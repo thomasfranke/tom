@@ -143,3 +143,6 @@ app.*.symbols
 
 # FVM Version Cache
 .fvm/
+
+# Claude Code — machine-local permissions; the skills in .claude/skills/ are versioned
+.claude/settings.local.json
