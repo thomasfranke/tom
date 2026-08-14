@@ -1,6 +1,6 @@
 # Pattern: Extension modules
 
-Complements [Decision 12](../decisions/012-paid-edition-ships-as-compile-time-module.md). The app shell is extensible through compile-time modules from M0 — even with no module existing yet. Panels, providers and commands are registered, never hardcoded.
+Complements [Decision 12](../decisions/012-shell-is-extensible-via-compile-time-modules.md). The app shell is extensible through compile-time modules from M0 — even with no module existing yet. Panels, providers and commands are registered, never hardcoded.
 
 ## The contract (public repo)
 
@@ -50,16 +50,13 @@ void main() => runTom(modules: const []);
 ```
 
 ```dart
-// (future) private repo — apps/tom_desktop_pro/lib/main_pro.dart
-void main() => runTom(modules: [ProModule()]);
+// a separate application composing the same shell with an extra module
+void main() => runTom(modules: [SomeModule()]);
 ```
 
 ## Rules
 
-1. **The shell knows no panel by name** — including the built-in ones (explorer, editor, diff, git), which are registered through the same mechanism (an internal `CoreModule`). One path for everything: the mechanism never rots from disuse.
-2. **One direction:** modules depend on the app/core; the public app never imports a module.
-3. **A paid feature is a module + a license key** (offline signature validation — the app is offline-first; license infrastructure is only built alongside the first paid module).
-4. The `TomModule` contract is public on purpose: third parties can write their own modules (the seed of a future extension ecosystem).
+What the mechanism guarantees — built-in panels going through the same path, the one-way dependency, composition happening at build time, and the contract being public on purpose — is [Decision 12](../decisions/012-shell-is-extensible-via-compile-time-modules.md). This page is the code; the anti-patterns below are what breaking those guarantees looks like in practice.
 
 ## Anti-patterns
 
@@ -67,5 +64,5 @@ void main() => runTom(modules: [ProModule()]);
 |---|---|
 | A panel added directly to the shell widget | Expensive retrofit later; violates rule 1 |
 | `if (isPro)` scattered through the UI | Gating belongs to the module (present in the build + licensed), not to community UI |
-| A module altering free-tier behavior | The free tier is untouchable (Decision 4); modules **add** |
-| License checks requiring the network | Breaks offline-first |
+| A module altering the shell's existing behavior | Modules **add**; they never change or degrade what the app already does |
+| A module that needs the network to start | Breaks offline-first — the app must work with no connection |

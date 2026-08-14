@@ -33,7 +33,8 @@
 | [009](decisions/009-space-session-is-single-source-of-truth.md) | The space session is the single source of truth |
 | [010](decisions/010-watcher-and-git-cooperate-by-protocol.md) | The watcher and git cooperate by an explicit protocol |
 | [011](decisions/011-telemetry-is-opt-in.md) | Telemetry is opt-in, no-op by default |
-| [012](decisions/012-paid-edition-ships-as-compile-time-module.md) | The paid edition ships as a compile-time module |
+| [012](decisions/012-shell-is-extensible-via-compile-time-modules.md) | The shell is extensible through compile-time modules |
+| [013](decisions/013-stack-is-flutter-and-dart.md) | The stack is Flutter and Dart |
 
 ---
 
