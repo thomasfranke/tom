@@ -11,6 +11,8 @@
 
 ## Milestone 0 — Foundation
 
+> Layout for everything below: [design/](design/) — `empty-state` and `shell` are the M0 screens.
+
 - [ ] **Extensible shell**: `runTom(modules: [])` + panels registered through `PanelDescriptor` (including the built-in ones, via `CoreModule`) — see [patterns/extension-modules.md](patterns/extension-modules.md)
 - [ ] Open a local folder inside a Git repo (a "space") — the repository root or any subfolder of it
 - [ ] `.md` file tree with navigation, dotfolders included (`.claude/`, `.github/`); only `.git/` is hidden

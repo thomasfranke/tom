@@ -9,6 +9,7 @@
 | [vision.md](vision.md) | Vision, market, the bet and the principles |
 | [product.md](product.md) | Personas, killer features and non-goals |
 | [mvp.md](mvp.md) | Spikes and MVP milestones |
+| [design/](design/) | Wireframes: one screen per state, low fidelity |
 | [architecture/](architecture/) | System design: layers, monorepo, Result, infrastructure, presentation, testing (numbered files in reading order) |
 | [decisions/](decisions/) | Architecture decisions, one per file, declaratively named (ADR format) |
 | [patterns/](patterns/) | Canonical code patterns (how it is written here) |

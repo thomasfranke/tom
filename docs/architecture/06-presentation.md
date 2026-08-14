@@ -7,6 +7,8 @@
 
 ## The preview is assembled block by block
 
+> How the panels sit on screen: [../design/](../design/).
+
 Presentation receives an ordered list of blocks, not a document. Each block is rendered individually and wrapped in a container the app owns, and that container is what carries the diff decoration (added, removed, modified), the anchor for navigation and, later, per-block selection.
 
 Rendering the document as one opaque widget tree would make the rendered diff — the reason the product exists — impossible to express, and would have to be undone at M2. Inline markdown *inside* a block is delegated to the markdown package, which is where CommonMark's real complexity lives; the app owns block-level layout only.
