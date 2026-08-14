@@ -7,11 +7,7 @@ Every external dependency is reached exclusively through a contract and lives is
 
 ## How it applies per tier
 
-| Tier | Examples | Rule |
-|---|---|---|
-| 1 — External services/capabilities | git binary, filesystem, sqlite/FTS5, markdown parser, text diff, remote APIs | Full isolation: `*_interface.dart` + impl + `*_failure.dart` in `infrastructure/`; consumed only through the contract |
-| 2 — External UI widgets | `re_editor` | Our own wrapper widget in `presentation/widgets/` exposing our API; swapping the package stays confined to one file |
-| 3 — Structural (accepted exception) | Flutter, Riverpod, Freezed | Declared foundation, not abstracted, **with restricted scope**: Riverpod only in `presentation/` + `bootstrap/di/` (no `Ref`/provider in any other layer — constructor injection); Freezed allowed everywhere (pure build-time, no runtime coupling); Flutter only in `presentation/`/`bootstrap/` |
+The principle is not uniform: external services get full isolation, third-party widgets get a wrapper we own, and structural dependencies (Flutter, Riverpod, Freezed) are a declared exception with a restricted scope rather than an abstraction. The three tiers, their boundaries and why the exception exists are in [../architecture/02-dependency-isolation.md](../architecture/02-dependency-isolation.md).
 
 ## Rationale
 - Testability: repositories testable with mocked infrastructure — no real process, disk or database.

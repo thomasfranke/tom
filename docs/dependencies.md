@@ -15,9 +15,11 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 | Package | License | Role |
 |---|---|---|
 | `markdown` | BSD-3 | The official Dart parser; exposes an AST (`Node`/`Element`) — the foundation of the preview and of diff v1 |
-| `flutter_markdown_plus` *(or our own renderer over the AST)* | BSD | Read-only preview; likely migration to our own renderer for full control over diff highlights |
+| `flutter_markdown_plus` | BSD | Renders the inline content **inside** a block; block-level layout and decoration are ours, which is what the rendered diff needs ([presentation](architecture/06-presentation.md)) |
 | `diff_match_patch` or `diffutil_dart` | Apache/MIT | Textual diff (Myers) for diff v0 and block alignment in v1 |
 | `re_highlight` or `flutter_highlight` | MIT | Syntax highlighting for code blocks in the preview |
+
+> If Spike B rules out the `markdown` package, the named fallbacks are our own block parser and, failing that, a Rust parser over `dart:ffi` ([Decision 13](decisions/013-stack-is-flutter-and-dart.md)). Neither is in the stack today.
 
 ## Editor (source mode)
 
@@ -54,7 +56,7 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 | Dio / `http` | There is no HTTP in the MVP; it arrives with layer 3 (remote APIs) when needed |
 | `sqflite` | Mobile-oriented; on desktop, plain `sqlite3` |
 
-> Every judgment on this page is scoped to the **desktop** app. iOS and Android arrive in Phase 4, post-1.0 ([roadmap](roadmap.md#phases)), and get their own stack under `tom_infra_mobile` — `sqflite` and a touch-capable editor become live candidates there, and `re_editor` almost certainly does not travel. Nothing here is a verdict on mobile.
+> Every judgment on this page is scoped to the **desktop** app. iOS and Android arrive in Phase 3, post-1.0 ([roadmap](roadmap.md#phases)), and get their own stack under `tom_infra_mobile` — `sqflite` and a touch-capable editor become live candidates there, and `re_editor` almost certainly does not travel. Nothing here is a verdict on mobile.
 
 ---
 

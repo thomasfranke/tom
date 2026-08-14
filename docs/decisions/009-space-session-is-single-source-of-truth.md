@@ -6,12 +6,9 @@
 The panels (explorer, editor, diff, git) are all views over the same open repo. If each notifier fetched its own state independently, post-operation coordination (a commit affects status, history, the file tree and the open document) would become hand-rolled cascading invalidation — a well-known and hard-to-trace class of bug.
 
 ## Decision
-A **root session provider** (`spaceSessionProvider`) is the single source of truth for the open space in presentation: it holds the space (root path), current branch, `GitStatus`, ahead/behind and sync state.
+A **root session provider** (`spaceSessionProvider`) is the single source of truth for the open space in presentation: it holds the space, current branch, `GitStatus` and ahead/behind. Panels derive from it instead of fetching space state themselves, and git operations write to it instead of triggering invalidation scattered across the app.
 
-- **Panel notifiers derive from the root** via `ref.watch` (with `select` for minimal rebuilds) — they never fetch space state on their own.
-- **Git operations write to the root:** notifiers call use cases, but the resulting update (new status, new branch) enters through the session, and panels react by derivation — not through scattered `ref.invalidate`.
-- **Panel-local state** (scroll, text selection, commit message draft) stays in the panel's notifier — the root only carries what is shared.
-- Multiple windows/spaces in the future: one session per space (family).
+How that plays out — derivation with `select`, what stays panel-local, one session per space — is in [../architecture/06-presentation.md](../architecture/06-presentation.md).
 
 ## Rationale
 - Removes coordination by cascading invalidation; Riverpod's dependency graph does the propagation.
