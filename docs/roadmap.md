@@ -3,8 +3,7 @@
 ## Phases
 
 ```
-Phase 0 · Validation      Do non-developers already read docs in a repo?
-                          (in parallel: Spikes A and B — editor and AST)
+Phase 0 · Spikes          The two technical unknowns: the editor and the AST
 Phase 1 · MVP (M0–M3)     Build in public; launch with a GIF of the rendered diff
 Phase 2 · Traction        Assisted conflict resolution, section blame
 Phase 3 · Mobile          iOS and Android, post-1.0 (Decision 8 reserves the shape)
@@ -15,17 +14,19 @@ Mobile is a committed direction, not a maybe — but it comes **after** 1.0. It 
 - **Git without a system binary.** iOS and Android have no `git` CLI and no free filesystem — this is exactly the trigger [Decision 2](decisions/002-git-via-system-binary.md) names for embedding `libgit2` via FFI.
 - **Editing on touch.** `re_editor` is desktop-oriented ([dependencies](dependencies.md)); source mode on a phone is an open design question, not just a port.
 
-## What Phase 0 asks
+## Goals
 
-The question is not "is documentation in Git painful?". Pain deduced from one's own experience is not evidence, and a leading question gets a yes from anyone being polite. The question is whether people who do not write code **already** read, comment on or approve documentation that lives in a repository — and how that happens today.
+Three, in this order.
 
-Five conversations with tech leads, about what already happens rather than about a product that does not exist:
+**A tool worth using every day.** The scope comes from problems the maintainer hits directly — documentation kept as markdown in a repository, a diff that shows syntax instead of the document, colleagues who would read and approve that documentation if reaching it did not require a terminal. Nothing in the MVP is speculative; every item is something the author wants on their own machine.
 
-- Does a PM, designer or manager on your team ever read documentation in the repository?
-- Have they ever commented on a pull request? Do they have an account in the organization at all?
-- When something the team wrote needs their approval, where does that happen today?
+**A demonstration of how software can be built.** The architecture notes, the decision records and the code patterns are as thorough as they are on purpose: this repository is meant to be read as much as run. That goal explains choices a purely product-driven project would skip — a pure Dart core with framework independence proved by `dart test`, a decision file behind every architectural commitment, documentation updated in the same pull request as the behaviour it describes. If TOM never has a second user, this part still succeeded.
 
-Answers about past behaviour beat answers about intent. And "they do not even have an account" is as useful a result as "every week" — it names the barrier precisely, which is the whole reason to ask before building rather than after.
+**Revenue, eventually, and only if earned.** [Decision 4](decisions/004-business-model-is-open-core.md) gates anything commercial on genuine signals of team demand and keeps the free tier whole regardless. It is third on this list on purpose, and the first two do not depend on it.
+
+The ordering is also what makes the plan honest: goals one and two are met by building well, which is entirely within the maintainer's control. Goal three is not, so it is written as a possibility rather than a projection, and no date is attached to it anywhere.
+
+Feedback comes from use, not from research. The maintainer is the first user and the documentation in this repository is the first space TOM opens, so anything awkward shows up within a day of shipping it. Beyond that, the repository is public: whoever clones it, uses it and reports what breaks is a slower signal than a study, but it is a real one, and it arrives from people who chose to be there.
 
 ## Open questions
 
