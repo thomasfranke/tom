@@ -55,19 +55,18 @@ Once a feature ships and is stable, **remove the flag and the `if` in the very n
 
 A `chore(desktop): remove FEATURE_DIFF_V1 flag` commit is a healthy sign, not busywork.
 
-## Flags, modules and licences are three different questions
+## Flags and modules are different questions
 
 They stack and must never be conflated:
 
-| Question | Mechanism | Where it lives |
-|---|---|---|
-| Who **has** this code? | The repository | Free code in `tom`, paid code in `tom-pro` — always, regardless of flags |
-| Is it **exposed** in this build? | Feature flag | Either repo |
-| Is this user **entitled** to it? | Licence key | `tom-pro` only |
+| Question | Mechanism |
+|---|---|
+| Is this code **in this repository**? | The repository itself. Code that lives elsewhere is not "flagged off" here — it is simply absent, and no flag can reveal it |
+| Is it **exposed** in this build? | A build-time feature flag |
 
-A paid feature under development lives in `tom-pro`, behind a flag there. When it stabilizes, the flag is removed and the licence check alone governs it.
+A feature being developed inside a separate module sits behind a flag *there*, in its own repository, on exactly the same terms as anything here.
 
-**Hooks in the public repo:** a paid feature sometimes needs an extension point in the public shell. That hook is public, free code — and it must **stand on its own**: either useful to free users, or generic enough for any third-party module. A hook whose only purpose is to serve the commercial edition degrades the public repo for the paid one, which violates the spirit of [Decision 4](../decisions/004-business-model-is-open-core.md).
+**Hooks for modules outside this repository:** a module sometimes needs an extension point in the shell. That hook is ordinary code here, and it must **stand on its own** — either useful to the people using this repository, or generic enough for any third-party module. A hook whose only purpose is to serve one particular module degrades this repository for the benefit of another.
 
 ## Anti-patterns
 
@@ -77,4 +76,4 @@ A paid feature under development lives in `tom-pro`, behind a flag there. When i
 | A flag with no removal target | Permanent branching in the code; the debt never gets paid |
 | A remote/runtime flag service | Phone-home; contradicts Decision 11 and offline-first |
 | Nested flags (`if (a && b)`) | Combinatorial paths nobody tests; split the work instead |
-| Using a flag to hide paid code in the public repo | Repo answers "who has this code" — paid code never ships publicly |
+| Using a flag to hide code that belongs in another repository | The repository answers "who has this code"; a flag only answers whether it is reachable |

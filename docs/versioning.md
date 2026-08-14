@@ -32,17 +32,6 @@ Pre-releases use `-beta.N` (`v1.2.0-beta.1`) and are published from the same tag
 
 A `TomModule` contract member that is going away is marked `@Deprecated` with the version that will remove it, kept for at least one minor release, and listed in the release notes. Anything that changes a written format ships with a migration path, or does not ship.
 
-## Version alignment across the two repositories
-
-The product has one version number, and it is **defined by the public repository**.
-
-- A release is tagged `v0.4.0` on `tom`. That tag is the source of truth for the version.
-- `tom-pro` is tagged with the **same** number and its build pins the public repo at that exact tag — never at a floating branch. The binary is therefore reproducible: the same two tags rebuild the same artifact months later.
-- `tom-pro` never invents its own numbering. A user who sees "TOM 0.4.0" in the About dialog can find `v0.4.0` on the public repo and read exactly what is in it.
-- The number does not change between an unlicensed and a licensed run of the same binary — a licence activates features, not a different version.
-
-**Fixes exclusive to the commercial edition** (a bug in licence verification, say) need a new build without a public change. Those use a build suffix: `v0.4.0+2` — same product version, second build. The suffix never appears as a separate product version in release notes.
-
 ## The changelog
 
 Generated from Conventional Commits since the previous tag ([workflow](../CONTRIBUTING.md#workflow)): `feat` entries become the features section, `fix` the fixes, and `BREAKING CHANGE` footers are surfaced at the top. This is the practical reason the commit convention is enforced rather than merely suggested.

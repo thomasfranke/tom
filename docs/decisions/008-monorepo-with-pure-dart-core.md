@@ -4,19 +4,7 @@
 
 ## Decision
 
-The project is a **monorepo**: a single Git repository holding multiple Dart packages, wired through the **native pub workspace** (Dart 3.6+). Initial structure of **two packages**:
-
-```
-tom/                          ← ONE Git repository
-├── pubspec.yaml              ← workspace root (declares the packages)
-├── docs/
-├── packages/
-│   └── tom_core/             ← PURE DART package (pubspec without Flutter)
-│       └── lib/                 domain/ · application/ · data/ · infrastructure/ · core/
-└── apps/
-    └── tom_desktop/          ← Flutter desktop app
-        └── lib/                 presentation/ · bootstrap/
-```
+The project is a **monorepo**: a single Git repository holding multiple Dart packages, wired through the **native pub workspace** (Dart 3.6+). Two packages to start — `packages/tom_core`, pure Dart with no Flutter in its pubspec, and `apps/tom_desktop`, the Flutter application. The tree, and the layers inside each package, are in [../architecture/03-repository-structure.md](../architecture/03-repository-structure.md).
 
 **Important:** monorepo ≠ multi-repo. One clone, one history, one PR able to touch core and app atomically. The split happens at the `pubspec.yaml` (build) level, not in Git.
 
@@ -47,14 +35,14 @@ apps/tom_desktop ──────┬──> packages/tom_core <──┬──
 
 | Trigger | Action |
 |---|---|
-| A second platform (mobile) started — **planned for Phase 4, post-1.0** | Extract `tom_infra_desktop` (git via CLI, free filesystem); create `tom_infra_mobile` (libgit2/FFI, sandbox, keychain) and `apps/tom_mobile` (its own presentation — panels do not become screens) |
+| A second platform (mobile) started — **planned for Phase 3, post-1.0** | Extract `tom_infra_desktop` (git via CLI, free filesystem); create `tom_infra_mobile` (libgit2/FFI, sandbox, keychain) and `apps/tom_mobile` (its own presentation — panels do not become screens) |
 | 3+ packages in the workspace | Adopt **Melos** (batch command runner across packages: tests, codegen, diff-based filtering in CI) |
 | `tom_core` published on pub.dev | Melos versioning + changelog from Conventional Commits |
 
 ## Rationale
 
 - **A physical boundary on the divide that matters:** Clean Architecture stops being a convention and becomes a build constraint exactly where leakage would be irreversible.
-- **Mobile as a bounded cost:** `domain/application/data/core` are born 100% reusable; the planned iOS/Android app means alternative infrastructure implementations + a new presentation, with no refactor of the core. This decision is what keeps Phase 4 from being a rewrite.
+- **Mobile as a bounded cost:** `domain/application/data/core` are born 100% reusable; the planned iOS/Android app means alternative infrastructure implementations + a new presentation, with no refactor of the core. This decision is what keeps Phase 3 from being a rewrite. And mobile is expected rather than merely hoped for: writing documentation needs a repository, markdown and git — not a development environment — and the people who read and approve documentation are rarely at a desk when they do ([roadmap](../roadmap.md#phases)).
 - **Minimal cost:** two packages on the native workspace carry almost no overhead (one `pub get` at the root, the IDE sees the whole set); the real ceremony (Melos, N packages) stays behind triggers.
 - **Portfolio narrative:** the repo tree communicates the architecture in the first fold on GitHub.
 

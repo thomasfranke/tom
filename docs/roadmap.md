@@ -3,52 +3,38 @@
 ## Phases
 
 ```
-Phase 0 · Validation      Public pitch → measure real demand
+Phase 0 · Validation      Do non-developers already read docs in a repo?
                           (in parallel: Spikes A and B — editor and AST)
 Phase 1 · MVP (M0–M3)     Build in public; launch with a GIF of the rendered diff
-Phase 2 · Traction        Assisted conflicts, section blame, PR integration (layer 3)
-Phase 3 · Commercial      Paid edition, gated by real signals (Decision 4)
-Phase 4 · Mobile          iOS and Android, post-1.0 (Decision 8 reserves the shape)
+Phase 2 · Traction        Assisted conflict resolution, section blame
+Phase 3 · Mobile          iOS and Android, post-1.0 (Decision 8 reserves the shape)
 ```
 
-Mobile is a committed direction, not a maybe — but it comes **after** 1.0. Desktop stays the reference platform: the panel layout, the Git-CLI infrastructure and the MVP scope are all unchanged by it. The cost is bounded because `tom_core` is pure Dart by construction, so mobile means new infrastructure implementations plus a new presentation, not a refactor. Two things must be resolved before Phase 4 starts:
+Mobile is a committed direction, not a maybe — but it comes **after** 1.0. It is not a port for its own sake: writing documentation needs a repository, markdown and git, not a development environment, and the people who read and approve documentation are rarely at a desk when they do it. Desktop stays the reference platform: the panel layout, the Git-CLI infrastructure and the MVP scope are all unchanged by it. The cost is bounded because `tom_core` is pure Dart by construction, so mobile means new infrastructure implementations plus a new presentation, not a refactor. Two things must be resolved before Phase 3 starts:
 
 - **Git without a system binary.** iOS and Android have no `git` CLI and no free filesystem — this is exactly the trigger [Decision 2](decisions/002-git-via-system-binary.md) names for embedding `libgit2` via FFI.
 - **Editing on touch.** `re_editor` is desktop-oriented ([dependencies](dependencies.md)); source mode on a phone is an open design question, not just a port.
 
-## What to say publicly about the commercial edition
+## What Phase 0 asks
 
-Until a paid edition actually ships, the public line is short and unambiguous:
+The question is not "is documentation in Git painful?". Pain deduced from one's own experience is not evidence, and a leading question gets a yes from anyone being polite. The question is whether people who do not write code **already** read, comment on or approve documentation that lives in a repository — and how that happens today.
 
-> TOM is free and open source (MIT). A commercial edition for organizations may come later, funding the project's maintenance — the current feature set stays free.
+Five conversations with tech leads, about what already happens rather than about a product that does not exist:
 
-Rules for every public communication (README, site, HN/Reddit posts, release notes):
+- Does a PM, designer or manager on your team ever read documentation in the repository?
+- Have they ever commented on a pull request? Do they have an account in the organization at all?
+- When something the team wrote needs their approval, where does that happen today?
 
-- **Never announce features that do not exist**, and never give dates for them.
-- **Never quote a price** before there is something to sell.
-- **Never use the words "lifetime" or "perpetual"** — the most expensive promise to walk back (see the prior art in [Decision 4](decisions/004-business-model-is-open-core.md)).
-- **Never ship a capped build or a countdown trial.** The free tier is the whole product as it stands.
-- If asked directly how the project will sustain itself, answer plainly: a future paid edition aimed at organizations, plus GitHub Sponsors — and that the free/paid boundary only ever moves toward free.
-
-## Risks and mitigation
-
-| Risk | Likelihood | Mitigation |
-|---|---|---|
-| Unvalidated demand (deduced pain, not observed) | High | Phase 0 before heavy code; explicit decision gate |
-| Obsidian ships decent official Git support | Medium | Focus on *teams* and the rendered diff (outside their positioning); speed |
-| The rendered diff is harder than estimated | Medium | Incremental v0→v2; v0 alone is already shippable and useful |
-| Divided energy (a solo maintainer) | High | Aggressively small MVP scope; success in Phase 1 defined without revenue |
-| An AGPL dependency slips in | Low | License check as a PR checklist item |
+Answers about past behaviour beat answers about intent. And "they do not even have an account" is as useful a result as "every week" — it names the barrier precisely, which is the whole reason to ask before building rather than after.
 
 ## Open questions
 
-- [ ] Final name + domain + GitHub org (availability and trademark check pending)
 - [ ] ~~Does the `markdown` AST handle diff v1?~~ → **Spike B** ([mvp.md](mvp.md))
 - [ ] ~~Can `re_editor` serve as source mode?~~ → **Spike A** ([mvp.md](mvp.md))
-- [ ] Space configuration format (`.tom/config.yaml` in the repo? none at all?)
+- [ ] ~~Space configuration format~~ → `.tom/` is reserved for it, and nothing is written there until a genuinely shared setting needs it ([domain model](architecture/08-domain-model.md))
+- [ ] ~~How far does `flutter_markdown_plus` take the preview?~~ → the preview renders block by block and delegates inline to the package ([presentation](architecture/06-presentation.md))
 - [ ] Binary signing (Windows/macOS certificate cost) — needed for launch or later?
-- [ ] Preview: how far does `flutter_markdown_plus` take us before migrating to our own AST renderer? (Spike B may answer this naturally)
 
 ---
 
-*See also: [mvp.md](mvp.md) · [Decision 4 (open-core)](decisions/004-business-model-is-open-core.md)*
+*See also: [mvp.md](mvp.md) · [product.md](product.md)*

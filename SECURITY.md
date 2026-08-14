@@ -4,7 +4,7 @@
 
 **Do not open a public issue for a security problem.**
 
-Report it privately through [GitHub Security Advisories](../../security/advisories/new), or by email to `security@DOMAIN` if you prefer.
+Report it privately through [GitHub Security Advisories](../../security/advisories/new). The thread stays private between us until a fix is published, and it needs nothing beyond your GitHub account — no email, no form, no waiting for someone to hand out an address.
 
 Please include: what the issue is, how to reproduce it, the version affected, and what an attacker could achieve. A proof of concept helps enormously.
 
@@ -32,11 +32,10 @@ This section exists to point researchers at the parts that matter, rather than a
 
 **TOM writes files.** Document paths derive from the space tree; writes must stay inside the space root.
 
-**What TOM deliberately does not do**, and which therefore reduces the surface: it has no telemetry ([Decision 11](docs/decisions/011-telemetry-is-opt-in.md)), no account system, no cloud sync, no runtime plugin loading, and no network access at all in the free tier — authentication and transport are entirely the system git's responsibility, using the user's own credentials and configuration ([Decision 2](docs/decisions/002-git-via-system-binary.md)).
+**What TOM deliberately does not do**, and which therefore reduces the surface: it has no telemetry ([Decision 11](docs/decisions/011-telemetry-is-opt-in.md)), no account system, no cloud sync, no runtime plugin loading, and no network access of its own — authentication and transport are entirely the system git's responsibility, using the user's own credentials and configuration ([Decision 2](docs/decisions/002-git-via-system-binary.md)).
 
 ## Out of scope
 
 - Vulnerabilities in `git` itself, in Flutter, or in third-party packages — report those upstream (tell us too if TOM's usage makes them worse).
 - Anything requiring the attacker to already have write access to the user's machine or filesystem.
 - Missing hardening that is not exploitable on its own.
-- The licence key mechanism in the commercial edition: keys are signed documents validated offline, and the model deliberately accepts that a determined user can bypass it ([Decision 12](docs/decisions/012-paid-edition-ships-as-compile-time-module.md)). Forging a signature would be in scope; sharing a key is not a vulnerability.

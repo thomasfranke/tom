@@ -15,7 +15,7 @@ Every relevant decision lives in `docs/`. **Before suggesting architecture, depe
 - `docs/README.md` — general index
 - `docs/vision.md` / `docs/product.md` — principles, killer features and **non-goals** (respect them!)
 - `docs/mvp.md` — spikes and milestones; whatever is out of the MVP stays out
-- `docs/architecture/` — the system design (9 numbered files in reading order: Git integration, dependency isolation, monorepo/layers, error model, infrastructure, presentation, testing, domain model)
+- `docs/architecture/` — the system design (8 numbered files in reading order: Git integration, dependency isolation, monorepo/layers, error model, infrastructure, presentation, testing, domain model)
 - **Read selectively.** Consult only the files relevant to the task at hand; never load `docs/` wholesale. The index above exists so the right file can be picked without reading the rest.
 - `docs/decisions/` — formalized decisions (ADR format, declarative names); changing a decision requires a new file or an explicit revision
 - `docs/patterns/` — **canonical code templates** (error handling with inline try/catch, DI/composition root, extension modules); all new code follows these templates
@@ -32,11 +32,13 @@ Every relevant decision lives in `docs/`. **Before suggesting architecture, depe
 7. **Monorepo with a pure Dart core** (Decision 8): `packages/tom_core` (domain/application/data/infrastructure/core, NO Flutter in the pubspec, CI with `dart test`) + `apps/tom_desktop` (presentation/bootstrap).
 8. **Files are the truth** — never propose a database or state that is not rebuildable from the `.md` files on disk. The FTS5 index is a cache.
 9. **Telemetry is opt-in** — observability behind a contract, no-op by default; no data leaves the user's machine (Decision 11).
-10. **Extensible shell** — panels are ALWAYS registered through `TomModule`/`PanelDescriptor`, never hardcoded in the shell (Decision 12; template in `docs/patterns/extension-modules.md`).
+10. **Extensible shell** — panels are ALWAYS registered through `TomModule`/`PanelDescriptor`, never hardcoded in the shell, including the built-in ones (Decision 12; template in `docs/patterns/extension-modules.md`).
+11. **The public repo documents the free product only** — no tier catalogue, no pricing, no licensing mechanics, no reference to a private repository. Commercial modelling lives outside this repo (Decision 4).
+12. **A space is a folder, not a repository** — `Space` carries `root` and `repositoryRoot` separately; git runs against the repository, navigation and search stay in the folder.
 
 ## Stack (summary — details in docs/dependencies.md)
 
-Riverpod (codegen) + Freezed · `markdown` (AST) · `diff_match_patch` · `re_editor` (spike pending) · `sqlite3` + FTS5 · `watcher` · `window_manager` / `file_selector` · `dart:io Process` for Git.
+Riverpod (codegen) + Freezed · `markdown` (AST) · `diff_match_patch` · `re_editor` (spike pending) · `sqlite3` + FTS5 · `watcher` · `window_manager` / `file_selector` · `dart:io Process` for Git. Why Dart rather than a web stack, and where Rust could still enter via FFI: Decision 13.
 
 ## Code structure
 
@@ -53,6 +55,6 @@ See `docs/architecture/03-repository-structure.md` (source of truth). Summary: m
 
 ## Current status
 
-**Phase 0 — Validation + Spikes.** Nothing from the MVP has been built yet. The domain model is deliberately partial (`docs/architecture/08-domain-model.md`) — `Block` in particular is an *output* of Spike B; do not design `BlockDiffer` before the spike reports. Next steps: Spike A (`re_editor` as source mode), Spike B (the `markdown` AST for block diff), validation pitch. See `docs/mvp.md` and `docs/roadmap.md`.
+**Phase 0 — Validation + Spikes.** Nothing from the MVP has been built yet. The domain model is deliberately partial (`docs/architecture/08-domain-model.md`) — `Block` in particular is an *output* of Spike B; do not design `BlockDiffer` before the spike reports. Next steps: Spike A (`re_editor` as source mode), Spike B (the `markdown` AST for block diff, now also answering whether a single block can be rendered in isolation), and the Phase 0 interviews — five conversations about whether non-developers already read documentation in a repository (`docs/roadmap.md`). See `docs/mvp.md`.
 
 > Keep this "Current status" section up to date at the end of each meaningful work session — it is what carries context between sessions.

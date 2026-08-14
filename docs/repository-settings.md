@@ -10,7 +10,7 @@ The GitHub configuration that the workflow in [CONTRIBUTING.md](../CONTRIBUTING.
 | Run PR validation | Automatic (first PR from a new outside contributor requires maintainer approval) |
 | Merge into `main` | Maintainer only |
 | Create a `v*` tag | Maintainer only |
-| Trigger the official build | Maintainer only — it runs in the private repository |
+| Trigger the official build | Maintainer only — it does not run in this repository |
 
 Nobody outside the maintainers has write access, which is the default for a public repository: contribution happens through forks, never through branches here.
 
@@ -31,13 +31,13 @@ Approval is **not** required while there is a single maintainer — requiring it
 
 A ruleset on the `v*` pattern restricting **creation** to maintainers. The tag is the release trigger, so this is the real gate: a collaborator with write access could otherwise ship a release.
 
-Note that the separation of repositories already provides defence in depth — a tag on the public repo marks a point in history but produces no binary. Only the private repository builds and publishes.
+There is defence in depth behind it: a tag here marks a point in history and, on its own, produces nothing. No build, signing or publishing step runs in this repository.
 
 ## Actions settings
 
-- **Require approval for all outside collaborators** before running workflows from forks. Standard protection against a PR whose workflow exists to abuse the runner or probe for secrets.
+- **Require approval before running workflows from a fork, for contributors who have not landed a PR yet.** This is GitHub's default, and it is deliberate rather than inherited: the abuse it guards against — a workflow that exists to mine crypto on the runner — arrives from throwaway accounts with no history, which is exactly what this setting catches. Requiring approval from *every* outside contributor, forever, was considered and rejected: it buys almost nothing here, because fork PRs get a read-only token and no secrets, and this repository has no secrets in CI anyway (below). It would cost a maintainer click on every contribution from people who have already proven themselves, and leave their pull requests sitting without CI until someone is awake.
 - Workflow permissions: read-only by default; grant write per workflow only where genuinely needed.
-- **No secrets in this repository's CI.** Signing keys and certificates live only in the private repo ([BUILD-AND-RELEASE.md](../../tom-pro/docs/BUILD-AND-RELEASE.md) there). Validation here must never require a secret — which is why git tests run against a temporary local repository rather than a real remote.
+- **No secrets in this repository's CI.** Signing keys, certificates and distribution credentials live outside it. Validation here must never require a secret — which is why git tests run against a temporary local repository rather than a real remote.
 
 ## CLA bot
 
@@ -60,7 +60,7 @@ The bot only reacts to a comment matching the acceptance phrase exactly, and the
 - Issues and Discussions enabled; blank issues disabled (templates in `.github/ISSUE_TEMPLATE/`)
 - Private vulnerability reporting enabled ([SECURITY.md](../SECURITY.md))
 - Wiki disabled — documentation lives in `docs/`, versioned with the code, which is the entire thesis of this project
-- Default branch: `main` (the only long-lived branch)
+- Default branch: `main` — the only long-lived line of development. The orphan branch `cla-signatures` is also permanent, but it holds the CLA signature file and no code; the bot commits to it directly, which is why it cannot live on `main`.
 
 ## Changing any of this
 
