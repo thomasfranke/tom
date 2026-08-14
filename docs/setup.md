@@ -39,7 +39,7 @@ cd apps/tom_desktop && flutter run -d windows   # or macos / linux
 
 ## Everyday commands
 
-A `Makefile` wraps the common tasks so that a local run and a CI run cannot drift apart — the pipeline calls the same targets.
+A `Makefile` wraps the common tasks as a convenience. Every target is a short command you can equally run by hand, and the docs name those commands directly — nothing in the project requires `make`.
 
 ```bash
 make help            # list every target

@@ -29,9 +29,9 @@ The title is **exactly the Conventional Commit that the squash merge will produc
 ```
 
 Types: `feat` · `fix` · `docs` · `refactor` · `test` · `chore` · `perf` · `ci` · `build`
-Scopes: `core` · `desktop` · `git` · `diff` · `editor` · `search` · `watcher` · `di` · `docs` · `ci`
+Scopes: `core` · `desktop` · `git` · `diff` · `editor` · `search` · `watcher` · `di` — or, for a documentation change, the docs area: `decisions` · `architecture` · `patterns`
 
-Imperative mood, lowercase after the colon, no trailing period, under ~72 characters.
+The scope is optional: omit it when a change genuinely spans the repository rather than picking one. Imperative mood, lowercase after the colon, no trailing period, under ~72 characters.
 
 ```
 feat(diff): classify modified blocks by similarity
@@ -66,7 +66,7 @@ follow-ups worth an issue. Omit the section if there is genuinely nothing.
 
 **How to test** comes first because it is what the reviewer acts on. Write reproducible steps, not a claim: which repo state to start from (a space with a dirty working tree? two branches with diverging docs?), what to do, and what should happen. A reviewer who cannot follow the steps cannot review the change. Always name the platform it was verified on — this is a three-platform desktop app and "works on my machine" is a real risk.
 
-**Automated tests** comes second. Check the branch for changes under `test/`; if there are none, say so plainly rather than implying coverage that does not exist. Match the level to what changed ([testing strategy](../../docs/architecture/07-testing.md)):
+**Automated tests** comes second. Check the branch for changes under `test/`; if there are none, say so plainly rather than implying coverage that does not exist. Match the level to what changed ([testing strategy](../../../docs/architecture/07-testing.md)):
 
 | Changed | Expected tests |
 |---|---|

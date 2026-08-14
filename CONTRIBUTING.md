@@ -1,10 +1,14 @@
 # Contributing to TOM
 
-Thanks for considering a contribution. TOM is a Git client specialized in markdown documentation — [read the vision first](docs/vision.md), it explains what this project deliberately does *not* try to be.
+Thanks for being here. TOM is built in spare time, so anyone who turns up — with a typo fix, a bug report, or an afternoon of real work — is choosing to spend it on this. That is worth saying before anything else.
+
+TOM is a desktop Git client for teams who keep their documentation as markdown in a repository: files stay files, and the Git workflow *is* the app rather than a menu buried inside it. The [vision](docs/vision.md) is one page and worth the two minutes — it covers what the project is reaching for, and what it happily leaves to other tools.
+
+Not sure whether an idea fits, or where to start? Open an issue and ask. Questions are never a bother, and asking early is usually faster than guessing — for both of us.
 
 ## Before you start
 
-- **Check the non-goals.** [product.md](docs/product.md) lists what TOM will not become (WYSIWYG editing, real-time collaboration, its own cloud sync). PRs implementing a non-goal will be declined, however good the code.
+- **Check the non-goals.** [product.md](docs/product.md) lists what TOM deliberately will not become — WYSIWYG editing, real-time collaboration, its own cloud sync. A quick look before you start is the surest way to have your work land well. And if one of them strikes you as wrong, that is genuinely worth hearing: open an issue and make the case.
 - **Read the decisions.** [docs/decisions/](docs/decisions/) records the architectural choices and *why* they were made. If your change contradicts one, that is a conversation to have in an issue first — not a surprise in a PR.
 - **Follow the patterns.** [docs/patterns/](docs/patterns/) holds the canonical code templates (error handling, dependency injection, extension modules). New code follows them.
 - **Open an issue for anything substantial.** Small fixes can go straight to a PR; a feature or refactor deserves a discussion first, so nobody wastes an afternoon.
@@ -26,7 +30,7 @@ Two practical consequences:
 
 ## Workflow
 
-**Trunk-based.** `main` is the only long-lived branch and is always green.
+**Trunk-based.** `main` is the only long-lived line of development, and is always green. (There is one other permanent branch, `cla-signatures` — an orphan branch holding the CLA signature file. It carries no code and nobody works in it.)
 
 ```
 feat/*  ──PR──▶  main  ──tag──▶  published release

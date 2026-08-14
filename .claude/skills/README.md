@@ -1,20 +1,20 @@
 # Skills — TOM
 
-Duas skills com as convenções operacionais do projeto. Carregadas **sob demanda** (só quando a tarefa se encaixa), diferente do `CLAUDE.md`, que entra em toda sessão.
+Two skills holding the project's operational conventions. They are loaded **on demand** — only when the task at hand matches — unlike `CLAUDE.md`, which enters every session.
 
-| Skill | Dispara quando | Cobre |
+| Skill | Fires on | Covers |
 |---|---|---|
-| `tom-git-workflow` | commitar, criar branch, abrir PR, taggear release, "commit this", "push", "ship it" | Nomenclatura de branch, Conventional Commits com os escopos do monorepo, política de squash, releases como tags, regras extras do `tom-pro` |
-| `tom-pr-writer` | "escreve o PR", "draft a PR description", terminar uma branch, revisar descrição existente | Inspecionar o diff real antes de escrever, título = Conventional Commit do squash, template What/Why/Notes, checklist condicional |
+| `tom-git-workflow` | committing, creating a branch, opening a PR, tagging a release, "commit this", "push", "ship it" | Branch naming, Conventional Commits with the monorepo's scopes, squash policy, releases as tags, the extra rules for `tom-pro` |
+| `tom-pr-writer` | "write the PR", "draft a PR description", finishing a branch, revising an existing description | Inspecting the real diff before writing, title = the Conventional Commit the squash will produce, the What/Why/Notes template, conditional checklist |
 
-## Destino: só o repo público
+## Where they live: the public repo, and nowhere else
 
-As skills vivem em **`tom/.claude/skills/`** e em nenhum outro lugar:
+The skills live in **`tom/.claude/skills/`**:
 
-- Versionadas com o projeto e disponíveis para qualquer pessoa que clone e use o Claude Code — o `tom-git-workflow` só cumpre seu papel se o contribuidor externo também o receber.
-- O **`tom-pro` as herda por caminho relativo** (`~/dev/tom/.claude/skills/`), como já faz com a doc. O setup do repo comercial exige os dois clones lado a lado, então o caminho resolve. **Nunca copiar para lá** — cópia divergente é pior que nenhuma cópia; ambas as skills já têm uma seção final cobrindo o que muda no `tom-pro`.
-- A pasta `skills/` deste pacote é só uma cópia avulsa para conveniência (instalar no perfil pessoal, se quiser tê-las fora dos repos). A fonte da verdade é o repo público.
+- Versioned with the project and available to anyone who clones it and uses Claude Code — `tom-git-workflow` only does its job if an outside contributor receives it too.
+- **`tom-pro` inherits them by relative path** (`../tom/.claude/skills/`), exactly as it already does with the documentation. The path is relative on purpose: the commercial repo's setup requires both clones side by side, so it resolves wherever the pair happens to live. **Never copy them there** — one source of truth, and a divergent copy is worse than no copy. Both skills carry a final section covering what differs in `tom-pro`.
+- That rule is not theoretical. Copies did exist in `tom-pro`, and they had drifted from the originals within a single working session. They were removed on 2026-08-14.
 
-## Manutenção
+## Maintenance
 
-As skills espelham o `CONTRIBUTING.md` e as decisões. Ao mudar uma convenção (escopos novos, política de merge, formato de release), atualizar os três: `CONTRIBUTING.md`, a skill correspondente e — se for decisão arquitetural — um arquivo em `docs/decisions/`. Como o `tom-pro` referencia as skills por caminho em vez de copiá-las, ele acompanha automaticamente.
+The skills mirror `CONTRIBUTING.md` and the decisions. When a convention changes — new scopes, merge policy, release format — update all three: `CONTRIBUTING.md`, the corresponding skill, and, if it is an architectural decision, a file in `docs/decisions/`. Because `tom-pro` references the skills by path instead of copying them, it follows along automatically.

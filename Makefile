@@ -1,8 +1,9 @@
 ####################################################################
 ###  *** Makefile for TOM ***                                    ###
 ### Run `make help` to list every target with a description.     ###
-### Targets are the single source of truth: CI calls them too,   ###
-### so a local run and a pipeline run cannot drift apart.        ###
+### Targets are a convenience, not a requirement: each one       ###
+### wraps a short command the docs name directly, so nothing     ###
+### here is needed to build, test or contribute.                 ###
 ####################################################################
 
 CORE := packages/tom_core
