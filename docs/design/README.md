@@ -8,7 +8,13 @@ Low-fidelity screens, one per state the app is actually in. They answer **what i
 |---|---|---|
 | [empty-state](screens/desktop/empty-state.excalidraw) | No space open: brand, open a folder, recent | M0 (clone by URL: M3) |
 | [shell](screens/desktop/shell.excalidraw) | Reading and editing — explorer, source and preview side by side | M0 (search: M2) |
+| [reading](screens/desktop/reading.excalidraw) | Preview only — the default for whoever does not edit | M0 |
+| [unsaved-changes](screens/desktop/unsaved-changes.excalidraw) | The gap between the buffer and the file on disk | M0 |
+| [not-a-repository](screens/desktop/not-a-repository.excalidraw) | The one way opening a folder fails | M0 |
 | [committing](screens/desktop/committing.excalidraw) | Stage, describe, commit, push | M1 |
+| [branch-switcher](screens/desktop/branch-switcher.excalidraw) | Switch branches, or start one | M1 |
+| [file-history](screens/desktop/file-history.excalidraw) | The commits that touched this document | M1 |
+| [push-rejected](screens/desktop/push-rejected.excalidraw) | The remote moved first | M1 |
 
 ```
 docs/design/

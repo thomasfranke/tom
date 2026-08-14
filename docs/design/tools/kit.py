@@ -152,6 +152,26 @@ class Scene:
         self.text(id + "-t", x + 12, y + (h - CAPTION * 1.25) / 2,
                   placeholder, size=CAPTION, color=SOFT)
 
+    def popover(self, id, x, y, w, h):
+        """A floating surface over the window — branch list, autocomplete.
+
+        Decision 6 keeps `Navigator` for dialogs only, so anything that is
+        not modal is drawn as a surface anchored to its trigger.
+
+        Opaque, always: a transparent popover lets the content underneath show
+        through and stops reading as a surface that sits above the window.
+        """
+        self.rect(id, x, y, w, h, bg=WHITE, sw=2, round=True)
+
+    def banner(self, id, x, y, w, message, accent, h=44):
+        """A condition the user has to act on, stated where it happened."""
+        self.rect(id + "-b", x, y, w, h, stroke=accent, round=True)
+        self.text(id + "-t", x + 14, y + (h - CAPTION * 1.25) / 2, message,
+                  size=CAPTION, color=accent)
+
+    def dot(self, id, x, y, color=INK, size=8):
+        self.rect(id, x, y, size, size, stroke=color, bg=color, round=True)
+
     def bars(self, id, x, y, widths, gap=BAR_GAP):
         """Placeholder text. Never real prose — a wireframe is not a mockup."""
         for i, w in enumerate(widths):
