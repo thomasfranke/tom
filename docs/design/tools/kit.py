@@ -229,3 +229,41 @@ class Scene:
             "files": {},
         }, open(path, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
         print(f"{len(self.els):3d} elements  ->  {path}")
+
+
+# ── Mobile ───────────────────────────────────────────────────────────────
+# Phase 3, post-1.0. These are NOT the desktop values scaled down: Decision 8
+# gives mobile its own presentation, and the layout below is a navigation
+# stack rather than side-by-side panels, because that is what the form
+# factor and the job actually are.
+PHONE_W = 380
+PHONE_H = 780
+NAV_BAR = 60      # top: back, title, one action
+ACTION_BAR = 68   # bottom: the primary action for this screen
+
+
+class Phone(Scene):
+    """A phone screen. Same tokens, different frame and different structure."""
+
+    def frame(self, title, back=True, action=None, height=PHONE_H):
+        self.h = height
+        self.rect("_win", 0, 0, PHONE_W, height, sw=2, round=True)
+        self.hline("_navrule", 0, NAV_BAR, PHONE_W)
+        if back:
+            self.text("_back", PAD, 20, "‹", size=24)
+        self.text("_title", PAD + (24 if back else 0), 22, title, size=BODY)
+        if action:
+            self.text("_act", PHONE_W - PAD - len(action) * BODY * 0.58, 22,
+                      action, size=BODY, color=LABEL)
+
+    def action_bar(self, label, muted=False):
+        y = self.h - ACTION_BAR
+        self.hline("_actrule", 0, y, PHONE_W)
+        self.button("_primary", PAD, y + 14, PHONE_W - 2 * PAD, label,
+                    h=40, muted=muted)
+
+    def row(self, id, y, label, meta=None, h=56):
+        self.text(id + "-l", PAD, y, label, size=BODY)
+        if meta:
+            self.text(id + "-m", PAD, y + 22, meta, size=CAPTION, color=LABEL)
+        self.hline(id + "-r", PAD, y + h - 12, PHONE_W - 2 * PAD, color=SOFT)

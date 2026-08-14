@@ -5,14 +5,18 @@ description: How TOM's screen wireframes are made — the shared drawing kit, th
 
 # TOM — wireframes
 
-Wireframes live in `docs/design/`, are **generated rather than hand-drawn**, and exist to answer one question: what is on the screen and where. Anything beyond that — colour, iconography, final copy — is out of scope and actively harmful, because it invites feedback on decoration while the structure is still open.
+Wireframes live in `docs/design/`, are **generated rather than hand-drawn**, and exist to answer one question: what is on the screen and where. Anything beyond that — iconography, final copy, visual styling — is out of scope and actively harmful, because it draws feedback onto decoration while the structure is still open.
+
+Colour is decided separately, in [visual-language.md](../../../docs/design/visual-language.md). The four values below are *drawing* tokens; they are not the product palette and must never be confused with it.
 
 ## Never hand-draw a screen
 
 Every screen is produced by `docs/design/tools/build.py` on top of `docs/design/tools/kit.py`:
 
 ```bash
-python3 docs/design/tools/build.py
+python3 docs/design/tools/build.py         # desktop screens
+python3 docs/design/tools/build_mobile.py  # mobile screens (Phase 3, exploratory)
+python3 docs/design/tools/palette.py       # palette.svg + WCAG check
 ```
 
 Hand-tuning one `.excalidraw` file is how a set of wireframes stops looking like one product: the second screen's explorer ends up 8px narrower than the first, and nobody notices until they are side by side. Change a token in `tools/kit.py` and rebuild instead — all screens move together.
@@ -73,10 +77,15 @@ A coloured mark in a TOM wireframe always means **"this part arrives later"**. N
 | `caption(id, x, y, s)` | Panel caption in `LABEL` |
 | `hline(id, x, y, w)` / `vline(id, x, y, h)` | Divider between regions |
 | `text_centred(id, y, s, size)` | Text centred across the canvas |
+| `popover(id, x, y, w, h)` | Floating surface — opaque, anchored to its trigger |
+| `banner(id, x, y, w, msg, accent)` | A condition to act on, stated where it happened |
+| `dot(id, x, y)` | Status mark (unsaved, unread) |
+
+`Phone` extends `Scene` for mobile with `frame(title, back, action)`, `action_bar(label)` and `row(id, y, label, meta)` — a navigation stack, not panels.
 
 ## Rules
 
-1. **Desktop only, for now.** Screens live in `screens/desktop/`. `screens/mobile/` is reserved and empty until Phase 3 — [Decision 8](../../../docs/decisions/008-monorepo-with-pure-dart-core.md) is explicit that mobile gets its own presentation and that *panels do not become screens*, so a narrowed copy of a desktop screen is the one thing never to draw there.
+1. **Desktop and mobile are separate sets, not one set at two widths.** `screens/desktop/` is the product; `screens/mobile/` is exploratory for Phase 3 and is built by `build_mobile.py` on the `Phone` frame. [Decision 8](../../../docs/decisions/008-monorepo-with-pure-dart-core.md) gives mobile its own presentation and says *panels do not become screens*, so a narrowed copy of a desktop screen is the one thing never to draw there — mobile is drawn from the job (read, review, capture), with navigation as a stack.
 2. **One file per state the app is actually in** — `empty-state`, `shell`, `committing`. Name it for what the user is doing, never `m0-shell` / `m1-shell`: a screen that gains a panel in a later milestone is one file with a chip on that panel, not two files that must be kept in sync.
 3. **Placeholder content, never prose.** Text is `bars(...)`. Real words appear only in labels, buttons and the file tree — the parts whose wording is itself the design.
 4. **Draw each border once.** The frame is a rounded rectangle; every region inside it is separated by `hline`/`vline`, never by its own rectangle. A rectangle laid over the frame repeats a border that is already there, and the repeat is obvious because the outer corner is rounded and the inner one is not.
