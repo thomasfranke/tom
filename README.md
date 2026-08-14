@@ -40,8 +40,8 @@ Your `.md` files stay plain files on disk. Any other tool edits the same files w
 1. **Files are the truth.** No proprietary database, no lock-in.
 2. **Git is the backbone, not a plugin.**
 3. **Local-first and offline-first.** No essential feature needs the network. Sync is `git push/pull`.
-4. **Zero telemetry by default.** No data leaves your machine.
-5. **Open source, MIT.** A commercial edition for organizations may come later; the current feature set stays free.
+4. **Your documents are yours.** They stay on your machine, in your repository, in plain markdown. TOM reads and writes them and nothing more — it never sends them anywhere on its own, there is no account and no cloud, and telemetry is opt-in and off by default ([Decision 11](docs/decisions/011-telemetry-is-opt-in.md)). If a feature ever transmits anything, it is because you asked it to, with your own credentials, to a service you chose. This holds for the paid edition too: whatever an organization buys, it is not access to anyone's documents.
+5. **Open source, MIT.** A commercial edition for organizations may come later — and whatever is free today stays free.
 
 ## Documentation
 
