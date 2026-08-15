@@ -2,20 +2,20 @@
 
 Thanks for being here. TOM is built in spare time, so anyone who turns up — with a typo fix, a bug report, or an afternoon of real work — is choosing to spend it on this. That is worth saying before anything else.
 
-TOM is a desktop Git client for teams who keep their documentation as markdown in a repository: files stay files, and the Git workflow *is* the app rather than a menu buried inside it. The [vision](docs/vision.md) is one page and worth the two minutes — it covers what the project is reaching for, and what it happily leaves to other tools.
+TOM is a desktop Git client for teams who keep their documentation as markdown in a repository: files stay files, and the Git workflow *is* the app rather than a menu buried inside it. The [vision](docs/product/vision.md) is one page and worth the two minutes — it covers what the project is reaching for, and what it happily leaves to other tools.
 
 Not sure whether an idea fits, or where to start? Open an issue and ask. Questions are never a bother, and asking early is usually faster than guessing — for both of us.
 
 ## Before you start
 
-- **Check the non-goals.** [product.md](docs/product.md) lists what TOM deliberately will not become — WYSIWYG editing, real-time collaboration, its own cloud sync. A quick look before you start is the surest way to have your work land well. And if one of them strikes you as wrong, that is genuinely worth hearing: open an issue and make the case.
+- **Check the non-goals.** [product.md](docs/product/product.md) lists what TOM deliberately will not become — WYSIWYG editing, real-time collaboration, its own cloud sync. A quick look before you start is the surest way to have your work land well. And if one of them strikes you as wrong, that is genuinely worth hearing: open an issue and make the case.
 - **Read the decisions.** [docs/decisions/](docs/decisions/) records the architectural choices and *why* they were made. If your change contradicts one, that is a conversation to have in an issue first — not a surprise in a PR.
-- **Follow the patterns.** [docs/patterns/](docs/patterns/) holds the canonical code templates (error handling, dependency injection, extension modules). New code follows them.
+- **Follow the patterns.** [docs/patterns/](docs/architecture/) holds the canonical code templates (error handling, dependency injection, extension modules). New code follows them.
 - **Open an issue for anything substantial.** Small fixes can go straight to a PR; a feature or refactor deserves a discussion first, so nobody wastes an afternoon.
 
 ## Development setup
 
-See [docs/setup.md](docs/setup.md). In short: a pub workspace with `packages/tom_core` (pure Dart) and `apps/tom_desktop` (Flutter).
+See [docs/setup.md](docs/process/setup.md). In short: a pub workspace with `packages/tom_core` (pure Dart) and `apps/tom_desktop` (Flutter).
 
 ## How contributions reach the project
 
@@ -42,7 +42,7 @@ feat/*  ──PR──▶  main  ──tag──▶  published release
 4. Fill in the description: **What**, **Why** (link the decision if there is one), **How to test**, **Automated tests**, **Notes**. Both testing sections are required — first the steps a reviewer can follow (and the platform you verified on), then the coverage you added; "none needed" is fine with a reason.
 5. CI must be green. PRs are **squash-merged**, so a messy branch history is fine — the commit landing on `main` is not.
 
-Incomplete work integrates early behind a [feature flag](docs/patterns/feature-flags.md) rather than living on a branch. Releases are tags on `main` (`v0.1.0`) and the changelog is generated from commit messages; **`main` is publishable, and what is in production is the most recent tag.** There is no `dev` branch and no permanent `release/*` branch — the latter is created only if a released version needs a fix while `main` has moved on.
+Incomplete work integrates early behind a [feature flag](docs/architecture/overview/feature-flags.md) rather than living on a branch. Releases are tags on `main` (`v0.1.0`) and the changelog is generated from commit messages; **`main` is publishable, and what is in production is the most recent tag.** There is no `dev` branch and no permanent `release/*` branch — the latter is created only if a released version needs a fix while `main` has moved on.
 
 ## Rules that PRs are checked against
 
@@ -52,8 +52,8 @@ Incomplete work integrates early behind a [feature flag](docs/patterns/feature-f
 - **`tom_core` stays pure Dart.** No `import 'package:flutter/...'` — the build enforces it, and `dart test` proves it ([Decision 8](docs/decisions/008-monorepo-with-pure-dart-core.md)).
 - **Riverpod only in `presentation/` and `bootstrap/di/`.** Everything below takes its dependencies through constructors ([Decision 7](docs/decisions/007-external-dependencies-behind-contracts.md)).
 - **Reviewable?** The PR gives concrete steps to see the change working, starting from a described repo state, on a named platform.
-- **Tests?** Match the level to what changed ([strategy](docs/architecture/07-testing.md)): parsers get fixtures, the block differ gets golden files, use cases get mocked repositories, repository implementations get a real git repo in a temp dir. A PR whose Testing section is empty will be asked about it.
-- **Incomplete feature?** Put it behind a build-time flag ([pattern](docs/patterns/feature-flags.md)) — disabled means *unreachable*, not merely invisible, and every flag states when it will be removed.
+- **Tests?** Match the level to what changed ([strategy](docs/architecture/overview/testing.md)): parsers get fixtures, the block differ gets golden files, use cases get mocked repositories, repository implementations get a real git repo in a temp dir. A PR whose Testing section is empty will be asked about it.
+- **Incomplete feature?** Put it behind a build-time flag ([pattern](docs/architecture/overview/feature-flags.md)) — disabled means *unreachable*, not merely invisible, and every flag states when it will be removed.
 - **English everywhere:** code, comments, commits, documentation.
 
 ## Tests
@@ -62,7 +62,7 @@ Incomplete work integrates early behind a [feature flag](docs/patterns/feature-f
 - `tom_desktop`: `flutter test`.
 - Parsers get fixtures of real git output; the block differ gets golden files; `GitRepositoryImpl` gets integration tests against a real git repo created in a temp directory.
 
-See [docs/architecture/07-testing.md](docs/architecture/07-testing.md).
+See [docs/architecture/07-testing.md](docs/architecture/overview/testing.md).
 
 ## Contributor License Agreement
 

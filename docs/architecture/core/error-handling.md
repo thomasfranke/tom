@@ -1,13 +1,13 @@
 # Pattern: Error handling
 
-Complements [Decision 5](../decisions/005-errors-use-result-with-sealed-classes.md) (Result with sealed classes) and the [error model](../architecture/04-error-model.md). This file is the **how it is written**.
+Complements [Decision 5](../../decisions/005-errors-use-result-with-sealed-classes.md) (Result with sealed classes) and the [error model](error-model.md). This file is the **how it is written**.
 
 ## Rules
 
 1. Every repository contract method (`domain/repositories/`) returns `Result<T>` — an exception never crosses a layer boundary.
 2. Every use case has a **standardized inline try/catch** (template below) as the last customs checkpoint: an unexpected exception never reaches presentation.
 3. Technical infrastructure failures (`GitClientFailure`, etc.) are translated into domain failures (`GitFailure`, etc.) by the `repositories_impl` — presentation only ever knows `AppFailure`.
-4. Observability always through the contract ([Decision 11](../decisions/011-telemetry-is-opt-in.md)) — never a vendor SDK or `print` directly.
+4. Observability always through the contract ([Decision 11](../../decisions/011-telemetry-is-opt-in.md)) — never a vendor SDK or `print` directly.
 
 ## Canonical use case template
 

@@ -1,20 +1,26 @@
 # Decision 8 — Monorepo with a build boundary between core and app
 
-**Status:** accepted
+**Status:** partly superseded by [Decision 14](014-each-layer-is-its-own-package.md)
+
+> **What changed.** The monorepo, the pub workspace and the pure Dart core all stand. What Decision 14 revises is *how many* boundaries there are: this decision drew one, between pure Dart and Flutter, and left the layers as folders. There is now one package per layer, so the layering is enforced by the pubspecs rather than by convention.
+>
+> Read this file for the reasoning about monorepo versus multi-repo and about mobile, which is unaffected. Read Decision 14 for the package graph as it actually is.
 
 ## Decision
 
-The project is a **monorepo**: a single Git repository holding multiple Dart packages, wired through the **native pub workspace** (Dart 3.6+). Two packages to start — `packages/tom_core`, pure Dart with no Flutter in its pubspec, and `apps/tom_desktop`, the Flutter application. The tree, and the layers inside each package, are in [../architecture/03-repository-structure.md](../architecture/03-repository-structure.md).
+The project is a **monorepo**: a single Git repository holding multiple Dart packages, wired through the **native pub workspace** (Dart 3.6+). ~~Two packages to start~~ — one package per layer, plus the Flutter application; see [Decision 14](014-each-layer-is-its-own-package.md). The tree is in [../architecture/overview/repository-structure.md](../architecture/overview/repository-structure.md).
 
 **Important:** monorepo ≠ multi-repo. One clone, one history, one PR able to touch core and app atomically. The split happens at the `pubspec.yaml` (build) level, not in Git.
 
 ## The rule of thumb for where a build boundary belongs
 
+> **Superseded.** [Decision 14](014-each-layer-is-its-own-package.md) took the opposite view and put a build boundary at every layer. The reasoning below is kept because it is the argument that had to be answered, and because the trade-off it names — ceremony against enforcement — is real. What changed is the weight given to each: this project's second goal is a repository worth reading, and an architecture that holds because the wrong import does not resolve demonstrates more than one that holds because reviewers were careful.
+
 **A build boundary only where leakage would be structural; a convention boundary (folders + import lint) everywhere else.**
 
 - **Pure Dart × Flutter** is the catastrophic, silent divide: a `material.dart` import in the application layer slips through review, contaminates the testability of the core and rules out future platforms. It deserves the compiler as a guard: `tom_core`'s `pubspec.yaml` **does not declare Flutter** — importing it does not compile.
 - **domain × application × data × infrastructure** (inside the core): leakage here is an elegance problem, detectable in review and fixable locally. Proportional guardian: convention + a per-layer import lint.
-- Every new package must justify itself by this rule — it prevents both the sloppy monolith and ceremonial fragmentation (one package per layer).
+- Every new package must justify itself by this rule — it prevents both the sloppy monolith and ceremonial fragmentation (one package per layer). *Decision 14 accepts that cost deliberately, and names the trigger for undoing it: a layer whose package stayed empty through a whole milestone.*
 
 ## Why infrastructure lives INSIDE tom_core (for now)
 
@@ -42,7 +48,7 @@ apps/tom_desktop ──────┬──> packages/tom_core <──┬──
 ## Rationale
 
 - **A physical boundary on the divide that matters:** Clean Architecture stops being a convention and becomes a build constraint exactly where leakage would be irreversible.
-- **Mobile as a bounded cost:** `domain/application/data/core` are born 100% reusable; the planned iOS/Android app means alternative infrastructure implementations + a new presentation, with no refactor of the core. This decision is what keeps Phase 3 from being a rewrite. And mobile is expected rather than merely hoped for: writing documentation needs a repository, markdown and git — not a development environment — and the people who read and approve documentation are rarely at a desk when they do ([roadmap](../roadmap.md#phases)).
+- **Mobile as a bounded cost:** `domain/application/data/core` are born 100% reusable; the planned iOS/Android app means alternative infrastructure implementations + a new presentation, with no refactor of the core. This decision is what keeps Phase 3 from being a rewrite. And mobile is expected rather than merely hoped for: writing documentation needs a repository, markdown and git — not a development environment — and the people who read and approve documentation are rarely at a desk when they do ([roadmap](../product/roadmap.md#phases)).
 - **Minimal cost:** two packages on the native workspace carry almost no overhead (one `pub get` at the root, the IDE sees the whole set); the real ceremony (Melos, N packages) stays behind triggers.
 - **Portfolio narrative:** the repo tree communicates the architecture in the first fold on GitHub.
 

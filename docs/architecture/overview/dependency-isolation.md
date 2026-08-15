@@ -1,6 +1,6 @@
 # Guiding principle: minimal coupling to external dependencies
 
-**Every external dependency is reached exclusively through a contract and lives isolated in `infrastructure/`.** No other layer imports an external service package directly. This principle ([Decision 7](../decisions/007-external-dependencies-behind-contracts.md)) settles any allocation question on its own, and applies across three tiers:
+**Every external dependency is reached exclusively through a contract and lives isolated in `infrastructure/`.** No other layer imports an external service package directly. This principle ([Decision 7](../../decisions/007-external-dependencies-behind-contracts.md)) settles any allocation question on its own, and applies across three tiers:
 
 | Tier | Dependencies | How the principle applies |
 |---|---|---|

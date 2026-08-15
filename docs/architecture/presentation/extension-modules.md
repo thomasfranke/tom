@@ -1,6 +1,6 @@
 # Pattern: Extension modules
 
-Complements [Decision 12](../decisions/012-shell-is-extensible-via-compile-time-modules.md). The app shell is extensible through compile-time modules from M0 — even with no module existing yet. Panels, providers and commands are registered, never hardcoded.
+Complements [Decision 12](../../decisions/012-shell-is-extensible-via-compile-time-modules.md). The app shell is extensible through compile-time modules from M0 — even with no module existing yet. Panels, providers and commands are registered, never hardcoded.
 
 ## The contract (public repo)
 
@@ -56,7 +56,7 @@ void main() => runTom(modules: [SomeModule()]);
 
 ## Rules
 
-What the mechanism guarantees — built-in panels going through the same path, the one-way dependency, composition happening at build time, and the contract being public on purpose — is [Decision 12](../decisions/012-shell-is-extensible-via-compile-time-modules.md). This page is the code; the anti-patterns below are what breaking those guarantees looks like in practice.
+What the mechanism guarantees — built-in panels going through the same path, the one-way dependency, composition happening at build time, and the contract being public on purpose — is [Decision 12](../../decisions/012-shell-is-extensible-via-compile-time-modules.md). This page is the code; the anti-patterns below are what breaking those guarantees looks like in practice.
 
 ## Anti-patterns
 

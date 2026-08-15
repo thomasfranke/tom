@@ -1,8 +1,8 @@
 # The Result pattern
 
-> **Canonical use case template** (standardized inline try/catch, observability behind a contract): [patterns/error-handling.md](../patterns/error-handling.md). DI patterns (composition root, lifetimes): [patterns/dependency-injection.md](../patterns/dependency-injection.md).
+> **Canonical use case template** (standardized inline try/catch, observability behind a contract): [patterns/error-handling.md](error-handling.md). DI patterns (composition root, lifetimes): [patterns/dependency-injection.md](../presentation/dependency-injection.md).
 
-Every repository method (contract in the domain) returns `Result<T>` — an exception never crosses a layer boundary. Implemented with **native Dart 3 sealed classes**, no `dartz` ([Decision 5](../decisions/005-errors-use-result-with-sealed-classes.md)).
+Every repository method (contract in the domain) returns `Result<T>` — an exception never crosses a layer boundary. Implemented with **native Dart 3 sealed classes**, no `dartz` ([Decision 5](../../decisions/005-errors-use-result-with-sealed-classes.md)).
 
 ## The type
 

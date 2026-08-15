@@ -4,7 +4,7 @@
 
 ## Context
 
-TOM parses markdown, renders it, drives the `git` binary, runs on three desktop platforms and is meant to reach phones after 1.0 ([roadmap](../roadmap.md#phases)). Nothing in that description points at one obvious toolkit. This is the most consequential choice in the project — every other decision is written against it — so it is recorded here with its counter-argument rather than left implicit.
+TOM parses markdown, renders it, drives the `git` binary, runs on three desktop platforms and is meant to reach phones after 1.0 ([roadmap](../product/roadmap.md#phases)). Nothing in that description points at one obvious toolkit. This is the most consequential choice in the project — every other decision is written against it — so it is recorded here with its counter-argument rather than left implicit.
 
 ## Decision
 
@@ -37,7 +37,7 @@ Three things decide it anyway.
 
 Choosing Dart does not forfeit the Rust ecosystem. A crate compiles to a native library and is reached over `dart:ffi` behind an ordinary infrastructure contract ([Decision 7](007-external-dependencies-behind-contracts.md)). That matters most for markdown parsing, where `pulldown-cmark`, `comrak` and `markdown-rs` all expose source positions that the Dart ecosystem may not.
 
-It is the **third** option for Spike B, behind the `markdown` package alone and our own block parser with inline delegated to it ([domain model](../architecture/08-domain-model.md)). It is not the plan, and the price is real: a Rust toolchain in CI for every target, cross-compilation, and the loss of `dart test` as a self-contained proof that the core is framework-independent. It is named here so that it is not discovered *after* a hand-written parser has already been paid for.
+It is the **third** option for Spike B, behind the `markdown` package alone and our own block parser with inline delegated to it ([domain model](../architecture/domain/model.md)). It is not the plan, and the price is real: a Rust toolchain in CI for every target, cross-compilation, and the loss of `dart test` as a self-contained proof that the core is framework-independent. It is named here so that it is not discovered *after* a hand-written parser has already been paid for.
 
 FFI is on this project's path regardless — `libgit2` is the scheduled implementation of `GitClientInterface` for mobile ([Decision 2](002-git-via-system-binary.md)).
 

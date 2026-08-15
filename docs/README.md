@@ -4,20 +4,17 @@
 
 ## Documentation map
 
-| Folder / file | Contents |
-|---|---|
-| [vision.md](vision.md) | Vision, market, the bet and the principles |
-| [product.md](product.md) | Personas, killer features and non-goals |
-| [mvp.md](mvp.md) | Spikes and MVP milestones |
-| [design/](design/) | Wireframes: one screen per state, low fidelity |
-| [architecture/](architecture/) | System design: layers, monorepo, Result, infrastructure, presentation, testing (numbered files in reading order) |
-| [decisions/](decisions/) | Architecture decisions, one per file, declaratively named (ADR format) |
-| [patterns/](patterns/) | Canonical code patterns (how it is written here) |
-| [dependencies.md](dependencies.md) | Dependency stack with licenses and deliberate exclusions |
-| [roadmap.md](roadmap.md) | Phases, risks and open questions |
-| [versioning.md](versioning.md) | What counts as a breaking change, when 1.0 is cut, deprecation policy |
-| [setup.md](setup.md) | Development setup and conventions |
-| [repository-settings.md](repository-settings.md) | GitHub configuration: permissions, branch and tag protection, Actions settings |
+Four folders, one question each, plus the decision log that cuts across them.
+
+| Folder | Answers | Contents |
+|---|---|---|
+| [product/](product/) | what is being built, and why | [vision](product/vision.md) · [product](product/product.md) · [mvp](product/mvp.md) · [roadmap](product/roadmap.md) |
+| [architecture/](architecture/) | how it is built | one folder per package, mirroring `src/packages/`, plus [dependencies](architecture/dependencies.md) |
+| [design/](design/) | what it looks like | [wireframes](design/README.md) per screen · [visual language](design/visual-language.md) |
+| [process/](process/) | how the work is done | [setup](process/setup.md) · [versioning](process/versioning.md) · [repository settings](process/repository-settings.md) |
+| [decisions/](decisions/) | what was settled, and why | ADRs, one per file, declaratively named |
+
+`decisions/` sits outside the four on purpose: 001 is about licensing, 004 about the business model, 013 about the stack. They belong to no single folder, and keeping the log flat is the ADR convention.
 
 ## Decisions at a glance
 
@@ -30,12 +27,17 @@
 | [005](decisions/005-errors-use-result-with-sealed-classes.md) | Errors use Result with sealed classes; no dartz |
 | [006](decisions/006-no-navigation-package.md) | No navigation package |
 | [007](decisions/007-external-dependencies-behind-contracts.md) | External dependencies isolated behind contracts |
-| [008](decisions/008-monorepo-with-pure-dart-core.md) | Monorepo with a pure Dart core |
+| [008](decisions/008-monorepo-with-pure-dart-core.md) | Monorepo with a pure Dart core *(partly superseded by 014)* |
 | [009](decisions/009-space-session-is-single-source-of-truth.md) | The space session is the single source of truth |
 | [010](decisions/010-watcher-and-git-cooperate-by-protocol.md) | The watcher and git cooperate by an explicit protocol |
 | [011](decisions/011-telemetry-is-opt-in.md) | Telemetry is opt-in, no-op by default |
 | [012](decisions/012-shell-is-extensible-via-compile-time-modules.md) | The shell is extensible through compile-time modules |
 | [013](decisions/013-stack-is-flutter-and-dart.md) | The stack is Flutter and Dart |
+| [014](decisions/014-each-layer-is-its-own-package.md) | Each layer is its own package |
+
+## Where the code is
+
+The Dart workspace lives in [`src/`](../src/), so this folder and the licence lead the repository root rather than build files. Seven packages, one per layer; `make help` from the root lists every command.
 
 ---
 

@@ -2,7 +2,7 @@
 
 A feature flag is an `if` that decides whether part of the app exists in a given build. It is what lets large features **integrate early** on `main` instead of living on a branch for weeks — the merge pain disappears, integration is tested continuously, and a release never waits for a branch to stabilize.
 
-Flags in TOM are **build-time only**. There is no remote flag service, ever: that would be a phone-home, contradicting [Decision 11](../decisions/011-telemetry-is-opt-in.md). Zero infrastructure, zero network.
+Flags in TOM are **build-time only**. There is no remote flag service, ever: that would be a phone-home, contradicting [Decision 11](../../decisions/011-telemetry-is-opt-in.md). Zero infrastructure, zero network.
 
 ## Declaration
 
@@ -34,7 +34,7 @@ Every flag carries a comment stating **what it gates and when it is expected to 
 
 A disabled flag must make the feature *not exist*: not registered, not listening, not routable, not reachable by a keyboard shortcut. Hiding a widget while its shortcut still fires, or registering a panel and then filtering it out of the UI, is the way flags leak.
 
-The natural place to apply this in TOM is the panel registration itself ([extension-modules.md](extension-modules.md)):
+The natural place to apply this in TOM is the panel registration itself ([extension-modules.md](../presentation/extension-modules.md)):
 
 ```dart
 // in CoreModule

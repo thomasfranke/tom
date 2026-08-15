@@ -13,4 +13,4 @@ Integration tests against real git are the project's confidence differentiator: 
 
 ---
 
-*See also: [../mvp.md](../mvp.md) · [../decisions/](../decisions/) · Dependency stack: [../dependencies.md](../dependencies.md)*
+*See also: [../mvp.md](../../product/mvp.md) · [../decisions/](../../decisions/) · Dependency stack: [../dependencies.md](../dependencies.md)*

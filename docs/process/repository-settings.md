@@ -1,6 +1,6 @@
 # Repository settings
 
-The GitHub configuration that the workflow in [CONTRIBUTING.md](../CONTRIBUTING.md) assumes. Recorded here because settings live in a web UI where nobody can review them — a change that quietly weakens a protection leaves no trace otherwise.
+The GitHub configuration that the workflow in [CONTRIBUTING.md](../../CONTRIBUTING.md) assumes. Recorded here because settings live in a web UI where nobody can review them — a change that quietly weakens a protection leaves no trace otherwise.
 
 ## Who can do what
 
@@ -41,7 +41,7 @@ There is defence in depth behind it: a tag here marks a point in history and, on
 
 ## CLA bot
 
-The [CLA](../CLA.md) is enforced by [`.github/workflows/cla.yml`](../.github/workflows/cla.yml), which runs the self-hosted `contributor-assistant/github-action`. Nothing is delegated to a third-party service — the alternative, the hosted CLA Assistant GitHub App, would mean granting an outside service write access to this repository, which contradicts the Actions rules above.
+The [CLA](../../CLA.md) is enforced by [`.github/workflows/cla.yml`](../../.github/workflows/cla.yml), which runs the self-hosted `contributor-assistant/github-action`. Nothing is delegated to a third-party service — the alternative, the hosted CLA Assistant GitHub App, would mean granting an outside service write access to this repository, which contradicts the Actions rules above.
 
 Setup, in order:
 
@@ -53,12 +53,12 @@ Setup, in order:
 
 The bot only reacts to a comment matching the acceptance phrase exactly, and the job performs no checkout: `pull_request_target` runs with a writable token in the base repo's context, so executing anything from the PR head would hand that token to the contributor.
 
-**Timing matters.** A contribution merged before the bot is live is MIT-only and permanently blocks relicensing of that code ([Decision 1](decisions/001-license-is-mit.md)). This has to be in place before the first external PR, not after.
+**Timing matters.** A contribution merged before the bot is live is MIT-only and permanently blocks relicensing of that code ([Decision 1](../decisions/001-license-is-mit.md)). This has to be in place before the first external PR, not after.
 
 ## General
 
 - Issues and Discussions enabled; blank issues disabled (templates in `.github/ISSUE_TEMPLATE/`)
-- Private vulnerability reporting enabled ([SECURITY.md](../SECURITY.md))
+- Private vulnerability reporting enabled ([SECURITY.md](../../SECURITY.md))
 - Wiki disabled — documentation lives in `docs/`, versioned with the code, which is the entire thesis of this project
 - Default branch: `main` — the only long-lived line of development. The orphan branch `cla-signatures` is also permanent, but it holds the CLA signature file and no code; the bot commits to it directly, which is why it cannot live on `main`.
 

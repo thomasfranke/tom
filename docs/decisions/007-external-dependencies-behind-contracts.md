@@ -7,7 +7,7 @@ Every external dependency is reached exclusively through a contract and lives is
 
 ## How it applies per tier
 
-The principle is not uniform: external services get full isolation, third-party widgets get a wrapper we own, and structural dependencies (Flutter, Riverpod, Freezed) are a declared exception with a restricted scope rather than an abstraction. The three tiers, their boundaries and why the exception exists are in [../architecture/02-dependency-isolation.md](../architecture/02-dependency-isolation.md).
+The principle is not uniform: external services get full isolation, third-party widgets get a wrapper we own, and structural dependencies (Flutter, Riverpod, Freezed) are a declared exception with a restricted scope rather than an abstraction. The three tiers, their boundaries and why the exception exists are in [../architecture/02-dependency-isolation.md](../architecture/overview/dependency-isolation.md).
 
 ## Rationale
 - Testability: repositories testable with mocked infrastructure — no real process, disk or database.

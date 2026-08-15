@@ -32,7 +32,7 @@ The preview is not a convenience for whoever is editing. For anyone who does not
 - Databases / kanban / tasks
 - Our own cloud sync (the Git remote **is** the sync)
 
-> **Not a non-goal: mobile.** iOS and Android are a planned direction, post-1.0 — desktop still comes first, and nothing about the MVP scope changes. See the [roadmap](roadmap.md#phases) and [Decision 8](decisions/008-monorepo-with-pure-dart-core.md), which already reserves the shape (`tom_infra_mobile` + `apps/tom_mobile` over the same pure-Dart core).
+> **Not a non-goal: mobile.** iOS and Android are a planned direction, post-1.0 — desktop still comes first, and nothing about the MVP scope changes. See the [roadmap](roadmap.md#phases) and [Decision 8](../decisions/008-monorepo-with-pure-dart-core.md), which already reserves the shape (`tom_infra_mobile` + `apps/tom_mobile` over the same pure-Dart core).
 
 ---
 

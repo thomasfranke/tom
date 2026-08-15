@@ -4,4 +4,4 @@ Technical capabilities behind contracts — git, filesystem, markdown, search. I
 
 Depends on: `tom_core`.
 
-Part of [TOM](../../README.md); the layer graph is in [docs/architecture](../../docs/architecture/).
+Part of [TOM](../../../README.md); the layer graph is in [docs/architecture](../../../docs/architecture/infra/).

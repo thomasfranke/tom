@@ -49,21 +49,21 @@ Everything is in [`docs/`](docs/) — and yes, it is edited the way TOM proposes
 
 | | |
 |---|---|
-| [Vision](docs/vision.md) · [Product](docs/product.md) | What this is, and the non-goals it will not drift into |
+| [Vision](docs/product/vision.md) · [Product](docs/product/product.md) | What this is, and the non-goals it will not drift into |
 | [Architecture](docs/architecture/) | The system design, in reading order |
 | [Decisions](docs/decisions/) | Every architectural choice and why — the folder listing reads as a summary |
-| [Patterns](docs/patterns/) | Canonical code templates |
-| [MVP](docs/mvp.md) · [Roadmap](docs/roadmap.md) | What is being built, and in what order |
+| [Patterns](docs/architecture/) | Canonical code templates |
+| [MVP](docs/product/mvp.md) · [Roadmap](docs/product/roadmap.md) | What is being built, and in what order |
 
 ## Status
 
-Phase 0: technical spikes. The MVP milestones are in [`docs/mvp.md`](docs/mvp.md).
+Phase 0: technical spikes. The MVP milestones are in [`docs/mvp.md`](docs/product/mvp.md).
 
 Watch or star the repository if you want to know when there is something to run.
 
 ## Contributing
 
-Contributions are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md) first, and in particular the [non-goals](docs/product.md#non-goals-equally-important): TOM deliberately will not become a WYSIWYG editor, a real-time collaboration tool, or a Notion-style workspace.
+Contributions are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md) first, and in particular the [non-goals](docs/product/product.md#non-goals-equally-important): TOM deliberately will not become a WYSIWYG editor, a real-time collaboration tool, or a Notion-style workspace.
 
 Security issues: see [SECURITY.md](SECURITY.md) — please do not open a public issue.
 

@@ -8,7 +8,7 @@ Every git operation on a space goes through the `GitClientInterface` implementat
 - A single place for timeout, logging and `exit code + stderr → GitFailure` translation
 - One runner per space; different spaces run in parallel
 
-## Filesystem: the watcher and external edits ([Decision 10](../decisions/010-watcher-and-git-cooperate-by-protocol.md))
+## Filesystem: the watcher and external edits ([Decision 10](../../decisions/010-watcher-and-git-cooperate-by-protocol.md))
 
 External editing (VS Code open alongside) is an **expected use case, not an error** — but the watcher and git operations interfere with each other, so cooperation is an explicit protocol, never a coincidence:
 
@@ -25,7 +25,7 @@ FTS5 (SQLite) indexes the content of the `.md` files. Absolute rule: **the index
 ## The rendered diff (incremental evolution)
 
 1. **v0 — line diff over the preview:** classic textual diff (Myers) mapped onto the rendered blocks containing each hunk. Fast to ship, already better than current tools.
-2. **v1 — block diff:** parse both sides into blocks (paragraph, heading, list item, code block), align by similarity, classify as unchanged/added/removed/modified. This is the heart of `domain/services/block_differ.dart` (pure business rule — see [03-repository-structure.md](03-repository-structure.md)).
+2. **v1 — block diff:** parse both sides into blocks (paragraph, heading, list item, code block), align by similarity, classify as unchanged/added/removed/modified. This is the heart of `domain/services/block_differ.dart` (pure business rule — see [03-repository-structure.md](../overview/repository-structure.md)).
 3. **v2 — intra-block diff:** word-level ins/del inside modified blocks.
 
 A parsing and tree-comparison problem — **testable with golden files, no UI involved**: pairs of md files + expected diff as JSON, running in CI.

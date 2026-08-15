@@ -1,6 +1,6 @@
 # Pattern: Dependency injection
 
-Complements [Decision 7](../decisions/007-external-dependencies-behind-contracts.md) (Riverpod restricted to presentation + bootstrap/di) and [Decision 8](../decisions/008-monorepo-with-pure-dart-core.md). The core does not know Riverpod: classes receive everything **through constructors**. The object graph is assembled in the app's **composition root**.
+Complements [Decision 7](../../decisions/007-external-dependencies-behind-contracts.md) (Riverpod restricted to presentation + bootstrap/di) and [Decision 8](../../decisions/008-monorepo-with-pure-dart-core.md). The core does not know Riverpod: classes receive everything **through constructors**. The object graph is assembled in the app's **composition root**.
 
 ## Mirrored composition root
 

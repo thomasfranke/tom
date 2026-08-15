@@ -1,6 +1,6 @@
 # Development setup
 
-A monorepo on the native pub workspace ([Decision 8](decisions/008-monorepo-with-pure-dart-core.md)). Prerequisites: Flutter stable (Dart ≥ 3.6) and git.
+A monorepo on the native pub workspace ([Decision 8](../decisions/008-monorepo-with-pure-dart-core.md)). Prerequisites: Flutter stable (Dart ≥ 3.6) and git.
 
 ```bash
 flutter config --enable-windows-desktop --enable-macos-desktop --enable-linux-desktop
@@ -61,9 +61,9 @@ make run-flags FLAGS="FEATURE_DIFF_V1=true"
   - **PR into `main`:** `dart analyze` + **`dart test`** on `tom_core` (the purity proof — no Flutter binding), `flutter analyze` + `flutter test` on `tom_desktop`. Required to merge.
   - **Tag on `main`:** the full build for all three platforms, signing, packaging and publishing.
 - **Feature flags** are build-time only (`--dart-define`); enable experimental ones locally, never in a release build.
-- **The PR checklist includes a license check** for every new dependency (nothing AGPL/GPL — [Decision 1](decisions/001-license-is-mit.md))
+- **The PR checklist includes a license check** for every new dependency (nothing AGPL/GPL — [Decision 1](../decisions/001-license-is-mit.md))
 - **Per-layer import lint** inside the core — boundaries between packages are enforced by the build; boundaries inside the core, by the lint
 
 ---
 
-*See also: [architecture/](architecture/) · [dependencies.md](dependencies.md)*
+*See also: [architecture/](../architecture/) · [dependencies.md](../architecture/dependencies.md)*
