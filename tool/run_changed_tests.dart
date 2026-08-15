@@ -25,6 +25,7 @@
 // No external packages — only dart:io — so it runs with nothing but the SDK
 // already on the machine, from any directory.
 
+import 'dart:async';
 import 'dart:io';
 
 const _pkgOrder = [
@@ -40,6 +41,11 @@ void main(List<String> args) async {
   final coverage = args.contains('--coverage');
   final rest = args.where((a) => a != '--coverage').toList();
   final base = rest.isNotEmpty ? rest.first : Platform.environment['BASE'] ?? 'main';
+
+  // Shown here rather than left to tool/run_tests.dart, since this script's
+  // own setup — the git diff, walking each package's test/ for a filename
+  // match — is the part that can actually take a moment on a large diff.
+  await _showCompiling();
 
   final root = _repoRoot();
   final changed = await _changedFiles(root, base);
@@ -140,11 +146,41 @@ void main(List<String> args) async {
 
   final process = await Process.start(
     'dart',
-    ['run', 'tool/run_tests.dart', if (coverage) '--coverage', ...specs],
+    [
+      'run',
+      'tool/run_tests.dart',
+      '--no-banner',
+      if (coverage) '--coverage',
+      ...specs,
+    ],
     workingDirectory: root.path,
     mode: ProcessStartMode.inheritStdio,
   );
   exit(await process.exitCode);
+}
+
+/// A brief banner shown before setup, covering it with a live "compiling"
+/// ticker instead of a silent terminal. The floor delay keeps it visible for
+/// a beat even when setup is instant — otherwise it would flash and vanish,
+/// which reads as nothing having happened at all. Duplicated from
+/// tool/run_tests.dart rather than shared: each entry point shows its own,
+/// and tool/run_tests.dart skips it (`--no-banner`) when this one already ran.
+Future<void> _showCompiling() async {
+  stdout.writeln('• Running build hooks...');
+  stdout.writeln();
+  final start = DateTime.now();
+  void redraw() {
+    final d = DateTime.now().difference(start);
+    final mm = d.inMinutes.toString().padLeft(2, '0');
+    final ss = (d.inSeconds % 60).toString().padLeft(2, '0');
+    stdout.write('\r\x1B[K⏳ compiling…  $mm:$ss');
+  }
+
+  redraw();
+  final ticker = Timer.periodic(const Duration(seconds: 1), (_) => redraw());
+  await Future.delayed(const Duration(milliseconds: 300));
+  ticker.cancel();
+  stdout.write('\r\x1B[K');
 }
 
 Future<List<String>> _changedFiles(Directory root, String base) async {

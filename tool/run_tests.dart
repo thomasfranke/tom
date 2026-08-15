@@ -44,7 +44,13 @@ const _barWidth = 20;
 
 void main(List<String> rawArgs) async {
   final coverage = rawArgs.contains('--coverage');
-  final args = rawArgs.where((a) => a != '--coverage').toList();
+  // Set by tool/run_changed_tests.dart, which shows its own banner before
+  // doing the (slower, on a big diff) work of mapping changed files to
+  // tests — showing this one too would just repeat it after the fact.
+  final noBanner = rawArgs.contains('--no-banner');
+  final args = rawArgs
+      .where((a) => a != '--coverage' && a != '--no-banner')
+      .toList();
   if (args.isEmpty) {
     stderr.writeln('Usage: dart run tool/run_tests.dart [--coverage] <pkg>...');
     exit(64);
@@ -57,6 +63,8 @@ void main(List<String> rawArgs) async {
   for (final row in rows) {
     if (!row.hasTests) row.state = _RowState.skipped;
   }
+
+  if (!noBanner) await _showCompiling();
 
   final dashboard = _Dashboard(rows, DateTime.now());
   dashboard.render();
@@ -82,18 +90,19 @@ void main(List<String> rawArgs) async {
   ticker.cancel();
   dashboard.render();
 
-  final totalTests = rows.fold(0, (a, r) => a + r.passed + r.failed);
+  final totalPassed = rows.fold(0, (a, r) => a + r.passed);
+  final totalTests = totalPassed + rows.fold(0, (a, r) => a + r.failed);
   final covHit = rows.fold(0, (a, r) => a + (r.coverageHit ?? 0));
   final covTotal = rows.fold(0, (a, r) => a + (r.coverageTotal ?? 0));
   final totalElapsed = _fmtDuration(DateTime.now().difference(dashboard.started));
 
   stdout.writeln();
-  stdout.writeln('Summary');
-  stdout.write('Totals: $totalTests tests  •  ⏱ $totalElapsed');
+  stdout.writeln('• Summary:');
+  stdout.writeln('  • Totals: $totalPassed/$totalTests');
+  stdout.writeln('  • ⏱ $totalElapsed');
   if (covTotal > 0) {
-    stdout.write('  •  ◔ ${(covHit / covTotal * 100).round()}%');
+    stdout.writeln('  • ◔ ${(covHit / covTotal * 100).round()}%');
   }
-  stdout.writeln();
 
   if (dashboard.failures.isNotEmpty) {
     final counts = <String, int>{};
@@ -183,6 +192,29 @@ bool _hasTests(_Target target) {
           .listSync(recursive: true)
           .whereType<File>()
           .any((f) => f.path.endsWith('_test.dart'));
+}
+
+/// A brief banner shown before the dashboard takes over, covering setup
+/// (target resolution, the test/ scans `_hasTests` does) with a live
+/// "compiling" ticker instead of a silent terminal. The floor delay keeps it
+/// visible for a beat even when that setup is instant — otherwise it would
+/// flash and vanish, which reads as nothing having happened at all.
+Future<void> _showCompiling() async {
+  stdout.writeln('• Running build hooks...');
+  stdout.writeln();
+  final start = DateTime.now();
+  void redraw() {
+    final d = DateTime.now().difference(start);
+    final mm = d.inMinutes.toString().padLeft(2, '0');
+    final ss = (d.inSeconds % 60).toString().padLeft(2, '0');
+    stdout.write('\r\x1B[K⏳ compiling…  $mm:$ss');
+  }
+
+  redraw();
+  final ticker = Timer.periodic(const Duration(seconds: 1), (_) => redraw());
+  await Future.delayed(const Duration(milliseconds: 300));
+  ticker.cancel();
+  stdout.write('\r\x1B[K');
 }
 
 enum _RowState { queued, skipped, running, done }
@@ -414,10 +446,10 @@ class _Dashboard {
         .where((r) => r.state == _RowState.done || r.state == _RowState.skipped)
         .length;
     final elapsed = _fmtDuration(DateTime.now().difference(started));
-    if (done == rows.length) {
-      return 'Summary — ${rows.length}/${rows.length} packages, $elapsed:';
-    }
-    return 'Running tests — $done/${rows.length} packages, $elapsed elapsed:';
+    // Stays "Running tests" even once everything is done — "Summary" is the
+    // one below, with the totals; switching this one too would print it
+    // twice.
+    return '• Running tests — $done/${rows.length} packages, $elapsed elapsed:';
   }
 
   String _renderRow(_Row row, int countsWidth) {
