@@ -98,7 +98,7 @@ void main(List<String> rawArgs) async {
 
   stdout.writeln();
   stdout.writeln('• Summary:');
-  stdout.writeln('  • Totals: $totalPassed/$totalTests');
+  stdout.writeln('  • $totalPassed/$totalTests');
   stdout.writeln('  • ⏱ $totalElapsed');
   if (covTotal > 0) {
     stdout.writeln('  • ◔ ${(covHit / covTotal * 100).round()}%');
@@ -441,15 +441,49 @@ class _Dashboard {
     _paintedLines = 0;
   }
 
+  // Stays "Running tests" even once everything is done — "Summary" is the
+  // one below, with the totals; switching this one too would print it twice.
   String _header() {
-    final done = rows
-        .where((r) => r.state == _RowState.done || r.state == _RowState.skipped)
-        .length;
-    final elapsed = _fmtDuration(DateTime.now().difference(started));
-    // Stays "Running tests" even once everything is done — "Summary" is the
-    // one below, with the totals; switching this one too would print it
-    // twice.
-    return '• Running tests — $done/${rows.length} packages, $elapsed elapsed:';
+    final doneRows = rows.where(
+      (r) => r.state == _RowState.done || r.state == _RowState.skipped,
+    );
+    final doneCount = doneRows.length;
+
+    if (doneCount == rows.length) {
+      final elapsed = _fmtDuration(DateTime.now().difference(started));
+      return '• Running tests — $doneCount/${rows.length} packages, $elapsed elapsed:';
+    }
+
+    // ETA rather than elapsed: extrapolated from the average of packages that
+    // have actually finished, minus how far the one running now already is
+    // into that average — a package sitting at "no tests yet" is instant and
+    // would otherwise drag the average down for no reason, so it is excluded.
+    final timed = doneRows.where(
+      (r) => r.state == _RowState.done && r.elapsed != null,
+    );
+    if (timed.isEmpty) {
+      return '• Running tests — $doneCount/${rows.length} packages, estimating…:';
+    }
+
+    final avgMs =
+        timed.fold<int>(0, (a, r) => a + r.elapsed!.inMilliseconds) /
+        timed.length;
+    final remaining = rows.length - doneCount;
+
+    _Row? running;
+    for (final r in rows) {
+      if (r.state == _RowState.running) {
+        running = r;
+        break;
+      }
+    }
+    final runningMs = running?.startedAt != null
+        ? DateTime.now().difference(running!.startedAt!).inMilliseconds
+        : 0;
+
+    final etaMs = (avgMs * remaining - runningMs).clamp(0.0, avgMs * remaining);
+    final eta = _fmtDuration(Duration(milliseconds: etaMs.round()));
+    return '• Running tests — $doneCount/${rows.length} packages, ~$eta remaining:';
   }
 
   String _renderRow(_Row row, int countsWidth) {
