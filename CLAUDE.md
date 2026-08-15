@@ -55,6 +55,6 @@ See `docs/architecture/03-repository-structure.md` (source of truth). Summary: m
 
 ## Current status
 
-**Phase 0 — Validation + Spikes.** Nothing from the MVP has been built yet. The domain model is deliberately partial (`docs/architecture/08-domain-model.md`) — `Block` in particular is an *output* of Spike B; do not design `BlockDiffer` before the spike reports. Next steps: Spike A (`re_editor` as source mode), Spike B (the `markdown` AST for block diff, now also answering whether a single block can be rendered in isolation), and the Phase 0 interviews — five conversations about whether non-developers already read documentation in a repository (`docs/roadmap.md`). See `docs/mvp.md`.
+**Phase 0 — Spikes.** Nothing from the MVP has been built yet. The domain model is deliberately partial (`docs/architecture/08-domain-model.md`) — `Block` in particular is an *output* of Spike B; do not design `BlockDiffer` before the spike reports. Next steps: Spike A (`re_editor` as source mode) and Spike B (the `markdown` AST for block diff, now also answering whether a single block can be rendered in isolation). See `docs/mvp.md`. There is no user-research phase: the project is built on the maintainer's own experience, stated as such in `docs/roadmap.md`. Desktop wireframes for M0/M1 live in `docs/design/` (skill: `tom-wireframes`).
 
 > Keep this "Current status" section up to date at the end of each meaningful work session — it is what carries context between sessions.

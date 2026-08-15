@@ -11,6 +11,8 @@
 
 ## Milestone 0 — Foundation
 
+> Layout for everything below: [design/](design/) — `empty-state` and `shell` are the M0 screens.
+
 - [ ] **Extensible shell**: `runTom(modules: [])` + panels registered through `PanelDescriptor` (including the built-in ones, via `CoreModule`) — see [patterns/extension-modules.md](patterns/extension-modules.md)
 - [ ] Open a local folder inside a Git repo (a "space") — the repository root or any subfolder of it
 - [ ] `.md` file tree with navigation, dotfolders included (`.claude/`, `.github/`); only `.git/` is hidden
@@ -36,11 +38,12 @@
 
 - [ ] Wikilinks `[[document]]` with autocomplete and navigation
 - [ ] Editor conveniences: buttons and shortcuts that insert syntax (bold, italic, list, link) — the source stays visible ([Decision 3](decisions/003-editor-is-source-plus-preview.md))
+- [ ] **Export a document as PDF or HTML** — free, always. A reader who cannot get a document out of the app is held hostage by it, which contradicts the first principle in [vision.md](vision.md). Budget for it properly: [Decision 13](decisions/013-stack-is-flutter-and-dart.md) records that PDF falls out of a web stack for nothing and is a separate problem in Flutter
 - [ ] Onboarding: clone a repo by URL from inside the app
 - [ ] Packaging: Windows (msix), macOS (dmg), Linux (AppImage/deb)
 - [ ] Landing page + a polished README + a GIF of the rendered diff
 
-## Out of the MVP (post-validation backlog)
+## Out of the MVP (backlog)
 
 Assisted conflict resolution, section blame, multiple open spaces, an example space repo for onboarding, themes.
 

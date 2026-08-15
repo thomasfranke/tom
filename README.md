@@ -57,7 +57,7 @@ Everything is in [`docs/`](docs/) — and yes, it is edited the way TOM proposes
 
 ## Status
 
-Phase 0: validation and technical spikes. The MVP milestones are in [`docs/mvp.md`](docs/mvp.md).
+Phase 0: technical spikes. The MVP milestones are in [`docs/mvp.md`](docs/mvp.md).
 
 Watch or star the repository if you want to know when there is something to run.
 
