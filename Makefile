@@ -4,10 +4,18 @@
 ### Targets are a convenience, not a requirement: each one       ###
 ### wraps a short command the docs name directly, so nothing     ###
 ### here is needed to build, test or contribute.                 ###
+###                                                              ###
+### The Dart workspace lives in src/ so that the repository root ###
+### stays readable — docs, licence and community files first.    ###
+### Every target below hides that: run them from the root.       ###
 ####################################################################
 
-CORE := packages/tom_core
-APP  := apps/tom_desktop
+SRC  := src
+APP  := $(SRC)/apps/desktop
+
+# The pure Dart layers, in dependency order. Each may depend only on the ones
+# before it; src/test/architecture_test.dart is what enforces that.
+PKGS := core domain application infra data presentation
 
 # Project Flutter version. Single source of truth: `.fvmrc` (also read by FVM,
 # by the GitHub Actions workflows and by VS Code). To switch versions, edit
@@ -18,10 +26,9 @@ FLUTTER_VERSION := $(shell sed -n 's/.*"flutter"[[:space:]]*:[[:space:]]*"\([^"]
 DEVICE ?= macos
 
 .DEFAULT_GOAL := help
-.PHONY: help setup clean format analyze test test-core test-app test-changed \
-        test-changed-html test-last coverage runner runner-hard runner-last \
-        runner-watch fvm run run-flags flags build build-linux build-macos \
-        build-windows verify
+.PHONY: help setup clean format analyze test test-arch test-packages test-app \
+        coverage runner runner-hard runner-watch fvm run run-flags flags \
+        build build-linux build-macos build-windows verify
 
 ##############################
 ### *** Help *** ###
@@ -35,31 +42,28 @@ help: ## List all targets
 ### *** Environment *** ###
 ##############################
 
-setup: ## Resolve the whole workspace (one get at the root)
-	dart pub get
+setup: ## Resolve the whole workspace (one get for every package)
+	cd $(SRC) && flutter pub get
 
 clean: ## Clean build artifacts and re-resolve
 	cd $(APP) && flutter clean
-	dart pub get
+	cd $(SRC) && flutter pub get
 
 fvm: ## Configure the Flutter version declared in .fvmrc
 	@test -n "$(FLUTTER_VERSION)" || { echo "Could not read the Flutter version from .fvmrc"; exit 1; }
 	dart pub global activate fvm
 	fvm use $(FLUTTER_VERSION)
 	fvm global $(FLUTTER_VERSION)
-	dart pub global deactivate fvm
-	dart pub global activate fvm
 
 ##############################
 ### *** Quality *** ###
 ##############################
 
 format: ## Format Dart code, failing if anything changes
-	dart format --set-exit-if-changed .
+	dart format --set-exit-if-changed $(SRC)
 
-analyze: ## Static analysis on both packages
-	cd $(CORE) && dart analyze
-	cd $(APP) && flutter analyze
+analyze: ## Static analysis across every package at once
+	cd $(SRC) && flutter analyze
 
 verify: format analyze test ## Everything CI runs, in one command
 
@@ -67,41 +71,32 @@ verify: format analyze test ## Everything CI runs, in one command
 ### *** Tests *** ###
 ##############################
 
-test: test-core test-app ## Run every test in the workspace
+test: test-arch test-packages test-app ## Run every test in the workspace
 
-test-core: ## Pure Dart tests — also the framework-independence proof (no Flutter binding)
-	cd $(CORE) && dart test
+test-arch: ## Assert the layer graph matches what the pubspecs declare
+	cd $(SRC) && dart test test/architecture_test.dart
+
+# Also the framework-independence proof: these run under `dart test`, with no
+# Flutter binding available. A layer that quietly grew a Flutter dependency
+# fails here rather than at review time.
+test-packages: ## Pure Dart tests, package by package
+	@for p in $(PKGS); do \
+		if ls $(SRC)/packages/$$p/test/*.dart >/dev/null 2>&1; then \
+			echo "── tom_$$p"; \
+			(cd $(SRC)/packages/$$p && dart test) || exit 1; \
+		else \
+			echo "── tom_$$p (no tests yet)"; \
+		fi; \
+	done
 
 test-app: ## Flutter tests for the desktop app
-	cd $(APP) && flutter test
-
-# Run only the tests matching lib files changed against a base ref. The default
-# base is `main`, diffed from the merge base, so it covers the whole branch plus
-# uncommitted work. Pass BASE=HEAD for only what is still uncommitted.
-# Usage: make test-changed [BASE=main|HEAD|<ref>] [COVERAGE=0]
-BASE ?= main
-COVERAGE ?= 1
-test-changed: ## Test only what this branch changed, with coverage for those files
-	@dart run tool/run_changed_tests.dart $(if $(filter 1,$(COVERAGE)),--coverage) $(BASE)
-
-test-changed-html: test-changed ## Same as test-changed, then open the narrowed coverage report
-	@test -s coverage/changed_files.txt || { echo "No changed files with coverage."; exit 1; }
-	@lcov --extract coverage/lcov.info $$(cat coverage/changed_files.txt) \
-		--output-file coverage/changed.info --ignore-errors empty,unused >/dev/null
-	@genhtml coverage/changed.info --output-directory coverage/html/changed
-	@open coverage/html/changed/index.html
-
-test-last: ## Run the most recently modified test files
-	@LAST_FILES=$$(find $(CORE)/test $(APP)/test -name "*.dart" -type f -exec ls -t {} + 2>/dev/null | head -n 20); \
-	if [ -n "$$LAST_FILES" ]; then \
-		echo "Running the most recently modified tests:"; \
-		echo "$$LAST_FILES" | tr ' ' '\n'; \
-		cd $(APP) && flutter test --no-color=false -r expanded $$LAST_FILES; \
+	@if ls $(APP)/test/*.dart >/dev/null 2>&1; then \
+		cd $(APP) && flutter test; \
 	else \
-		echo "No .dart test files found."; \
+		echo "── tom_desktop (no tests yet)"; \
 	fi
 
-coverage: ## Full coverage report for the app, opened in the browser
+coverage: ## Coverage report for the app, opened in the browser
 	cd $(APP) && flutter test --coverage
 	genhtml $(APP)/coverage/lcov.info --output-directory $(APP)/coverage/html
 	open $(APP)/coverage/html/index.html
@@ -110,27 +105,18 @@ coverage: ## Full coverage report for the app, opened in the browser
 ### *** Codegen *** ###
 ##############################
 
-runner: ## Run build_runner in both packages
-	cd $(CORE) && dart run build_runner build --delete-conflicting-outputs
-	cd $(APP) && dart run build_runner build --delete-conflicting-outputs
+runner: ## Run build_runner wherever a package declares it
+	@for d in $(addprefix $(SRC)/packages/,$(PKGS)) $(APP); do \
+		if grep -q "build_runner" $$d/pubspec.yaml 2>/dev/null; then \
+			echo "── $$d"; \
+			(cd $$d && dart run build_runner build --delete-conflicting-outputs) || exit 1; \
+		fi; \
+	done
 
 runner-hard: ## Delete generated files, then regenerate from scratch
-	find . -name "*.freezed.dart" -delete
-	find . -name "*.g.dart" -delete
+	find $(SRC) -name "*.freezed.dart" -delete
+	find $(SRC) -name "*.g.dart" -delete
 	$(MAKE) runner
-
-runner-last: ## Regenerate only for directories touched in the last 5 minutes
-	@CHANGED_DIRS=$$(find $(CORE)/lib $(APP)/lib -name "*.dart" -type f -mmin -5 \
-		! -name "*.g.dart" \
-		! -name "*.freezed.dart" | xargs -n1 dirname | sort -u); \
-	if [ -n "$$CHANGED_DIRS" ]; then \
-		echo "Running build_runner for:"; \
-		echo "$$CHANGED_DIRS" | tr ' ' '\n'; \
-		BUILD_FILTERS=$$(echo "$$CHANGED_DIRS" | xargs -n1 -I{} echo --build-filter={}/** | tr '\n' ' '); \
-		dart run build_runner build $$BUILD_FILTERS --delete-conflicting-outputs; \
-	else \
-		echo "Nothing modified in the last 5 minutes. Skipping build_runner."; \
-	fi
 
 runner-watch: ## Regenerate continuously while you work
 	cd $(APP) && dart run build_runner watch --delete-conflicting-outputs
@@ -159,8 +145,8 @@ flags: ## List the feature flags declared in the app
 ##############################
 
 # These produce the community build: a verification that the public repo
-# compiles on its own. The distributed artifact is the official build, produced
-# from the private repo — see docs/decisions/012-*.md.
+# compiles on its own. The distributed artifact is the official build, which is
+# not produced here — see docs/repository-settings.md.
 
 build: ## Compile check for the current platform (artifact is not distributed)
 	cd $(APP) && flutter build $(DEVICE) --release

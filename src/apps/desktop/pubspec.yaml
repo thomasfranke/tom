@@ -1,0 +1,46 @@
+name: tom_desktop
+description: >-
+  The desktop application: composition root and widgets. The only package in the
+  workspace that depends on Flutter, and the only one that knows which
+  implementation satisfies which contract.
+publish_to: none
+repository: https://github.com/thomasfranke/tom
+
+# The product version. Every package moves in lockstep with this number — none
+# is published separately, so independent versioning would be bookkeeping with
+# no reader. Releases are tags; see docs/versioning.md.
+version: 0.1.0
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+dependencies:
+  cupertino_icons: ^1.0.8
+  flutter:
+    sdk: flutter
+
+  # The whole graph, because this is the composition root: the one place
+  # allowed to see an implementation and hand it to whatever declared the
+  # contract. No package below may depend on a package above it.
+  tom_application:
+    path: ../../packages/application
+  tom_core:
+    path: ../../packages/core
+  tom_data:
+    path: ../../packages/data
+  tom_domain:
+    path: ../../packages/domain
+  tom_infra:
+    path: ../../packages/infra
+  tom_presentation:
+    path: ../../packages/presentation
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

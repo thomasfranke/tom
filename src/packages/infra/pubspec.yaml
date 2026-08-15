@@ -1,0 +1,18 @@
+name: tom_infra
+description: "Technical capabilities behind contracts — git, filesystem, markdown, search. Implementations never leave this package."
+version: 0.1.0
+publish_to: none
+repository: https://github.com/thomasfranke/tom
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+dependencies:
+  tom_core:
+    path: ../core
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

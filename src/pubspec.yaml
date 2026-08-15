@@ -1,0 +1,27 @@
+name: tom_workspace
+description: >-
+  Workspace root. Holds no code — it exists so every package resolves against a
+  single lockfile, which is what keeps two layers from ending up on different
+  versions of a shared dependency.
+publish_to: none
+repository: https://github.com/thomasfranke/tom
+
+environment:
+  sdk: ^3.12.0
+
+# Listed in dependency order rather than alphabetically: each entry may only
+# depend on the ones above it. The pubspecs enforce that; this order is for
+# whoever is reading, and test/architecture_test.dart is what proves it.
+workspace:
+  - packages/core
+  - packages/domain
+  - packages/application
+  - packages/infra
+  - packages/data
+  - packages/presentation
+  - apps/desktop
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
+  yaml: ^3.1.2
