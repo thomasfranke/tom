@@ -1,5 +1,7 @@
 # Domain model (emerging)
 
+> Which DDD patterns this model uses, and which it deliberately leaves out, is [Decision 15](../../decisions/015-ddd-is-applied-selectively.md). The short version: value objects and ubiquitous language yes, aggregates and domain events no — the domain here is thin, and the truth lives on disk.
+
 > **Status: partial and deliberately so.** The product's rules are still forming, and several entities can only be settled by experiment rather than by design — the shape of `Block`, in particular, is an *output* of Spike B, not an input to it.
 >
 > This document has three parts: what is **settled** (the architecture already depends on it), what is **open with the question formulated** (so the spike or milestone that answers it knows what it is looking for), and how the document is filled in over time. A partial, honest model is more useful than a complete, invented one.

@@ -34,6 +34,7 @@ Four folders, one question each, plus the decision log that cuts across them.
 | [012](decisions/012-shell-is-extensible-via-compile-time-modules.md) | The shell is extensible through compile-time modules |
 | [013](decisions/013-stack-is-flutter-and-dart.md) | The stack is Flutter and Dart |
 | [014](decisions/014-each-layer-is-its-own-package.md) | Each layer is its own package |
+| [015](decisions/015-ddd-is-applied-selectively.md) | DDD is applied selectively |
 
 ## Where the code is
 
