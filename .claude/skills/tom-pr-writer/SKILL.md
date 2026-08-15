@@ -102,7 +102,7 @@ Rules the PR is checked against (from `CONTRIBUTING.md`):
 - New dependency → its license is stated, and it is not AGPL/GPL.
 - Behavior changed → documentation updated **in the same PR**.
 - Architectural change → a file added or revised in `docs/decisions/`.
-- `tom_core` touched → still pure Dart, no Flutter import.
+- A layer package touched → still pure Dart, and `make test-arch` still green.
 - Riverpod appears only in `presentation/` or `bootstrap/di/`.
 
 ## Size

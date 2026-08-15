@@ -5,7 +5,7 @@ Complements [Decision 12](../../decisions/012-shell-is-extensible-via-compile-ti
 ## The contract (public repo)
 
 ```dart
-// apps/tom_desktop/lib/bootstrap/extensions/tom_module.dart
+// src/apps/desktop/lib/bootstrap/extensions/tom_module.dart
 
 /// A compile-time extension module. Implementations register extra
 /// panels, provider overrides and commands into the app shell.
@@ -39,13 +39,13 @@ final class PanelDescriptor {
 ## The entrypoint
 
 ```dart
-// apps/tom_desktop/lib/run_tom.dart
+// src/apps/desktop/lib/run_tom.dart
 Future<void> runTom({required final List<TomModule> modules}) async {
   // collects descriptors and overrides from every module,
   // builds the ProviderScope with the overrides and starts the shell
 }
 
-// apps/tom_desktop/lib/main.dart — community build
+// src/apps/desktop/lib/main.dart
 void main() => runTom(modules: const []);
 ```
 

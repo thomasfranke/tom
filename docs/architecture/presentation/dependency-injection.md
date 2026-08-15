@@ -7,7 +7,7 @@ Complements [Decision 7](../../decisions/007-external-dependencies-behind-contra
 No monolithic `di.dart`: the folder mirrors the core's areas, one small file per area.
 
 ```
-apps/tom_desktop/lib/bootstrap/di/
+src/apps/desktop/lib/bootstrap/di/
 ├── observability_providers.dart
 ├── git_providers.dart          # gitClient, gitRepository, git use cases
 ├── documents_providers.dart
@@ -30,7 +30,7 @@ Per-space scoping is the central requirement: the git queue and the sqlite conne
 ## Canonical provider file template
 
 ```dart
-// apps/tom_desktop/lib/bootstrap/di/git_providers.dart
+// src/apps/desktop/lib/bootstrap/di/git_providers.dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_core/tom_core.dart';
 
@@ -64,7 +64,7 @@ Fixed points:
 - Composition root providers **only instantiate and wire** — zero logic.
 - Space-scoped providers always use a `family` keyed by `spaceRoot`.
 - `ref.watch` while wiring (the graph rebuilds if a dependency changes); never `ref.read` inside a DI provider.
-- The core is imported through its barrel file (`package:tom_core/tom_core.dart`).
+- Every layer is imported through its barrel — `package:tom_domain/tom_domain.dart`, never a path into another package's `lib/src/`, which the analyzer refuses anyway.
 
 ## Anti-patterns
 

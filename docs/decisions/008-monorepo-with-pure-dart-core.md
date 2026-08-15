@@ -35,7 +35,7 @@ Every phase-1 infrastructure implementation is pure Dart: `Process.run` (git), `
 ```
 Projected end state:
 
-apps/tom_desktop ──────┬──> packages/tom_core <──┬────── apps/tom_mobile
+apps/desktop ──────────┬──> the pure Dart layers <┬────── apps/mobile
         └──> packages/tom_infra_desktop ──> core └──> packages/tom_infra_mobile
 ```
 

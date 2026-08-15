@@ -31,7 +31,7 @@ Three things decide it anyway.
 
 **The web path buys those wins with a Rust backend.** Tauri's filesystem, process and git layer is Rust — a second language to maintain in precisely the layer where correctness matters most, traded for advantages in two layers that [Decision 3](003-editor-is-source-plus-preview.md) already minimized on purpose. The editor is Flutter's real weakness and it is the one thing this product deliberately does not need to be excellent at.
 
-**One core, two platforms.** `tom_core` is pure Dart by construction, so mobile means new infrastructure implementations plus a new presentation — not a rewrite. That property is what keeps a future mobile app affordable for one person, and it is the reason the trade lands here rather than in the table above.
+**One core, two platforms.** Every layer below the app is pure Dart by construction ([Decision 14](014-each-layer-is-its-own-package.md)), so mobile means new infrastructure implementations plus a new set of widgets — not a rewrite. That property is what keeps a future mobile app affordable for one person, and it is the reason the trade lands here rather than in the table above.
 
 ## Rust stays available without adopting Tauri
 

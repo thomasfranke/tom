@@ -12,12 +12,10 @@ Complements [Decision 5](../../decisions/005-errors-use-result-with-sealed-class
 ## Canonical use case template
 
 ```dart
-// packages/tom_core/lib/application/git/commit_changes.dart
-import 'package:tom_core/core/observability/observability_interface.dart';
-import 'package:tom_core/core/result/result.dart';
-import 'package:tom_core/core/failures/failures.dart';
-import 'package:tom_core/domain/entities/commit.dart';
-import 'package:tom_core/domain/repositories/git_repository_interface.dart';
+// src/packages/application/lib/src/git/commit_changes.dart
+import 'package:tom_infra/tom_infra.dart';
+import 'package:tom_core/tom_core.dart';
+import 'package:tom_domain/tom_domain.dart';
 
 /// Use case for committing staged changes.
 class CommitChanges {

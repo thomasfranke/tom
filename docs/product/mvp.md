@@ -7,7 +7,7 @@
 > Timebox: about one weekend each. Goal: decide, not build.
 
 - [ ] **Spike A — Editor:** can `re_editor` carry source mode? Test with a 2000+ line md file, desktop shortcuts, selection, find/replace, typing latency. If it fails → fall back to a custom `TextField`.
-- [ ] **Spike B — The `markdown` AST:** does the package AST (`Node`/`Element`) carry enough information (source positions, block granularity) for the block diff (v1)? Test: parse two sibling md files, align blocks, classify unchanged/added/removed/modified. If insufficient → evaluate our own parser or enrich the AST through post-processing. **The questions this spike must answer are listed in [architecture/08-domain-model.md](../architecture/domain/model.md) — read them before starting; the shape of `Block` is the spike's main deliverable, and whether a block can be rendered in isolation decides how the preview is assembled.**
+- [ ] **Spike B — The `markdown` AST:** does the package AST (`Node`/`Element`) carry enough information (source positions, block granularity) for the block diff (v1)? Test: parse two sibling md files, align blocks, classify unchanged/added/removed/modified. If insufficient → evaluate our own parser or enrich the AST through post-processing. **The questions this spike must answer are listed in [the domain model](../architecture/domain/model.md) — read them before starting; the shape of `Block` is the spike's main deliverable, and whether a block can be rendered in isolation decides how the preview is assembled.**
 
 ## Milestone 0 — Foundation
 

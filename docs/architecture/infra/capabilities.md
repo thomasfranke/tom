@@ -25,7 +25,7 @@ FTS5 (SQLite) indexes the content of the `.md` files. Absolute rule: **the index
 ## The rendered diff (incremental evolution)
 
 1. **v0 — line diff over the preview:** classic textual diff (Myers) mapped onto the rendered blocks containing each hunk. Fast to ship, already better than current tools.
-2. **v1 — block diff:** parse both sides into blocks (paragraph, heading, list item, code block), align by similarity, classify as unchanged/added/removed/modified. This is the heart of `domain/services/block_differ.dart` (pure business rule — see [03-repository-structure.md](../overview/repository-structure.md)).
+2. **v1 — block diff:** parse both sides into blocks (paragraph, heading, list item, code block), align by similarity, classify as unchanged/added/removed/modified. This is the heart of `tom_domain`'s `src/services/block_differ.dart` (pure business rule — see [repository-structure.md](../overview/repository-structure.md)).
 3. **v2 — intra-block diff:** word-level ins/del inside modified blocks.
 
 A parsing and tree-comparison problem — **testable with golden files, no UI involved**: pairs of md files + expected diff as JSON, running in CI.

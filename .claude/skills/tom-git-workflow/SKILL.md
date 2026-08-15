@@ -11,7 +11,7 @@ description: TOM's Git conventions — trunk-based development on main, branch n
 feat/*  ──PR──▶  main  ──tag──▶  published release
 ```
 
-**`main` is publishable, not published. What is in production is the most recent tag.** Work that is not ready ships dormant behind a disabled feature flag rather than waiting on a branch — see `docs/patterns/feature-flags.md`.
+**`main` is publishable, not published. What is in production is the most recent tag.** Work that is not ready ships dormant behind a disabled feature flag rather than waiting on a branch — see `docs/architecture/overview/feature-flags.md`.
 
 There is **no `dev` branch** and **no permanent `release/*` branch.** A `release/x.y` branch is created only if an already-released version needs a fix while `main` has moved on (branch from the tag, fix, tag a patch, cherry-pick back if applicable).
 
