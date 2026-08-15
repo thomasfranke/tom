@@ -8,7 +8,7 @@
 
 ## Decision
 
-The project is a **monorepo**: a single Git repository holding multiple Dart packages, wired through the **native pub workspace** (Dart 3.6+). ~~Two packages to start~~ — one package per layer, plus the Flutter application; see [Decision 14](014-each-layer-is-its-own-package.md). The tree is in [../architecture/overview/repository-structure.md](../architecture/overview/repository-structure.md).
+The project is a **monorepo**: a single Git repository holding multiple Dart packages, wired through the **native pub workspace** (Dart 3.6+). ~~Two packages to start~~ — one package per layer, plus the Flutter application; see [Decision 14](014-each-layer-is-its-own-package.md). The tree is in [layers.md](../architecture/layers.md).
 
 **Important:** monorepo ≠ multi-repo. One clone, one history, one PR able to touch core and app atomically. The split happens at the `pubspec.yaml` (build) level, not in Git.
 

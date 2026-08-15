@@ -25,11 +25,11 @@ Seven packages, one per layer, in a pub workspace under `src/`:
 | `tom_presentation` | `tom_core`, `tom_domain`, `tom_application` | no |
 | `tom_desktop` | all of the above | **yes** |
 
-The tree, and what each package holds, is in [../architecture/overview/repository-structure.md](../architecture/overview/repository-structure.md).
+The tree, and what each package holds, is in [layers.md](../architecture/layers.md).
 
 ## What this buys, precisely
 
-**The domain cannot import a framework.** Not "should not" — `tom_domain`'s pubspec lists `tom_core` and nothing else, so `package:flutter/material.dart` fails to resolve. The same holds for sqlite, for `dart:io`'s process API, and for presentation.
+**The domain cannot import a framework.** Not "should not" — `tom_domain`'s pubspec lists `tom_core` and nothing else, so `package:flutter/material.dart` fails to resolve. The same holds for sqlite and for presentation. `dart:io` is the one it cannot cover — SDK libraries need no declaration, so they are available everywhere by default — which is why the architecture test scans imports as well as pubspecs.
 
 **Six of seven packages run under `dart test`**, with no Flutter binding available. Framework independence is asserted on every run rather than claimed in a document.
 

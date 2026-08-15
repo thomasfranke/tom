@@ -23,7 +23,7 @@ Separately, an application that hardcodes its own panels has no way to accept an
 
 ## Consequences
 
-- Contract and panel-registration templates: [../patterns/extension-modules.md](../architecture/presentation/extension-modules.md).
+- Contract and panel-registration templates: [flows.md](../architecture/flows.md#panels-are-registered-never-hardcoded).
 - M0 gains the "extensible shell" item.
-- A feature flag guards **registration**, not rendering ([feature flags](../architecture/overview/feature-flags.md)): a disabled panel is never registered, so it is unreachable rather than merely invisible.
+- A feature flag guards **registration**, not rendering ([feature flags](../../CONTRIBUTING.md#feature-flags)): a disabled panel is never registered, so it is unreachable rather than merely invisible.
 - Changing `TomModule` so that an existing module stops compiling is a breaking change ([versioning](../process/versioning.md)).

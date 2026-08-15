@@ -69,7 +69,7 @@ Refining a screen inside Excalidraw while exploring is fine. When it settles, fo
 
 ## What is deliberately not drawn yet
 
-**The rendered diff.** Its block granularity is the output of Spike B ([mvp.md](../product/mvp.md)) — whether a block can be rendered in isolation is still an open question ([domain model](../architecture/domain/model.md)). Drawing it in detail now would be work thrown away the moment the spike reports, so `shell` shows the preview assembled block by block and stops there.
+**The rendered diff.** Its block granularity is the output of Spike B ([mvp.md](../product/mvp.md)) — whether a block can be rendered in isolation is still an open question ([domain model](../architecture/domain-model.md)). Drawing it in detail now would be work thrown away the moment the spike reports, so `shell` shows the preview assembled block by block and stops there.
 
 **Conflict resolution, section blame, wikilink navigation.** Post-MVP, and none of them constrain the M0 layout.
 

@@ -13,7 +13,7 @@ make run              # DEVICE=windows|linux|macos
 
 ## Where things are
 
-The Dart workspace is under [`src/`](../../src/), so the repository root leads with documentation and licence rather than build files. Seven packages, one per layer, and a violation of the layering does not compile — the graph and what enforces it are in [architecture/overview/repository-structure.md](../architecture/overview/repository-structure.md).
+The Dart workspace is under [`src/`](../../src/), so the repository root leads with documentation and licence rather than build files. Seven packages, one per layer, and a violation of the layering does not compile — the graph and what enforces it are in [architecture/layers.md](../architecture/layers.md).
 
 Every `make` target runs from the repository root and handles the `src/` hop for you. If you prefer the raw commands, they are what the `Makefile` shows: `cd src && flutter pub get`, `cd src && flutter analyze`, and so on.
 

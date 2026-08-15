@@ -17,6 +17,6 @@ The use case pattern captures unexpected exceptions and reports them. Calling a 
 - Flexibility: no-op, local file, hosted service — swappable in the composition root without touching the core.
 
 ## Consequences
-- The use case template ([../patterns/error-handling.md](../architecture/core/error-handling.md)) always calls `_observability.capture(...)` — the contract, never a vendor.
+- The use case template ([layers.md](../architecture/layers.md#errors-across-boundaries)) always calls `_observability.capture(...)` — the contract, never a vendor.
 - The product README/site can declare "zero telemetry by default" as a feature.
 - If opt-in telemetry is implemented, it requires its own privacy section in the product documentation.

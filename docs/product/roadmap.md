@@ -32,8 +32,8 @@ Feedback comes from use, not from research. The maintainer is the first user and
 
 - [ ] ~~Does the `markdown` AST handle diff v1?~~ → **Spike B** ([mvp.md](mvp.md))
 - [ ] ~~Can `re_editor` serve as source mode?~~ → **Spike A** ([mvp.md](mvp.md))
-- [ ] ~~Space configuration format~~ → `.tom/` is reserved for it, and nothing is written there until a genuinely shared setting needs it ([domain model](../architecture/domain/model.md))
-- [ ] ~~How far does `flutter_markdown_plus` take the preview?~~ → the preview renders block by block and delegates inline to the package ([presentation](../architecture/presentation/state.md))
+- [ ] ~~Space configuration format~~ → `.tom/` is reserved for it, and nothing is written there until a genuinely shared setting needs it ([domain model](../architecture/domain-model.md))
+- [ ] ~~How far does `flutter_markdown_plus` take the preview?~~ → the preview renders block by block and delegates inline to the package ([flows](../architecture/flows.md))
 - [ ] Binary signing (Windows/macOS certificate cost) — needed for launch or later?
 
 ---

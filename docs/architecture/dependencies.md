@@ -15,7 +15,7 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 | Package | License | Role |
 |---|---|---|
 | `markdown` | BSD-3 | The official Dart parser; exposes an AST (`Node`/`Element`) — the foundation of the preview and of diff v1 |
-| `flutter_markdown_plus` | BSD | Renders the inline content **inside** a block; block-level layout and decoration are ours, which is what the rendered diff needs ([presentation](presentation/state.md)) |
+| `flutter_markdown_plus` | BSD | Renders the inline content **inside** a block; block-level layout and decoration are ours, which is what the rendered diff needs ([flows](flows.md#the-preview-is-assembled-block-by-block)) |
 | `diff_match_patch` or `diffutil_dart` | Apache/MIT | Textual diff (Myers) for diff v0 and block alignment in v1 |
 | `re_highlight` or `flutter_highlight` | MIT | Syntax highlighting for code blocks in the preview |
 
@@ -50,7 +50,7 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 
 | Excluded | Reason |
 |---|---|
-| `dartz` | Result pattern with native sealed classes ([Decision 5](../decisions/005-errors-use-result-with-sealed-classes.md); details in [architecture/04-error-model.md](core/error-model.md)) |
+| `dartz` | Result pattern with native sealed classes ([Decision 5](../decisions/005-errors-use-result-with-sealed-classes.md); details in [layers.md](layers.md#errors-across-boundaries)) |
 | `appflowy_editor` (and anything AGPL/GPL) | Contaminates the MIT license ([Decision 1](../decisions/001-license-is-mit.md)) |
 | AutoRoute / any routing package | A panel-based desktop app has no navigation ([Decision 6](../decisions/006-no-navigation-package.md)) |
 | Dio / `http` | There is no HTTP in the MVP; it arrives with layer 3 (remote APIs) when needed |

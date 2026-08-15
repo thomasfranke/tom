@@ -9,7 +9,7 @@ Four folders, one question each, plus the decision log that cuts across them.
 | Folder | Answers | Contents |
 |---|---|---|
 | [product/](product/) | what is being built, and why | [vision](product/vision.md) · [product](product/product.md) · [mvp](product/mvp.md) · [roadmap](product/roadmap.md) |
-| [architecture/](architecture/) | how it is built | one folder per package, mirroring `src/packages/`, plus [dependencies](architecture/dependencies.md) |
+| [architecture/](architecture/) | how it is built | [layers](architecture/layers.md) · [flows](architecture/flows.md) · [domain model](architecture/domain-model.md) · [dependencies](architecture/dependencies.md) |
 | [design/](design/) | what it looks like | [wireframes](design/README.md) per screen · [visual language](design/visual-language.md) |
 | [process/](process/) | how the work is done | [setup](process/setup.md) · [versioning](process/versioning.md) · [repository settings](process/repository-settings.md) |
 | [decisions/](decisions/) | what was settled, and why | ADRs, one per file, declaratively named |

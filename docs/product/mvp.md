@@ -7,13 +7,13 @@
 > Timebox: about one weekend each. Goal: decide, not build.
 
 - [ ] **Spike A — Editor:** can `re_editor` carry source mode? Test with a 2000+ line md file, desktop shortcuts, selection, find/replace, typing latency. If it fails → fall back to a custom `TextField`.
-- [ ] **Spike B — The `markdown` AST:** does the package AST (`Node`/`Element`) carry enough information (source positions, block granularity) for the block diff (v1)? Test: parse two sibling md files, align blocks, classify unchanged/added/removed/modified. If insufficient → evaluate our own parser or enrich the AST through post-processing. **The questions this spike must answer are listed in [the domain model](../architecture/domain/model.md) — read them before starting; the shape of `Block` is the spike's main deliverable, and whether a block can be rendered in isolation decides how the preview is assembled.**
+- [ ] **Spike B — The `markdown` AST:** does the package AST (`Node`/`Element`) carry enough information (source positions, block granularity) for the block diff (v1)? Test: parse two sibling md files, align blocks, classify unchanged/added/removed/modified. If insufficient → evaluate our own parser or enrich the AST through post-processing. **The questions this spike must answer are listed in [the domain model](../architecture/domain-model.md) — read them before starting; the shape of `Block` is the spike's main deliverable, and whether a block can be rendered in isolation decides how the preview is assembled.**
 
 ## Milestone 0 — Foundation
 
 > Layout for everything below: [design/](../design/) — `empty-state` and `shell` are the M0 screens.
 
-- [ ] **Extensible shell**: `runTom(modules: [])` + panels registered through `PanelDescriptor` (including the built-in ones, via `CoreModule`) — see [patterns/extension-modules.md](../architecture/presentation/extension-modules.md)
+- [ ] **Extensible shell**: `runTom(modules: [])` + panels registered through `PanelDescriptor` (including the built-in ones, via `CoreModule`) — see [flows](../architecture/flows.md#panels-are-registered-never-hardcoded)
 - [ ] Open a local folder inside a Git repo (a "space") — the repository root or any subfolder of it
 - [ ] `.md` file tree with navigation, dotfolders included (`.claude/`, `.github/`); only `.git/` is hidden
 - [ ] Markdown rendering (read-only preview), assembled block by block: headings, lists, tables, highlighted code blocks, local images, links
