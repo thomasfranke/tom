@@ -153,7 +153,7 @@ _Target _resolve(Directory src, String spec) {
       );
     case 'desktop':
       return _Target(
-        'tom_desktop',
+        'desktop',
         Directory('${src.path}/apps/desktop'),
         'flutter',
         files,
@@ -166,7 +166,7 @@ _Target _resolve(Directory src, String spec) {
         exit(64);
       }
       return _Target(
-        'tom_$pkg',
+        pkg,
         Directory('${src.path}/packages/$pkg'),
         'dart',
         files,
@@ -450,8 +450,8 @@ class _Dashboard {
     final doneCount = doneRows.length;
 
     if (doneCount == rows.length) {
-      final elapsed = _fmtDuration(DateTime.now().difference(started));
-      return '• Running tests — $doneCount/${rows.length} packages, $elapsed elapsed:';
+      // No elapsed time here — the Summary block below already has it.
+      return '• Running tests — $doneCount/${rows.length} packages:';
     }
 
     // ETA rather than elapsed: extrapolated from the average of packages that
