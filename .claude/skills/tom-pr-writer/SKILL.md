@@ -7,6 +7,8 @@ description: Writes pull request titles and descriptions for the TOM repositorie
 
 A PR on a public repository is read by strangers, by future contributors, and by future you. It is the record of **why** — the diff already covers what.
 
+**Draft first, show it inline, wait for approval — don't run `gh pr create` yet.** Same checkpoint as commits: see "When Claude Code is doing the committing" in the `tom-git-workflow` skill. Push is its own separate approval, even if the PR text is already approved.
+
 ## Step 1: read the actual change
 
 Never write a PR description from memory or from the branch name. Inspect the diff first:
