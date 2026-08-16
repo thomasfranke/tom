@@ -40,6 +40,15 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
     'tom_data',
     'tom_presentation',
   },
+  // Reserved skeleton for Phase 3 (docs/product/roadmap.md). No infra/data
+  // yet — those are platform-specific and arrive with the mobile-specific
+  // implementations of the contracts tom_infra defines for desktop.
+  'tom_mobile': <String>{
+    'tom_core',
+    'tom_domain',
+    'tom_application',
+    'tom_presentation',
+  },
 };
 
 /// Libraries each package may not import, whatever its pubspec says.
@@ -75,6 +84,7 @@ const Map<String, Set<String>> forbiddenImports = <String, Set<String>>{
   'tom_presentation': <String>{'dart:io', 'dart:ffi', 'package:flutter'},
   'tom_infra': <String>{'package:flutter'},
   'tom_desktop': <String>{},
+  'tom_mobile': <String>{},
 };
 
 /// Packages that drag Flutter in, in any dependency section.
@@ -90,8 +100,8 @@ const Set<String> flutterPackages = <String>{
   'integration_test',
 };
 
-/// The composition root, and the only package allowed to know Flutter exists.
-const String compositionRoot = 'tom_desktop';
+/// The composition roots — the only packages allowed to know Flutter exists.
+const Set<String> compositionRoots = <String>{'tom_desktop', 'tom_mobile'};
 
 /// An `import` or `export`, with the URI it names.
 final RegExp directive = RegExp(
@@ -167,11 +177,11 @@ void main() {
 
   group('framework isolation', () {
     for (final String package in graph.keys) {
-      final bool isRoot = package == compositionRoot;
+      final bool isRoot = compositionRoots.contains(package);
 
       test(
         isRoot
-            ? '$package is the only package with Flutter'
+            ? '$package is a composition root with Flutter'
             : '$package declares no Flutter package, not even to test',
         () {
           final Set<String> flutter = allDependenciesOf(
@@ -183,8 +193,8 @@ void main() {
               flutter,
               contains('flutter'),
               reason:
-                  '$compositionRoot is the composition root; it is meant to '
-                  'have Flutter.',
+                  '$package is a composition root; it is meant to have '
+                  'Flutter.',
             );
           } else {
             expect(

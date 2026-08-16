@@ -17,9 +17,10 @@ APP  := $(SRC)/apps/desktop
 # before it; src/test/integrity/architecture_test.dart is what enforces that.
 PKGS := core domain application infra data presentation
 
-# Everything a PKG= parameter accepts, plus `arch` for the graph test. The app
-# is addressed as `desktop`, matching its folder.
-ALL_PKGS := $(PKGS) desktop
+# Everything a PKG= parameter accepts, plus `arch` for the graph test. The
+# apps are addressed as `desktop`/`mobile`, matching their folders.
+APPS := desktop mobile
+ALL_PKGS := $(PKGS) $(APPS)
 
 # On by default: every test target reports each package's line coverage
 # alongside its pass/fail line, with no separate run needed. Override with
@@ -60,7 +61,7 @@ setup: ## Resolve the whole workspace (one get for every package)
 	cd $(SRC) && flutter pub get
 
 clean: ## Clean build artifacts and re-resolve
-	cd $(APP) && flutter clean
+	@for a in $(APPS); do (cd $(SRC)/apps/$$a && flutter clean); done
 	cd $(SRC) && flutter pub get
 
 fvm: ## Pin the Flutter version declared in src/.fvmrc for this workspace
@@ -94,20 +95,21 @@ verify: format analyze flutter-test coverage-gate ## Everything CI runs, in one 
 #
 # Two optional parameters, both read by the runner:
 #
-#   PKG        one package or several, by folder name; `desktop` is the app
+#   PKG        one package or several, by folder name; `desktop`/`mobile` are
+#              the apps
 #                make flutter-test PKG=domain
 #                make flutter-test PKG="domain data"
 #   TEST_ARGS  passed straight through to dart/flutter test
 #                make flutter-test PKG=domain TEST_ARGS="-n parses --reporter expanded"
 #
 # Without PKG, everything runs: the architecture assertions, then each
-# package in dependency order, then the app.
+# package in dependency order, then the apps.
 
 flutter-test: ## Run every test, live (PKG=<name> restricts)
 ifdef PKG
 	@$(MAKE) --no-print-directory flutter-test-only
 else
-	@$(RUNNER) arch $(PKGS) desktop
+	@$(RUNNER) arch $(PKGS) $(APPS)
 endif
 
 flutter-test-arch: ## Assert the layer graph matches what the pubspecs declare
@@ -119,8 +121,8 @@ flutter-test-arch: ## Assert the layer graph matches what the pubspecs declare
 flutter-test-packages: ## Pure Dart tests, package by package
 	@$(RUNNER) $(PKGS)
 
-flutter-test-app: ## Flutter tests for the desktop app
-	@$(RUNNER) desktop
+flutter-test-app: ## Flutter tests for the apps (desktop, mobile)
+	@$(RUNNER) $(APPS)
 
 flutter-test-only: ## Internal: the PKG branch of `flutter-test`
 	@for p in $(PKG); do \
@@ -146,9 +148,9 @@ flutter-test-diff: ## Test only what this branch's diff maps to (BASE=main)
 
 coverage: ## Coverage report, opened in the browser (PKG=<name> for one package)
 	@for p in $(if $(PKG),$(PKG),desktop); do \
-		if [ "$$p" = desktop ]; then \
-			(cd $(APP) && flutter test --coverage) || exit 1; \
-			d=$(APP); \
+		if [ "$$p" = desktop ] || [ "$$p" = mobile ]; then \
+			(cd $(SRC)/apps/$$p && flutter test --coverage) || exit 1; \
+			d=$(SRC)/apps/$$p; \
 		else \
 			(cd $(SRC)/packages/$$p && dart test --coverage=coverage \
 				&& dart run coverage:format_coverage --lcov --in=coverage \
@@ -180,12 +182,12 @@ coverage-gate: ## Fail if any implemented package is under the coverage threshol
 # no build_runner declared, or no change in this branch. See
 # tool/run_codegen.dart.
 runner: ## Run build_runner on packages changed in this branch (BASE=main)
-	@dart run tool/run_codegen.dart $(PKGS) desktop
+	@dart run tool/run_codegen.dart $(PKGS) $(APPS)
 
 runner-hard: ## Delete generated files, then regenerate every package from scratch
 	find $(SRC) -name "*.freezed.dart" -delete
 	find $(SRC) -name "*.g.dart" -delete
-	@dart run tool/run_codegen.dart --force $(PKGS) desktop
+	@dart run tool/run_codegen.dart --force $(PKGS) $(APPS)
 
 runner-watch: ## Regenerate continuously while you work
 	cd $(APP) && dart run build_runner watch --delete-conflicting-outputs
