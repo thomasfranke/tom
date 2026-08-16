@@ -35,6 +35,7 @@ Every relevant decision lives in `docs/`. **Before suggesting architecture, depe
 10. **Extensible shell** — panels are ALWAYS registered through `TomModule`/`PanelDescriptor`, never hardcoded in the shell, including the built-in ones (Decision 12; `docs/architecture/flows.md#panels-are-registered-never-hardcoded`).
 11. **The public repo documents the free product only** — no tier catalogue, no pricing, no licensing mechanics, no reference to a private repository. Commercial modelling lives outside this repo (Decision 4).
 12. **A space is a folder, not a repository** — `Space` carries `root` and `repositoryRoot` separately; git runs against the repository, navigation and search stay in the folder.
+13. **Freezed is mandatory for immutable data** — entities, value objects with more than one field, presentation view-state, and sealed hierarchies; no hand-written `==`/`copyWith` once a class qualifies (Decision 16). Single-field identifier/path value objects (`BranchName`, `CommitSha`…) are the one recommended exception — an `extension type` fits better there.
 
 ## Stack (summary — details in docs/dependencies.md)
 

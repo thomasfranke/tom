@@ -73,7 +73,7 @@ Every external dependency is reached through a contract ([Decision 7](../decisio
 |---|---|---|
 | **Flutter** | `tom_desktop` only | the pubspecs enforce it; the other six compile and test as pure Dart |
 | **Riverpod** | `tom_presentation` and the composition root | it is *runtime* — lifecycle, scope, invalidation. Use cases and repositories receive dependencies through constructors. A use case that needs a `Ref` is a design error |
-| **Freezed** | any layer | pure build-time; the generated code is ours and carries no runtime coupling |
+| **Freezed** | any layer | pure build-time; the generated code is ours and carries no runtime coupling. Mandatory for immutable data classes wherever one qualifies — entities, multi-field value objects, view-state, sealed hierarchies ([Decision 16](../decisions/016-freezed-is-mandatory-for-immutable-data.md)) |
 
 `Observability` is the one capability contract that lives in `tom_core` rather than `tom_infra`: every use case takes one, and `tom_application` cannot see `tom_infra`. It names no technology, and it is not a precedent for anything that does.
 

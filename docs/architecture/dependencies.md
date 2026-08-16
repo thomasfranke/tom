@@ -7,7 +7,7 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 | Package | License | Role |
 |---|---|---|
 | `flutter_riverpod` + `riverpod_annotation` | MIT | State; providers per space/document/panel |
-| `freezed` + `freezed_annotation` | MIT | Immutable entities and states (`GitStatus`, `Commit`, `DiffBlock`…); already in use for the `AppFailure` hierarchies (`GitFailure`, `DocumentFailure`, `SearchFailure`, `FilesystemFailure`) in `tom_core`/`tom_domain`/`tom_infra` |
+| `freezed` + `freezed_annotation` | MIT | Mandatory for immutable entities, multi-field value objects, view-state and sealed hierarchies ([Decision 16](../decisions/016-freezed-is-mandatory-for-immutable-data.md)) — `GitStatus`, `Commit`, `DiffBlock`… as they get built; already in use for the `AppFailure` hierarchies (`GitFailure`, `DocumentFailure`, `SearchFailure`, `FilesystemFailure`) in `tom_core`/`tom_domain`/`tom_infra` |
 | `riverpod_generator`, `riverpod_lint`, `custom_lint`, `build_runner` | MIT | Dev-time (codegen and lints) |
 
 ## Markdown and diff (the heart)
