@@ -1,0 +1,108 @@
+# Shared by every package: each one carries an analysis_options.yaml containing
+# nothing but an include of this file. Lint settings drifting apart between
+# packages in a monorepo is the sort of thing nobody notices until one of them
+# is a year behind the rest.
+#
+# This file deliberately does NOT include package:flutter_lints. Doing so would
+# force every pure Dart package to take flutter_lints as a dev_dependency,
+# which puts Flutter tooling inside the six layers that exist precisely to be
+# free of it. The app adds flutter_lints on top of this file instead.
+
+include: package:lints/recommended.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+  exclude:
+    - build/**
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.gr.dart"
+    - "**/*.config.dart"
+
+  errors:
+    # These two are what make the layer boundaries real rather than decorative.
+    #
+    #   depend_on_referenced_packages — Dart resolves transitive dependencies,
+    #     so `import 'package:tom_core/...'` compiles inside tom_data even when
+    #     tom_data never declared tom_core. Without this the pubspec graph is
+    #     weaker than it looks; with it, a package that was not declared is a
+    #     package that cannot be used.
+    #
+    #   implementation_imports — nothing may reach into another package's
+    #     lib/src/. This is what stops tom_data importing the concrete git
+    #     client instead of the contract tom_infra chose to export.
+    depend_on_referenced_packages: error
+    implementation_imports: error
+
+    # Freezed and json_serializable place annotations on generated targets the
+    # analyzer considers invalid. The alternative is an ignore comment on every
+    # generated file.
+    invalid_annotation_target: ignore
+
+    # A TODO is a note to a human, not a reason to fail the build.
+    todo: ignore
+
+linter:
+  rules:
+    always_declare_return_types: true
+    always_put_control_body_on_new_line: true
+    always_put_required_named_parameters_first: true
+    always_specify_types: true
+    # Across seven packages, seeing which package a symbol came from matters
+    # more than the brevity of a relative path.
+    always_use_package_imports: true
+    prefer_relative_imports: false
+    avoid_catches_without_on_clauses: true
+    avoid_classes_with_only_static_members: true
+    avoid_dynamic_calls: true
+    avoid_implementing_value_types: true
+    avoid_redundant_argument_values: true
+    avoid_setters_without_getters: true
+    avoid_slow_async_io: true
+    avoid_types_on_closure_parameters: false
+    cancel_subscriptions: true
+    cascade_invocations: true
+    cast_nullable_to_non_nullable: true
+    close_sinks: true
+    comment_references: true
+    diagnostic_describe_all_properties: true
+    directives_ordering: true
+    discarded_futures: true
+    document_ignores: true
+    flutter_style_todos: true
+    leading_newlines_in_multiline_strings: true
+    lines_longer_than_80_chars: true
+    no_literal_bool_comparisons: true
+    noop_primitive_operations: true
+    omit_local_variable_types: false
+    omit_obvious_local_variable_types: false
+    only_throw_errors: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_const_literals_to_create_immutables: true
+    prefer_double_quotes: false
+    prefer_expression_function_bodies: true
+    prefer_final_in_for_each: true
+    prefer_final_locals: true
+    prefer_int_literals: true
+    prefer_single_quotes: true
+    prefer_void_to_null: true
+    public_member_api_docs: true
+    require_trailing_commas: true
+    sort_pub_dependencies: true
+    throw_in_finally: true
+    unawaited_futures: true
+    unnecessary_await_in_return: true
+    unnecessary_breaks: true
+    unnecessary_final: false
+    unnecessary_lambdas: true
+    unnecessary_parenthesis: true
+    unreachable_from_main: true
+    use_named_constants: true
+    use_raw_strings: true
+    use_setters_to_change_properties: true
+    use_super_parameters: true

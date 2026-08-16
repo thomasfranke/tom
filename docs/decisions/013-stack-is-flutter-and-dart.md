@@ -4,7 +4,7 @@
 
 ## Context
 
-TOM parses markdown, renders it, drives the `git` binary, runs on three desktop platforms and is meant to reach phones after 1.0 ([roadmap](../roadmap.md#phases)). Nothing in that description points at one obvious toolkit. This is the most consequential choice in the project — every other decision is written against it — so it is recorded here with its counter-argument rather than left implicit.
+TOM parses markdown, renders it, drives the `git` binary, runs on three desktop platforms and is meant to reach phones after 1.0 ([roadmap](../product/roadmap.md#phases)). Nothing in that description points at one obvious toolkit. This is the most consequential choice in the project — every other decision is written against it — so it is recorded here with its counter-argument rather than left implicit.
 
 ## Decision
 
@@ -31,13 +31,13 @@ Three things decide it anyway.
 
 **The web path buys those wins with a Rust backend.** Tauri's filesystem, process and git layer is Rust — a second language to maintain in precisely the layer where correctness matters most, traded for advantages in two layers that [Decision 3](003-editor-is-source-plus-preview.md) already minimized on purpose. The editor is Flutter's real weakness and it is the one thing this product deliberately does not need to be excellent at.
 
-**One core, two platforms.** `tom_core` is pure Dart by construction, so mobile means new infrastructure implementations plus a new presentation — not a rewrite. That property is what keeps a future mobile app affordable for one person, and it is the reason the trade lands here rather than in the table above.
+**One core, two platforms.** Every layer below the app is pure Dart by construction ([Decision 14](014-each-layer-is-its-own-package.md)), so mobile means new infrastructure implementations plus a new set of widgets — not a rewrite. That property is what keeps a future mobile app affordable for one person, and it is the reason the trade lands here rather than in the table above.
 
 ## Rust stays available without adopting Tauri
 
 Choosing Dart does not forfeit the Rust ecosystem. A crate compiles to a native library and is reached over `dart:ffi` behind an ordinary infrastructure contract ([Decision 7](007-external-dependencies-behind-contracts.md)). That matters most for markdown parsing, where `pulldown-cmark`, `comrak` and `markdown-rs` all expose source positions that the Dart ecosystem may not.
 
-It is the **third** option for Spike B, behind the `markdown` package alone and our own block parser with inline delegated to it ([domain model](../architecture/08-domain-model.md)). It is not the plan, and the price is real: a Rust toolchain in CI for every target, cross-compilation, and the loss of `dart test` as a self-contained proof that the core is framework-independent. It is named here so that it is not discovered *after* a hand-written parser has already been paid for.
+It is the **third** option for Spike B, behind the `markdown` package alone and our own block parser with inline delegated to it ([domain model](../architecture/domain-model.md)). It is not the plan, and the price is real: a Rust toolchain in CI for every target, cross-compilation, and the loss of `dart test` as a self-contained proof that the core is framework-independent. It is named here so that it is not discovered *after* a hand-written parser has already been paid for.
 
 FFI is on this project's path regardless — `libgit2` is the scheduled implementation of `GitClientInterface` for mobile ([Decision 2](002-git-via-system-binary.md)).
 

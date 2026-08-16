@@ -7,6 +7,8 @@ description: Writes pull request titles and descriptions for the TOM repositorie
 
 A PR on a public repository is read by strangers, by future contributors, and by future you. It is the record of **why** — the diff already covers what.
 
+**Draft first, show it inline, wait for approval — don't run `gh pr create` yet.** Same checkpoint as commits: see "When Claude Code is doing the committing" in the `tom-git-workflow` skill. Push is its own separate approval, even if the PR text is already approved.
+
 ## Step 1: read the actual change
 
 Never write a PR description from memory or from the branch name. Inspect the diff first:
@@ -66,7 +68,7 @@ follow-ups worth an issue. Omit the section if there is genuinely nothing.
 
 **How to test** comes first because it is what the reviewer acts on. Write reproducible steps, not a claim: which repo state to start from (a space with a dirty working tree? two branches with diverging docs?), what to do, and what should happen. A reviewer who cannot follow the steps cannot review the change. Always name the platform it was verified on — this is a three-platform desktop app and "works on my machine" is a real risk.
 
-**Automated tests** comes second. Check the branch for changes under `test/`; if there are none, say so plainly rather than implying coverage that does not exist. Match the level to what changed ([testing strategy](../../../docs/architecture/07-testing.md)):
+**Automated tests** comes second. Check the branch for changes under `test/`; if there are none, say so plainly rather than implying coverage that does not exist. Match the level to what changed ([testing strategy](../../../docs/architecture/layers.md#testing)):
 
 | Changed | Expected tests |
 |---|---|
@@ -102,7 +104,7 @@ Rules the PR is checked against (from `CONTRIBUTING.md`):
 - New dependency → its license is stated, and it is not AGPL/GPL.
 - Behavior changed → documentation updated **in the same PR**.
 - Architectural change → a file added or revised in `docs/decisions/`.
-- `tom_core` touched → still pure Dart, no Flutter import.
+- A layer package touched → still pure Dart, and `make test-arch` still green.
 - Riverpod appears only in `presentation/` or `bootstrap/di/`.
 
 ## Size

@@ -1,0 +1,22 @@
+name: tom_data
+description: "Fulfils the domain's repository contracts by orchestrating infrastructure, and parses its output."
+version: 0.1.0
+publish_to: none
+repository: https://github.com/thomasfranke/tom
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+dependencies:
+  tom_core:
+    path: ../core
+  tom_domain:
+    path: ../domain
+  tom_infra:
+    path: ../infra
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

@@ -6,4 +6,4 @@ Internal format (known in the community as an *ADR — Architecture Decision Rec
 
 ---
 
-*See also: [../architecture/](../architecture/) · [../patterns/](../patterns/)*
+*See also: [../architecture/](../architecture/)*

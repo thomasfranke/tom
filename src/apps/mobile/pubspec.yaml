@@ -1,0 +1,42 @@
+name: tom_mobile
+description: >-
+  The mobile application: composition root and widgets for iOS and Android.
+  Reserved skeleton for Phase 3 (docs/product/roadmap.md) — no infrastructure
+  wired in yet; that arrives with the mobile-specific implementations of the
+  contracts tom_infra defines for desktop.
+publish_to: none
+repository: https://github.com/thomasfranke/tom
+
+# The product version. Every package moves in lockstep with this number — none
+# is published separately, so independent versioning would be bookkeeping with
+# no reader. Releases are tags; see docs/versioning.md.
+version: 0.1.0
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+dependencies:
+  cupertino_icons: ^1.0.8
+  flutter:
+    sdk: flutter
+
+  # The state and the widgets, shared with tom_desktop; not the infra/data
+  # implementations, which are platform-specific and arrive with Phase 3.
+  tom_application:
+    path: ../../packages/application
+  tom_core:
+    path: ../../packages/core
+  tom_domain:
+    path: ../../packages/domain
+  tom_presentation:
+    path: ../../packages/presentation
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

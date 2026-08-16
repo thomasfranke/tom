@@ -1,0 +1,132 @@
+name: CI
+
+# Level one of the two described in docs/process/setup.md#ci-in-two-levels:
+# format, analyze, a from-scratch codegen run (fails on drift between
+# committed .g.dart/.freezed.dart and what build_runner actually produces),
+# the architecture test, dart test on the six pure packages and flutter test
+# on the app, plus the coverage gate. Required to merge. The tag-triggered
+# build/sign/package pipeline is level two and lives in its own workflow,
+# added when there is something to sign.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Read-only by default (docs/process/repository-settings.md); this workflow
+# never needs to write anything.
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # src/.fvmrc is the single source of truth for the Flutter version —
+      # Makefile reads the same file for `make fvm`.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: src/.fvmrc
+          cache: true
+
+      - name: Enable desktop platforms
+        run: flutter config --enable-windows-desktop --enable-macos-desktop --enable-linux-desktop
+
+      - name: Resolve the workspace
+        run: make setup
+
+      - name: Format
+        run: make format
+
+      - name: Analyze
+        run: make analyze
+
+      # Calls build_runner/dart test/flutter test directly rather than through
+      # make codegen-gate / make flutter-test: those wrap tool/run_codegen.dart
+      # and tool/run_tests.dart, live dashboards meant for a real terminal —
+      # redrawn on a 250ms ticker with ANSI cursor moves that a plain CI log
+      # can't interpret, so every frame prints as new lines instead of
+      # overwriting. Fine (good, even) locally; unusable here. The dashboards
+      # remain the local dev path (`make codegen-gate`, `make flutter-test`).
+      - name: Codegen — regenerate from scratch, fail on drift
+        run: |
+          find src -name "*.freezed.dart" -delete
+          find src -name "*.g.dart" -delete
+          for pubspec in src/packages/*/pubspec.yaml src/apps/*/pubspec.yaml; do
+            dir=$(dirname "$pubspec")
+            grep -q build_runner "$pubspec" || continue
+            echo "::group::build_runner — $dir"
+            (cd "$dir" && dart run build_runner build)
+            echo "::endgroup::"
+          done
+          CHANGES=$(git status --porcelain -- '*.freezed.dart' '*.g.dart')
+          if [ -n "$CHANGES" ]; then
+            echo "Generated files are out of date — run 'make runner-hard' and commit the result:"
+            echo "$CHANGES"
+            exit 1
+          fi
+          echo "Generated files match the committed source."
+
+      # Coverage is captured per package here (not just tested) so the
+      # coverage-gate step below finds an existing coverage/lcov.info and
+      # reuses it instead of running each package's suite a second time —
+      # same convention tool/coverage_gate.dart already follows, see its
+      # _measure() doc comment.
+      - name: Test — architecture, the six pure packages, the app
+        run: |
+          echo "::group::architecture"
+          (cd src && dart test test/integrity/architecture_test.dart)
+          echo "::endgroup::"
+
+          for pkg in core domain application infra data presentation; do
+            dir=src/packages/$pkg
+            if [ ! -d "$dir/test" ]; then
+              echo "$pkg — no test/, skipped"
+              continue
+            fi
+            echo "::group::$pkg"
+            (cd "$dir" && dart test --coverage=coverage && \
+              dart run coverage:format_coverage --lcov --in=coverage \
+                --out=coverage/lcov.info --report-on=lib \
+                --ignore-files='**.freezed.dart,**.g.dart')
+            echo "::endgroup::"
+          done
+
+          for app in desktop mobile; do
+            dir=src/apps/$app
+            if [ ! -d "$dir/test" ]; then
+              echo "$app — no test/, skipped"
+              continue
+            fi
+            echo "::group::$app"
+            (cd "$dir" && flutter test)
+            echo "::endgroup::"
+          done
+
+      - name: Coverage gate
+        run: make coverage-gate
+
+  build-macos:
+    name: Build (macOS)
+    runs-on: macos-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: src/.fvmrc
+          cache: true
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Resolve the workspace
+        run: make setup
+
+      - name: Compile check (community build — not the distributed artifact)
+        run: make build-macos

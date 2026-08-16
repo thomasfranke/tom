@@ -1,4 +1,4 @@
-"""Builds every wireframe into ../screens/.
+"""Builds every desktop wireframe into the product it belongs to (../../products/<feature>/mocks/).
 
     python3 docs/design/tools/build.py
 
@@ -18,12 +18,20 @@ from kit import (  # noqa: E402
     PAD, PAD_TIGHT, LIST_ROW, BODY_Y, SOFT, LABEL, MILESTONE, CAPTION, BODY,
 )
 
-OUT = os.path.join(os.path.dirname(HERE), "screens", "desktop")
-os.makedirs(OUT, exist_ok=True)
+DESIGN = os.path.dirname(HERE)
+PRODUCTS = os.path.join(os.path.dirname(DESIGN), "products")  # every screen lives next to the product's doc.md
 H = 560
+
+
+def save(scene, path):
+    """Write a screen, creating the destination folder (e.g. a product's mocks/) if needed."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    scene.save(path)
+
+
 BODY_H = H - TOP_BAR - STATUS_BAR
 
-TREE = [(0, "docs"), (1, "vision.md"), (1, "mvp.md"), (1, "architecture"), (0, "README.md")]
+TREE = [(0, "docs"), (1, "product.md"), (1, "roadmap.md"), (1, "architecture"), (0, "README.md")]
 
 
 def tabs(s, x, y, labels, active):
@@ -55,7 +63,7 @@ s.chip("m3", 676, 338, "M3")
 s.caption("rec", 380, 406, "Recent")
 s.bars("rc", 380, 432, [190, 150, 210])
 s.status("no space open")
-s.save(f"{OUT}/empty-state.excalidraw")
+save(s, f"{PRODUCTS}/home/mocks/empty-state.excalidraw")
 
 # ── 2. reading and editing ───────────────────────────────────────────────
 s = Scene(2)
@@ -87,8 +95,8 @@ for i, bh in enumerate([40, 72, 58, 46]):
     by += bh + 16
 s.caption("bknote", BX, by + 6, "one container per block")
 
-s.status("~/dev/tom/docs", "mvp.md")
-s.save(f"{OUT}/shell.excalidraw")
+s.status("~/dev/tom/docs", "roadmap.md")
+save(s, f"{PRODUCTS}/workspace/mocks/shell.excalidraw")
 
 # ── 3. committing ────────────────────────────────────────────────────────
 s = Scene(3)
@@ -103,7 +111,7 @@ s.button("push", 890, 12, 120, "Push", h=28)
 s.chip("m1", 712, 15, "M1")
 
 DOCW = CANVAS_W - EXPLORER_W - GIT_W
-s.caption("doch", EXPLORER_W + PAD, BODY_Y + 16, "mvp.md")
+s.caption("doch", EXPLORER_W + PAD, BODY_Y + 16, "roadmap.md")
 s.bars("dl", EXPLORER_W + PAD, BODY_Y + 48,
        [280, 340, 300, 220, 340, 280, 320, 240, 300, 200])
 
@@ -121,7 +129,7 @@ s.text("msgt", GX + PAD_TIGHT + 16, BODY_Y + 246, "Summary", size=CAPTION, color
 s.button("commit", GX + PAD_TIGHT, BODY_Y + 344, GIT_W - 2 * PAD_TIGHT, "Commit")
 
 s.status("feat/rendered-diff", "3 changes", "in sync")
-s.save(f"{OUT}/committing.excalidraw")
+save(s, f"{PRODUCTS}/git-workflow/commit/mocks/committing-desktop.excalidraw")
 
 # ── 4. reading ───────────────────────────────────────────────────────────
 # product.md: "Reading is not a lesser mode" — for anyone who does not write
@@ -148,8 +156,8 @@ for i, bh in enumerate([40, 84, 62, 84, 48]):
                RW - (32 if r < rows - 1 else 90), 8, stroke=SOFT)
     by += bh + 18
 
-s.status("~/dev/tom/docs", "mvp.md", "read-only")
-s.save(f"{OUT}/reading.excalidraw")
+s.status("~/dev/tom/docs", "roadmap.md", "read-only")
+save(s, f"{PRODUCTS}/editor/markdown-preview/mocks/reading-desktop.excalidraw")
 
 # ── 5. folder is not in a Git repository ─────────────────────────────────
 # A space is a folder *inside* a repository, so this is the one way opening
@@ -169,7 +177,7 @@ s.text_centred("l3", 288, "inside a repository — the repository root, or any f
 s.button("again", 380, 340, 280, "Choose another folder…", h=44)
 s.text_centred("hint", 400, "Creating a repository is not something TOM does.", CAPTION, SOFT)
 s.status("no space open")
-s.save(f"{OUT}/not-a-repository.excalidraw")
+save(s, f"{PRODUCTS}/home/mocks/not-a-repository.excalidraw")
 
 # ── 6. unsaved changes ───────────────────────────────────────────────────
 # "Files are the truth" only holds once the buffer reaches disk, so the gap
@@ -201,8 +209,8 @@ for i, bh in enumerate([40, 72, 58]):
     s.rect(f"bk{i}r", BX + 14, by + 14, BW - 70, 8, stroke=SOFT)
     by += bh + 16
 
-s.status("~/dev/tom/docs", "mvp.md — unsaved", "⌘S to save")
-s.save(f"{OUT}/unsaved-changes.excalidraw")
+s.status("~/dev/tom/docs", "roadmap.md — unsaved", "⌘S to save")
+save(s, f"{PRODUCTS}/editor/source-mode/mocks/unsaved-changes.excalidraw")
 
 # ── 7. branch switcher ───────────────────────────────────────────────────
 # The first non-modal surface in the app. Decision 6 keeps `Navigator` for
@@ -218,7 +226,7 @@ s.text("brancht", 408, 18, "feat/rendered-diff", size=BODY)
 s.chip("m1", 608, 15, "M1")
 
 DOCW = CANVAS_W - EXPLORER_W - GIT_W
-s.caption("doch", EXPLORER_W + PAD, BODY_Y + 16, "mvp.md")
+s.caption("doch", EXPLORER_W + PAD, BODY_Y + 16, "roadmap.md")
 s.bars("dl", EXPLORER_W + PAD, BODY_Y + 48, [280, 340, 300, 220, 340, 280])
 
 POPX, POPW = 392, 260
@@ -235,7 +243,7 @@ s.hline("popsep", POPX, y + 4, POPW, color=SOFT)
 s.text("popnew", POPX + PAD_TIGHT + 8, y + 18, "Create branch…", size=BODY)
 
 s.status("feat/rendered-diff", "3 changes")
-s.save(f"{OUT}/branch-switcher.excalidraw")
+save(s, f"{PRODUCTS}/git-workflow/branch-switch/mocks/branch-switcher.excalidraw")
 
 # ── 8. file history ──────────────────────────────────────────────────────
 # "The commits that touched this file" — scoped to the open document rather
@@ -248,7 +256,7 @@ s.explorer(TREE, selected=2, height=H)
 s.chip("m1", CANVAS_W - 76, 15, "M1")
 
 DOCW = CANVAS_W - EXPLORER_W - GIT_W
-s.caption("doch", EXPLORER_W + PAD, BODY_Y + 16, "mvp.md")
+s.caption("doch", EXPLORER_W + PAD, BODY_Y + 16, "roadmap.md")
 s.bars("dl", EXPLORER_W + PAD, BODY_Y + 48,
        [280, 340, 300, 220, 340, 280, 320, 240])
 
@@ -263,13 +271,13 @@ for i in range(5):
     y += 56
 s.caption("histnote", GX + PAD, y + 4, "scoped to this file, not the repo")
 
-s.status("feat/rendered-diff", "mvp.md")
-s.save(f"{OUT}/file-history.excalidraw")
+s.status("feat/rendered-diff", "roadmap.md")
+save(s, f"{PRODUCTS}/git-workflow/file-history/mocks/file-history.excalidraw")
 
 # ── 9. push rejected ─────────────────────────────────────────────────────
 # The interesting half of push/pull. Named as a state because the wording
 # decides whether a non-developer understands what to do next — the whole
-# point of not hiding Git behind a Sync button (vision.md).
+# point of not hiding Git behind a Sync button (product.md).
 s = Scene(9)
 s.title("Push rejected", "The remote moved first · M1")
 s.window(height=H)
@@ -282,7 +290,7 @@ s.button("push", 890, 12, 120, "Push", h=28, muted=True)
 s.chip("m1", 712, 15, "M1")
 
 DOCW = CANVAS_W - EXPLORER_W - GIT_W
-s.caption("doch", EXPLORER_W + PAD, BODY_Y + 16, "mvp.md")
+s.caption("doch", EXPLORER_W + PAD, BODY_Y + 16, "roadmap.md")
 s.bars("dl", EXPLORER_W + PAD, BODY_Y + 48, [280, 340, 300, 220, 340, 280])
 
 GX = EXPLORER_W + DOCW
@@ -304,4 +312,4 @@ for i in range(2):
     y += 52
 
 s.status("feat/rendered-diff", "2 ahead, 3 behind")
-s.save(f"{OUT}/push-rejected.excalidraw")
+save(s, f"{PRODUCTS}/git-workflow/push-pull/mocks/push-rejected.excalidraw")

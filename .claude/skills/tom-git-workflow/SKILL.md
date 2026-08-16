@@ -11,7 +11,7 @@ description: TOM's Git conventions — trunk-based development on main, branch n
 feat/*  ──PR──▶  main  ──tag──▶  published release
 ```
 
-**`main` is publishable, not published. What is in production is the most recent tag.** Work that is not ready ships dormant behind a disabled feature flag rather than waiting on a branch — see `docs/patterns/feature-flags.md`.
+**`main` is publishable, not published. What is in production is the most recent tag.** Work that is not ready ships dormant behind a disabled feature flag rather than waiting on a branch — see `the "Feature flags" section of CONTRIBUTING.md`.
 
 There is **no `dev` branch** and **no permanent `release/*` branch.** A `release/x.y` branch is created only if an already-released version needs a fix while `main` has moved on (branch from the tag, fix, tag a patch, cherry-pick back if applicable).
 
@@ -67,6 +67,14 @@ Rules:
 - The body explains **why**, never restates the diff.
 - A commit that changes behavior updates the docs **in the same commit**.
 - Messy work-in-progress commits inside a branch are fine — the squash cleans them up. Never push messy commits straight to `main`.
+
+## When Claude Code is doing the committing
+
+Applies whenever Claude Code prepares a commit or opens a PR on your behalf, in `tom`, `tom-pro` or `tom-notes`:
+
+- **Draft, then approve, then act.** Show the proposed commit message (and file groupings, if splitting into several) as plain text in the reply — not written to a scratch file — and wait for approval before running `git commit`. Same for a PR: draft the title + body (see the `tom-pr-writer` skill for the format), show it inline, wait for approval, before running `gh pr create`.
+- **Push is always its own checkpoint**, separate from commit approval or PR-text approval — even within the same request, and even when push is a prerequisite for something else just approved (e.g. opening a PR needs the branch pushed first). Ask explicitly before every `git push`.
+- This holds even if the request already says "commit this" or "open a PR" — that approves the intent, not the specific text or the push.
 
 ## Merging
 

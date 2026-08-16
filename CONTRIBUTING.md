@@ -2,20 +2,20 @@
 
 Thanks for being here. TOM is built in spare time, so anyone who turns up — with a typo fix, a bug report, or an afternoon of real work — is choosing to spend it on this. That is worth saying before anything else.
 
-TOM is a desktop Git client for teams who keep their documentation as markdown in a repository: files stay files, and the Git workflow *is* the app rather than a menu buried inside it. The [vision](docs/vision.md) is one page and worth the two minutes — it covers what the project is reaching for, and what it happily leaves to other tools.
+TOM is a desktop Git client for teams who keep their documentation as markdown in a repository: files stay files, and the Git workflow *is* the app rather than a menu buried inside it. [product.md](docs/product/product.md) is worth the two minutes — it covers what the project is reaching for, and what it happily leaves to other tools.
 
 Not sure whether an idea fits, or where to start? Open an issue and ask. Questions are never a bother, and asking early is usually faster than guessing — for both of us.
 
 ## Before you start
 
-- **Check the non-goals.** [product.md](docs/product.md) lists what TOM deliberately will not become — WYSIWYG editing, real-time collaboration, its own cloud sync. A quick look before you start is the surest way to have your work land well. And if one of them strikes you as wrong, that is genuinely worth hearing: open an issue and make the case.
+- **Check the non-goals.** [product.md](docs/product/product.md) lists what TOM deliberately will not become — WYSIWYG editing, real-time collaboration, its own cloud sync. A quick look before you start is the surest way to have your work land well. And if one of them strikes you as wrong, that is genuinely worth hearing: open an issue and make the case.
 - **Read the decisions.** [docs/decisions/](docs/decisions/) records the architectural choices and *why* they were made. If your change contradicts one, that is a conversation to have in an issue first — not a surprise in a PR.
-- **Follow the patterns.** [docs/patterns/](docs/patterns/) holds the canonical code templates (error handling, dependency injection, extension modules). New code follows them.
+- **Follow the patterns.** The rules code is held to are in [layers](docs/architecture/layers.md) and [flows](docs/architecture/flows.md); the canonical *form* of each one lives in the dartdoc of the code that implements it, which is the copy that cannot go stale.
 - **Open an issue for anything substantial.** Small fixes can go straight to a PR; a feature or refactor deserves a discussion first, so nobody wastes an afternoon.
 
 ## Development setup
 
-See [docs/setup.md](docs/setup.md). In short: a pub workspace with `packages/tom_core` (pure Dart) and `apps/tom_desktop` (Flutter).
+See [docs/process/setup.md](docs/process/setup.md). In short: `make setup` from the repository root. The Dart workspace is under `src/` — seven packages, one per layer, six of them pure Dart.
 
 ## How contributions reach the project
 
@@ -37,32 +37,45 @@ feat/*  ──PR──▶  main  ──tag──▶  published release
 ```
 
 1. Branch off the latest `main`: `<type>/<kebab-case-summary>` (e.g. `feat/rendered-diff-v0`, `fix/watcher-echo-suppression`). Keep branches short-lived — a branch alive for weeks should have been merged behind a flag instead.
-2. Commit using [Conventional Commits](https://www.conventionalcommits.org/): `feat(diff): classify modified blocks by similarity`. The type says what kind of change it is (`feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`); the scope says which part it touches, and follows the structure: `core`, `desktop`, `git`, `diff`, `editor`, `search`, `watcher`, `di` — or, for a documentation change, the docs area: `decisions`, `architecture`, `patterns`. The scope is optional; omit it when a change genuinely spans the repository rather than picking one.
+2. Commit using [Conventional Commits](https://www.conventionalcommits.org/): `feat(diff): classify modified blocks by similarity`. The type says what kind of change it is (`feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`); the scope says which part it touches, and follows the structure: `core`, `desktop`, `git`, `diff`, `editor`, `search`, `watcher`, `di` — or, for a documentation change, the docs area: `decisions`, `architecture`, `product`, `process`, `design`. The scope is optional; omit it when a change genuinely spans the repository rather than picking one.
 3. Open a PR **against `main`** whose **title is the Conventional Commit** the squash will produce.
 4. Fill in the description: **What**, **Why** (link the decision if there is one), **How to test**, **Automated tests**, **Notes**. Both testing sections are required — first the steps a reviewer can follow (and the platform you verified on), then the coverage you added; "none needed" is fine with a reason.
 5. CI must be green. PRs are **squash-merged**, so a messy branch history is fine — the commit landing on `main` is not.
 
-Incomplete work integrates early behind a [feature flag](docs/patterns/feature-flags.md) rather than living on a branch. Releases are tags on `main` (`v0.1.0`) and the changelog is generated from commit messages; **`main` is publishable, and what is in production is the most recent tag.** There is no `dev` branch and no permanent `release/*` branch — the latter is created only if a released version needs a fix while `main` has moved on.
+Incomplete work integrates early behind a [feature flag](#feature-flags) rather than living on a branch. Releases are tags on `main` (`v0.1.0`) and the changelog is generated from commit messages; **`main` is publishable, and what is in production is the most recent tag.** There is no `dev` branch and no permanent `release/*` branch — the latter is created only if a released version needs a fix while `main` has moved on.
+
+## Feature flags
+
+A flag is an `if` deciding whether part of the app exists in a given build. It is what lets a large feature integrate on `main` in week one instead of living on a branch for a month.
+
+Flags here are **build-time only** — `bool.fromEnvironment`, declared in one file in the app, enabled with `--dart-define`. There is no remote flag service, ever: that would be a phone-home, and it contradicts [Decision 11](docs/decisions/011-telemetry-is-opt-in.md).
+
+Two rules, and they are the whole pattern:
+
+1. **Disabled means unreachable, not invisible.** Guard the *registration*, not the rendering — a panel that is registered and then filtered out of the UI still has live shortcuts, listeners and providers. In TOM the natural place is the panel list a module contributes: `if (Features.renderedDiffV1) diffPanel`.
+2. **Every flag states when it goes.** Once the feature ships and is stable, the flag and its `if` come out in the very next PR. A permanent flag doubles the paths tests have to cover and becomes debt nobody remembers the reason for. `chore(desktop): remove FEATURE_DIFF_V1 flag` is a healthy commit, not busywork.
+
+Not to be confused with modules: the repository answers *who has this code*, a flag answers only *whether it is reachable in this build*. Code that lives in another repository is absent, not flagged off.
 
 ## Rules that PRs are checked against
 
 - **New dependency?** State its license in the PR description. Nothing AGPL/GPL — the project is MIT and must stay relicensable ([Decision 1](docs/decisions/001-license-is-mit.md)).
 - **Behavior changed?** Update the documentation in the same PR. Docs live with the code they describe; that is the whole thesis of this project.
 - **Architectural change?** Add or revise a file in `docs/decisions/` in the same PR.
-- **`tom_core` stays pure Dart.** No `import 'package:flutter/...'` — the build enforces it, and `dart test` proves it ([Decision 8](docs/decisions/008-monorepo-with-pure-dart-core.md)).
+- **The layers stay pure Dart.** Only `tom_desktop` may import Flutter. You do not need to remember this: the pubspecs make the wrong import fail to resolve, and `make test-arch` asserts it ([Decision 14](docs/decisions/014-each-layer-is-its-own-package.md)).
 - **Riverpod only in `presentation/` and `bootstrap/di/`.** Everything below takes its dependencies through constructors ([Decision 7](docs/decisions/007-external-dependencies-behind-contracts.md)).
 - **Reviewable?** The PR gives concrete steps to see the change working, starting from a described repo state, on a named platform.
-- **Tests?** Match the level to what changed ([strategy](docs/architecture/07-testing.md)): parsers get fixtures, the block differ gets golden files, use cases get mocked repositories, repository implementations get a real git repo in a temp dir. A PR whose Testing section is empty will be asked about it.
-- **Incomplete feature?** Put it behind a build-time flag ([pattern](docs/patterns/feature-flags.md)) — disabled means *unreachable*, not merely invisible, and every flag states when it will be removed.
+- **Tests?** Match the level to what changed ([strategy](docs/architecture/layers.md#testing)): parsers get fixtures, the block differ gets golden files, use cases get fake repositories, repository implementations get a real git repo in a temp dir. A PR whose Testing section is empty will be asked about it.
+- **Incomplete feature?** Put it behind a build-time flag ([below](#feature-flags)) — disabled means *unreachable*, not merely invisible, and every flag states when it will be removed.
 - **English everywhere:** code, comments, commits, documentation.
 
 ## Tests
 
-- `tom_core`: `dart test` — pure, fast, no Flutter binding.
+- The six pure packages: `dart test` — fast, and with no Flutter binding available, which is what makes framework independence a fact rather than a claim.
 - `tom_desktop`: `flutter test`.
 - Parsers get fixtures of real git output; the block differ gets golden files; `GitRepositoryImpl` gets integration tests against a real git repo created in a temp directory.
 
-See [docs/architecture/07-testing.md](docs/architecture/07-testing.md).
+See [the testing table](docs/architecture/layers.md#testing).
 
 ## Contributor License Agreement
 

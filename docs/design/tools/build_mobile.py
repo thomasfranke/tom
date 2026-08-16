@@ -1,4 +1,4 @@
-"""Builds the mobile wireframes into ../screens/mobile/.
+"""Builds the mobile wireframes into the matching desktop product's mocks/.
 
     python3 docs/design/tools/build_mobile.py
 
@@ -26,9 +26,14 @@ from kit import (  # noqa: E402
     CAPTION, BODY, MILESTONE,
 )
 
-OUT = os.path.join(os.path.dirname(HERE), "screens", "mobile")
-os.makedirs(OUT, exist_ok=True)
+PRODUCTS = os.path.join(os.path.dirname(os.path.dirname(HERE)), "products")
 SUB = "Phase 3, exploratory"
+
+
+def save(scene, path):
+    """Write a screen, creating the destination folder (the job's mocks/) if needed."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    scene.save(path)
 
 
 def blocks(s, y, heights, x=PAD, w=PHONE_W - 2 * PAD):
@@ -51,28 +56,28 @@ s.frame("tom / docs", back=False, action="Search")
 s.field("f", PAD, NAV_BAR + 16, PHONE_W - 2 * PAD, "Filter")
 y = NAV_BAR + 70
 for i, (name, meta) in enumerate([
-    ("vision.md", "edited 2 days ago"),
-    ("product.md", "edited 5 days ago"),
-    ("mvp.md", "3 unpushed changes"),
-    ("roadmap.md", "edited last week"),
+    ("product.md", "edited 2 days ago"),
+    ("roadmap.md", "edited 5 days ago"),
+    ("layers.md", "3 unpushed changes"),
+    ("README.md", "edited last week"),
     ("architecture/", "8 documents"),
 ]):
     s.row(f"r{i}", y, name, meta)
     y += 62
 s.action_bar("Sync")
-s.save(f"{OUT}/documents.excalidraw")
+save(s, f"{PRODUCTS}/navigation/file-tree/mocks/documents-mobile.excalidraw")
 
 # ── 2. reading ───────────────────────────────────────────────────────────
 # The primary job. Full bleed, no chrome competing with the text — the phone
 # is where documentation gets read, not written.
 s = Phone(22)
 s.title("Reading", f"The primary job on a phone · {SUB}")
-s.frame("mvp.md", action="⋯")
+s.frame("roadmap.md", action="⋯")
 blocks(s, NAV_BAR + 20, [34, 76, 58, 76, 44, 62])
 s.action_bar("Edit", muted=True)
 s.text("open", PAD, PHONE_H - ACTION_BAR - 26,
        "editing on touch is an open question", size=CAPTION, color=SOFT)
-s.save(f"{OUT}/reading.excalidraw")
+save(s, f"{PRODUCTS}/editor/markdown-preview/mocks/reading-mobile.excalidraw")
 
 # ── 3. review ────────────────────────────────────────────────────────────
 # The rendered diff, which is the product's differentiator, on the device
@@ -80,7 +85,7 @@ s.save(f"{OUT}/reading.excalidraw")
 # documentation are rarely at a desk when they do it.
 s = Phone(23)
 s.title("Review", f"What changed, rendered · {SUB}")
-s.frame("mvp.md · 3 changes", action="⋯")
+s.frame("roadmap.md · 3 changes", action="⋯")
 s.text("since", PAD, NAV_BAR + 16, "against main", size=CAPTION, color=LABEL)
 y = blocks(s, NAV_BAR + 44, [34, 72])
 # one block marked as changed — the decoration is the whole point
@@ -88,7 +93,7 @@ s.rect("chg", PAD - 6, y, 5, 72, stroke=MILESTONE["M2"], bg=MILESTONE["M2"], sw=
 y = blocks(s, y, [72, 52])
 s.text("note", PAD, y + 4, "block granularity: Spike B", size=CAPTION, color=SOFT)
 s.action_bar("Approve")
-s.save(f"{OUT}/review.excalidraw")
+save(s, f"{PRODUCTS}/diff/rendered-diff/mocks/review-mobile.excalidraw")
 
 # ── 4. capture ───────────────────────────────────────────────────────────
 # Not an editor. A decision recorded where it was taken, committed in one
@@ -96,7 +101,7 @@ s.save(f"{OUT}/review.excalidraw")
 # waits for a desk.
 s = Phone(24)
 s.title("Capture", f"Record a decision, commit it · {SUB}")
-s.frame("mvp.md", action="Cancel")
+s.frame("roadmap.md", action="Cancel")
 s.rect("edit", PAD, NAV_BAR + 16, PHONE_W - 2 * PAD, 210, round=True)
 s.bars("el", PAD + 14, NAV_BAR + 40, [220, 260, 190, 240, 160], gap=24)
 s.text("cursor", PAD + 14, NAV_BAR + 168, "|", size=BODY)
@@ -110,4 +115,4 @@ s.text("br", PAD, NAV_BAR + 362, "on feat/rendered-diff", size=CAPTION, color=LA
 s.text("gitnote", PAD, PHONE_H - ACTION_BAR - 26,
        "git without a system binary: libgit2 via FFI", size=CAPTION, color=SOFT)
 s.action_bar("Commit and push")
-s.save(f"{OUT}/capture.excalidraw")
+save(s, f"{PRODUCTS}/git-workflow/commit/mocks/capture-mobile.excalidraw")
