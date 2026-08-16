@@ -4,7 +4,8 @@
 //   dart run tool/run_tests.dart [--coverage] <target>...
 //
 // <target> is either a bare package name — a folder under src/packages/,
-// "desktop" for the Flutter app, or "arch" for the architecture graph test
+// "desktop" or "mobile" for the Flutter apps, or "arch" for the architecture
+// graph test
 // (src/test/integrity/) — in which case its whole test/ tree runs, or
 // `pkg=file1,file2` to run only those test files (paths relative to the
 // package's own directory). tool/run_changed_tests.dart is what emits the
@@ -39,6 +40,8 @@ const _pkgOrder = [
   'data',
   'presentation',
 ];
+
+const _apps = ['desktop', 'mobile'];
 
 const _barWidth = 20;
 
@@ -94,14 +97,16 @@ void main(List<String> rawArgs) async {
   final totalTests = totalPassed + rows.fold(0, (a, r) => a + r.failed);
   final covHit = rows.fold(0, (a, r) => a + (r.coverageHit ?? 0));
   final covTotal = rows.fold(0, (a, r) => a + (r.coverageTotal ?? 0));
-  final totalElapsed = _fmtDuration(DateTime.now().difference(dashboard.started));
+  final totalElapsed = _fmtDuration(
+    DateTime.now().difference(dashboard.started),
+  );
 
   stdout.writeln();
-  stdout.writeln('• Summary:');
-  stdout.writeln('  • $totalPassed/$totalTests');
-  stdout.writeln('  • ⏱ $totalElapsed');
+  stdout.writeln('  • Summary:');
+  stdout.writeln('    • $totalPassed/$totalTests');
+  stdout.writeln('    • ⏱ $totalElapsed');
   if (covTotal > 0) {
-    stdout.writeln('  • ◔ ${(covHit / covTotal * 100).round()}%');
+    stdout.writeln('    • ◔ ${(covHit / covTotal * 100).round()}%');
   }
 
   if (dashboard.failures.isNotEmpty) {
@@ -151,17 +156,19 @@ _Target _resolve(Directory src, String spec) {
         'dart',
         files.isNotEmpty ? files : ['test/integrity/architecture_test.dart'],
       );
-    case 'desktop':
-      return _Target(
-        'desktop',
-        Directory('${src.path}/apps/desktop'),
-        'flutter',
-        files,
-      );
     default:
+      if (_apps.contains(pkg)) {
+        return _Target(
+          pkg,
+          Directory('${src.path}/apps/$pkg'),
+          'flutter',
+          files,
+        );
+      }
       if (!_pkgOrder.contains(pkg)) {
         stderr.writeln(
-          "Unknown package '$pkg'. Available: ${_pkgOrder.join(', ')}, desktop, arch",
+          "Unknown package '$pkg'. Available: ${_pkgOrder.join(', ')}, "
+          "${_apps.join(', ')}, arch",
         );
         exit(64);
       }
@@ -366,6 +373,11 @@ Future<bool> _runOne(
 /// `package:coverage`'s formatter to turn that into the same lcov.info —
 /// that package rides in transitively via `test`, so nothing extra to
 /// declare (see src/pubspec.yaml's shared lockfile).
+///
+/// `--ignore-files` drops `*.freezed.dart`/`*.g.dart`: their generated
+/// toString/copyWith/props are never called by name from a test, so counting
+/// them would cap every package with a union type well under any realistic
+/// threshold — see the same constant in `tool/coverage_gate.dart`.
 Future<({int hit, int total})?> _collectCoverage(_Target target) async {
   if (target.command == 'dart') {
     final result = await Process.run('dart', [
@@ -375,6 +387,7 @@ Future<({int hit, int total})?> _collectCoverage(_Target target) async {
       '--in=coverage',
       '--out=coverage/lcov.info',
       '--report-on=lib',
+      '--ignore-files=**.freezed.dart,**.g.dart',
     ], workingDirectory: target.dir.path);
     if (result.exitCode != 0) return null;
   }

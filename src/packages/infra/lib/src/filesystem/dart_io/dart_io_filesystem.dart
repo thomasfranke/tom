@@ -40,11 +40,15 @@ final class DartIoFilesystem implements Filesystem {
   /// `errorCode` is POSIX `errno` on macOS/Linux and a Win32 error code on
   /// Windows; `ENOENT`/`ERROR_FILE_NOT_FOUND` and `EACCES`/
   /// `ERROR_ACCESS_DENIED` happen to share the values TOM targets across all
-  /// three, so one check covers the desktop matrix. Anything else falls back
-  /// to [FilesystemOperationFailed] rather than guessing at a name for it.
+  /// three, so one check covers the desktop matrix. Windows additionally
+  /// reports `ERROR_PATH_NOT_FOUND` (3), distinct from `ERROR_FILE_NOT_FOUND`
+  /// (2), when a parent directory in the path is missing rather than just the
+  /// final entry — both mean "not found" from this API's point of view.
+  /// Anything else falls back to [FilesystemOperationFailed] rather than
+  /// guessing at a name for it.
   FilesystemFailure _translate(String path, FileSystemException exception) {
     final int? code = exception.osError?.errorCode;
-    if (code == 2) {
+    if (code == 2 || code == 3) {
       return FilesystemEntryNotFound(path);
     }
     if (code == 13 || code == 5) {

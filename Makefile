@@ -152,17 +152,19 @@ coverage: ## Coverage report, opened in the browser (PKG=<name> for one package)
 		else \
 			(cd $(SRC)/packages/$$p && dart test --coverage=coverage \
 				&& dart run coverage:format_coverage --lcov --in=coverage \
-					--out=coverage/lcov.info --report-on=lib) || exit 1; \
+					--out=coverage/lcov.info --report-on=lib \
+					"--ignore-files=**.freezed.dart,**.g.dart") || exit 1; \
 			d=$(SRC)/packages/$$p; \
 		fi; \
 		genhtml $$d/coverage/lcov.info --output-directory $$d/coverage/html; \
 		open $$d/coverage/html/index.html; \
 	done
 
-# Gates on line coverage rather than opening a report: a package with real
-# lib/src code and no tests failing at 0% is the point, and a package with
-# nothing under lib/src yet (application, data, presentation today) is
-# skipped rather than counted against — see tool/coverage_gate.dart.
+# Gates on line coverage rather than opening a report: a package with both
+# real lib/src code and tests falling under the threshold is the point. A
+# package with nothing under lib/src yet (application, data, presentation
+# today), or with code but no tests yet, is skipped rather than counted
+# against — see tool/coverage_gate.dart.
 coverage-gate: ## Fail if any implemented package is under the coverage threshold (THRESHOLD=95)
 	@dart run tool/coverage_gate.dart $(if $(THRESHOLD),--threshold=$(THRESHOLD))
 
@@ -170,18 +172,20 @@ coverage-gate: ## Fail if any implemented package is under the coverage threshol
 ### *** Codegen *** ###
 ##############################
 
-runner: ## Run build_runner wherever a package declares it
-	@for d in $(addprefix $(SRC)/packages/,$(PKGS)) $(APP); do \
-		if grep -q "build_runner" $$d/pubspec.yaml 2>/dev/null; then \
-			echo "── $$d"; \
-			(cd $$d && dart run build_runner build --delete-conflicting-outputs) || exit 1; \
-		fi; \
-	done
+# A live dashboard, one row per package, showing which one build_runner is
+# currently on and which stage its log is at — same idea as flutter-test's
+# runner (tool/run_tests.dart), adapted to build_runner's plain-text log
+# instead of a JSON event stream. Only packages with changes against BASE
+# (default: main) actually run; the rest show as skipped, with the reason —
+# no build_runner declared, or no change in this branch. See
+# tool/run_codegen.dart.
+runner: ## Run build_runner on packages changed in this branch (BASE=main)
+	@dart run tool/run_codegen.dart $(PKGS) desktop
 
-runner-hard: ## Delete generated files, then regenerate from scratch
+runner-hard: ## Delete generated files, then regenerate every package from scratch
 	find $(SRC) -name "*.freezed.dart" -delete
 	find $(SRC) -name "*.g.dart" -delete
-	$(MAKE) runner
+	@dart run tool/run_codegen.dart --force $(PKGS) desktop
 
 runner-watch: ## Regenerate continuously while you work
 	cd $(APP) && dart run build_runner watch --delete-conflicting-outputs

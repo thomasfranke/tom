@@ -7,7 +7,7 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 | Package | License | Role |
 |---|---|---|
 | `flutter_riverpod` + `riverpod_annotation` | MIT | State; providers per space/document/panel |
-| `freezed` + `freezed_annotation` | MIT | Immutable entities and states (`GitStatus`, `Commit`, `DiffBlock`…) |
+| `freezed` + `freezed_annotation` | MIT | Immutable entities and states (`GitStatus`, `Commit`, `DiffBlock`…); already in use for the `AppFailure` hierarchies (`GitFailure`, `DocumentFailure`, `SearchFailure`, `FilesystemFailure`) in `tom_core`/`tom_domain`/`tom_infra` |
 | `riverpod_generator`, `riverpod_lint`, `custom_lint`, `build_runner` | MIT | Dev-time (codegen and lints) |
 
 ## Markdown and diff (the heart)

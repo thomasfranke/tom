@@ -37,10 +37,14 @@ const _pkgOrder = [
   'presentation',
 ];
 
+const _apps = ['desktop', 'mobile'];
+
 void main(List<String> args) async {
   final coverage = args.contains('--coverage');
   final rest = args.where((a) => a != '--coverage').toList();
-  final base = rest.isNotEmpty ? rest.first : Platform.environment['BASE'] ?? 'main';
+  final base = rest.isNotEmpty
+      ? rest.first
+      : Platform.environment['BASE'] ?? 'main';
 
   // Shown here rather than left to tool/run_tests.dart, since this script's
   // own setup — the git diff, walking each package's test/ for a filename
@@ -49,10 +53,8 @@ void main(List<String> args) async {
 
   final root = _repoRoot();
   final changed = await _changedFiles(root, base);
-  if (changed.isEmpty) {
-    print('No changes against $base.');
-    exit(0);
-  }
+  stdout.writeln('• Diffing against $base — ${changed.length} file(s) changed');
+  if (changed.isEmpty) exit(0);
 
   final testFiles = <String, Set<String>>{}; // package label -> relative paths
   var wantArch = false;
@@ -65,8 +67,8 @@ void main(List<String> args) async {
     final pkgMatch = RegExp(
       r'^src/packages/([^/]+)/(lib|test)/(.+)$',
     ).firstMatch(path);
-    final desktopMatch = RegExp(
-      r'^src/apps/desktop/(lib|test)/(.+)$',
+    final appMatch = RegExp(
+      r'^src/apps/([^/]+)/(lib|test)/(.+)$',
     ).firstMatch(path);
 
     late final String label;
@@ -80,11 +82,11 @@ void main(List<String> args) async {
       pkgDir = Directory('${root.path}/src/packages/$pkg');
       kind = pkgMatch.group(2)!;
       sub = pkgMatch.group(3)!;
-    } else if (desktopMatch != null) {
-      label = 'desktop';
-      pkgDir = Directory('${root.path}/src/apps/desktop');
-      kind = desktopMatch.group(1)!;
-      sub = desktopMatch.group(2)!;
+    } else if (appMatch != null && _apps.contains(appMatch.group(1))) {
+      label = appMatch.group(1)!;
+      pkgDir = Directory('${root.path}/src/apps/$label');
+      kind = appMatch.group(2)!;
+      sub = appMatch.group(3)!;
     } else {
       continue; // docs, CI config, etc. — nothing to test
     }
@@ -98,7 +100,8 @@ void main(List<String> args) async {
 
     if (!sub.endsWith('.dart')) continue;
     final name = sub.split('/').last;
-    final testName = '${name.substring(0, name.length - '.dart'.length)}_test.dart';
+    final testName =
+        '${name.substring(0, name.length - '.dart'.length)}_test.dart';
     final testDir = Directory('${pkgDir.path}/test');
     final matches = testDir.existsSync()
         ? testDir
@@ -119,8 +122,8 @@ void main(List<String> args) async {
   // file that itself was deleted in the diff. Drop those rather than handing
   // tool/run_tests.dart a path that doesn't exist.
   for (final label in testFiles.keys.toList()) {
-    final pkgDir = label == 'desktop'
-        ? Directory('${root.path}/src/apps/desktop')
+    final pkgDir = _apps.contains(label)
+        ? Directory('${root.path}/src/apps/$label')
         : Directory('${root.path}/src/packages/$label');
     final existing = testFiles[label]!
         .where((f) => File('${pkgDir.path}/$f').existsSync())
@@ -141,8 +144,6 @@ void main(List<String> args) async {
     if (wantArch) 'arch',
     for (final e in testFiles.entries) '${e.key}=${e.value.join(',')}',
   ];
-
-  stdout.writeln('Changed files: ${changed.length}');
 
   final process = await Process.start(
     'dart',
@@ -190,7 +191,11 @@ Future<List<String>> _changedFiles(Directory root, String base) async {
       '--name-only',
       '$base...HEAD',
     ], workingDirectory: root.path),
-    Process.run('git', ['diff', '--name-only', 'HEAD'], workingDirectory: root.path),
+    Process.run('git', [
+      'diff',
+      '--name-only',
+      'HEAD',
+    ], workingDirectory: root.path),
     Process.run('git', [
       'ls-files',
       '--others',
@@ -202,7 +207,10 @@ Future<List<String>> _changedFiles(Directory root, String base) async {
   for (final r in results) {
     if (r.exitCode != 0) continue;
     files.addAll(
-      (r.stdout as String).split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty),
+      (r.stdout as String)
+          .split('\n')
+          .map((l) => l.trim())
+          .where((l) => l.isNotEmpty),
     );
   }
   final sorted = files.toList()..sort();

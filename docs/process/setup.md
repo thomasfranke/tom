@@ -1,6 +1,6 @@
 # Development setup
 
-**Prerequisites:** Flutter stable (Dart ≥ 3.6, for pub workspaces) and git. Nothing else — no Melos, no global tooling, no `make` if you would rather type the commands.
+**Prerequisites:** Flutter (Dart ≥ 3.12, for the workspace's `sdk` constraint) and git. Nothing else — no Melos, no global tooling, no `make` if you would rather type the commands. `src/.fvmrc` pins the exact version CI uses (`make fvm` to match it locally); anything recent enough should resolve regardless.
 
 ```bash
 git clone https://github.com/thomasfranke/tom.git
@@ -22,18 +22,18 @@ Every `make` target runs from the repository root and handles the `src/` hop for
 The `Makefile` is a convenience, not a requirement. Each target wraps a short command you can equally type by hand.
 
 ```bash
-make help            # list every target
-make setup           # resolve the workspace
-make verify          # format + analyze + test — everything CI runs
-make test            # architecture test, then each package, then the app
-make test-arch       # just the layer-graph assertions
-make analyze         # static analysis across all seven packages at once
-make runner          # build_runner wherever a package declares it
-make run             # run the app (DEVICE=windows|linux|macos)
+make help               # list every target
+make setup              # resolve the workspace
+make verify             # format + analyze + test + coverage gate — everything CI runs
+make flutter-test       # architecture test, then each package, then the app
+make flutter-test-arch  # just the layer-graph assertions
+make analyze            # static analysis across all seven packages at once
+make runner             # build_runner wherever a package declares it
+make run                # run the app (DEVICE=windows|linux|macos)
 make run-flags FLAGS="FEATURE_DIFF_V1=true"
 ```
 
-`make test-arch` is worth knowing early: it reads every `pubspec.yaml` and asserts the dependency graph, including that exactly one package knows Flutter exists. If you add a dependency between layers, that test is where you declare the intent — deliberately, because the graph is a decision.
+`make flutter-test-arch` is worth knowing early: it reads every `pubspec.yaml` and asserts the dependency graph, including that exactly one package knows Flutter exists. If you add a dependency between layers, that test is where you declare the intent — deliberately, because the graph is a decision.
 
 ## Adding a dependency
 
@@ -48,7 +48,7 @@ A new *external* dependency needs a licence check — nothing AGPL or GPL ([Deci
 - **Trunk-based branches:** `feat/*` → PR into `main` (squash) → a tag publishes. No `dev`. See `CONTRIBUTING.md` and the `tom-git-workflow` skill.
 - **Feature flags are build-time only** (`--dart-define`); enable experimental ones locally, never in a release build.
 - **CI, in two levels:**
-  - **PR into `main`:** format, analyze, the architecture test, `dart test` on the six pure packages (the framework-independence proof — no Flutter binding available) and `flutter test` on the app. Required to merge.
+  - **PR into `main`:** format, analyze, the architecture test, `dart test` on the six pure packages (the framework-independence proof — no Flutter binding available), `flutter test` on the app, and the coverage gate. Required to merge.
   - **Tag on `main`:** the full build for all three platforms, signing, packaging and publishing.
 
 ---

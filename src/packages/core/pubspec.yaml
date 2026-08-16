@@ -1,5 +1,5 @@
 name: tom_core
-description: "Result, AppFailure and the primitives every layer shares. Depends on nothing."
+description: "Result, AppFailure and the primitives every layer shares. Depends on no tom_* package."
 version: 0.1.0
 publish_to: none
 repository: https://github.com/thomasfranke/tom
@@ -9,9 +9,15 @@ environment:
 
 resolution: workspace
 
-# No dependencies at all: this is the bottom of the graph, and it is the
-# only package in the workspace that can say so.
+# The bottom of the graph: no tom_* dependency, and the only external one is
+# freezed_annotation — pure annotations, no runtime behaviour, needed so
+# AppFailure's variants get generated equality instead of hand-written ==.
+
+dependencies:
+  freezed_annotation: ^3.1.0
 
 dev_dependencies:
+  build_runner: ^2.15.1
+  freezed: 3.2.5
   lints: ^6.0.0
   test: ^1.25.6

@@ -1,13 +1,17 @@
 /// The root of the failure vocabulary — the marker, and nothing else.
 library;
 
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'app_failure.freezed.dart';
+
 /// What every failure in the product implements.
 ///
 /// Deliberately **not** `sealed`. A sealed type requires every direct subtype
 /// to live in the same library, which would pull the product's whole failure
 /// vocabulary — merge conflicts, missing documents, a corrupt index — down into
-/// the package that sits at the bottom of the graph and depends on nothing.
-/// `tom_core` holds mechanism, never vocabulary.
+/// the package that sits at the bottom of the graph and depends on no
+/// `tom_*` package. `tom_core` holds mechanism, never vocabulary.
 ///
 /// Exhaustiveness is kept where it pays instead: each area's hierarchy *is*
 /// sealed inside its own library — `GitFailure` and `DocumentFailure` in
@@ -21,9 +25,8 @@ library;
 ///
 /// Failures are **value objects**: two of the same kind carrying the same data
 /// are the same failure, so tests can assert on them and state can be compared
-/// without spurious rebuilds. Variants with no data get that from `const`
-/// canonicalisation; the ones that carry data implement `==` by hand, which is
-/// what Freezed replaces mechanically once codegen arrives.
+/// without spurious rebuilds. Every area hierarchy is Freezed, which is what
+/// gets that equality without writing `==`/`hashCode` by hand per variant.
 abstract interface class AppFailure {}
 
 /// The failure of last resort: something threw where nothing was expected to.
@@ -31,17 +34,13 @@ abstract interface class AppFailure {}
 /// Produced by the standardized `try/catch` every use case carries, after the
 /// error has been handed to observability. It is not an area failure — there is
 /// no vocabulary to give it, which is exactly why it lives here.
-final class UnexpectedFailure implements AppFailure {
+@freezed
+abstract class UnexpectedFailure
+    with _$UnexpectedFailure
+    implements AppFailure {
   /// Creates an unexpected failure described by [description].
-  const UnexpectedFailure(this.description);
-
-  /// What was caught, as text. For diagnostics — never parsed, never matched.
-  final String description;
-
-  @override
-  bool operator ==(Object other) =>
-      other is UnexpectedFailure && other.description == description;
-
-  @override
-  int get hashCode => Object.hash(runtimeType, description);
+  const factory UnexpectedFailure(
+    /// What was caught, as text. For diagnostics — never parsed, never matched.
+    String description,
+  ) = _UnexpectedFailure;
 }

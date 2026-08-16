@@ -1,19 +1,28 @@
-// Fails the build if line coverage on any package that has real `lib/src`
-// code falls under the threshold.
+// Fails the build if line coverage on any package that has both `lib/src`
+// code and tests falls under the threshold.
 //
 //   dart run tool/coverage_gate.dart [--threshold=95]
 //
 // A package whose `lib/src` has no `.dart` files yet (application, data,
-// presentation, as of Phase 0) is skipped rather than counted as 0% — the
-// gate is about work that exists having tests, not about punishing a layer
-// for not being built yet. It starts being measured the moment it gains its
-// first file, with no change needed here.
+// presentation, as of Phase 0), or that has code but no tests yet, is
+// skipped rather than counted as 0% — the gate is about code that has tests
+// falling short, not about punishing a layer for not being built or tested
+// yet. It starts being measured the moment it gains its first test, with no
+// change needed here.
 //
 // No external packages beyond `coverage` (already resolvable in the
 // workspace through `test`'s own dependency on it) — see
 // docs/architecture/layers.md#testing.
 
 import 'dart:io';
+
+// Freezed's generated toString/copyWith/props are never exercised directly —
+// the tests hit the hand-written factories, not the generated methods by
+// name — so counting them would cap every package with a union type well
+// under any realistic threshold. Excluded by pattern rather than a per-file
+// pragma: the files are regenerated on every `make runner` run, so a
+// comment inside them would not survive.
+const String generatedFileGlobs = '**.freezed.dart,**.g.dart';
 
 const List<String> _pkgOrder = <String>[
   'core',
@@ -30,47 +39,66 @@ void main(List<String> args) async {
   final Directory packages = Directory('${root.path}/src/packages');
 
   var overallFail = false;
+  var gatedTotal = 0;
+  var gatedPassed = 0;
+  var linesHit = 0;
+  var linesFound = 0;
+
+  stdout.writeln();
   stdout.writeln(
-    'Coverage gate — threshold ${threshold.toStringAsFixed(1)}%\n',
+    '• Coverage gate — threshold ${threshold.toStringAsFixed(1)}%:',
   );
+  stdout.writeln();
+
+  // Same label column as the flutter-test dashboard (tool/run_tests.dart):
+  // bare package name, padded to the longest one, so the numbers line up.
+  final int labelWidth = _pkgOrder
+      .map((String p) => p.length)
+      .reduce((int a, int b) => a > b ? a : b);
 
   for (final String pkg in _pkgOrder) {
     final Directory dir = Directory('${packages.path}/$pkg');
     final bool hasCode = _dartFilesUnder(
       Directory('${dir.path}/lib/src'),
     ).isNotEmpty;
+    final String label = pkg.padRight(labelWidth);
 
     if (!hasCode) {
-      stdout.writeln('⏭️  tom_$pkg — no lib/src yet, not gated');
+      stdout.writeln('  🟠 $label  no lib/src yet, not gated');
       continue;
     }
 
     final _Coverage? result = await _measure(dir);
     if (result == null) {
-      stdout.writeln('⏭️  tom_$pkg — no tests yet, not gated');
+      stdout.writeln('  🟠 $label  no tests yet, not gated');
       continue;
     }
+    gatedTotal++;
     if (!result.testsPassed) {
       overallFail = true;
-      stdout.writeln('❌ tom_$pkg — tests failed, coverage not measured');
+      stdout.writeln('  🔴 $label  tests failed, coverage not measured');
       continue;
     }
 
     final bool ok = result.percentage >= threshold;
     if (!ok) overallFail = true;
-    final String icon = ok ? '✅' : '❌';
+    if (ok) gatedPassed++;
+    linesHit += result.linesHit;
+    linesFound += result.linesFound;
+    final String icon = ok ? '🟢' : '🔴';
     stdout.writeln(
-      '$icon tom_$pkg — ${result.percentage.toStringAsFixed(1)}% '
+      '  $icon $label  ${result.percentage.toStringAsFixed(1)}% '
       '(${result.linesHit}/${result.linesFound} lines)',
     );
   }
 
   stdout.writeln();
-  if (overallFail) {
-    stdout.writeln('Coverage gate failed.');
-  } else {
-    stdout.writeln('Coverage gate passed.');
+  stdout.writeln('  • Summary:');
+  stdout.writeln('    • $gatedPassed/$gatedTotal gated');
+  if (linesFound > 0) {
+    stdout.writeln('    • ◔ ${(linesHit / linesFound * 100).round()}%');
   }
+  stdout.writeln('    • ${overallFail ? '🔴 failed' : '🟢 passed'}');
   exit(overallFail ? 1 : 0);
 }
 
@@ -96,6 +124,15 @@ class _Coverage {
 
 /// Runs a package's tests with coverage, converts to lcov, and sums it.
 ///
+/// Reuses `coverage/lcov.info` if it already exists rather than deleting and
+/// regenerating it: `verify`/CI always run `flutter-test` (which produces
+/// this same file per package under `COVERAGE=1`, the default) immediately
+/// before `coverage-gate`, and a failing test run there halts the chain
+/// before this ever executes — so a file found here is trustworthy, and
+/// reusing it saves rerunning every package's suite a second time just to
+/// gate it. `make coverage-gate` invoked on its own, with no such file
+/// present, still runs the suite itself.
+///
 /// Returns `null` if the package has no `_test.dart` files — coverage over
 /// zero tests is not a measurement, it is a package waiting for its first
 /// test, and the two must not look the same in the report.
@@ -109,9 +146,13 @@ Future<_Coverage?> _measure(Directory dir) async {
           .any((File f) => f.path.endsWith('_test.dart'));
   if (!hasTests) return null;
 
-  final Directory coverageDir = Directory('${dir.path}/coverage');
-  if (coverageDir.existsSync()) coverageDir.deleteSync(recursive: true);
+  final File existingLcov = File('${dir.path}/coverage/lcov.info');
+  if (existingLcov.existsSync()) {
+    final (int linesFound, int linesHit) = _sumLcov(existingLcov);
+    return _Coverage(true, linesFound, linesHit);
+  }
 
+  final Directory coverageDir = Directory('${dir.path}/coverage');
   try {
     final ProcessResult testRun = await Process.run('dart', <String>[
       'test',
@@ -130,6 +171,7 @@ Future<_Coverage?> _measure(Directory dir) async {
       '--in=coverage',
       '--out=coverage/lcov.info',
       '--report-on=lib',
+      '--ignore-files=$generatedFileGlobs',
     ], workingDirectory: dir.path);
     if (format.exitCode != 0) {
       stdout.writeln(format.stdout);
@@ -140,16 +182,21 @@ Future<_Coverage?> _measure(Directory dir) async {
     final File lcov = File('${dir.path}/coverage/lcov.info');
     if (!lcov.existsSync()) return const _Coverage(true, 0, 0);
 
-    var linesFound = 0;
-    var linesHit = 0;
-    for (final String line in lcov.readAsLinesSync()) {
-      if (line.startsWith('LF:')) linesFound += int.parse(line.substring(3));
-      if (line.startsWith('LH:')) linesHit += int.parse(line.substring(3));
-    }
+    final (int linesFound, int linesHit) = _sumLcov(lcov);
     return _Coverage(true, linesFound, linesHit);
   } finally {
     if (coverageDir.existsSync()) coverageDir.deleteSync(recursive: true);
   }
+}
+
+(int linesFound, int linesHit) _sumLcov(File lcov) {
+  var linesFound = 0;
+  var linesHit = 0;
+  for (final String line in lcov.readAsLinesSync()) {
+    if (line.startsWith('LF:')) linesFound += int.parse(line.substring(3));
+    if (line.startsWith('LH:')) linesHit += int.parse(line.substring(3));
+  }
+  return (linesFound, linesHit);
 }
 
 Iterable<File> _dartFilesUnder(Directory dir) {
