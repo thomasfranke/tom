@@ -24,11 +24,12 @@ The `Makefile` is a convenience, not a requirement. Each target wraps a short co
 ```bash
 make help               # list every target
 make setup              # resolve the workspace
-make verify             # format + analyze + test + coverage gate — everything CI runs
+make verify             # format + analyze + codegen gate + test + coverage gate — everything CI runs
 make flutter-test       # architecture test, then each package, then the app
 make flutter-test-arch  # just the layer-graph assertions
 make analyze            # static analysis across all seven packages at once
 make runner             # build_runner wherever a package declares it
+make codegen-gate       # runner-hard, then fail if .g.dart/.freezed.dart drifted from git
 make run                # run the app (DEVICE=windows|linux|macos)
 make run-flags FLAGS="FEATURE_DIFF_V1=true"
 ```
@@ -48,7 +49,7 @@ A new *external* dependency needs a licence check — nothing AGPL or GPL ([Deci
 - **Trunk-based branches:** `feat/*` → PR into `main` (squash) → a tag publishes. No `dev`. See `CONTRIBUTING.md` and the `tom-git-workflow` skill.
 - **Feature flags are build-time only** (`--dart-define`); enable experimental ones locally, never in a release build.
 - **CI, in two levels:**
-  - **PR into `main`:** format, analyze, the architecture test, `dart test` on the six pure packages (the framework-independence proof — no Flutter binding available), `flutter test` on the app, and the coverage gate. Required to merge.
+  - **PR into `main`:** format, analyze, a from-scratch codegen run that fails if `.g.dart`/`.freezed.dart` drifted from the committed source, the architecture test, `dart test` on the six pure packages (the framework-independence proof — no Flutter binding available), `flutter test` on the app, and the coverage gate. Required to merge.
   - **Tag on `main`:** the full build for all three platforms, signing, packaging and publishing.
 
 ---

@@ -1,10 +1,12 @@
 name: CI
 
 # Level one of the two described in docs/process/setup.md#ci-in-two-levels:
-# format, analyze, the architecture test, dart test on the six pure packages
-# and flutter test on the app, plus the coverage gate. Required to merge.
-# The tag-triggered build/sign/package pipeline is level two and lives in its
-# own workflow, added when there is something to sign.
+# format, analyze, a from-scratch codegen run (fails on drift between
+# committed .g.dart/.freezed.dart and what build_runner actually produces),
+# the architecture test, dart test on the six pure packages and flutter test
+# on the app, plus the coverage gate. Required to merge. The tag-triggered
+# build/sign/package pipeline is level two and lives in its own workflow,
+# added when there is something to sign.
 
 on:
   pull_request:
@@ -41,6 +43,9 @@ jobs:
 
       - name: Analyze
         run: make analyze
+
+      - name: Codegen — regenerate from scratch, fail on drift
+        run: make codegen-gate
 
       - name: Test — architecture, the six pure packages, the app
         run: make flutter-test

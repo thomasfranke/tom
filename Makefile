@@ -42,7 +42,7 @@ DEVICE ?= macos
 .DEFAULT_GOAL := help
 .PHONY: help setup clean format analyze verify flutter-test flutter-test-arch \
         flutter-test-packages flutter-test-app flutter-test-only flutter-test-diff \
-        coverage coverage-gate runner runner-hard runner-watch fvm run run-flags flags \
+        coverage coverage-gate runner runner-hard runner-watch codegen-gate fvm run run-flags flags \
         build build-linux build-macos build-windows
 
 ##############################
@@ -79,7 +79,7 @@ format: ## Format Dart code, failing if anything changes
 analyze: ## Static analysis across every package at once
 	cd $(SRC) && flutter analyze
 
-verify: format analyze flutter-test coverage-gate ## Everything CI runs, in one command
+verify: format analyze codegen-gate flutter-test coverage-gate ## Everything CI runs, in one command
 
 ##############################
 ### *** Tests *** ###
@@ -191,6 +191,23 @@ runner-hard: ## Delete generated files, then regenerate every package from scrat
 
 runner-watch: ## Regenerate continuously while you work
 	cd $(APP) && dart run build_runner watch --delete-conflicting-outputs
+
+# Runs after `runner-hard` has deleted and regenerated every *.freezed.dart /
+# *.g.dart from scratch: if the working tree still differs from HEAD, either
+# someone hand-edited a generated file or a source change wasn't followed by
+# a regenerate-and-commit. Either way it's a CI failure, not a warning —
+# generated files are committed (not gitignored), so drift here means what's
+# checked in doesn't match what the annotations actually produce.
+codegen-gate: ## Regenerate every package from scratch and fail if generated files drifted (CI)
+	@$(MAKE) --no-print-directory runner-hard
+	@CHANGES="$$(git status --porcelain -- '*.freezed.dart' '*.g.dart')"; \
+	if [ -n "$$CHANGES" ]; then \
+		echo "Generated files are out of date — run 'make runner-hard' and commit the result:"; \
+		echo "$$CHANGES"; \
+		exit 1; \
+	else \
+		echo "Generated files match the committed source."; \
+	fi
 
 ##############################
 ### *** Run *** ###
