@@ -2,7 +2,7 @@
 
 Thanks for being here. TOM is built in spare time, so anyone who turns up — with a typo fix, a bug report, or an afternoon of real work — is choosing to spend it on this. That is worth saying before anything else.
 
-TOM is a desktop Git client for teams who keep their documentation as markdown in a repository: files stay files, and the Git workflow *is* the app rather than a menu buried inside it. The [vision](docs/product/vision.md) is one page and worth the two minutes — it covers what the project is reaching for, and what it happily leaves to other tools.
+TOM is a desktop Git client for teams who keep their documentation as markdown in a repository: files stay files, and the Git workflow *is* the app rather than a menu buried inside it. [product.md](docs/product/product.md) is worth the two minutes — it covers what the project is reaching for, and what it happily leaves to other tools.
 
 Not sure whether an idea fits, or where to start? Open an issue and ask. Questions are never a bother, and asking early is usually faster than guessing — for both of us.
 

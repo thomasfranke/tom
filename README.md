@@ -37,11 +37,7 @@ Your `.md` files stay plain files on disk. Any other tool edits the same files w
 
 ## Principles
 
-1. **Files are the truth.** No proprietary database, no lock-in.
-2. **Git is the backbone, not a plugin.**
-3. **Local-first and offline-first.** No essential feature needs the network. Sync is `git push/pull`.
-4. **Your documents are yours.** They stay on your machine, in your repository, in plain markdown. TOM reads and writes them and nothing more — it never sends them anywhere on its own, there is no account and no cloud, and telemetry is opt-in and off by default ([Decision 11](docs/decisions/011-telemetry-is-opt-in.md)). If a feature ever transmits anything, it is because you asked it to, with your own credentials, to a service you chose. This holds for the paid edition too: whatever an organization buys, it is not access to anyone's documents.
-5. **Open source, MIT.** A commercial edition for organizations may come later — and whatever is free today stays free.
+Files are the truth, Git is the backbone rather than a plugin, everything works offline, your documents never leave your machine unless you ask them to ([Decision 11](docs/decisions/011-telemetry-is-opt-in.md)), and it's MIT — whatever is free today stays free. The full list, with the reasoning behind each one, is in [product.md](docs/product/product.md#principles).
 
 ## Documentation
 
@@ -49,14 +45,15 @@ Everything is in [`docs/`](docs/) — and yes, it is edited the way TOM proposes
 
 | | |
 |---|---|
-| [Vision](docs/product/vision.md) · [Product](docs/product/product.md) | What this is, and the non-goals it will not drift into |
+| [Product](docs/product/product.md) | What this is, and the non-goals it will not drift into |
 | [Architecture](docs/architecture/layers.md) | The seven packages, the graph, and what enforces it |
 | [Decisions](docs/decisions/) | Every architectural choice and why — the folder listing reads as a summary |
-| [MVP](docs/product/mvp.md) · [Roadmap](docs/product/roadmap.md) | What is being built, and in what order |
+| [Roadmap](docs/product/roadmap.md) | What is being built, in what order, and by which package |
+| [Products](docs/products/) | What each feature must do, one folder per feature |
 
 ## Status
 
-Phase 0: technical spikes. The MVP milestones are in [`docs/product/mvp.md`](docs/product/mvp.md).
+Phase 0: technical spikes. The milestones are in [`docs/product/roadmap.md`](docs/product/roadmap.md).
 
 Watch or star the repository if you want to know when there is something to run.
 

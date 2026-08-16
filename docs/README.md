@@ -4,17 +4,18 @@
 
 ## Documentation map
 
-Four folders, one question each, plus the decision log that cuts across them.
+Five folders, one question each, plus the decision log that cuts across them.
 
 | Folder | Answers | Contents |
 |---|---|---|
-| [product/](product/) | what is being built, and why | [vision](product/vision.md) · [product](product/product.md) · [mvp](product/mvp.md) · [roadmap](product/roadmap.md) |
+| [products/](products/) | what each feature must do, for stakeholders | [convention](products/README.md) — one folder per feature: `doc.md` (non-technical rules) + `mocks/` |
+| [product/](product/) | what is being built, and why | [product](product/product.md) · [roadmap](product/roadmap.md) |
 | [architecture/](architecture/) | how it is built | [layers](architecture/layers.md) · [flows](architecture/flows.md) · [domain model](architecture/domain-model.md) · [dependencies](architecture/dependencies.md) |
-| [design/](design/) | what it looks like | [wireframes](design/README.md) per screen · [visual language](design/visual-language.md) |
+| [design/](design/) | what the composite screens and the visual system look like | [wireframes](design/README.md) · [visual language](design/visual-language.md) |
 | [process/](process/) | how the work is done | [setup](process/setup.md) · [versioning](process/versioning.md) · [repository settings](process/repository-settings.md) |
 | [decisions/](decisions/) | what was settled, and why | ADRs, one per file, declaratively named |
 
-`decisions/` sits outside the four on purpose: 001 is about licensing, 004 about the business model, 013 about the stack. They belong to no single folder, and keeping the log flat is the ADR convention.
+`docs/products/` is the one folder meant to be edited by stakeholders, not just engineers: it is the living source of truth for app behaviour, kept current as the app evolves, and is what code should be checked against. `product/` stays the "why" — vision, personas, non-goals — one level above any single feature. `decisions/` sits outside all of them on purpose: 001 is about licensing, 004 about the business model, 013 about the stack. They belong to no single folder, and keeping the log flat is the ADR convention.
 
 ## Decisions at a glance
 

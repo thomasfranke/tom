@@ -13,7 +13,8 @@ Project context for AI assistance. Read before any task.
 Every relevant decision lives in `docs/`. **Before suggesting architecture, dependencies or scope, consult:**
 
 - `docs/README.md` — general index
-- `docs/product/` — `vision.md` and `product.md` for principles, killer features and **non-goals** (respect them!); `mvp.md` for spikes and milestones, and whatever is out of the MVP stays out
+- `docs/products/` — **the source of truth for what each feature must do**, in non-technical language, one folder per feature (`doc.md` + `mocks/`). Maintained by stakeholders, kept current as the app evolves. Check the relevant `doc.md` before implementing or changing a feature's behavior, and flag it if the code diverges from what's written there.
+- `docs/product/` — `product.md` for the pitch, principles, personas, killer features and **non-goals** (respect them!); `roadmap.md` for spikes, phases, milestones and links to the relevant `docs/products/` entries — whatever is out of the MVP stays out
 - `docs/architecture/` — four files: `layers.md` (the graph and what enforces it), `flows.md` (how it behaves at runtime), `domain-model.md`, `dependencies.md`
 - **Read selectively.** Consult only the files relevant to the task at hand; never load `docs/` wholesale. The index above exists so the right file can be picked without reading the rest.
 - `docs/decisions/` — formalized decisions (ADR format, declarative names); changing a decision requires a new file or an explicit revision
@@ -57,11 +58,12 @@ core ← domain ← application ← presentation
 - Conventional Commits + semantic versioning. Trunk-based: `feat/*` → PR into `main` (squash) → tag publishes. No `dev` branch. `main` is publishable; production is the most recent tag.
 - **Incomplete work integrates behind a build-time feature flag**, never on a long-lived branch (`CONTRIBUTING.md`, "Feature flags"). Disabled = unreachable, and every flag has a removal target.
 - Documentation updated in the same PR that changes behavior (dogfooding: this project exists for that)
+- **If a PR changes a product's user-facing interface, it updates that product's mock in the same PR** (`docs/products/<feature>/mocks/`) — a mock that no longer matches what shipped is worse than no mock, see [docs/products/README.md](docs/products/README.md)
 - A new architecture decision → a new file in `docs/decisions/` following the existing format
 - **All documentation and code in English** (identifiers, comments, docs)
 
 ## Current status
 
-**Phase 0 — Spikes.** No milestone has been built. The workspace skeleton is in place and the error model is real code: `Result`, `AppFailure` and `Observability` in `tom_core`; the sealed `GitFailure`/`DocumentFailure`/`SearchFailure` hierarchies in `tom_domain` (8 tests). `docs/architecture/` was consolidated from 13 files into four. The domain model is deliberately partial (`docs/architecture/domain-model.md`) — `Block` in particular is an *output* of Spike B; do not design `BlockDiffer` before the spike reports. Next steps: Spike A (`re_editor` as source mode) and Spike B (the `markdown` AST for block diff, now also answering whether a single block can be rendered in isolation). See `docs/product/mvp.md`. There is no user-research phase: the project is built on the maintainer's own experience, stated as such in `docs/product/roadmap.md`. Desktop wireframes for M0/M1 live in `docs/design/` (skill: `tom-wireframes`).
+**Phase 0 — Spikes.** No milestone has been built. The workspace skeleton is in place and the error model is real code: `Result`, `AppFailure` and `Observability` in `tom_core`; the sealed `GitFailure`/`DocumentFailure`/`SearchFailure` hierarchies in `tom_domain` (8 tests). `docs/architecture/` was consolidated from 13 files into four. The domain model is deliberately partial (`docs/architecture/domain-model.md`) — `Block` in particular is an *output* of Spike B; do not design `BlockDiffer` before the spike reports. Next steps: Spike A (`re_editor` as source mode) and Spike B (the `markdown` AST for block diff, now also answering whether a single block can be rendered in isolation). See `docs/product/roadmap.md`. There is no user-research phase: the project is built on the maintainer's own experience, stated as such in `docs/product/roadmap.md`. Desktop wireframes for M0/M1 live in `docs/design/` (skill: `tom-wireframes`).
 
 > Keep this "Current status" section up to date at the end of each meaningful work session — it is what carries context between sessions.

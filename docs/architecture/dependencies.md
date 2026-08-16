@@ -25,7 +25,7 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 
 | Package | License | Role |
 |---|---|---|
-| `re_editor` | MIT | Desktop-oriented code editor — main candidate (**Spike A**, see [mvp.md](../product/mvp.md)) |
+| `re_editor` | MIT | Desktop-oriented code editor — main candidate (**Spike A**, see [roadmap.md](../product/roadmap.md)) |
 | *(fallback)* custom `TextField` | — | Plan B if the spike fails |
 
 ## Local infrastructure

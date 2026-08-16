@@ -5,7 +5,9 @@ description: How TOM's screen wireframes are made — the shared drawing kit, th
 
 # TOM — wireframes
 
-Wireframes live in `docs/design/`, are **generated rather than hand-drawn**, and exist to answer one question: what is on the screen and where. Anything beyond that — iconography, final copy, visual styling — is out of scope and actively harmful, because it draws feedback onto decoration while the structure is still open.
+Wireframes are **generated rather than hand-drawn**, and exist to answer one question: what is on the screen and where. Anything beyond that — iconography, final copy, visual styling — is out of scope and actively harmful, because it draws feedback onto decoration while the structure is still open.
+
+**Every screen lives next to the product it belongs to**, in `docs/products/<feature>/mocks/` — there is no separate screens folder anymore; `docs/design/` holds only the shared tokens and build tools. `shell` belongs to the `workspace` product (the panel layout itself); every other desktop screen belongs to whichever feature it shows. Mobile is not a separate tree: a mobile screen goes in the *same* `mocks/` folder as its desktop counterpart, and once both exist each is suffixed with its platform (`reading-desktop.excalidraw` / `reading-mobile.excalidraw`) — one capability, two devices, not two products. A screen does not need to redraw the full window unless, like `shell`, the layout is what it's showing: crop to what's relevant (a popover, a panel) when the frame adds nothing. See [docs/design/README.md](../../../docs/design/README.md) for the current map of what lives where.
 
 Colour is decided separately, in [visual-language.md](../../../docs/design/visual-language.md). The four values below are *drawing* tokens; they are not the product palette and must never be confused with it.
 
@@ -85,14 +87,15 @@ A coloured mark in a TOM wireframe always means **"this part arrives later"**. N
 
 ## Rules
 
-1. **Desktop and mobile are separate sets, not one set at two widths.** `screens/desktop/` is the product; `screens/mobile/` is exploratory for Phase 3 and is built by `build_mobile.py` on the `Phone` frame. [Decision 8](../../../docs/decisions/008-monorepo-with-pure-dart-core.md) gives mobile its own presentation and says *panels do not become screens*, so a narrowed copy of a desktop screen is the one thing never to draw there — mobile is drawn from the job (read, review, capture), with navigation as a stack.
+1. **Desktop and mobile are separate sets, not one set at two widths.** Desktop screens are built by `build.py` on the `Scene` frame; mobile screens are exploratory for Phase 3, built by `build_mobile.py` on the `Phone` frame, and land in the same product's `mocks/` as their desktop counterpart (see rule 9 below). [Decision 8](../../../docs/decisions/008-monorepo-with-pure-dart-core.md) gives mobile its own presentation and says *panels do not become screens*, so a narrowed copy of a desktop screen is the one thing never to draw there — mobile is drawn from the job (read, review, capture), with navigation as a stack.
 2. **One file per state the app is actually in** — `empty-state`, `shell`, `committing`. Name it for what the user is doing, never `m0-shell` / `m1-shell`: a screen that gains a panel in a later milestone is one file with a chip on that panel, not two files that must be kept in sync.
 3. **Placeholder content, never prose.** Text is `bars(...)`. Real words appear only in labels, buttons and the file tree — the parts whose wording is itself the design.
 4. **Draw each border once.** The frame is a rounded rectangle; every region inside it is separated by `hline`/`vline`, never by its own rectangle. A rectangle laid over the frame repeats a border that is already there, and the repeat is obvious because the outer corner is rounded and the inner one is not.
 5. **Never centre text by estimating its width.** Use `text_centred(...)`, which hands the centring to Excalidraw. Computing `x` from character count is always a few pixels out, and it shows.
 6. **Chrome stays put across screens.** The explorer is 220 wide in every screen that has one, drawn by `explorer(...)`. If one screen needs it narrower, the token changes and every screen follows.
-7. **Do not wireframe what a spike has not answered.** The rendered diff's block granularity is Spike B's output ([mvp.md](../../../docs/product/mvp.md)); drawing it in detail now is work that gets thrown away. Coarse is honest.
+7. **Do not wireframe what a spike has not answered.** The rendered diff's block granularity is Spike B's output ([roadmap.md](../../../docs/product/roadmap.md)); drawing it in detail now is work that gets thrown away. Coarse is honest.
 8. **Look at it before committing.** Render to PNG and actually view it — a wireframe with an overlapping label or a panel that fell off the canvas is invisible in the JSON diff.
+9. **A shipped interface change updates its mock in the same PR.** A product's `mocks/` is read as the current shape of its UI ([docs/products/README.md](../../../docs/products/README.md)); once it drifts from what's actually built, it stops teaching the right thing and starts teaching the wrong one with a straight face.
 
 ## Review
 
