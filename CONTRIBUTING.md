@@ -2,20 +2,20 @@
 
 Thanks for being here. TOM is built in spare time, so anyone who turns up — with a typo fix, a bug report, or an afternoon of real work — is choosing to spend it on this. That is worth saying before anything else.
 
-TOM is a desktop Git client for teams who keep their documentation as markdown in a repository: files stay files, and the Git workflow *is* the app rather than a menu buried inside it. [product.md](docs/product/product.md) is worth the two minutes — it covers what the project is reaching for, and what it happily leaves to other tools.
+TOM is a desktop Git client for teams who keep their documentation as markdown in a repository: files stay files, and the Git workflow *is* the app rather than a menu buried inside it. [about.md](docs/about.md) is worth the two minutes — it covers what the project is reaching for, and what it happily leaves to other tools.
 
 Not sure whether an idea fits, or where to start? Open an issue and ask. Questions are never a bother, and asking early is usually faster than guessing — for both of us.
 
 ## Before you start
 
-- **Check the non-goals.** [product.md](docs/product/product.md) lists what TOM deliberately will not become — WYSIWYG editing, real-time collaboration, its own cloud sync. A quick look before you start is the surest way to have your work land well. And if one of them strikes you as wrong, that is genuinely worth hearing: open an issue and make the case.
-- **Read the decisions.** [docs/decisions/](docs/decisions/) records the architectural choices and *why* they were made. If your change contradicts one, that is a conversation to have in an issue first — not a surprise in a PR.
-- **Follow the patterns.** The rules code is held to are in [layers](docs/architecture/layers.md) and [flows](docs/architecture/flows.md); the canonical *form* of each one lives in the dartdoc of the code that implements it, which is the copy that cannot go stale.
+- **Check the non-goals.** [about.md](docs/about.md) lists what TOM deliberately will not become — WYSIWYG editing, real-time collaboration, its own cloud sync. A quick look before you start is the surest way to have your work land well. And if one of them strikes you as wrong, that is genuinely worth hearing: open an issue and make the case.
+- **Read the decisions.** [docs/technical/decisions/](docs/technical/decisions/) records the architectural choices and *why* they were made. If your change contradicts one, that is a conversation to have in an issue first — not a surprise in a PR.
+- **Follow the patterns.** The rules code is held to are in [layers](docs/technical/layers.md) and [flows](docs/technical/flows.md); the canonical *form* of each one lives in the dartdoc of the code that implements it, which is the copy that cannot go stale.
 - **Open an issue for anything substantial.** Small fixes can go straight to a PR; a feature or refactor deserves a discussion first, so nobody wastes an afternoon.
 
 ## Development setup
 
-See [docs/process/setup.md](docs/process/setup.md). In short: `make setup` from the repository root. The Dart workspace is under `src/` — seven packages, one per layer, six of them pure Dart.
+See [docs/technical/setup.md](docs/technical/setup.md). In short: `make setup` from the repository root. The Dart workspace is under `src/` — seven packages, one per layer, six of them pure Dart.
 
 ## How contributions reach the project
 
@@ -48,7 +48,7 @@ Incomplete work integrates early behind a [feature flag](#feature-flags) rather 
 
 A flag is an `if` deciding whether part of the app exists in a given build. It is what lets a large feature integrate on `main` in week one instead of living on a branch for a month.
 
-Flags here are **build-time only** — `bool.fromEnvironment`, declared in one file in the app, enabled with `--dart-define`. There is no remote flag service, ever: that would be a phone-home, and it contradicts [Decision 11](docs/decisions/011-telemetry-is-opt-in.md).
+Flags here are **build-time only** — `bool.fromEnvironment`, declared in one file in the app, enabled with `--dart-define`. There is no remote flag service, ever: that would be a phone-home, and it contradicts [Decision 11](docs/technical/decisions/011-telemetry-is-opt-in.md).
 
 Two rules, and they are the whole pattern:
 
@@ -59,13 +59,13 @@ Not to be confused with modules: the repository answers *who has this code*, a f
 
 ## Rules that PRs are checked against
 
-- **New dependency?** State its license in the PR description. Nothing AGPL/GPL — the project is MIT and must stay relicensable ([Decision 1](docs/decisions/001-license-is-mit.md)).
+- **New dependency?** State its license in the PR description. Nothing AGPL/GPL — the project is MIT and must stay relicensable ([Decision 1](docs/technical/decisions/001-license-is-mit.md)).
 - **Behavior changed?** Update the documentation in the same PR. Docs live with the code they describe; that is the whole thesis of this project.
-- **Architectural change?** Add or revise a file in `docs/decisions/` in the same PR.
-- **The layers stay pure Dart.** Only `tom_desktop` may import Flutter. You do not need to remember this: the pubspecs make the wrong import fail to resolve, and `make test-arch` asserts it ([Decision 14](docs/decisions/014-each-layer-is-its-own-package.md)).
-- **Riverpod only in `presentation/` and `bootstrap/di/`.** Everything below takes its dependencies through constructors ([Decision 7](docs/decisions/007-external-dependencies-behind-contracts.md)).
+- **Architectural change?** Add or revise a file in `docs/technical/decisions/` in the same PR.
+- **The layers stay pure Dart.** Only `tom_desktop` may import Flutter. You do not need to remember this: the pubspecs make the wrong import fail to resolve, and `make test-arch` asserts it ([Decision 14](docs/technical/decisions/014-each-layer-is-its-own-package.md)).
+- **Riverpod only in `presentation/` and `bootstrap/di/`.** Everything below takes its dependencies through constructors ([Decision 7](docs/technical/decisions/007-external-dependencies-behind-contracts.md)).
 - **Reviewable?** The PR gives concrete steps to see the change working, starting from a described repo state, on a named platform.
-- **Tests?** Match the level to what changed ([strategy](docs/architecture/layers.md#testing)): parsers get fixtures, the block differ gets golden files, use cases get fake repositories, repository implementations get a real git repo in a temp dir. A PR whose Testing section is empty will be asked about it.
+- **Tests?** Match the level to what changed ([strategy](docs/technical/layers.md#testing)): parsers get fixtures, the block differ gets golden files, use cases get fake repositories, repository implementations get a real git repo in a temp dir. A PR whose Testing section is empty will be asked about it.
 - **Incomplete feature?** Put it behind a build-time flag ([below](#feature-flags)) — disabled means *unreachable*, not merely invisible, and every flag states when it will be removed.
 - **English everywhere:** code, comments, commits, documentation.
 
@@ -75,7 +75,7 @@ Not to be confused with modules: the repository answers *who has this code*, a f
 - `tom_desktop`: `flutter test`.
 - Parsers get fixtures of real git output; the block differ gets golden files; `GitRepositoryImpl` gets integration tests against a real git repo created in a temp directory.
 
-See [the testing table](docs/architecture/layers.md#testing).
+See [the testing table](docs/technical/layers.md#testing).
 
 ## Contributor License Agreement
 
@@ -85,7 +85,7 @@ Here is what it means in plain terms — nobody should have to read legalese to 
 
 - **You keep the copyright to your work.** Nothing is signed over. You can reuse your own contribution anywhere, under any terms, forever.
 - **Anything already released under MIT stays MIT, permanently.** MIT grants cannot be revoked, so every version published as free software remains free software — forkable and usable by anyone, you included.
-- **The project can relicense contributed code in future releases**, possibly under terms other than MIT. We would rather say so here than let you find it in a legal file later; the reasoning is written out in [Decision 1](docs/decisions/001-license-is-mit.md).
+- **The project can relicense contributed code in future releases**, possibly under terms other than MIT. We would rather say so here than let you find it in a legal file later; the reasoning is written out in [Decision 1](docs/technical/decisions/001-license-is-mit.md).
 
 Questions are welcome — open an issue and ask. And if you would rather not sign, that is completely understandable: issues, bug reports, design discussion and docs feedback are all genuinely useful, and none of them need a CLA.
 

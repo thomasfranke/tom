@@ -1,6 +1,6 @@
 /// The mobile composition root.
 ///
-/// Reserved skeleton for Phase 3 (docs/product/roadmap.md) — desktop is the
+/// Reserved skeleton for Phase 3 (docs/tasks/roadmap.md) — desktop is the
 /// reference platform until 1.0 ships. Nothing is wired yet; when it is, this
 /// mirrors apps/desktop/lib/main.dart: construct the mobile-specific
 /// infrastructure implementations, hand them to the repositories shared with

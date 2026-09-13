@@ -12,7 +12,7 @@
 //
 // No external packages beyond `coverage` (already resolvable in the
 // workspace through `test`'s own dependency on it) — see
-// docs/architecture/layers.md#testing.
+// docs/technical/layers.md#testing.
 
 import 'dart:io';
 

@@ -32,7 +32,7 @@ This section exists to point researchers at the parts that matter, rather than a
 
 **TOM writes files.** Document paths derive from the space tree; writes must stay inside the space root.
 
-**What TOM deliberately does not do**, and which therefore reduces the surface: it has no telemetry ([Decision 11](docs/decisions/011-telemetry-is-opt-in.md)), no account system, no cloud sync, no runtime plugin loading, and no network access of its own — authentication and transport are entirely the system git's responsibility, using the user's own credentials and configuration ([Decision 2](docs/decisions/002-git-via-system-binary.md)).
+**What TOM deliberately does not do**, and which therefore reduces the surface: it has no telemetry ([Decision 11](docs/technical/decisions/011-telemetry-is-opt-in.md)), no account system, no cloud sync, no runtime plugin loading, and no network access of its own — authentication and transport are entirely the system git's responsibility, using the user's own credentials and configuration ([Decision 2](docs/technical/decisions/002-git-via-system-binary.md)).
 
 ## Out of scope
 

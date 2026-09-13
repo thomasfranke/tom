@@ -38,7 +38,7 @@ jobs:
           custom-notsigned-prcomment: |
             Thanks for the pull request — there is one step before it can be merged.
 
-            We ask contributors to accept the [Contributor License Agreement](${{ github.server_url }}/${{ github.repository }}/blob/main/CLA.md). The short version: **you keep the copyright to your work**, anything already released under MIT stays MIT permanently and stays forkable by anyone, and the project can relicense contributions in future releases. The reasoning is written out in [Decision 1](${{ github.server_url }}/${{ github.repository }}/blob/main/docs/decisions/001-license-is-mit.md) — questions are welcome, just ask here.
+            We ask contributors to accept the [Contributor License Agreement](${{ github.server_url }}/${{ github.repository }}/blob/main/CLA.md). The short version: **you keep the copyright to your work**, anything already released under MIT stays MIT permanently and stays forkable by anyone, and the project can relicense contributions in future releases. The reasoning is written out in [Decision 1](${{ github.server_url }}/${{ github.repository }}/blob/main/docs/technical/decisions/001-license-is-mit.md) — questions are welcome, just ask here.
 
             If you agree, reply to this pull request with exactly:
           custom-pr-sign-comment: I have read the CLA Document and I hereby sign the CLA

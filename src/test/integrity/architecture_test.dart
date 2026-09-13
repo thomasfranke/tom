@@ -40,7 +40,7 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
     'tom_data',
     'tom_presentation',
   },
-  // Reserved skeleton for Phase 3 (docs/product/roadmap.md). No infra/data
+  // Reserved skeleton for Phase 3 (docs/tasks/roadmap.md). No infra/data
   // yet — those are platform-specific and arrive with the mobile-specific
   // implementations of the contracts tom_infra defines for desktop.
   'tom_mobile': <String>{
@@ -169,7 +169,7 @@ void main() {
           reason:
               '$package declares a dependency it is not allowed to have. If '
               'the layering genuinely changed, change it here first and say '
-              'why in docs/architecture/layers.md.',
+              'why in docs/technical/layers.md.',
         );
       });
     });

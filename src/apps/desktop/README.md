@@ -14,4 +14,4 @@ make run              # or: make run DEVICE=windows|linux|macos
 ```
 
 Part of [TOM](../../../README.md); the layer graph is in
-[docs/architecture](../../../docs/architecture/).
+[docs/architecture](../../../docs/technical/).

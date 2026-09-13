@@ -234,7 +234,7 @@ flags: ## List the feature flags declared in the app
 
 # These produce the community build: a verification that the public repo
 # compiles on its own. The distributed artifact is the official build, which is
-# not produced here — see docs/process/repository-settings.md.
+# not produced here — see docs/technical/repository-settings.md.
 
 build: ## Compile check for the current platform (artifact is not distributed)
 	cd $(APP) && flutter build $(DEVICE) --release

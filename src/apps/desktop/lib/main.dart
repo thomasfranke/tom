@@ -34,7 +34,7 @@ class TomApp extends StatelessWidget {
 ///
 /// It exists so `flutter run` proves the workspace resolves and builds end to
 /// end. What replaces it is registered through modules rather than hardcoded
-/// here — see `docs/architecture/flows.md`.
+/// here — see `docs/technical/flows.md`.
 class _Placeholder extends StatelessWidget {
   const _Placeholder();
 

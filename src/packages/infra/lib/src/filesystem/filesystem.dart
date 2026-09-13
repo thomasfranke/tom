@@ -7,7 +7,7 @@ import 'package:tom_infra/src/filesystem/filesystem_failure.dart';
 /// Reads and writes files at an absolute path.
 ///
 /// The capability contract for storage ([Decision
-/// 7](../../../../../../../docs/decisions/007-external-dependencies-behind-contracts.md)):
+/// 7](../../../../../../../docs/technical/decisions/007-external-dependencies-behind-contracts.md)):
 /// the file on disk is the truth for the whole product, so this is the
 /// narrowest, most-depended-on capability in `tom_infra`. One implementation
 /// today, `dart_io/`; a sandboxed mobile implementation is a sibling folder
