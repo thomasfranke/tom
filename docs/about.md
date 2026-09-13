@@ -23,11 +23,10 @@ that belongs in one of those is in the wrong place.
 | [`tasks/`](tasks/README.md) | **The queue.** What is being worked on, and in which order. |
 | [`specs/`](specs/README.md) | **The detail of one change.** Historical record — not a description of the present. |
 
-The structure follows [WritRun](https://github.com/thomasfranke/whitrun): four
-folders split by audience (`product/` vs. `technical/`) and by nature
-(permanent — `about`/`product`/`technical` — vs. ephemeral — `tasks`/`specs`).
-Where TOM diverges from that standard, and why, is recorded in
-[`technical/README.md`](technical/README.md#divergences-from-writrun).
+Four folders, split twice: by audience (`product/` vs. `technical/`) and by
+nature — permanent (`about`, `product`, `technical`) vs. ephemeral (`tasks`,
+`specs`). A permanent doc describes the system as it is today; an ephemeral one
+describes a change in flight, and stops being read once that change lands.
 
 The documentation lives in `docs/` inside the repo itself, as markdown — the
 app should, as soon as possible, be used to edit its own docs.

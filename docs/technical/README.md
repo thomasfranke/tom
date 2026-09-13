@@ -167,19 +167,3 @@ Deterministic, and independent of file layout on disk:
 
 An agent never picks a task by directory listing order, by filename, or by
 "the one that looks easiest".
-
-## Divergences from WritRun
-
-TOM follows [WritRun](https://github.com/thomasfranke/whitrun). Where it takes
-a different shape from that standard's defaults, the choice is recorded here
-rather than left to be reverse-engineered from the file tree:
-
-| Divergence | Status |
-|---|---|
-| A single flat, numbered ADR log instead of one `decisions.md` per subsystem | **Documented variant.** WritRun leaves the decisions-log shape open; the reasoning is in [Where decisions live](#where-decisions-live). |
-| `product/` organized **by feature** (`<group>/<feature>/doc.md` + `mocks/`) instead of by concept | **Documented variant.** WritRun leaves chapter organization open. Mocks live next to the rules they illustrate, which a per-concept layout could not do. |
-| Product rules are atomic "must" statements rather than a closing `## Criteria` block in EARS form | **Open gap**, not a variant. The rules are checkable but not yet EARS-shaped, so they do not map one-to-one onto test names. |
-| `tasks/` and `specs/` exist with schemas documented, but hold no entries — work selection still runs off [`tasks/roadmap.md`](../tasks/roadmap.md) | **Adopting, not adopted.** Until the roadmap's milestone items become real tasks with specs, nothing mechanically forces `product/` to be touched in the same change that ships a behaviour. |
-
-The last two are what keeps TOM from claiming full adoption today. They are
-tracked as work, not as permanent shape.

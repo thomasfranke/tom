@@ -20,8 +20,7 @@ carry the **Proposed changes** contract a spec does, so nothing mechanically
 forces a feature's `doc.md` to be updated in the same change that ships the
 behaviour. Converting the roadmap's items into real tasks — each with a
 `milestone`, a `product_ref`, and a spec where the brief needs one — is the
-step that closes it. Recorded in
-[`technical/README.md`](../technical/README.md#divergences-from-writrun).
+step that closes it.
 
 Until then, `roadmap.md` lives here rather than in `product/` or `technical/`
 for one reason: it describes a **plan**, and a permanent doc describes the

@@ -22,6 +22,8 @@ Desktop mocks are generated, not hand-drawn — see the `tom-wireframes` skill a
 
 Rules are atomic and imperative ("Fetch alone never changes a file on disk"), not prose paragraphs — that's what makes them checkable, by a stakeholder reading it and by an agent implementing against it. Each file also states a `Status` line (Planned / Shipped) and the milestone it belongs to, per [roadmap.md](../tasks/roadmap.md).
 
+**Known gap:** the rules are checkable by a reader, but they are not yet phrased as testable criteria (EARS or equivalent), so they do not map one-to-one onto test names. Until they do, nothing mechanically ties a rule to the test that proves it.
+
 ---
 
 *See also: [roadmap.md](../tasks/roadmap.md) · [about.md](../about.md) · [technical/design/](../technical/design/README.md)*
