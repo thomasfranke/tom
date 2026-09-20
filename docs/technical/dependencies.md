@@ -25,7 +25,7 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 
 | Package | License | Role |
 |---|---|---|
-| `re_editor` | MIT | Desktop-oriented code editor — main candidate (**Spike A**, see [roadmap.md](../tasks/roadmap.md)) |
+| `re_editor` | MIT | Desktop-oriented code editor — main candidate (**Spike A**, see [roadmap.md](../roadmap.md)) |
 | *(fallback)* custom `TextField` | — | Plan B if the spike fails |
 
 ## Local infrastructure
@@ -56,7 +56,7 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 | Dio / `http` | There is no HTTP in the MVP; it arrives with layer 3 (remote APIs) when needed |
 | `sqflite` | Mobile-oriented; on desktop, plain `sqlite3` |
 
-> Every judgment on this page is scoped to the **desktop** app. iOS and Android arrive in Phase 3, post-1.0 ([roadmap](../tasks/roadmap.md#phases)), and get their own stack under `tom_infra_mobile` — `sqflite` and a touch-capable editor become live candidates there, and `re_editor` almost certainly does not travel. Nothing here is a verdict on mobile.
+> Every judgment on this page is scoped to the **desktop** app. iOS and Android arrive in Phase 3, post-1.0 ([roadmap](../roadmap.md#phases)), and get their own stack under `tom_infra_mobile` — `sqflite` and a touch-capable editor become live candidates there, and `re_editor` almost certainly does not travel. Nothing here is a verdict on mobile.
 
 ---
 

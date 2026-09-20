@@ -9,7 +9,7 @@ Decision 8 drew a single build boundary — `tom_core` (pure Dart) against `tom_
 
 That works, and for most projects it is the right amount of ceremony. It rests on one thing: that nobody writes the import. A folder does not stop `domain/` importing `sqlite3`. Review does, until the day it does not.
 
-This project's second goal is a repository worth reading ([roadmap](../../tasks/roadmap.md#goals)). An architecture that survives because people are careful demonstrates carefulness. An architecture that survives because the wrong import does not resolve demonstrates the architecture.
+This project's second goal is a repository worth reading ([roadmap](../../roadmap.md#goals)). An architecture that survives because people are careful demonstrates carefulness. An architecture that survives because the wrong import does not resolve demonstrates the architecture.
 
 ## Decision
 

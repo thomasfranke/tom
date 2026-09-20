@@ -6,7 +6,7 @@
 
 The layering ([Decision 14](014-each-layer-is-its-own-package.md)) gives the project a domain package that nothing else can contaminate. The question it raises immediately is what goes in it, and "DDD" is not an answer on its own — the tactical patterns are a menu, not a set.
 
-It matters here more than usual because the second goal is a repository worth reading ([roadmap](../../tasks/roadmap.md#goals)). A codebase that applies a pattern where it does not fit teaches the pattern wrongly, and does so with the project's full authority behind it. Ceremony is not neutral when the artefact is meant to be an example.
+It matters here more than usual because the second goal is a repository worth reading ([roadmap](../../roadmap.md#goals)). A codebase that applies a pattern where it does not fit teaches the pattern wrongly, and does so with the project's full authority behind it. Ceremony is not neutral when the artefact is meant to be an example.
 
 **TOM's domain is thin, and admitting that is the whole decision.** The truth of this application lives on disk and in Git, both external by definition — "files are the truth" is a project rule. Business logic with nowhere else to live has essentially one inhabitant: classifying blocks as added, removed or modified. Most of what looks like domain work here is orchestration of a filesystem and a process.
 

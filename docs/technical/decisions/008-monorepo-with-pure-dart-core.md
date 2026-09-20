@@ -48,7 +48,7 @@ apps/desktop ──────────┬──> the pure Dart layers <┬�
 ## Rationale
 
 - **A physical boundary on the divide that matters:** Clean Architecture stops being a convention and becomes a build constraint exactly where leakage would be irreversible.
-- **Mobile as a bounded cost:** `domain/application/data/core` are born 100% reusable; the planned iOS/Android app means alternative infrastructure implementations + a new presentation, with no refactor of the core. This decision is what keeps Phase 3 from being a rewrite. And mobile is expected rather than merely hoped for: writing documentation needs a repository, markdown and git — not a development environment — and the people who read and approve documentation are rarely at a desk when they do ([roadmap](../../tasks/roadmap.md#phases)).
+- **Mobile as a bounded cost:** `domain/application/data/core` are born 100% reusable; the planned iOS/Android app means alternative infrastructure implementations + a new presentation, with no refactor of the core. This decision is what keeps Phase 3 from being a rewrite. And mobile is expected rather than merely hoped for: writing documentation needs a repository, markdown and git — not a development environment — and the people who read and approve documentation are rarely at a desk when they do ([roadmap](../../roadmap.md#phases)).
 - **Minimal cost:** two packages on the native workspace carry almost no overhead (one `pub get` at the root, the IDE sees the whole set); the real ceremony (Melos, N packages) stays behind triggers.
 - **Portfolio narrative:** the repo tree communicates the architecture in the first fold on GitHub.
 

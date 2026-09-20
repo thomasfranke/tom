@@ -4,7 +4,7 @@
 
 ## Context
 
-TOM parses markdown, renders it, drives the `git` binary, runs on three desktop platforms and is meant to reach phones after 1.0 ([roadmap](../../tasks/roadmap.md#phases)). Nothing in that description points at one obvious toolkit. This is the most consequential choice in the project — every other decision is written against it — so it is recorded here with its counter-argument rather than left implicit.
+TOM parses markdown, renders it, drives the `git` binary, runs on three desktop platforms and is meant to reach phones after 1.0 ([roadmap](../../roadmap.md#phases)). Nothing in that description points at one obvious toolkit. This is the most consequential choice in the project — every other decision is written against it — so it is recorded here with its counter-argument rather than left implicit.
 
 ## Decision
 

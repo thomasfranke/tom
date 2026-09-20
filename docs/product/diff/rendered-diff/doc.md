@@ -18,9 +18,9 @@ Show what changed over the *formatted* document — a struck-through removed par
 
 ## Mocks
 
-- Desktop: not drawn yet — the block granularity depends on Spike B's findings (see [roadmap.md](../../../tasks/roadmap.md)); the [shell](../../workspace/mocks/shell.excalidraw) layout deliberately stops at "preview assembled block by block" until that's answered.
+- Desktop: not drawn yet — the block granularity depends on Spike B's findings (see [roadmap.md](../../../roadmap.md)); the [shell](../../workspace/mocks/shell.excalidraw) layout deliberately stops at "preview assembled block by block" until that's answered.
 - Mobile: [review](mocks/review-mobile.excalidraw) — what changed, rendered, with approve as the one action.
 
 ---
 
-*See also: [about.md](../../../about.md) · [roadmap.md](../../../tasks/roadmap.md)*
+*See also: [about.md](../../../about.md) · [roadmap.md](../../../roadmap.md)*

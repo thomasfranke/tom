@@ -18,4 +18,4 @@ Edit the raw markdown text with a live preview alongside — deliberately not a 
 
 ---
 
-*See also: [about.md](../../../about.md) · [roadmap.md](../../../tasks/roadmap.md) · [Decision 3](../../../technical/decisions/003-editor-is-source-plus-preview.md)*
+*See also: [about.md](../../../about.md) · [roadmap.md](../../../roadmap.md) · [Decision 3](../../../technical/decisions/003-editor-is-source-plus-preview.md)*

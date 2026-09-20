@@ -15,4 +15,4 @@ Buttons and keyboard shortcuts that insert markdown syntax, without hiding the s
 
 ---
 
-*See also: [about.md](../../../about.md) · [roadmap.md](../../../tasks/roadmap.md) · [Decision 3](../../../technical/decisions/003-editor-is-source-plus-preview.md)*
+*See also: [about.md](../../../about.md) · [roadmap.md](../../../roadmap.md) · [Decision 3](../../../technical/decisions/003-editor-is-source-plus-preview.md)*

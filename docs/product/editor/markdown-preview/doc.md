@@ -13,7 +13,7 @@ Render the document as formatted output, not raw text — the primary way anyone
 ## Rules — mobile ("reading")
 
 - Reading is full-bleed: no split view, no permanent side panel — this is the primary job on a phone, not a companion mode.
-- Editing from this screen is not available yet. Editing on touch is an open design question, not just a port of the desktop editor ([roadmap](../../../tasks/roadmap.md#phases)).
+- Editing from this screen is not available yet. Editing on touch is an open design question, not just a port of the desktop editor ([roadmap](../../../roadmap.md#phases)).
 
 ## Mocks
 
@@ -23,4 +23,4 @@ Render the document as formatted output, not raw text — the primary way anyone
 
 ---
 
-*See also: [about.md](../../../about.md) · [roadmap.md](../../../tasks/roadmap.md)*
+*See also: [about.md](../../../about.md) · [roadmap.md](../../../roadmap.md)*

@@ -16,4 +16,4 @@ How the panels sit together on screen: the explorer, the editor/preview, and the
 
 ---
 
-*See also: [about.md](../../about.md) · [roadmap.md](../../tasks/roadmap.md) · [Decision 12](../../technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)*
+*See also: [about.md](../../about.md) · [roadmap.md](../../roadmap.md) · [Decision 12](../../technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)*

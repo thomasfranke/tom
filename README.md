@@ -48,12 +48,12 @@ Everything is in [`docs/`](docs/) — and yes, it is edited the way TOM proposes
 | [Product](docs/about.md) | What this is, and the non-goals it will not drift into |
 | [Architecture](docs/technical/layers.md) | The seven packages, the graph, and what enforces it |
 | [Decisions](docs/technical/decisions/) | Every architectural choice and why — the folder listing reads as a summary |
-| [Roadmap](docs/tasks/roadmap.md) | What is being built, in what order, and by which package |
+| [Roadmap](docs/roadmap.md) | What is being built, in what order, and by which package |
 | [Products](docs/product/) | What each feature must do, one folder per feature |
 
 ## Status
 
-Phase 0: technical spikes. The milestones are in [`docs/tasks/roadmap.md`](docs/tasks/roadmap.md).
+Phase 0: technical spikes. The milestones are in [`docs/roadmap.md`](docs/roadmap.md).
 
 Watch or star the repository if you want to know when there is something to run.
 

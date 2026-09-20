@@ -16,4 +16,4 @@ Get a document out of the app as PDF or HTML — free, always, for every user.
 
 ---
 
-*See also: [about.md](../../about.md) · [roadmap.md](../../tasks/roadmap.md)*
+*See also: [about.md](../../about.md) · [roadmap.md](../../roadmap.md)*

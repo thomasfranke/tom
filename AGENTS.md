@@ -12,25 +12,25 @@ Read before any task.
 
 ## Source of truth
 
-`docs/` is four folders, split by audience (product vs. technical) and by nature (permanent vs. work in progress), with `about.md` as the shared context above the fork. **Before suggesting architecture, dependencies or scope, consult:**
+`docs/` is two folders and two files, split by audience (product vs. technical), with `about.md` as the shared context above the fork and `roadmap.md` as the order things arrive in. **Before suggesting architecture, dependencies or scope, consult:**
 
 - [`docs/about.md`](docs/about.md) — what the project *is*: the bet, principles, personas, killer features and **non-goals** (respect them!). Short by design; read it first.
 - [`docs/product/`](docs/product/README.md) — **the source of truth for what each feature must do**, in non-technical language, one folder per feature (`doc.md` + `mocks/`). Maintained by stakeholders, kept current as the app evolves. Check the relevant `doc.md` before implementing or changing a feature's behavior, and flag it if the code diverges from what's written there.
 - [`docs/technical/`](docs/technical/README.md) — how it is built: `layers.md` (the graph and what enforces it), `flows.md` (runtime behaviour), `domain-model.md`, `dependencies.md` (stack with licenses), the development process, `decisions/` (ADRs — a new decision is a new file, changing one requires an explicit revision) and `design/` (wireframes and the visual language).
-- [`docs/tasks/`](docs/tasks/README.md) — the queue, plus `roadmap.md` for spikes, phases and milestones — whatever is out of the MVP stays out. **The queue is empty today**: work is still selected from the roadmap, and the [selection algorithm](docs/technical/README.md#task-selection-algorithm) has nothing to run against yet.
-- [`docs/specs/`](docs/specs/README.md) — the detail of one change. Also empty today.
+- [`docs/roadmap.md`](docs/roadmap.md) — spikes, phases and milestones, in order — whatever is out of the MVP stays out. **There is no task queue and no spec folder**: work is picked from the roadmap, or from what the maintainer asks for directly.
 - **Read selectively.** Consult only the files relevant to the task at hand; never load `docs/` wholesale. The index above exists so the right file can be picked without reading the rest.
 - **The canonical form of a rule is the dartdoc of the code that implements it** — `docs/technical/` states the rule, the code shows it. When the two disagree, the code is right and the doc is a bug.
 
 ## Human gates
 
-Three checkpoints, named explicitly rather than implied. Everything not on this table — creating tasks, drafting specs, implementing an approved spec, filling a spec's Outcome — is agent work, autonomously.
+One checkpoint, named explicitly rather than implied. Everything else is agent work, autonomously — and **no process artefact is a prerequisite for doing the work**: there is no task to open, no spec to draft, no approval to wait for. What is asked for gets built.
 
 | Transition | Who |
 |---|---|
-| Changing a permanent doc: `docs/about.md`, anything under `docs/product/` or `docs/technical/` | Human writes it or reviews it before merge. Agents may draft; a permanent doc never merges on agent approval alone. |
-| Spec `draft → approved` | **Human only.** An agent never self-approves, not even a draft it wrote itself. |
-| A task with an empty `spec_ref` whose body plus `product_ref` is not a sufficient brief | **Stop and ask** whether to draft a spec first. Never improvise scope to keep moving. |
+| Changing a doc under `docs/` | Human writes it or reviews it before merge. Agents may draft; a doc never merges on agent approval alone. |
+
+The one thing that still applies to any change: if the request is ambiguous
+enough that two readings produce different work, ask — don't improvise scope.
 
 ## Skills — load on the matching trigger
 
@@ -91,6 +91,6 @@ core ← domain ← application ← presentation
 
 ## Current status
 
-**Phase 0 — Spikes.** No milestone has been built. The workspace skeleton is in place and the error model is real code: `Result`, `AppFailure` and `Observability` in `tom_core`; the sealed `GitFailure`/`DocumentFailure`/`SearchFailure` hierarchies in `tom_domain`; `FilesystemFailure` in `tom_infra` (55 tests across the workspace). Every `AppFailure` hierarchy is now Freezed — `tom_core`, `tom_domain` and `tom_infra` each carry `freezed`/`freezed_annotation`/`build_runner`, generated equality replaces the hand-written `==`/`hashCode`, and `--ignore-files` keeps `*.freezed.dart` out of the coverage gate (`tool/coverage_gate.dart`, `tool/run_tests.dart`, `make coverage`). `docs/architecture/` was consolidated from 13 files into four, and `docs/` was then restructured into four folders — `about.md` + `product/` + `technical/` + `tasks/` + `specs/` — with `architecture/`, `process/`, `decisions/` and `design/` folding into `technical/`, `products/` becoming `product/`, and the roadmap moving next to the (still empty) queue. The domain model is deliberately partial (`docs/technical/domain-model.md`) — `Block` in particular is an *output* of Spike B; do not design `BlockDiffer` before the spike reports. Next steps: Spike A (`re_editor` as source mode) and Spike B (the `markdown` AST for block diff, now also answering whether a single block can be rendered in isolation). See `docs/tasks/roadmap.md`. There is no user-research phase: the project is built on the maintainer's own experience, stated as such in `docs/tasks/roadmap.md`. Desktop wireframes for M0/M1 live in `docs/technical/design/` (skill: `tom-wireframes`).
+**Phase 0 — Spikes.** No milestone has been built. The workspace skeleton is in place and the error model is real code: `Result`, `AppFailure` and `Observability` in `tom_core`; the sealed `GitFailure`/`DocumentFailure`/`SearchFailure` hierarchies in `tom_domain`; `FilesystemFailure` in `tom_infra` (55 tests across the workspace). Every `AppFailure` hierarchy is now Freezed — `tom_core`, `tom_domain` and `tom_infra` each carry `freezed`/`freezed_annotation`/`build_runner`, generated equality replaces the hand-written `==`/`hashCode`, and `--ignore-files` keeps `*.freezed.dart` out of the coverage gate (`tool/coverage_gate.dart`, `tool/run_tests.dart`, `make coverage`). `docs/architecture/` was consolidated from 13 files into four, and `docs/` then settled on `about.md` + `roadmap.md` + `product/` + `technical/`, with `architecture/`, `process/`, `decisions/` and `design/` folding into `technical/` and `products/` becoming `product/`. The domain model is deliberately partial (`docs/technical/domain-model.md`) — `Block` in particular is an *output* of Spike B; do not design `BlockDiffer` before the spike reports. The task/spec process was removed in full: `docs/tasks/`, `docs/specs/` and the leftover `work/` queue are gone, along with the schemas and the selection algorithm that went with them — work is picked from `docs/roadmap.md` or asked for directly, and nothing has to be filed before it can be built. `tom_infra` holds one capability of the five `layers.md` names (`filesystem/`); `git_client/` is next and is the only M1 blocker that waits on no spike, while `markdown_parser/` and `text_differ/` sit behind Spike B and `search_index/` is M2. File watching and settings are used by the roadmap but are not yet declared capabilities in `layers.md`. Next steps: `git_client/`, then Spike A (`re_editor` as source mode) and Spike B (the `markdown` AST for block diff, now also answering whether a single block can be rendered in isolation). See `docs/roadmap.md`. There is no user-research phase: the project is built on the maintainer's own experience, stated as such in `docs/roadmap.md`. Desktop wireframes for M0/M1 live in `docs/technical/design/` (skill: `tom-wireframes`).
 
 > Keep this "Current status" section up to date at the end of each meaningful work session — it is what carries context between sessions.

@@ -1,7 +1,7 @@
 name: tom_mobile
 description: >-
   The mobile application: composition root and widgets for iOS and Android.
-  Reserved skeleton for Phase 3 (docs/tasks/roadmap.md) — no infrastructure
+  Reserved skeleton for Phase 3 (docs/roadmap.md) — no infrastructure
   wired in yet; that arrives with the mobile-specific implementations of the
   contracts tom_infra defines for desktop.
 publish_to: none

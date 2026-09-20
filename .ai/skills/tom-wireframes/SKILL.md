@@ -93,7 +93,7 @@ A coloured mark in a TOM wireframe always means **"this part arrives later"**. N
 4. **Draw each border once.** The frame is a rounded rectangle; every region inside it is separated by `hline`/`vline`, never by its own rectangle. A rectangle laid over the frame repeats a border that is already there, and the repeat is obvious because the outer corner is rounded and the inner one is not.
 5. **Never centre text by estimating its width.** Use `text_centred(...)`, which hands the centring to Excalidraw. Computing `x` from character count is always a few pixels out, and it shows.
 6. **Chrome stays put across screens.** The explorer is 220 wide in every screen that has one, drawn by `explorer(...)`. If one screen needs it narrower, the token changes and every screen follows.
-7. **Do not wireframe what a spike has not answered.** The rendered diff's block granularity is Spike B's output ([roadmap.md](../../../docs/tasks/roadmap.md)); drawing it in detail now is work that gets thrown away. Coarse is honest.
+7. **Do not wireframe what a spike has not answered.** The rendered diff's block granularity is Spike B's output ([roadmap.md](../../../docs/roadmap.md)); drawing it in detail now is work that gets thrown away. Coarse is honest.
 8. **Look at it before committing.** Render to PNG and actually view it — a wireframe with an overlapping label or a panel that fell off the canvas is invisible in the JSON diff.
 9. **A shipped interface change updates its mock in the same PR.** A product's `mocks/` is read as the current shape of its UI ([docs/product/README.md](../../../docs/product/README.md)); once it drifts from what's actually built, it stops teaching the right thing and starts teaching the wrong one with a straight face.
 
