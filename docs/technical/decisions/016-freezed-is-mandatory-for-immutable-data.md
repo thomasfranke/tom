@@ -22,7 +22,7 @@ Every immutable data class that is an **entity, value object with more than one 
 
 ## Consequences
 
-- `tool/coverage_gate.dart`'s `--ignore-files` for `*.freezed.dart` ([Current status, AGENTS.md](../../../AGENTS.md)) keeps excluding generated code as usage grows; no gate change needed.
+- `tool/src/commands/coverage_gate.dart`'s `--ignore-files` for `*.freezed.dart` ([Current status, AGENTS.md](../../../AGENTS.md)) keeps excluding generated code as usage grows; no gate change needed.
 - Not lint-enforced today — same as Decision 5's "inline try/catch mandatory", this is reviewed in PR, not caught by tooling.
 
 ## Revisit when

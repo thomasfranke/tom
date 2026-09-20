@@ -4,7 +4,7 @@
 // run back to back otherwise with no sense of progress, just silence until
 // each one's full build_runner log dumps out at once.
 //
-//   dart run tool/run_codegen.dart [--force] <target>...
+//   dart run tool/src/commands/run_codegen.dart [--force] <target>...
 //
 // <target> is a bare package name — a folder under src/packages/ — or
 // "desktop"/"mobile" for the Flutter apps. A target with no build_runner
@@ -27,12 +27,16 @@
 // running and which named stage its log is currently on ("Running build...",
 // "Succeeded after 4.2s with 63 outputs"), not a file-by-file count.
 //
-// No external packages — only dart:async, dart:convert, dart:io — so it
-// runs with nothing but the SDK already on the machine, from any directory.
+// No external packages — only dart:* and one sibling file — so it runs with
+// nothing but the SDK already on the machine, from any directory.
 
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
+import '../repo.dart';
+import '../theme/theme.dart';
+import '../tty.dart';
 
 const _pkgOrder = [
   'core',
@@ -51,11 +55,13 @@ void main(List<String> rawArgs) async {
   final force = rawArgs.contains('--force');
   final args = rawArgs.where((a) => a != '--force').toList();
   if (args.isEmpty) {
-    stderr.writeln('Usage: dart run tool/run_codegen.dart [--force] <pkg>...');
+    stderr.writeln(
+      'Usage: dart run tool/src/commands/run_codegen.dart [--force] <pkg>...',
+    );
     exit(64);
   }
 
-  final root = _repoRoot();
+  final root = repoRoot();
   final src = Directory('${root.path}/src');
   final base = Platform.environment['BASE'] ?? 'main';
   final diff = force ? null : await _changedPackages(root, base);
@@ -81,10 +87,14 @@ void main(List<String> rawArgs) async {
 
   final dashboard = _Dashboard(rows, DateTime.now());
   dashboard.render();
-  final ticker = Timer.periodic(
-    const Duration(milliseconds: 250),
-    (_) => dashboard.render(),
-  );
+  // No ticker without a terminal: its only job is to advance a spinner in
+  // place, and in a log it would print the same frame four times a second.
+  final ticker = isPlain
+      ? null
+      : Timer.periodic(
+          const Duration(milliseconds: 250),
+          (_) => dashboard.render(),
+        );
 
   var overallFail = false;
   for (var i = 0; i < targets.length; i++) {
@@ -100,7 +110,7 @@ void main(List<String> rawArgs) async {
     dashboard.render();
   }
 
-  ticker.cancel();
+  ticker?.cancel();
   dashboard.render();
 
   final failedRows = rows.where((r) => r.failed).toList();
@@ -112,15 +122,17 @@ void main(List<String> rawArgs) async {
   stdout.writeln();
   stdout.writeln(
     failedRows.isEmpty
-        ? '  • Summary: 🟢 all packages succeeded'
-        : '  • Summary: 🔴 ${failedRows.length} package(s) failed',
+        ? '  • Summary: ${palette.ok}${Status.ok}${Ansi.reset} '
+              'all packages succeeded'
+        : '  • Summary: ${palette.fail}${Status.fail}${Ansi.reset} '
+              '${failedRows.length} package(s) failed',
   );
   stdout.writeln('    • $totalOutputs file(s) written by codegen');
   stdout.writeln('    • ⏱ $totalElapsed');
 
   if (failedRows.isNotEmpty) {
     stdout.writeln();
-    stdout.writeln('🔴 Failed:');
+    stdout.writeln('${palette.fail}${Status.fail}${Ansi.reset} Failed:');
     for (final row in failedRows) {
       if (row.failedFiles.isEmpty) {
         stdout.writeln('  ${row.label}');
@@ -155,11 +167,8 @@ _Target _resolve(Directory src, String pkg) {
   return _Target(pkg, Directory('${src.path}/packages/$pkg'));
 }
 
-Directory _repoRoot() {
-  // tool/run_codegen.dart -> tool/ -> repo root, regardless of cwd.
-  final scriptDir = File(Platform.script.toFilePath()).parent;
-  return scriptDir.parent;
-}
+// The repository root is found by marker now (see ../repo.dart): counting
+// levels from this file is what broke when it moved into tool/src/commands/.
 
 bool _hasBuildRunner(_Target target) {
   final pubspec = File('${target.dir.path}/pubspec.yaml');
@@ -280,7 +289,10 @@ Future<bool> _runOne(_Target target, _Row row, _Dashboard dashboard) async {
       row.failed = true;
       final failingFile = _failingFile.firstMatch(message)?.group(1);
       if (failingFile != null) row.failedFiles.add(failingFile);
-      dashboard.log('  🔴 ${target.label} — $message');
+      dashboard.log(
+        '  ${palette.fail}${Status.fail}${Ansi.reset}  ${target.label} '
+        '— $message',
+      );
     }
 
     final stageDone = _stageDone.firstMatch(message);
@@ -315,7 +327,12 @@ class _Dashboard {
   int _paintedLines = 0;
   int _tick = 0;
 
+  /// Rows already printed in plain mode, so each is reported once.
+  final Set<String> _reported = {};
+
   void render() {
+    if (isPlain) return _renderPlain();
+
     _tick++;
     _erase();
     final lines = [_header(), ...rows.map(_renderRow)];
@@ -323,14 +340,30 @@ class _Dashboard {
     _paintedLines = lines.length;
   }
 
+  /// Append-only: one line per package, the moment it stops moving. The
+  /// header is a progress readout, which in a log is the same line repeated.
+  void _renderPlain() {
+    for (final row in rows) {
+      if (row.state == _RowState.queued || row.state == _RowState.running) {
+        continue;
+      }
+      if (!_reported.add(row.label)) continue;
+      stdout.writeln(_renderRow(row));
+    }
+  }
+
   void log(String text) {
+    if (isPlain) {
+      stdout.writeln(text);
+      return;
+    }
     _erase();
     stdout.writeln(text);
     render();
   }
 
   void _erase() {
-    if (_paintedLines == 0) return;
+    if (isPlain || _paintedLines == 0) return;
     stdout.write('\x1B[${_paintedLines}A\x1B[J');
     _paintedLines = 0;
   }
@@ -367,23 +400,34 @@ class _Dashboard {
     final label = row.label.padRight(_labelWidth);
     switch (row.state) {
       case _RowState.skippedNoBuildRunner:
-        return '  🟠 $label  no build_runner';
+        return '${_mark(Status.skipped, palette.skipped)}$label  '
+            'no build_runner';
       case _RowState.skippedNoChange:
-        return '  🔵 $label  skipped — no change in this branch';
+        return '${_mark(Status.skipped, palette.skipped)}$label  '
+            'skipped — no change in this branch';
       case _RowState.queued:
-        return '  ⚪ $label  queued';
+        return '${_mark(Status.queued, palette.queued)}$label  queued';
       case _RowState.running:
         final spin = _spinner[_tick % _spinner.length];
         final elapsed = _fmtDuration(DateTime.now().difference(row.startedAt!));
-        return '  🟡 $label  $spin ${row.stage}  •  ⏱ $elapsed';
+        return '${_mark(Status.running, palette.running)}$label  '
+            '$spin ${row.stage}  •  ⏱ $elapsed';
       case _RowState.done:
         final elapsed = _fmtDuration(row.elapsed ?? Duration.zero);
-        final icon = row.failed ? '🔴' : '🟢';
+        final mark = row.failed
+            ? _mark(Status.fail, palette.fail)
+            : _mark(Status.ok, palette.ok);
         final outputs = row.outputs != null ? '${row.outputs} outputs  ' : '';
-        return '  $icon $label  $outputs⏱ $elapsed';
+        return '$mark$label  $outputs⏱ $elapsed';
     }
   }
 }
+
+/// A row's status mark, plus the margin around it.
+///
+/// Five columns, matching what the double-width emoji it replaced occupied,
+/// so nothing to its right shifts.
+String _mark(String glyph, String color) => '  $color$glyph${Ansi.reset}  ';
 
 String _fmtDuration(Duration d) {
   final m = d.inMinutes;

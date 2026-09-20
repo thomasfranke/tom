@@ -1,7 +1,7 @@
 // Maps a git diff against BASE to the specific *_test.dart files it should
 // re-run, then hands that off to tool/run_tests.dart to execute and render.
 //
-//   dart run tool/run_changed_tests.dart [--coverage] [BASE]
+//   dart run tool/src/commands/run_changed_tests.dart [--coverage] [BASE]
 //
 // BASE defaults to $BASE, then "main" — `make flutter-test-diff BASE=develop`
 // sets the env var Make already exports to this recipe's shell. Three diff
@@ -28,6 +28,9 @@
 import 'dart:async';
 import 'dart:io';
 
+import '../repo.dart';
+import '../tty.dart';
+
 const _pkgOrder = [
   'core',
   'domain',
@@ -51,7 +54,7 @@ void main(List<String> args) async {
   // match — is the part that can actually take a moment on a large diff.
   await _showCompiling();
 
-  final root = _repoRoot();
+  final root = repoRoot();
   final changed = await _changedFiles(root, base);
   stdout.writeln('• Diffing against $base — ${changed.length} file(s) changed');
   if (changed.isEmpty) exit(0);
@@ -149,7 +152,7 @@ void main(List<String> args) async {
     'dart',
     [
       'run',
-      'tool/run_tests.dart',
+      'tool/src/commands/run_tests.dart',
       '--no-banner',
       if (coverage) '--coverage',
       ...specs,
@@ -164,10 +167,15 @@ void main(List<String> args) async {
 /// ticker instead of a silent terminal. The floor delay keeps it visible for
 /// a beat even when setup is instant — otherwise it would flash and vanish,
 /// which reads as nothing having happened at all. Duplicated from
-/// tool/run_tests.dart rather than shared: each entry point shows its own,
-/// and tool/run_tests.dart skips it (`--no-banner`) when this one already ran.
+/// run_tests.dart rather than shared: each entry point shows its own, and
+/// run_tests.dart skips it (`--no-banner`) when this one already ran.
 Future<void> _showCompiling() async {
   stdout.writeln('• Running build hooks...');
+
+  // The banner exists to fill a silence someone is watching. Nobody watches a
+  // log, so in plain mode the line above is the whole banner.
+  if (isPlain) return;
+
   stdout.writeln();
   final start = DateTime.now();
   void redraw() {
@@ -217,8 +225,5 @@ Future<List<String>> _changedFiles(Directory root, String base) async {
   return sorted;
 }
 
-Directory _repoRoot() {
-  // tool/run_changed_tests.dart -> tool/ -> repo root, regardless of cwd.
-  final scriptDir = File(Platform.script.toFilePath()).parent;
-  return scriptDir.parent;
-}
+// The repository root is found by marker now (see ../repo.dart): counting
+// levels from this file is what broke when it moved into tool/src/commands/.

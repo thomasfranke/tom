@@ -1,40 +1,41 @@
 # Development setup
 
-**Prerequisites:** Flutter (Dart ≥ 3.12, for the workspace's `sdk` constraint) and git. Nothing else — no Melos, no global tooling, no `make` if you would rather type the commands. `src/.fvmrc` pins the exact version CI uses (`make fvm` to match it locally); anything recent enough should resolve regardless.
+**Prerequisites:** Flutter (Dart ≥ 3.12, for the workspace's `sdk` constraint) and git. Nothing else — no Melos, no global tooling, and `make` is optional. `src/.fvmrc` pins the exact version CI uses (`tom fvm` to match it locally); anything recent enough should resolve regardless.
 
 ```bash
 git clone https://github.com/thomasfranke/tom.git
 cd tom
 flutter config --enable-windows-desktop --enable-macos-desktop --enable-linux-desktop
 
-make setup            # one resolve for all seven packages
-make run              # DEVICE=windows|linux|macos
+dart run tool/tom.dart setup   # one resolve for all seven packages
+dart run tool/tom.dart run     # opens the desktop app
 ```
 
 ## Where things are
 
 The Dart workspace is under [`src/`](../../src/), so the repository root leads with documentation and licence rather than build files. Seven packages, one per layer, and a violation of the layering does not compile — the graph and what enforces it are in [layers.md](layers.md).
 
-Every `make` target runs from the repository root and handles the `src/` hop for you. If you prefer the raw commands, they are what the `Makefile` shows: `cd src && flutter pub get`, `cd src && flutter analyze`, and so on.
+Everything runs from the repository root and handles the `src/` hop for you.
 
 ## Everyday commands
 
-The `Makefile` is a convenience, not a requirement. Each target wraps a short command you can equally type by hand.
+`tom` is the CLI, in [`tool/`](../../tool/). It needs nothing but the Dart SDK — no `pub get` of its own, which is what lets it be the thing that resolves the workspace. Run it with no arguments for a navigable menu, or name a command directly:
 
 ```bash
-make help               # list every target
-make setup              # resolve the workspace
-make verify             # format + analyze + codegen gate + test + coverage gate — everything CI runs
-make flutter-test       # architecture test, then each package, then the app
-make flutter-test-arch  # just the layer-graph assertions
-make analyze            # static analysis across all seven packages at once
-make runner             # build_runner wherever a package declares it
-make codegen-gate       # runner-hard, then fail if .g.dart/.freezed.dart drifted from git
-make run                # run the app (DEVICE=windows|linux|macos)
-make run-flags FLAGS="FEATURE_DIFF_V1=true"
+dart run tool/tom.dart                 # the menu: arrow keys, Enter, Esc to go back
+dart run tool/tom.dart --help          # every command, non-interactively
+dart run tool/tom.dart verify          # everything CI runs, stopping at the first failure
+dart run tool/tom.dart test unit       # then it asks which package
+dart run tool/tom.dart test arch       # just the layer-graph assertions
+dart run tool/tom.dart codegen hard    # delete every generated file, then regenerate
+dart run tool/tom.dart coverage domain # measure, build the HTML report, open it
 ```
 
-`make flutter-test-arch` is worth knowing early: it reads every `pubspec.yaml` and asserts the dependency graph, including that exactly one package knows Flutter exists. If you add a dependency between layers, that test is where you declare the intent — deliberately, because the graph is a decision.
+The `Makefile` is a shortcut over the same commands, for the muscle memory and the shell completion — `make verify`, `make flutter-test`, `make setup`. It holds no logic of its own: every target is one line through `tom`, and nothing in `tool/` calls back into `make`. That direction is deliberate, because `make` is not installed on Windows and the commands have to work there.
+
+`tom test arch` is worth knowing early: it reads every `pubspec.yaml` and asserts the dependency graph, including that exactly one package knows Flutter exists. If you add a dependency between layers, that test is where you declare the intent — deliberately, because the graph is a decision.
+
+The gates — `codegen-gate` and `coverage-gate` — exist to fail a build rather than to do anything for you, so they are not menu rows and `codegen-gate` is not a `make` target. Both arrive as steps of `verify`, which is how anyone wants them locally.
 
 ## Adding a dependency
 

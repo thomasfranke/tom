@@ -1,7 +1,7 @@
 // Fails the build if line coverage on any package that has both `lib/src`
 // code and tests falls under the threshold.
 //
-//   dart run tool/coverage_gate.dart [--threshold=95]
+//   dart run tool/src/commands/coverage_gate.dart [--threshold=95]
 //
 // A package whose `lib/src` has no `.dart` files yet (application, data,
 // presentation, as of Phase 0), or that has code but no tests yet, is
@@ -15,6 +15,9 @@
 // docs/technical/layers.md#testing.
 
 import 'dart:io';
+
+import '../repo.dart';
+import '../theme/theme.dart';
 
 // Freezed's generated toString/copyWith/props are never exercised directly —
 // the tests hit the hand-written factories, not the generated methods by
@@ -35,7 +38,7 @@ const List<String> _pkgOrder = <String>[
 
 void main(List<String> args) async {
   final double threshold = _threshold(args);
-  final Directory root = _repoRoot();
+  final Directory root = repoRoot();
   final Directory packages = Directory('${root.path}/src/packages');
 
   var overallFail = false;
@@ -64,19 +67,28 @@ void main(List<String> args) async {
     final String label = pkg.padRight(labelWidth);
 
     if (!hasCode) {
-      stdout.writeln('  🟠 $label  no lib/src yet, not gated');
+      stdout.writeln(
+        '${_mark(Status.skipped, palette.skipped)}$label  '
+        'no lib/src yet, not gated',
+      );
       continue;
     }
 
     final _Coverage? result = await _measure(dir);
     if (result == null) {
-      stdout.writeln('  🟠 $label  no tests yet, not gated');
+      stdout.writeln(
+        '${_mark(Status.skipped, palette.skipped)}$label  '
+        'no tests yet, not gated',
+      );
       continue;
     }
     gatedTotal++;
     if (!result.testsPassed) {
       overallFail = true;
-      stdout.writeln('  🔴 $label  tests failed, coverage not measured');
+      stdout.writeln(
+        '${_mark(Status.fail, palette.fail)}$label  '
+        'tests failed, coverage not measured',
+      );
       continue;
     }
 
@@ -85,9 +97,11 @@ void main(List<String> args) async {
     if (ok) gatedPassed++;
     linesHit += result.linesHit;
     linesFound += result.linesFound;
-    final String icon = ok ? '🟢' : '🔴';
+    final String mark = ok
+        ? _mark(Status.ok, palette.ok)
+        : _mark(Status.fail, palette.fail);
     stdout.writeln(
-      '  $icon $label  ${result.percentage.toStringAsFixed(1)}% '
+      '$mark$label  ${result.percentage.toStringAsFixed(1)}% '
       '(${result.linesHit}/${result.linesFound} lines)',
     );
   }
@@ -98,9 +112,17 @@ void main(List<String> args) async {
   if (linesFound > 0) {
     stdout.writeln('    • ◔ ${(linesHit / linesFound * 100).round()}%');
   }
-  stdout.writeln('    • ${overallFail ? '🔴 failed' : '🟢 passed'}');
+  stdout.writeln(
+    '    • ${overallFail ? '${palette.fail}${Status.fail}${Ansi.reset} failed' : '${palette.ok}${Status.ok}${Ansi.reset} passed'}',
+  );
   exit(overallFail ? 1 : 0);
 }
+
+/// A row's status mark, plus the margin around it.
+///
+/// Five columns, matching what the double-width emoji it replaced occupied,
+/// so nothing to its right shifts.
+String _mark(String glyph, String color) => '  $color$glyph${Ansi.reset}  ';
 
 double _threshold(List<String> args) {
   for (final String arg in args) {
@@ -207,8 +229,5 @@ Iterable<File> _dartFilesUnder(Directory dir) {
       .where((File f) => f.path.endsWith('.dart'));
 }
 
-Directory _repoRoot() {
-  // tool/coverage_gate.dart -> tool/ -> repo root, regardless of cwd.
-  final Directory scriptDir = File(Platform.script.toFilePath()).parent;
-  return scriptDir.parent;
-}
+// The repository root is found by marker now (see ../repo.dart): counting
+// levels from this file is what broke when it moved into tool/src/commands/.

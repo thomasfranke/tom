@@ -1,7 +1,7 @@
 // A live test dashboard: one fixed line per package, each with its own
 // progress bar, driven by package:test's `--reporter=json` protocol.
 //
-//   dart run tool/run_tests.dart [--coverage] <target>...
+//   dart run tool/src/commands/run_tests.dart [--coverage] <target>...
 //
 // <target> is either a bare package name — a folder under src/packages/,
 // "desktop" or "mobile" for the Flutter apps, or "arch" for the architecture
@@ -22,8 +22,9 @@
 // place, with every failure printed above the block the instant it happens
 // rather than scrolled past waiting for the run to end.
 //
-// Status is a single colored-dot emoji (🟢/🔴/🟡/⚪/🟠) — a traffic-light
-// read at a glance across however many rows are in the block.
+// Status is one circled glyph per row (see Status in the theme), coloured by
+// the palette rather than by the character — read at a glance down the
+// column, and one terminal cell wide, which an emoji is not.
 //
 // No external packages — only dart:io and dart:convert — so it runs with
 // nothing but the SDK already on the machine, from any directory.
@@ -31,6 +32,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
+import '../repo.dart';
+import '../theme/theme.dart';
+import '../tty.dart';
 
 const _pkgOrder = [
   'core',
@@ -55,11 +60,13 @@ void main(List<String> rawArgs) async {
       .where((a) => a != '--coverage' && a != '--no-banner')
       .toList();
   if (args.isEmpty) {
-    stderr.writeln('Usage: dart run tool/run_tests.dart [--coverage] <pkg>...');
+    stderr.writeln(
+      'Usage: dart run tool/src/commands/run_tests.dart [--coverage] <pkg>...',
+    );
     exit(64);
   }
 
-  final root = _repoRoot();
+  final root = repoRoot();
   final src = Directory('${root.path}/src');
   final targets = args.map((a) => _resolve(src, a)).toList();
   final rows = [for (final t in targets) _Row(t.label, hasTests: _hasTests(t))];
@@ -71,10 +78,14 @@ void main(List<String> rawArgs) async {
 
   final dashboard = _Dashboard(rows, DateTime.now());
   dashboard.render();
-  final ticker = Timer.periodic(
-    const Duration(milliseconds: 250),
-    (_) => dashboard.render(),
-  );
+  // No ticker without a terminal: its only job is to advance a clock in place,
+  // and in a log it would print the same frame four times a second.
+  final ticker = isPlain
+      ? null
+      : Timer.periodic(
+          const Duration(milliseconds: 250),
+          (_) => dashboard.render(),
+        );
 
   var overallFail = false;
   for (var i = 0; i < targets.length; i++) {
@@ -90,7 +101,7 @@ void main(List<String> rawArgs) async {
     dashboard.render();
   }
 
-  ticker.cancel();
+  ticker?.cancel();
   dashboard.render();
 
   final totalPassed = rows.fold(0, (a, r) => a + r.passed);
@@ -120,7 +131,7 @@ void main(List<String> rawArgs) async {
         return byCount != 0 ? byCount : a.key.compareTo(b.key);
       });
     stdout.writeln();
-    stdout.writeln('🔴 Failed files:');
+    stdout.writeln('${palette.fail}${Status.fail}${Ansi.reset} Failed files:');
     for (final e in sorted) {
       stdout.writeln('  ${e.value}  ${e.key}');
     }
@@ -181,16 +192,20 @@ _Target _resolve(Directory src, String spec) {
   }
 }
 
-Directory _repoRoot() {
-  // tool/run_tests.dart -> tool/ -> repo root, regardless of cwd.
-  final scriptDir = File(Platform.script.toFilePath()).parent;
-  return scriptDir.parent;
-}
+// The repository root used to be counted in levels from this file. It is
+// found by marker now (see ../repo.dart), because counting is what broke when
+// this script moved into tool/src/commands/.
 
 bool _hasTests(_Target target) {
   if (target.extraArgs.isNotEmpty) {
+    // A directory counts as much as a file: `pkg=test/unit` is how a run
+    // narrowed to one kind of test is expressed, and a package that has no
+    // such folder is reported as skipped rather than failing the run — "no
+    // e2e tests here yet" is information, not an error.
     return target.extraArgs.every(
-      (f) => File('${target.dir.path}/$f').existsSync(),
+      (f) =>
+          File('${target.dir.path}/$f').existsSync() ||
+          Directory('${target.dir.path}/$f').existsSync(),
     );
   }
   final testDir = Directory('${target.dir.path}/test');
@@ -208,6 +223,12 @@ bool _hasTests(_Target target) {
 /// flash and vanish, which reads as nothing having happened at all.
 Future<void> _showCompiling() async {
   stdout.writeln('• Running build hooks...');
+
+  // The banner exists to fill a silence someone is watching. Nobody watches a
+  // log, so in plain mode the line above is the whole banner — no clock, and
+  // no floor delay to make it linger.
+  if (isPlain) return;
+
   stdout.writeln();
   final start = DateTime.now();
   void redraw() {
@@ -421,35 +442,62 @@ class _Dashboard {
   final int _labelWidth;
   int _paintedLines = 0;
 
+  /// Rows already printed in plain mode, so each is reported once.
+  final Set<String> _reported = {};
+
   void render() {
+    if (isPlain) return _renderPlain();
+
     _erase();
-    final countsWidth = rows
-        .where((r) => r.state == _RowState.done)
-        .map((r) => '${r.passed}/${r.passed + r.failed}'.length)
-        .fold(0, (a, b) => a > b ? a : b);
-    final lines = [_header(), ...rows.map((r) => _renderRow(r, countsWidth))];
+    final lines = [
+      _header(),
+      ...rows.map((r) => _renderRow(r, _countsWidth())),
+    ];
     stdout.writeln(lines.join('\n'));
     _paintedLines = lines.length;
   }
+
+  /// Append-only: one line per package, the moment it stops moving.
+  ///
+  /// No header and no repainting — the header is a progress readout, and in a
+  /// log a progress readout is just the same line over and over. The totals
+  /// still arrive at the end, from the summary the caller prints.
+  void _renderPlain() {
+    for (final row in rows) {
+      final settled =
+          row.state == _RowState.done || row.state == _RowState.skipped;
+      if (!settled || !_reported.add(row.label)) continue;
+      stdout.writeln(_renderRow(row, _countsWidth()));
+    }
+  }
+
+  int _countsWidth() => rows
+      .where((r) => r.state == _RowState.done)
+      .map((r) => '${r.passed}/${r.passed + r.failed}'.length)
+      .fold(0, (a, b) => a > b ? a : b);
 
   void logFailure(String pkg, String path, String name, String? error) {
     final file = '$pkg — $path';
     failures.add(file);
     final buf = StringBuffer()
-      ..writeln('  🔴 $file')
+      ..writeln('  ${palette.fail}${Status.fail}${Ansi.reset}  $file')
       ..writeln('     $name');
     if (error != null && error.isNotEmpty) buf.writeln('     $error');
     log(buf.toString().trimRight());
   }
 
   void log(String text) {
+    if (isPlain) {
+      stdout.writeln(text);
+      return;
+    }
     _erase();
     stdout.writeln(text);
     render();
   }
 
   void _erase() {
-    if (_paintedLines == 0) return;
+    if (isPlain || _paintedLines == 0) return;
     stdout.write('\x1B[${_paintedLines}A\x1B[J');
     _paintedLines = 0;
   }
@@ -503,22 +551,25 @@ class _Dashboard {
     final label = row.label.padRight(_labelWidth);
     switch (row.state) {
       case _RowState.skipped:
-        return '  🟠 $label  no tests yet';
+        return '${_mark(Status.skipped, palette.skipped)}$label  no tests yet';
       case _RowState.queued:
-        return '  ⚪ $label  ${_bar(0, 0)}';
+        return '${_mark(Status.queued, palette.queued)}$label  ${_bar(0, 0)}';
       case _RowState.running:
         final elapsed = _fmtDuration(DateTime.now().difference(row.startedAt!));
         final total = row.suiteTotal > 0 ? '${row.suiteTotal}' : '?';
-        return '  🟡 $label  ${_bar(row.suiteDone, row.suiteTotal)} '
-            '${row.suiteDone}/$total  •  +${row.passed} ✗${row.failed}  •  ⏱ $elapsed';
+        return '${_mark(Status.running, palette.running)}$label  '
+            '${_bar(row.suiteDone, row.suiteTotal)} '
+            '${row.suiteDone}/$total  •  +${row.passed} ✗${row.failed}  '
+            '•  ⏱ $elapsed';
       case _RowState.done:
         final elapsed = _fmtDuration(row.elapsed ?? Duration.zero);
         final total = row.passed + row.failed;
         final counts = '${row.passed}/$total'.padRight(countsWidth);
-        final icon = row.failed == 0 ? '🟢' : '🔴';
+        final mark = row.failed == 0
+            ? _mark(Status.ok, palette.ok)
+            : _mark(Status.fail, palette.fail);
         final cov = row.coverage != null ? '◔ ${row.coverage!.round()}%  ' : '';
-        return '  $icon $label  ${_bar(1, 1)} '
-            '$counts  $cov⏱ $elapsed';
+        return '$mark$label  ${_bar(1, 1)} $counts  $cov⏱ $elapsed';
     }
   }
 
@@ -529,6 +580,13 @@ class _Dashboard {
     return '█' * filled + '░' * (_barWidth - filled);
   }
 }
+
+/// A row's status mark, plus the margin around it.
+///
+/// Five columns in total — two of indent, one for the glyph, two of gap —
+/// which is what the double-width emoji it replaced occupied. Keeping the
+/// width identical is what stops every column to its right from shifting.
+String _mark(String glyph, String color) => '  $color$glyph${Ansi.reset}  ';
 
 String _fmtDuration(Duration d) {
   final m = d.inMinutes;
