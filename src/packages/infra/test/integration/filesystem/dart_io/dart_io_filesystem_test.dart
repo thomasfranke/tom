@@ -24,6 +24,14 @@ void main() {
     tempDir.deleteSync(recursive: true);
   });
 
+  /// [path] with forward slashes, whatever the platform reported.
+  ///
+  /// `dart:io` hands back a Windows path with backslashes, so an assertion
+  /// written with `/` would pass on two of the three platforms TOM ships on
+  /// and fail on the third. Normalising in the test keeps the assertion
+  /// readable without pretending the difference is not there.
+  String slashed(String path) => path.replaceAll(r'\', '/');
+
   test('writeFile then readFile round-trips the content', () async {
     final String path = '${tempDir.path}/note.md';
 
@@ -106,4 +114,173 @@ void main() {
         ? 'chmod does not model POSIX permissions on Windows'
         : false,
   );
+
+  group('listDirectory', () {
+    /// The shape the file tree actually walks: dotfolders alongside `.git/`,
+    /// and markdown nested below the top level.
+    setUp(() {
+      for (final String relative in const <String>[
+        'readme.md',
+        'docs/guide.md',
+        'docs/deep/nested.md',
+        '.ai/skills/notes.md',
+        '.git/config',
+      ]) {
+        File('${tempDir.path}/$relative')
+          ..parent.createSync(recursive: true)
+          ..writeAsStringSync('x');
+      }
+    });
+
+    test('lists one level, sorted, without descending', () async {
+      final Result<List<FilesystemEntry>> listed = await filesystem
+          .listDirectory(tempDir.path);
+
+      expect(listed, isA<Success<List<FilesystemEntry>>>());
+      final List<String> names = (listed as Success<List<FilesystemEntry>>)
+          .value
+          .map((FilesystemEntry e) => slashed(e.path).split('/').last)
+          .toList();
+      expect(names, <String>['.ai', '.git', 'docs', 'readme.md']);
+    });
+
+    test('reports what each entry is', () async {
+      final List<FilesystemEntry> entries =
+          (await filesystem.listDirectory(tempDir.path)
+                  as Success<List<FilesystemEntry>>)
+              .value;
+
+      expect(
+        entries
+            .firstWhere((FilesystemEntry e) => e.path.endsWith('readme.md'))
+            .type,
+        FilesystemEntryType.file,
+      );
+      expect(
+        entries.firstWhere((FilesystemEntry e) => e.path.endsWith('docs')).type,
+        FilesystemEntryType.directory,
+      );
+    });
+
+    test('recursive reaches every dotfolder, filtering nothing', () async {
+      final List<String> paths =
+          (await filesystem.listDirectory(tempDir.path, recursive: true)
+                  as Success<List<FilesystemEntry>>)
+              .value
+              .map((FilesystemEntry e) => slashed(e.path))
+              .toList();
+
+      // `.git/` is hidden by the tree, not by the capability — the caller's
+      // policy, so it has to arrive here.
+      final String root = slashed(tempDir.path);
+      expect(paths, contains('$root/.git/config'));
+      expect(paths, contains('$root/.ai/skills/notes.md'));
+      expect(paths, contains('$root/docs/deep/nested.md'));
+    });
+
+    test(
+      'reports a symlink as a link and does not follow it',
+      () async {
+        Link('${tempDir.path}/loop').createSync(tempDir.path);
+
+        final List<FilesystemEntry> entries =
+            (await filesystem.listDirectory(tempDir.path, recursive: true)
+                    as Success<List<FilesystemEntry>>)
+                .value;
+
+        // Following it would walk its own parent forever.
+        expect(
+          entries
+              .firstWhere(
+                (FilesystemEntry e) => slashed(e.path).endsWith('/loop'),
+              )
+              .type,
+          FilesystemEntryType.link,
+        );
+        expect(
+          entries.where(
+            (FilesystemEntry e) => slashed(e.path).contains('/loop/'),
+          ),
+          isEmpty,
+        );
+      },
+      skip: Platform.isWindows
+          ? 'creating a symlink needs Developer Mode or an elevated shell'
+          : false,
+    );
+
+    test(
+      'fails with FilesystemEntryNotFound for a missing directory',
+      () async {
+        final Result<List<FilesystemEntry>> listed = await filesystem
+            .listDirectory('${tempDir.path}/nowhere');
+
+        expect(listed, isA<Failure<List<FilesystemEntry>>>());
+        expect(
+          (listed as Failure<List<FilesystemEntry>>).failure,
+          FilesystemEntryNotFound('${tempDir.path}/nowhere'),
+        );
+      },
+    );
+
+    test('fails when the path is a file rather than a directory', () async {
+      final Result<List<FilesystemEntry>> listed = await filesystem
+          .listDirectory('${tempDir.path}/readme.md');
+
+      expect(listed, isA<Failure<List<FilesystemEntry>>>());
+    });
+  });
+
+  group('directoryExists', () {
+    test('true for a directory', () async {
+      final Result<bool> exists = await filesystem.directoryExists(
+        tempDir.path,
+      );
+
+      expect((exists as Success<bool>).value, isTrue);
+    });
+
+    test('false for a path with nothing at it', () async {
+      final Result<bool> exists = await filesystem.directoryExists(
+        '${tempDir.path}/gone',
+      );
+
+      expect((exists as Success<bool>).value, isFalse);
+    });
+
+    test(
+      'fails when the parent directory cannot be read',
+      () async {
+        // Not false: `existsSync` throws here rather than answering, and the
+        // difference matters — "the folder is gone" and "this machine will
+        // not say" are different things to tell someone about a space.
+        final String parent = '${tempDir.path}/locked';
+        Directory('$parent/space').createSync(recursive: true);
+        Process.runSync('chmod', <String>['000', parent]);
+
+        final Result<bool> exists = await filesystem.directoryExists(
+          '$parent/space',
+        );
+
+        Process.runSync('chmod', <String>['755', parent]);
+        expect(exists, isA<Failure<bool>>());
+        expect(
+          (exists as Failure<bool>).failure,
+          FilesystemAccessDenied('$parent/space'),
+        );
+      },
+      skip: Platform.isWindows
+          ? 'chmod does not model POSIX permissions on Windows'
+          : false,
+    );
+
+    test('false for a file, which is not a directory', () async {
+      final String path = '${tempDir.path}/note.md';
+      File(path).writeAsStringSync('# Note');
+
+      final Result<bool> exists = await filesystem.directoryExists(path);
+
+      expect((exists as Success<bool>).value, isFalse);
+    });
+  });
 }

@@ -5,6 +5,8 @@ import 'dart:io';
 
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_infra/src/filesystem/filesystem.dart';
+import 'package:tom_infra/src/filesystem/filesystem_entry.dart';
+import 'package:tom_infra/src/filesystem/filesystem_entry_type.dart';
 import 'package:tom_infra/src/filesystem/filesystem_failure.dart';
 
 /// Reads and writes files through `dart:io`'s [File].
@@ -34,6 +36,49 @@ final class DartIoFilesystem implements Filesystem {
       return Failure<void>(_translate(path, exception));
     }
   }
+
+  @override
+  Future<Result<List<FilesystemEntry>>> listDirectory(
+    String path, {
+    bool recursive = false,
+  }) async {
+    try {
+      final List<FilesystemEntry> entries =
+          <FilesystemEntry>[
+            // The async stream rather than `listSync`: a space's documentation
+            // folder can hold thousands of entries, and the walk must not block
+            // the isolate the app draws from.
+            await for (final FileSystemEntity entity in Directory(
+              path,
+            ).list(recursive: recursive, followLinks: false))
+              FilesystemEntry(path: entity.path, type: _typeOf(entity)),
+          ]..sort(
+            (FilesystemEntry a, FilesystemEntry b) => a.path.compareTo(b.path),
+          );
+      return Success<List<FilesystemEntry>>(entries);
+    } on FileSystemException catch (exception) {
+      return Failure<List<FilesystemEntry>>(_translate(path, exception));
+    }
+  }
+
+  @override
+  Future<Result<bool>> directoryExists(String path) async {
+    try {
+      return Success<bool>(Directory(path).existsSync());
+    } on FileSystemException catch (exception) {
+      return Failure<bool>(_translate(path, exception));
+    }
+  }
+
+  /// What `dart:io` says the entity is.
+  ///
+  /// [FileSystemEntity] has exactly these three subclasses, and a listing that
+  /// does not follow links never reports a link as the thing it points at.
+  FilesystemEntryType _typeOf(FileSystemEntity entity) => switch (entity) {
+    Directory() => FilesystemEntryType.directory,
+    Link() => FilesystemEntryType.link,
+    _ => FilesystemEntryType.file,
+  };
 
   /// Maps what the OS reported to a [FilesystemFailure].
   ///

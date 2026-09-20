@@ -1,10 +1,12 @@
-/// Reading and writing files on disk, behind a contract.
+/// Reading, writing and listing files on disk, behind a contract.
 library;
 
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_infra/src/filesystem/filesystem_entry.dart';
+import 'package:tom_infra/src/filesystem/filesystem_entry_type.dart';
 import 'package:tom_infra/src/filesystem/filesystem_failure.dart';
 
-/// Reads and writes files at an absolute path.
+/// Reads, writes and lists files at an absolute path.
 ///
 /// The capability contract for storage ([Decision
 /// 7](../../../../../../../docs/technical/decisions/007-external-dependencies-behind-contracts.md)):
@@ -20,4 +22,29 @@ abstract interface class Filesystem {
 
   /// Writes [content] to the file at [path], creating or overwriting it.
   Future<Result<void>> writeFile(String path, String content);
+
+  /// Every entry inside the directory at [path], sorted by path — and, with
+  /// [recursive], everything below it too.
+  ///
+  /// Nothing is filtered out. The file tree hides `.git/` and keeps every
+  /// other dotfolder (`docs/product/navigation/file-tree/doc.md`), which is
+  /// the caller's policy and not this capability's.
+  ///
+  /// A symbolic link is reported as [FilesystemEntryType.link] and never
+  /// followed: a link pointing at one of its own ancestors would otherwise
+  /// make a recursive walk run forever.
+  ///
+  /// Fails with [FilesystemEntryNotFound] if no directory is at [path].
+  Future<Result<List<FilesystemEntry>>> listDirectory(
+    String path, {
+    bool recursive = false,
+  });
+
+  /// Whether a directory exists at [path].
+  ///
+  /// False rather than a failure: a recent space whose folder was deleted or
+  /// unmounted is a state Home offers to clean up, not an error
+  /// (`docs/product/home/doc.md`). A parent the machine will not let it read
+  /// is a different thing, and fails.
+  Future<Result<bool>> directoryExists(String path);
 }
