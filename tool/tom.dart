@@ -83,7 +83,10 @@ const _commands = <_Command>[
   _Command(
     'format',
     'Format, failing if anything was not formatted',
-    hidden: true,
+    description:
+        'Formats every Dart file under src/ and tool/, and fails if any of '
+        'them was not already formatted — in a gate, "I fixed it for you" and '
+        '"it was wrong" are the same event.',
   ),
   // The label is spelled out because the derivation would give `Fvm`, and a
   // tool's name is not a word to capitalize.
@@ -337,13 +340,21 @@ Future<void> _waitForKey(Terminal terminal) async {
 /// nothing the title has not already said.
 const _prompt = 'What do you want to run?';
 
-/// Commands the root screen lists under `Tests` instead of in the first
-/// group, and therefore leaves out of it.
+/// Commands the root screen lists under `Tests` rather than in the first
+/// group.
 ///
 /// `test` itself is here because the screen offers its kinds rather than the
 /// command; `coverage` because someone looking for it is thinking about
 /// tests, not about the browser it happens to open.
 const _testGroup = {'test', 'coverage'};
+
+/// Commands the root screen lists under `Dev Tools`.
+///
+/// What they have in common is that they act on the repository rather than on
+/// the product: they resolve it, regenerate it, tidy it, pin its toolchain,
+/// check it before a PR. The first group is left with the two things that
+/// produce the app itself — build it, run it.
+const _devToolsGroup = {'clean', 'codegen', 'format', 'fvm', 'verify'};
 
 /// The root screen's rows.
 ///
@@ -359,7 +370,14 @@ const _testGroup = {'test', 'coverage'};
 /// the same thing.
 List<MenuItem<String>> get _rootItems => [
   for (final command in _commands)
-    if (!command.hidden && !_testGroup.contains(command.name))
+    if (!command.hidden &&
+        !_testGroup.contains(command.name) &&
+        !_devToolsGroup.contains(command.name))
+      MenuItem(command.label, command.name, description: command.description),
+  const MenuItem.rule(),
+  const MenuItem.section('Dev Tools'),
+  for (final command in _commands)
+    if (_devToolsGroup.contains(command.name))
       MenuItem(command.label, command.name, description: command.description),
   const MenuItem.rule(),
   const MenuItem.section('Tests'),
