@@ -31,8 +31,9 @@ abstract interface class GitClient {
   ///
   /// A space is a folder, not a repository — what the user opened is often
   /// `docs/` inside a code repository. Fails with [GitClientNotARepository]
-  /// when nothing encloses it, which the product offers to fix with
-  /// `git init` rather than reports.
+  /// when nothing encloses it, which Home shows as a named failure: TOM
+  /// never creates a repository on the user's behalf and never falls back to
+  /// a quieter mode (`docs/product/home/doc.md`).
   Future<Result<String>> repositoryRoot();
 
   /// What differs from `HEAD`, and where the branch stands against its

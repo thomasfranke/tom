@@ -31,8 +31,10 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
 
   /// The path the client was pointed at is not inside a git repository.
   ///
-  /// A space is a folder, not a repository, so this is a state the product
-  /// offers to fix rather than an error it reports.
+  /// A space is a folder, not a repository, and the search runs upwards — so
+  /// this means no repository encloses the folder at all. Home names it and
+  /// stops there: TOM never runs `git init` for the user, and never opens
+  /// the folder in a quieter mode instead (`docs/product/home/doc.md`).
   const factory GitClientFailure.notARepository(
     /// The absolute path that was searched for an enclosing repository.
     String path,
