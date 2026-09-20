@@ -1,3 +1,0 @@
-# word replacement why
-pending ready spec-0018 renamed the queue statuses; a task rests at backlog or ready
-level stage spec-0018 renamed the settings key and made its values integers
