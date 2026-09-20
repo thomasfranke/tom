@@ -73,10 +73,11 @@ void main() {
 
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('tom_git_client_test_');
-    // Resolved, because git reports the real path: on macOS the system
-    // temporary directory is a symlink, and every comparison below would be
-    // against the wrong one of the two names.
-    base = tempDir.resolveSymbolicLinksSync();
+    // Resolved and forward-slashed, because git reports the real path in its
+    // own spelling: on macOS the system temporary directory is a symlink, and
+    // on Windows `dart:io` answers with backslashes while git always answers
+    // with `/`. Either difference turns a correct client into a red test.
+    base = tempDir.resolveSymbolicLinksSync().replaceAll(r'\', '/');
     repoPath = '$base/repo';
     initRepository(repoPath);
     write('a.md', '# A\n');
