@@ -68,19 +68,57 @@ void main() {
     },
   );
 
-  test(
-    'writeFile fails with FilesystemEntryNotFound for a missing directory',
-    () async {
-      final Result<void> written = await filesystem.writeFile(
-        '${tempDir.path}/no_such_dir/note.md',
-        'content',
-      );
+  test('writeFile creates the directories the path needs', () async {
+    final String path = '${tempDir.path}/notes/2026/q1.md';
 
-      expect(written, isA<Failure<void>>());
-      expect(
-        (written as Failure<void>).failure,
-        FilesystemEntryNotFound('${tempDir.path}/no_such_dir/note.md'),
-      );
+    final Result<void> written = await filesystem.writeFile(path, '# Q1');
+
+    expect(written, isA<Success<void>>());
+    expect(File(path).readAsStringSync(), '# Q1');
+  });
+
+  test('writeFile leaves nothing beside the file it wrote', () async {
+    // The write goes through a temporary sibling and a rename — that is what
+    // makes it atomic — and the temporary is not the caller's business.
+    await filesystem.writeFile('${tempDir.path}/note.md', '# Hello');
+
+    expect(
+      tempDir.listSync().map(
+        (FileSystemEntity e) => slashed(e.path).split('/').last,
+      ),
+      <String>['note.md'],
+    );
+  });
+
+  test('a write that cannot land leaves no temporary behind', () async {
+    // A directory cannot be replaced by a file: the rename is what fails,
+    // which is precisely the moment a temporary would be orphaned.
+    final String path = '${tempDir.path}/folder';
+    Directory(path).createSync();
+
+    final Result<void> written = await filesystem.writeFile(path, 'content');
+
+    expect(written, isA<Failure<void>>());
+    expect(Directory(path).existsSync(), isTrue);
+    expect(
+      tempDir.listSync().map(
+        (FileSystemEntity e) => slashed(e.path).split('/').last,
+      ),
+      <String>['folder'],
+    );
+  });
+
+  test(
+    'readFile fails with FilesystemNotUtf8 for bytes that are not',
+    () async {
+      // A latin-1 accented byte, which is not a valid UTF-8 sequence.
+      final String path = '${tempDir.path}/latin.md';
+      File(path).writeAsBytesSync(<int>[0xE9, 0x63, 0x68, 0x6F]);
+
+      final Result<String> read = await filesystem.readFile(path);
+
+      expect(read, isA<Failure<String>>());
+      expect((read as Failure<String>).failure, FilesystemNotUtf8(path));
     },
   );
 
@@ -221,6 +259,56 @@ void main() {
           FilesystemEntryNotFound('${tempDir.path}/nowhere'),
         );
       },
+    );
+
+    test(
+      'a folder that cannot be opened costs that folder, not the listing',
+      () async {
+        final String locked = '${tempDir.path}/locked';
+        Directory('$locked/inside').createSync(recursive: true);
+        Process.runSync('chmod', <String>['000', locked]);
+
+        final Result<List<FilesystemEntry>> listed = await filesystem
+            .listDirectory(tempDir.path, recursive: true);
+
+        Process.runSync('chmod', <String>['755', locked]);
+        expect(listed, isA<Success<List<FilesystemEntry>>>());
+        final List<String> paths = (listed as Success<List<FilesystemEntry>>)
+            .value
+            .map((FilesystemEntry e) => slashed(e.path))
+            .toList();
+        // Everything readable is still there, and the folder itself is
+        // reported — it exists, it just would not open.
+        expect(paths, contains('${slashed(tempDir.path)}/docs/deep/nested.md'));
+        expect(paths, contains('${slashed(tempDir.path)}/locked'));
+        expect(paths.where((String p) => p.contains('/locked/')), isEmpty);
+      },
+      skip: Platform.isWindows
+          ? 'chmod does not model POSIX permissions on Windows'
+          : false,
+    );
+
+    test(
+      'fails with FilesystemAccessDenied when the directory itself will not '
+      'open',
+      () async {
+        final String locked = '${tempDir.path}/locked';
+        Directory(locked).createSync();
+        Process.runSync('chmod', <String>['000', locked]);
+
+        final Result<List<FilesystemEntry>> listed = await filesystem
+            .listDirectory(locked);
+
+        Process.runSync('chmod', <String>['755', locked]);
+        expect(listed, isA<Failure<List<FilesystemEntry>>>());
+        expect(
+          (listed as Failure<List<FilesystemEntry>>).failure,
+          FilesystemAccessDenied(locked),
+        );
+      },
+      skip: Platform.isWindows
+          ? 'chmod does not model POSIX permissions on Windows'
+          : false,
     );
 
     test('fails when the path is a file rather than a directory', () async {

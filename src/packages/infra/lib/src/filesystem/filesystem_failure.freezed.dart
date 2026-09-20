@@ -87,12 +87,13 @@ extension FilesystemFailurePatterns on FilesystemFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FilesystemEntryNotFound value)?  entryNotFound,TResult Function( FilesystemAccessDenied value)?  accessDenied,TResult Function( FilesystemOperationFailed value)?  operationFailed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FilesystemEntryNotFound value)?  entryNotFound,TResult Function( FilesystemAccessDenied value)?  accessDenied,TResult Function( FilesystemNotUtf8 value)?  notUtf8,TResult Function( FilesystemOperationFailed value)?  operationFailed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
 return entryNotFound(_that);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that);case FilesystemOperationFailed() when operationFailed != null:
+return accessDenied(_that);case FilesystemNotUtf8() when notUtf8 != null:
+return notUtf8(_that);case FilesystemOperationFailed() when operationFailed != null:
 return operationFailed(_that);case _:
   return orElse();
 
@@ -111,12 +112,13 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FilesystemEntryNotFound value)  entryNotFound,required TResult Function( FilesystemAccessDenied value)  accessDenied,required TResult Function( FilesystemOperationFailed value)  operationFailed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FilesystemEntryNotFound value)  entryNotFound,required TResult Function( FilesystemAccessDenied value)  accessDenied,required TResult Function( FilesystemNotUtf8 value)  notUtf8,required TResult Function( FilesystemOperationFailed value)  operationFailed,}){
 final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound():
 return entryNotFound(_that);case FilesystemAccessDenied():
-return accessDenied(_that);case FilesystemOperationFailed():
+return accessDenied(_that);case FilesystemNotUtf8():
+return notUtf8(_that);case FilesystemOperationFailed():
 return operationFailed(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -131,12 +133,13 @@ return operationFailed(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FilesystemEntryNotFound value)?  entryNotFound,TResult? Function( FilesystemAccessDenied value)?  accessDenied,TResult? Function( FilesystemOperationFailed value)?  operationFailed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FilesystemEntryNotFound value)?  entryNotFound,TResult? Function( FilesystemAccessDenied value)?  accessDenied,TResult? Function( FilesystemNotUtf8 value)?  notUtf8,TResult? Function( FilesystemOperationFailed value)?  operationFailed,}){
 final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
 return entryNotFound(_that);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that);case FilesystemOperationFailed() when operationFailed != null:
+return accessDenied(_that);case FilesystemNotUtf8() when notUtf8 != null:
+return notUtf8(_that);case FilesystemOperationFailed() when operationFailed != null:
 return operationFailed(_that);case _:
   return null;
 
@@ -154,11 +157,12 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path)?  entryNotFound,TResult Function( String path)?  accessDenied,TResult Function( String path,  String description)?  operationFailed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path)?  entryNotFound,TResult Function( String path)?  accessDenied,TResult Function( String path)?  notUtf8,TResult Function( String path,  String description)?  operationFailed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
 return entryNotFound(_that.path);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that.path);case FilesystemOperationFailed() when operationFailed != null:
+return accessDenied(_that.path);case FilesystemNotUtf8() when notUtf8 != null:
+return notUtf8(_that.path);case FilesystemOperationFailed() when operationFailed != null:
 return operationFailed(_that.path,_that.description);case _:
   return orElse();
 
@@ -177,11 +181,12 @@ return operationFailed(_that.path,_that.description);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path)  entryNotFound,required TResult Function( String path)  accessDenied,required TResult Function( String path,  String description)  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path)  entryNotFound,required TResult Function( String path)  accessDenied,required TResult Function( String path)  notUtf8,required TResult Function( String path,  String description)  operationFailed,}) {final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound():
 return entryNotFound(_that.path);case FilesystemAccessDenied():
-return accessDenied(_that.path);case FilesystemOperationFailed():
+return accessDenied(_that.path);case FilesystemNotUtf8():
+return notUtf8(_that.path);case FilesystemOperationFailed():
 return operationFailed(_that.path,_that.description);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -196,11 +201,12 @@ return operationFailed(_that.path,_that.description);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path)?  entryNotFound,TResult? Function( String path)?  accessDenied,TResult? Function( String path,  String description)?  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path)?  entryNotFound,TResult? Function( String path)?  accessDenied,TResult? Function( String path)?  notUtf8,TResult? Function( String path,  String description)?  operationFailed,}) {final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
 return entryNotFound(_that.path);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that.path);case FilesystemOperationFailed() when operationFailed != null:
+return accessDenied(_that.path);case FilesystemNotUtf8() when notUtf8 != null:
+return notUtf8(_that.path);case FilesystemOperationFailed() when operationFailed != null:
 return operationFailed(_that.path,_that.description);case _:
   return null;
 
@@ -335,6 +341,73 @@ class _$FilesystemAccessDeniedCopyWithImpl<$Res>
 /// with the given fields replaced by the non-null parameter values.
 @override @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
   return _then(FilesystemAccessDenied(
+null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class FilesystemNotUtf8 implements FilesystemFailure {
+  const FilesystemNotUtf8(this.path);
+  
+
+/// The path whose bytes could not be decoded.
+@override final  String path;
+
+/// Create a copy of FilesystemFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$FilesystemNotUtf8CopyWith<FilesystemNotUtf8> get copyWith => _$FilesystemNotUtf8CopyWithImpl<FilesystemNotUtf8>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FilesystemNotUtf8&&(identical(other.path, path) || other.path == path));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,path);
+
+@override
+String toString() {
+  return 'FilesystemFailure.notUtf8(path: $path)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $FilesystemNotUtf8CopyWith<$Res> implements $FilesystemFailureCopyWith<$Res> {
+  factory $FilesystemNotUtf8CopyWith(FilesystemNotUtf8 value, $Res Function(FilesystemNotUtf8) _then) = _$FilesystemNotUtf8CopyWithImpl;
+@override @useResult
+$Res call({
+ String path
+});
+
+
+
+
+}
+/// @nodoc
+class _$FilesystemNotUtf8CopyWithImpl<$Res>
+    implements $FilesystemNotUtf8CopyWith<$Res> {
+  _$FilesystemNotUtf8CopyWithImpl(this._self, this._then);
+
+  final FilesystemNotUtf8 _self;
+  final $Res Function(FilesystemNotUtf8) _then;
+
+/// Create a copy of FilesystemFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
+  return _then(FilesystemNotUtf8(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,
   ));

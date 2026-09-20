@@ -1,7 +1,9 @@
 /// The `dart:io` implementation of [Filesystem].
 library;
 
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_infra/src/filesystem/filesystem.dart';
@@ -18,21 +20,44 @@ final class DartIoFilesystem implements Filesystem {
   /// Creates the implementation.
   const DartIoFilesystem();
 
+  /// Distinguishes two temporary files taken in the same process.
+  static int _sequence = 0;
+
   @override
   Future<Result<String>> readFile(String path) async {
+    final Uint8List bytes;
     try {
-      return Success<String>(await File(path).readAsString());
+      bytes = await File(path).readAsBytes();
     } on FileSystemException catch (exception) {
       return Failure<String>(_translate(path, exception));
+    }
+    try {
+      return Success<String>(utf8.decode(bytes));
+    } on FormatException {
+      // Named rather than decoded leniently, which is the opposite of what
+      // the git client does with the same hazard — and for the same reason.
+      // Nothing TOM shows is written back to git; a document is. A
+      // replacement character saved over a latin-1 file destroys the bytes
+      // that could not be read, so refusing is the only lossless answer.
+      return Failure<String>(FilesystemNotUtf8(path));
     }
   }
 
   @override
   Future<Result<void>> writeFile(String path, String content) async {
+    final File temporary = File(_temporaryPathFor(path));
     try {
-      await File(path).writeAsString(content);
+      await File(path).parent.create(recursive: true);
+      // Written beside the target and renamed over it, because a rename is
+      // the only write the operating system finishes or does not start: the
+      // files are the truth for this product, and a document half-written by
+      // a crash is a document lost. The temporary cannot live in the system's
+      // temporary directory — a rename is atomic within one filesystem only.
+      await temporary.writeAsString(content, flush: true);
+      await temporary.rename(path);
       return const Success<void>(null);
     } on FileSystemException catch (exception) {
+      await _discard(temporary);
       return Failure<void>(_translate(path, exception));
     }
   }
@@ -48,9 +73,21 @@ final class DartIoFilesystem implements Filesystem {
             // The async stream rather than `listSync`: a space's documentation
             // folder can hold thousands of entries, and the walk must not block
             // the isolate the app draws from.
-            await for (final FileSystemEntity entity in Directory(
-              path,
-            ).list(recursive: recursive, followLinks: false))
+            await for (final FileSystemEntity entity
+                in Directory(path)
+                    .list(recursive: recursive, followLinks: false)
+                    .handleError(
+                      // One folder the machine will not open costs that
+                      // folder, never the listing: a single unreadable
+                      // directory somewhere under a space would otherwise
+                      // leave the file tree with nothing to show. An error on
+                      // the directory that was asked for is the listing
+                      // itself failing, and still travels.
+                      (Object? _) {},
+                      test: (Object? error) =>
+                          error is FileSystemException &&
+                          !_isAbout(path, error),
+                    ))
               FilesystemEntry(path: entity.path, type: _typeOf(entity)),
           ]..sort(
             (FilesystemEntry a, FilesystemEntry b) => a.path.compareTo(b.path),
@@ -64,11 +101,53 @@ final class DartIoFilesystem implements Filesystem {
   @override
   Future<Result<bool>> directoryExists(String path) async {
     try {
-      return Success<bool>(Directory(path).existsSync());
+      // A space's folder can sit on a network mount, and the synchronous
+      // probe blocks for as long as a stale one takes to give up — which Home
+      // would spend frozen while it checks the spaces it offers to reopen.
+      // ignore: avoid_slow_async_io
+      return Success<bool>(await Directory(path).exists());
     } on FileSystemException catch (exception) {
       return Failure<bool>(_translate(path, exception));
     }
   }
+
+  /// A sibling path of [path] no other write is using.
+  ///
+  /// It is visible on disk for as long as the write takes: [listDirectory]
+  /// filters nothing, so a caller walking the folder at that instant sees it.
+  /// The alternative is a window in which the document itself is truncated,
+  /// which is worse.
+  static String _temporaryPathFor(String path) =>
+      '$path.$pid.${_sequence++}.tom-tmp';
+
+  /// Removes a temporary file a failed write left behind.
+  Future<void> _discard(File temporary) async {
+    try {
+      await temporary.delete();
+    } on FileSystemException {
+      // Deliberately ignored: the write has already failed, and reporting
+      // "the temporary file could not be deleted" over "the document could
+      // not be saved" would name the wrong problem.
+    }
+  }
+
+  /// Whether [exception] is about [path] itself rather than something inside
+  /// it.
+  ///
+  /// `dart:io` names the directory a listing started from with a trailing
+  /// separator and the ones it walked into without one, so the difference has
+  /// to be taken out before the two can be compared. An exception carrying no
+  /// path at all is about what was asked for: there is nothing else it could
+  /// be about.
+  static bool _isAbout(String path, FileSystemException exception) {
+    final String? failed = exception.path;
+    return failed == null || _bare(failed) == _bare(path);
+  }
+
+  /// [path] without a trailing separator, either platform's.
+  static String _bare(String path) => path.endsWith('/') || path.endsWith(r'\')
+      ? path.substring(0, path.length - 1)
+      : path;
 
   /// What `dart:io` says the entity is.
   ///
@@ -82,23 +161,30 @@ final class DartIoFilesystem implements Filesystem {
 
   /// Maps what the OS reported to a [FilesystemFailure].
   ///
-  /// `errorCode` is POSIX `errno` on macOS/Linux and a Win32 error code on
-  /// Windows; `ENOENT`/`ERROR_FILE_NOT_FOUND` and `EACCES`/
-  /// `ERROR_ACCESS_DENIED` happen to share the values TOM targets across all
-  /// three, so one check covers the desktop matrix. Windows additionally
-  /// reports `ERROR_PATH_NOT_FOUND` (3), distinct from `ERROR_FILE_NOT_FOUND`
-  /// (2), when a parent directory in the path is missing rather than just the
-  /// final entry — both mean "not found" from this API's point of view.
-  /// Anything else falls back to [FilesystemOperationFailed] rather than
-  /// guessing at a name for it.
-  FilesystemFailure _translate(String path, FileSystemException exception) {
-    final int? code = exception.osError?.errorCode;
-    if (code == 2 || code == 3) {
-      return FilesystemEntryNotFound(path);
-    }
-    if (code == 13 || code == 5) {
-      return FilesystemAccessDenied(path);
-    }
-    return FilesystemOperationFailed(path, exception.message);
+  /// By exception type, not by `errorCode`: POSIX `errno` and Win32 error
+  /// codes share one namespace with different meanings — `5` is `EIO` on one
+  /// and `ERROR_ACCESS_DENIED` on the other — so a disk failing on Linux
+  /// would be reported as a permission problem and send the user to `chmod`.
+  /// `dart:io` has already done that platform mapping to reach
+  /// [PathNotFoundException] and [PathAccessException]; anything it did not
+  /// name falls back to [FilesystemOperationFailed] rather than being guessed
+  /// at.
+  ///
+  /// The path is [requested] as the caller spelled it, unless the failure is
+  /// about something else: a recursive walk fails on an entry deep inside the
+  /// folder that was asked for, and telling the user the folder they opened
+  /// is unreadable when it is not would be a lie.
+  FilesystemFailure _translate(
+    String requested,
+    FileSystemException exception,
+  ) {
+    final String path = _isAbout(requested, exception)
+        ? requested
+        : exception.path!;
+    return switch (exception) {
+      PathNotFoundException() => FilesystemEntryNotFound(path),
+      PathAccessException() => FilesystemAccessDenied(path),
+      _ => FilesystemOperationFailed(path, exception.message),
+    };
   }
 }

@@ -8,6 +8,7 @@ void main() {
     String headline(FilesystemFailure failure) => switch (failure) {
       FilesystemEntryNotFound(path: final String path) => 'Not found: $path',
       FilesystemAccessDenied(path: final String path) => 'Denied: $path',
+      FilesystemNotUtf8(path: final String path) => 'Not text: $path',
       FilesystemOperationFailed(description: final String description) =>
         'Failed: $description',
     };
@@ -20,6 +21,10 @@ void main() {
       expect(
         headline(const FilesystemAccessDenied('/tmp/a.md')),
         startsWith('Denied'),
+      );
+      expect(
+        headline(const FilesystemNotUtf8('/tmp/a.md')),
+        startsWith('Not text'),
       );
       expect(
         headline(const FilesystemOperationFailed('/tmp/a.md', 'disk full')),
@@ -45,6 +50,19 @@ void main() {
 
   group('FilesystemAccessDenied compares by value', () {
     FilesystemAccessDenied at(String path) => FilesystemAccessDenied(path);
+
+    test('same path', () {
+      expect(at('/tmp/a.md'), at('/tmp/a.md'));
+      expect(at('/tmp/a.md').hashCode, at('/tmp/a.md').hashCode);
+    });
+
+    test('different path', () {
+      expect(at('/tmp/a.md'), isNot(at('/tmp/b.md')));
+    });
+  });
+
+  group('FilesystemNotUtf8 compares by value', () {
+    FilesystemNotUtf8 at(String path) => FilesystemNotUtf8(path);
 
     test('same path', () {
       expect(at('/tmp/a.md'), at('/tmp/a.md'));

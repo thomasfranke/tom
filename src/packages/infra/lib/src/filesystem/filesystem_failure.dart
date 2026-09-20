@@ -28,6 +28,18 @@ sealed class FilesystemFailure with _$FilesystemFailure implements AppFailure {
     String path,
   ) = FilesystemAccessDenied;
 
+  /// The bytes at the path are not valid UTF-8 text.
+  ///
+  /// Named rather than decoded leniently: TOM writes a document back where it
+  /// read it, and a replacement character saved over the byte it stood for
+  /// destroys the original. A file TOM cannot read losslessly is a file it
+  /// refuses to open — a capability decision, made here because nothing in
+  /// `docs/product/` rules on encodings yet.
+  const factory FilesystemFailure.notUtf8(
+    /// The path whose bytes could not be decoded.
+    String path,
+  ) = FilesystemNotUtf8;
+
   /// A filesystem operation failed in a way infrastructure has no name for.
   ///
   /// The typed fallback, in the same spirit as `GitCommandFailed`: unexpected,
