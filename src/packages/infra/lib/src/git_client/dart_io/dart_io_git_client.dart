@@ -23,7 +23,9 @@ final class DartIoGitClient implements GitClient {
   /// Creates a client running git inside [workingDirectory].
   ///
   /// [workingDirectory] may sit below the repository root; git resolves
-  /// upwards on its own and [repositoryRoot] reports where it landed.
+  /// upwards on its own and [repositoryRoot] reports where it landed. Every
+  /// path crossing the contract stays relative to that root whatever this
+  /// folder is — see [_pathspec].
   /// [timeout] bounds a local command, [networkTimeout] one that reaches a
   /// remote — without them a hung command stalls the whole queue, not one
   /// action.
@@ -53,6 +55,16 @@ final class DartIoGitClient implements GitClient {
   /// A decoder that threw would turn "this file is odd" into an exception
   /// crossing a boundary.
   static const Utf8Decoder _decoder = Utf8Decoder(allowMalformed: true);
+
+  /// How long a killed process's pipes are given to close.
+  ///
+  /// Killing git closes git's own ends, but anything it started that outlives
+  /// it — a hook's background job, and whatever else inherited the pipe —
+  /// holds its copy open for as long as it lives, and `dart:io` cannot kill a
+  /// process group. Waiting on them unbounded would hang the queue the timeout
+  /// exists to protect, so they are abandoned instead: the bytes of a command
+  /// that was killed are worth nothing anyway.
+  static const Duration _drainGrace = Duration(seconds: 2);
 
   /// The `--format` of [log] and of [branches], spelling out the fields the
   /// contract promises.
@@ -97,12 +109,24 @@ final class DartIoGitClient implements GitClient {
   ]);
 
   @override
-  Future<Result<String>> log({String? path, int? limit}) => _git(<String>[
-    'log',
-    '--format=$_logFormat',
-    if (limit != null) '--max-count=$limit',
-    if (path != null) ...<String>['--', path],
-  ]);
+  Future<Result<String>> log({String? path, int? limit}) async {
+    final Result<String> result = await _git(<String>[
+      'log',
+      '--format=$_logFormat',
+      if (limit != null) '--max-count=$limit',
+      if (path != null) ...<String>['--', _pathspec(path)],
+    ]);
+    // A branch whose first commit has not happened yet is not an error: the
+    // history is empty, which is exactly what a space opened on a freshly
+    // initialised repository should show. Calling it fatal is git's
+    // convention, not the product's.
+    return switch (result) {
+      Failure<String>(failure: GitClientCommandFailed(:final String stderr))
+          when _unbornHead.hasMatch(stderr) =>
+        const Success<String>(''),
+      _ => result,
+    };
+  }
 
   @override
   Future<Result<String>> branches() =>
@@ -114,11 +138,11 @@ final class DartIoGitClient implements GitClient {
 
   @override
   Future<Result<void>> stage(List<String> paths) =>
-      _gitVoid(<String>['add', '--', ...paths]);
+      _gitVoid(<String>['add', '--', ...paths.map(_pathspec)]);
 
   @override
   Future<Result<void>> unstage(List<String> paths) =>
-      _gitVoid(<String>['restore', '--staged', '--', ...paths]);
+      _gitVoid(<String>['restore', '--staged', '--', ...paths.map(_pathspec)]);
 
   @override
   Future<Result<void>> commit(String message) =>
@@ -143,6 +167,19 @@ final class DartIoGitClient implements GitClient {
   @override
   Future<Result<void>> push() =>
       _gitVoid(<String>['push'], limit: networkTimeout);
+
+  /// [path], as a pathspec git resolves from the repository root.
+  ///
+  /// Every path crossing this contract is repository-root relative, because
+  /// that is what `status --porcelain=v2` returns and a path the caller read
+  /// from [status] has to be usable in [stage]. A bare pathspec would be
+  /// resolved against [workingDirectory] instead, which is the repository
+  /// root only by accident: a space is a folder, not a repository, and `docs/`
+  /// inside a code repository is the normal case, not the exotic one.
+  ///
+  /// `literal` on top of `top` because a document may legitimately be called
+  /// `notes[draft].md`, and git reads `[` in a pathspec as a glob.
+  static String _pathspec(String path) => ':(top,literal)$path';
 
   /// Runs a command whose output the caller does not need.
   Future<Result<void>> _gitVoid(
@@ -182,14 +219,7 @@ final class DartIoGitClient implements GitClient {
         environment: _environment,
       );
     } on ProcessException {
-      // Two very different things arrive here: no `git` on the PATH, and a
-      // working directory that is gone — a space whose folder was deleted or
-      // unmounted while it was open. Reporting the second as "git is not
-      // installed" would send the user to fix their machine over a missing
-      // folder.
-      return Directory(workingDirectory).existsSync()
-          ? const Failure<String>(GitClientExecutableNotFound())
-          : Failure<String>(GitClientNotARepository(workingDirectory));
+      return Failure<String>(await _startFailure());
     }
 
     final Future<String> out = process.stdout.transform(_decoder).join();
@@ -200,27 +230,126 @@ final class DartIoGitClient implements GitClient {
       exitCode = await process.exitCode.timeout(limit);
     } on TimeoutException {
       process.kill(ProcessSignal.sigkill);
-      await Future.wait<String>(<Future<String>>[out, err]);
+      await _drain(out, err);
       return Failure<String>(GitClientTimedOut(command, limit));
     }
 
     final String stdout = await out;
     final String stderr = await err;
-    return exitCode == 0
-        ? Success<String>(stdout)
-        : Failure<String>(_translate(command, exitCode, stdout, stderr));
+    if (exitCode == 0) {
+      return Success<String>(stdout);
+    }
+    final GitClientFailure failure = _translate(
+      command,
+      exitCode,
+      stdout,
+      stderr,
+    );
+    return Failure<String>(
+      failure is GitClientMergeConflict ? await _named(failure) : failure,
+    );
+  }
+
+  /// Why [Process.start] refused, without letting the probe throw.
+  ///
+  /// Two very different things arrive as a `ProcessException`: no `git` on
+  /// the PATH, and a working directory git could not enter — a space whose
+  /// folder was deleted or unmounted while it was open. Reporting the second
+  /// as "git is not installed" would send the user to fix their machine over
+  /// a missing folder.
+  ///
+  /// The probe can fail too: a parent the machine will not let TOM read
+  /// answers neither yes nor no. That is still a folder TOM cannot open, and
+  /// never a missing binary — and a `FileSystemException` escaping here is
+  /// the one thing this package promises never to leak.
+  Future<GitClientFailure> _startFailure() async {
+    bool reachable;
+    try {
+      // A space folder can sit on a network mount, and the synchronous probe
+      // would block the isolate for as long as a stale one takes to answer.
+      // ignore: avoid_slow_async_io
+      reachable = await Directory(workingDirectory).exists();
+    } on FileSystemException {
+      reachable = false;
+    }
+    return reachable
+        ? const GitClientExecutableNotFound()
+        : GitClientNotARepository(workingDirectory);
+  }
+
+  /// Waits for both pipes to close, giving up after [_drainGrace].
+  ///
+  /// Both futures keep their handlers whether or not this returns first, so a
+  /// pipe that dies with the process cannot surface later as an unhandled
+  /// asynchronous error.
+  static Future<void> _drain(Future<String> out, Future<String> err) {
+    final Future<void> closed = Future.wait<String>(<Future<String>>[
+      out,
+      err,
+    ]).then<void>((List<String> _) {}).catchError((Object _) {});
+    return closed.timeout(_drainGrace, onTimeout: () {});
+  }
+
+  /// [conflict] carrying the paths git's index reports, when it can be asked.
+  ///
+  /// The `CONFLICT (...)` lines have a shape per kind — `Merge conflict in
+  /// the path` for a content clash, `the path deleted in ... and modified in
+  /// ...` for modify/delete, two paths for rename/rename — so reading them off
+  /// the message misses most of them and the product would announce a conflict
+  /// listing no files. The index knows: `--diff-filter=U` is every path left
+  /// conflicted, whatever produced it. What the message gave stands only if
+  /// asking fails.
+  Future<GitClientFailure> _named(GitClientMergeConflict conflict) async {
+    final List<String> unmerged = await _unmergedPaths();
+    return unmerged.isEmpty ? conflict : GitClientMergeConflict(unmerged);
+  }
+
+  /// Every path git left unmerged, relative to the repository root.
+  ///
+  /// Runs outside the queue on purpose: the caller is holding the queue slot
+  /// it would wait for. `diff.relative` is forced off because a user who set
+  /// it would otherwise get paths relative to [workingDirectory], which the
+  /// contract does not allow.
+  Future<List<String>> _unmergedPaths() async {
+    final Result<String> unmerged = await _run(<String>[
+      '-c',
+      'diff.relative=false',
+      'diff',
+      '--name-only',
+      '--diff-filter=U',
+      '-z',
+    ], timeout);
+    return switch (unmerged) {
+      Success<String>(:final String value) =>
+        value
+            .split(GitClient.nulSeparator)
+            .where((String path) => path.isNotEmpty)
+            .toList(growable: false),
+      Failure<String>() => const <String>[],
+    };
   }
 
   /// What git is run with, on top of the user's own environment.
   ///
   /// The parent environment is kept — PATH, the SSH agent and the credential
   /// helper are the user's, which is the whole point of driving their binary.
-  /// These three are forced on top of it, and none changes what git does:
+  /// These are forced on top of it, and none changes what git does:
   /// no credential prompt nothing is there to answer, no index lock taken for
   /// a read TOM performs far more often than a person would, and messages in
   /// English so that recognising one below is not a bet on the user's locale.
+  ///
+  /// Suppressing the prompt takes all four: `GIT_TERMINAL_PROMPT` covers only
+  /// the terminal, and git then falls through to `GIT_ASKPASS`, then to ssh's
+  /// own `SSH_ASKPASS`. An askpass left reachable turns a missing credential
+  /// into a dialog nobody is looking at, blocking for the whole
+  /// [networkTimeout] instead of failing as [GitClientAuthenticationFailed].
+  /// `GIT_SSH_COMMAND` is deliberately not set: it would override the user's
+  /// own `core.sshCommand`, which is exactly the config this client exists to
+  /// honour.
   static const Map<String, String> _environment = <String, String>{
     'GIT_TERMINAL_PROMPT': '0',
+    'GIT_ASKPASS': '',
+    'SSH_ASKPASS_REQUIRE': 'never',
     'GIT_OPTIONAL_LOCKS': '0',
     'LC_ALL': 'C',
   };
@@ -289,8 +418,17 @@ final class DartIoGitClient implements GitClient {
   );
 
   /// The path named by one `CONFLICT (...): Merge conflict in <path>` line.
+  ///
+  /// The fallback behind [_unmergedPaths], and only that: it recognises the
+  /// content conflict and none of the other kinds.
   static final RegExp _conflictedPath = RegExp(
     r'^CONFLICT \([^)]*\): Merge conflict in (.+)$',
     multiLine: true,
+  );
+
+  /// The branch exists but carries no commit yet.
+  static final RegExp _unbornHead = RegExp(
+    'does not have any commits yet|bad default revision',
+    caseSensitive: false,
   );
 }

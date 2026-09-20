@@ -129,6 +129,88 @@ void main() {
         );
       },
     );
+
+    test(
+      'fails rather than throwing when the folder cannot even be probed',
+      () async {
+        // The recovery above asks whether the folder is there. Under a parent
+        // the machine will not read, that question throws too — and a
+        // `dart:io` exception escaping this package is the one thing it
+        // promises never to do.
+        final String locked = '$base/locked';
+        Directory('$locked/space').createSync(recursive: true);
+        Process.runSync('chmod', <String>['000', locked]);
+
+        final Result<String> root = await DartIoGitClient(
+          workingDirectory: '$locked/space',
+        ).repositoryRoot();
+
+        Process.runSync('chmod', <String>['755', locked]);
+        expect(failureOf(root), GitClientNotARepository('$locked/space'));
+      },
+      skip: Platform.isWindows
+          ? 'chmod does not model POSIX permissions on Windows'
+          : false,
+    );
+  });
+
+  group('from a folder below the repository root', () {
+    late DartIoGitClient below;
+
+    setUp(() {
+      Directory('$repoPath/docs').createSync();
+      below = DartIoGitClient(workingDirectory: '$repoPath/docs');
+    });
+
+    test('status names paths the client can be handed straight back', () async {
+      write('docs/b.md', '# B\n');
+
+      final String path = valueOf(await below.status())
+          .split('\u0000')
+          .firstWhere((String entry) => entry.startsWith('? '))
+          .substring(2);
+
+      // Root-relative, not relative to the folder the space opened on: `docs/`
+      // inside a code repository is the normal case, and a path that only
+      // works from one of the two is a path neither side can use.
+      expect(path, 'docs/b.md');
+      expect(await below.stage(<String>[path]), isA<Success<void>>());
+      expect(valueOf(await below.status()), contains('1 A. '));
+    });
+
+    test('unstage takes the same path back out', () async {
+      write('docs/b.md', '# B\n');
+      await below.stage(<String>['docs/b.md']);
+
+      expect(await below.unstage(<String>['docs/b.md']), isA<Success<void>>());
+
+      expect(valueOf(await below.status()), contains('? docs/b.md'));
+    });
+
+    test('log filters on the same path', () async {
+      write('docs/b.md', '# B\n');
+      await below.stage(<String>['docs/b.md']);
+      await below.commit('Add B');
+
+      final List<String> records = valueOf(await below.log(path: 'docs/b.md'))
+          .split(GitClient.recordSeparator)
+          .where((String r) => r.trim().isNotEmpty)
+          .toList();
+
+      expect(records, hasLength(1));
+      expect(records.single, contains('Add B'));
+    });
+
+    test('a path git would read as a glob is taken literally', () async {
+      write('docs/notes[draft].md', '# Draft\n');
+
+      expect(
+        await below.stage(<String>['docs/notes[draft].md']),
+        isA<Success<void>>(),
+      );
+
+      expect(valueOf(await below.status()), contains('docs/notes[draft].md'));
+    });
   });
 
   group('status', () {
@@ -267,6 +349,22 @@ void main() {
 
       expect(records, 1);
     });
+
+    test(
+      'a branch with no commits yet returns nothing, not a failure',
+      () async {
+        // A space opened on a folder someone just ran `git init` in: History is
+        // empty, which git calls fatal and the product calls Tuesday.
+        final String fresh = '$base/fresh';
+        initRepository(fresh);
+
+        final Result<String> log = await DartIoGitClient(
+          workingDirectory: fresh,
+        ).log();
+
+        expect(valueOf(log).trim(), isEmpty);
+      },
+    );
 
     test('path returns only the commits that touched it', () async {
       write('b.md', '# B\n');
@@ -432,6 +530,29 @@ void main() {
       );
     });
 
+    test('a conflict git words differently is still named', () async {
+      // Modify/delete prints `CONFLICT (modify/delete): a.md deleted in ...`
+      // — no `Merge conflict in`, so anything reading the paths off the
+      // message announces a conflict over zero files.
+      File('$otherPath/a.md').deleteSync();
+      git(<String>['add', '--all'], inside: otherPath);
+      git(<String>[
+        'commit',
+        '--quiet',
+        '--message',
+        'Delete A',
+      ], inside: otherPath);
+      git(<String>['push', '--quiet'], inside: otherPath);
+      write('a.md', '# A from here\n');
+      await client.stage(<String>['a.md']);
+      await client.commit('A here');
+
+      expect(
+        failureOf(await client.pull()),
+        const GitClientMergeConflict(<String>['a.md']),
+      );
+    });
+
     test(
       'push fails with GitClientPushRejected when the remote moved',
       () async {
@@ -483,6 +604,38 @@ void main() {
       expect(failure, isA<GitClientTimedOut>());
       expect((failure as GitClientTimedOut).timeout, Duration.zero);
     });
+
+    test(
+      'gives up on pipes a process git left behind is holding open',
+      () async {
+        // Killing git closes git's own ends of the pipes. A process started
+        // under it — here by a hook, in the field an `ssh` or a credential
+        // helper — keeps its copy, and reading them to the end then means
+        // waiting for that process rather than for git. The queue is
+        // serialized, so the space stays stuck for as long as it lives: the
+        // exact stall the timeout exists to prevent. The assertion is the
+        // clock, because the old behaviour reaches the same failure
+        // eventually — twenty seconds later.
+        final File hook = File('$repoPath/.git/hooks/pre-commit')
+          ..writeAsStringSync('#!/bin/sh\nsleep 20 &\nsleep 20\n');
+        Process.runSync('chmod', <String>['755', hook.path]);
+        write('b.md', '# B\n');
+        await client.stage(<String>['b.md']);
+        final DartIoGitClient impatient = DartIoGitClient(
+          workingDirectory: repoPath,
+          timeout: const Duration(milliseconds: 300),
+        );
+
+        final Stopwatch waited = Stopwatch()..start();
+        final AppFailure failure = failureOf(await impatient.commit('Add B'));
+
+        expect(failure, isA<GitClientTimedOut>());
+        expect(waited.elapsed, lessThan(const Duration(seconds: 10)));
+      },
+      skip: Platform.isWindows
+          ? 'the hook is a shell script, and /bin/sh is not there'
+          : false,
+    );
 
     test('one timeout does not poison the queue behind it', () async {
       final DartIoGitClient impatient = DartIoGitClient(

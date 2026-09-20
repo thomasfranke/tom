@@ -18,6 +18,12 @@ import 'package:tom_infra/src/git_client/git_client_failure.dart';
 /// order — because a caller cannot parse what it was not promised, and a
 /// second implementation owes the same format.
 ///
+/// **Every path crossing this contract is relative to the repository root**,
+/// in both directions — what [status] reports and what [stage], [unstage],
+/// [log] and [show] are given. A space is a folder, not a repository, so the
+/// folder an implementation runs git inside is usually *not* that root, and a
+/// path is only meaningful here if both sides measure it from the same place.
+///
 /// An instance belongs to one space and serializes its own commands
 /// (`flows.md#one-serialized-queue-per-space`).
 abstract interface class GitClient {
@@ -26,6 +32,13 @@ abstract interface class GitClient {
 
   /// Separates records, ASCII `0x1E`.
   static const String recordSeparator = '\u001E';
+
+  /// Terminates every entry of the `-z` form [status] returns, ASCII `0x00`.
+  ///
+  /// Named here rather than spelled again in the parser for the same reason
+  /// as the two above: the format is this contract's promise, and a second
+  /// copy of it drifts the day someone changes one.
+  static const String nulSeparator = '\u0000';
 
   /// The absolute path of the repository enclosing this client's folder.
   ///
@@ -40,12 +53,20 @@ abstract interface class GitClient {
   /// remote.
   ///
   /// Returns `git status --porcelain=v2 --branch --untracked-files=all -z`
-  /// verbatim: NUL-terminated entries, `# branch.*` headers first. The `-z`
-  /// is what makes paths parseable — without it git quotes anything unusual.
+  /// verbatim: entries terminated by [nulSeparator], `# branch.*` headers
+  /// first, every path relative to the repository root. The `-z` is what
+  /// makes paths parseable — without it git quotes anything unusual, and a
+  /// rename's two paths arrive as two entries rather than one line split on a
+  /// tab.
   Future<Result<String>> status();
 
-  /// The commits that touched [path], most recent first — or, with [path]
-  /// null, the commits on the current branch.
+  /// The commits that touched [path] — relative to the repository root, as
+  /// [status] reports it — most recent first, or with [path] null the commits
+  /// on the current branch.
+  ///
+  /// A branch with no commits yet returns nothing, not a failure: a space
+  /// opened on a freshly initialised repository has an empty history, which
+  /// is a state and not an error.
   ///
   /// One record per commit, [recordSeparator]-terminated, six
   /// [unitSeparator]-separated fields: sha, author name, author email,
@@ -64,13 +85,17 @@ abstract interface class GitClient {
   /// [revision] — a sha, `HEAD`, a branch name, anything git resolves.
   Future<Result<String>> show(String revision, String path);
 
-  /// Adds [paths] to the index, deletions included.
+  /// Adds [paths] — relative to the repository root, as [status] reports
+  /// them — to the index, deletions included.
   ///
   /// Whole files: staging is everything at once or one file at a time, never
   /// a hunk (`product/git-workflow/commit/doc.md`).
   Future<Result<void>> stage(List<String> paths);
 
   /// Removes [paths] from the index, leaving the working tree alone.
+  ///
+  /// Relative to the repository root, like everywhere else on this
+  /// contract.
   Future<Result<void>> unstage(List<String> paths);
 
   /// Records what is staged, with [message].
