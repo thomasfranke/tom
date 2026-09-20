@@ -8,3 +8,6 @@ library;
 export 'src/filesystem/dart_io/dart_io_filesystem.dart';
 export 'src/filesystem/filesystem.dart';
 export 'src/filesystem/filesystem_failure.dart';
+export 'src/git_client/dart_io/dart_io_git_client.dart';
+export 'src/git_client/git_client.dart';
+export 'src/git_client/git_client_failure.dart';
