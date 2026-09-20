@@ -192,7 +192,24 @@ const _mobilePlatforms = <_Platform>[
   _Platform('', 'iOS'),
 ];
 
-Future<int> main(List<String> args) async {
+/// Runs the CLI and hands its exit code to the process.
+///
+/// The code has to be *assigned*, not returned: Dart discards whatever `main`
+/// answers, so a `Future<int> main` reports success for every failure it ever
+/// finds — which is the quiet version of a broken gate, because CI goes green
+/// on a tree that does not analyze.
+///
+/// [exitCode] rather than [exit]: `exit` terminates the isolate where it
+/// stands, skipping the `finally` in [_browse] that puts the terminal back.
+/// A menu session that failed would leave the user in the alternate buffer
+/// with no echo. Assigning lets the isolate finish and flush on its own.
+Future<void> main(List<String> args) async {
+  exitCode = await _run(args);
+}
+
+/// The CLI proper: dispatches [args] and answers the code the process should
+/// exit with.
+Future<int> _run(List<String> args) async {
   if (args.contains('--help') || args.contains('-h')) {
     _printUsage();
     return 0;
@@ -280,6 +297,13 @@ Future<void> _runUntilBack(
 
     // Cooked mode for the duration of the work, so a Ctrl-C reaches the child
     // rather than arriving as a byte nobody is reading.
+    //
+    // The exit code is dropped on purpose — the only place in the CLI where
+    // that is true. A failed command inside a session is something to read
+    // and try again, not a reason to throw the user out of the menu; it has
+    // already printed its own failure, and the keystroke below is what gives
+    // them time to see it. The subcommand face is where a code has to
+    // survive, and it does, through `main`.
     terminal.suspend();
     await _dispatch(name, arguments);
     terminal.resume();
