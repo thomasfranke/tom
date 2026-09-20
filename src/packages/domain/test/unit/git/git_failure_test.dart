@@ -7,20 +7,26 @@ void main() {
     // branch, so a new variant breaks every switch that has to handle it.
     String headline(GitFailure failure) => switch (failure) {
       GitNotInstalled() => 'Git is not installed',
-      NotARepository(path: final String path) => 'Not a repository: $path',
-      MergeConflict(conflictedFiles: final List<String> files) =>
+      GitNotARepository(path: final String path) => 'Not a repository: $path',
+      GitMergeConflict(conflictedFiles: final List<String> files) =>
         '${files.length} conflicted files',
-      AuthenticationFailed() => 'Authentication failed',
-      DetachedHead() => 'Detached HEAD',
+      GitAuthenticationFailed() => 'Authentication failed',
+      GitDetachedHead() => 'Detached HEAD',
       GitCommandFailed(command: final String command) => 'Failed: $command',
     };
 
     test('every variant has a headline, with no default branch', () {
       expect(headline(const GitNotInstalled()), isNotEmpty);
-      expect(headline(const NotARepository('/tmp/space')), contains('/tmp'));
-      expect(headline(const MergeConflict(<String>['a.md'])), startsWith('1'));
-      expect(headline(const AuthenticationFailed()), 'Authentication failed');
-      expect(headline(const DetachedHead()), 'Detached HEAD');
+      expect(headline(const GitNotARepository('/tmp/space')), contains('/tmp'));
+      expect(
+        headline(const GitMergeConflict(<String>['a.md'])),
+        startsWith('1'),
+      );
+      expect(
+        headline(const GitAuthenticationFailed()),
+        'Authentication failed',
+      );
+      expect(headline(const GitDetachedHead()), 'Detached HEAD');
       expect(
         headline(const GitCommandFailed('git push', 'rejected')),
         'Failed: git push',
@@ -31,8 +37,8 @@ void main() {
   group('failures compare by value', () {
     // Built at runtime rather than const: const instances are canonicalised,
     // which would make these tests pass even with no `==` at all.
-    MergeConflict conflictOver(List<String> files) =>
-        MergeConflict(files.toList());
+    GitMergeConflict conflictOver(List<String> files) =>
+        GitMergeConflict(files.toList());
 
     test('same variant, same data', () {
       expect(conflictOver(<String>['a.md']), conflictOver(<String>['a.md']));
@@ -58,14 +64,14 @@ void main() {
 
     test('the same data under a different variant is a different failure', () {
       expect(
-        const NotARepository('/tmp/space'),
-        isNot(const MergeConflict(<String>[])),
+        const GitNotARepository('/tmp/space'),
+        isNot(const GitMergeConflict(<String>[])),
       );
     });
   });
 
-  group('NotARepository compares by value', () {
-    NotARepository at(String path) => NotARepository(path);
+  group('GitNotARepository compares by value', () {
+    GitNotARepository at(String path) => GitNotARepository(path);
 
     test('same path', () {
       expect(at('/tmp/space'), at('/tmp/space'));

@@ -10,6 +10,7 @@ export 'src/git/author.dart';
 export 'src/git/branch.dart';
 export 'src/git/branch_name.dart';
 export 'src/git/commit.dart';
+export 'src/git/commit_date.dart';
 export 'src/git/commit_sha.dart';
 export 'src/git/file_state.dart';
 export 'src/git/git_failure.dart';

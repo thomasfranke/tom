@@ -17,7 +17,7 @@ part 'git_failure.freezed.dart';
 /// `sealed`, so a `switch` over it is exhaustive — in an app where new git
 /// failure modes are discovered continuously, that turns "I forgot this case"
 /// from a silent bug into a compile error. Freezed generates the variants'
-/// `==`/`hashCode` (element-wise for [MergeConflict.conflictedFiles]), which
+/// `==`/`hashCode` (element-wise for [GitMergeConflict.conflictedFiles]), which
 /// is what used to be hand-written here.
 @freezed
 sealed class GitFailure with _$GitFailure implements AppFailure {
@@ -34,23 +34,26 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
   const factory GitFailure.notARepository(
     /// The absolute path that was searched for an enclosing repository.
     String path,
-  ) = NotARepository;
+  ) = GitNotARepository;
 
   /// A merge, pull or rebase stopped with conflicts.
   const factory GitFailure.mergeConflict(
     /// Paths left conflicted, relative to the repository root.
+    ///
+    /// Handed over, not copied — see `GitStatus.entries` for why, and for
+    /// what it would take to make it structural.
     List<String> conflictedFiles,
-  ) = MergeConflict;
+  ) = GitMergeConflict;
 
   /// The remote refused the credentials, or asked for some TOM cannot supply.
-  const factory GitFailure.authenticationFailed() = AuthenticationFailed;
+  const factory GitFailure.authenticationFailed() = GitAuthenticationFailed;
 
   /// HEAD points at a commit rather than a branch.
   ///
   /// Committing from here is legal in git and almost never what a
   /// documentation author meant, so it is surfaced rather than silently
   /// allowed.
-  const factory GitFailure.detachedHead() = DetachedHead;
+  const factory GitFailure.detachedHead() = GitDetachedHead;
 
   /// A git command failed in a way the product has no vocabulary for.
   ///

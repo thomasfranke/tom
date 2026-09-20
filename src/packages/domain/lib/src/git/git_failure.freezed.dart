@@ -55,14 +55,14 @@ extension GitFailurePatterns on GitFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( GitNotInstalled value)?  notInstalled,TResult Function( NotARepository value)?  notARepository,TResult Function( MergeConflict value)?  mergeConflict,TResult Function( AuthenticationFailed value)?  authenticationFailed,TResult Function( DetachedHead value)?  detachedHead,TResult Function( GitCommandFailed value)?  commandFailed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( GitNotInstalled value)?  notInstalled,TResult Function( GitNotARepository value)?  notARepository,TResult Function( GitMergeConflict value)?  mergeConflict,TResult Function( GitAuthenticationFailed value)?  authenticationFailed,TResult Function( GitDetachedHead value)?  detachedHead,TResult Function( GitCommandFailed value)?  commandFailed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
-return notInstalled(_that);case NotARepository() when notARepository != null:
-return notARepository(_that);case MergeConflict() when mergeConflict != null:
-return mergeConflict(_that);case AuthenticationFailed() when authenticationFailed != null:
-return authenticationFailed(_that);case DetachedHead() when detachedHead != null:
+return notInstalled(_that);case GitNotARepository() when notARepository != null:
+return notARepository(_that);case GitMergeConflict() when mergeConflict != null:
+return mergeConflict(_that);case GitAuthenticationFailed() when authenticationFailed != null:
+return authenticationFailed(_that);case GitDetachedHead() when detachedHead != null:
 return detachedHead(_that);case GitCommandFailed() when commandFailed != null:
 return commandFailed(_that);case _:
   return orElse();
@@ -82,14 +82,14 @@ return commandFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( GitNotInstalled value)  notInstalled,required TResult Function( NotARepository value)  notARepository,required TResult Function( MergeConflict value)  mergeConflict,required TResult Function( AuthenticationFailed value)  authenticationFailed,required TResult Function( DetachedHead value)  detachedHead,required TResult Function( GitCommandFailed value)  commandFailed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( GitNotInstalled value)  notInstalled,required TResult Function( GitNotARepository value)  notARepository,required TResult Function( GitMergeConflict value)  mergeConflict,required TResult Function( GitAuthenticationFailed value)  authenticationFailed,required TResult Function( GitDetachedHead value)  detachedHead,required TResult Function( GitCommandFailed value)  commandFailed,}){
 final _that = this;
 switch (_that) {
 case GitNotInstalled():
-return notInstalled(_that);case NotARepository():
-return notARepository(_that);case MergeConflict():
-return mergeConflict(_that);case AuthenticationFailed():
-return authenticationFailed(_that);case DetachedHead():
+return notInstalled(_that);case GitNotARepository():
+return notARepository(_that);case GitMergeConflict():
+return mergeConflict(_that);case GitAuthenticationFailed():
+return authenticationFailed(_that);case GitDetachedHead():
 return detachedHead(_that);case GitCommandFailed():
 return commandFailed(_that);}
 }
@@ -105,14 +105,14 @@ return commandFailed(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( GitNotInstalled value)?  notInstalled,TResult? Function( NotARepository value)?  notARepository,TResult? Function( MergeConflict value)?  mergeConflict,TResult? Function( AuthenticationFailed value)?  authenticationFailed,TResult? Function( DetachedHead value)?  detachedHead,TResult? Function( GitCommandFailed value)?  commandFailed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( GitNotInstalled value)?  notInstalled,TResult? Function( GitNotARepository value)?  notARepository,TResult? Function( GitMergeConflict value)?  mergeConflict,TResult? Function( GitAuthenticationFailed value)?  authenticationFailed,TResult? Function( GitDetachedHead value)?  detachedHead,TResult? Function( GitCommandFailed value)?  commandFailed,}){
 final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
-return notInstalled(_that);case NotARepository() when notARepository != null:
-return notARepository(_that);case MergeConflict() when mergeConflict != null:
-return mergeConflict(_that);case AuthenticationFailed() when authenticationFailed != null:
-return authenticationFailed(_that);case DetachedHead() when detachedHead != null:
+return notInstalled(_that);case GitNotARepository() when notARepository != null:
+return notARepository(_that);case GitMergeConflict() when mergeConflict != null:
+return mergeConflict(_that);case GitAuthenticationFailed() when authenticationFailed != null:
+return authenticationFailed(_that);case GitDetachedHead() when detachedHead != null:
 return detachedHead(_that);case GitCommandFailed() when commandFailed != null:
 return commandFailed(_that);case _:
   return null;
@@ -134,10 +134,10 @@ return commandFailed(_that);case _:
 @optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  notInstalled,TResult Function( String path)?  notARepository,TResult Function( List<String> conflictedFiles)?  mergeConflict,TResult Function()?  authenticationFailed,TResult Function()?  detachedHead,TResult Function( String command,  String stderr)?  commandFailed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
-return notInstalled();case NotARepository() when notARepository != null:
-return notARepository(_that.path);case MergeConflict() when mergeConflict != null:
-return mergeConflict(_that.conflictedFiles);case AuthenticationFailed() when authenticationFailed != null:
-return authenticationFailed();case DetachedHead() when detachedHead != null:
+return notInstalled();case GitNotARepository() when notARepository != null:
+return notARepository(_that.path);case GitMergeConflict() when mergeConflict != null:
+return mergeConflict(_that.conflictedFiles);case GitAuthenticationFailed() when authenticationFailed != null:
+return authenticationFailed();case GitDetachedHead() when detachedHead != null:
 return detachedHead();case GitCommandFailed() when commandFailed != null:
 return commandFailed(_that.command,_that.stderr);case _:
   return orElse();
@@ -160,10 +160,10 @@ return commandFailed(_that.command,_that.stderr);case _:
 @optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  notInstalled,required TResult Function( String path)  notARepository,required TResult Function( List<String> conflictedFiles)  mergeConflict,required TResult Function()  authenticationFailed,required TResult Function()  detachedHead,required TResult Function( String command,  String stderr)  commandFailed,}) {final _that = this;
 switch (_that) {
 case GitNotInstalled():
-return notInstalled();case NotARepository():
-return notARepository(_that.path);case MergeConflict():
-return mergeConflict(_that.conflictedFiles);case AuthenticationFailed():
-return authenticationFailed();case DetachedHead():
+return notInstalled();case GitNotARepository():
+return notARepository(_that.path);case GitMergeConflict():
+return mergeConflict(_that.conflictedFiles);case GitAuthenticationFailed():
+return authenticationFailed();case GitDetachedHead():
 return detachedHead();case GitCommandFailed():
 return commandFailed(_that.command,_that.stderr);}
 }
@@ -182,10 +182,10 @@ return commandFailed(_that.command,_that.stderr);}
 @optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  notInstalled,TResult? Function( String path)?  notARepository,TResult? Function( List<String> conflictedFiles)?  mergeConflict,TResult? Function()?  authenticationFailed,TResult? Function()?  detachedHead,TResult? Function( String command,  String stderr)?  commandFailed,}) {final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
-return notInstalled();case NotARepository() when notARepository != null:
-return notARepository(_that.path);case MergeConflict() when mergeConflict != null:
-return mergeConflict(_that.conflictedFiles);case AuthenticationFailed() when authenticationFailed != null:
-return authenticationFailed();case DetachedHead() when detachedHead != null:
+return notInstalled();case GitNotARepository() when notARepository != null:
+return notARepository(_that.path);case GitMergeConflict() when mergeConflict != null:
+return mergeConflict(_that.conflictedFiles);case GitAuthenticationFailed() when authenticationFailed != null:
+return authenticationFailed();case GitDetachedHead() when detachedHead != null:
 return detachedHead();case GitCommandFailed() when commandFailed != null:
 return commandFailed(_that.command,_that.stderr);case _:
   return null;
@@ -230,8 +230,8 @@ String toString() {
 /// @nodoc
 
 
-class NotARepository implements GitFailure {
-  const NotARepository(this.path);
+class GitNotARepository implements GitFailure {
+  const GitNotARepository(this.path);
   
 
 /// The absolute path that was searched for an enclosing repository.
@@ -241,13 +241,13 @@ class NotARepository implements GitFailure {
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$NotARepositoryCopyWith<NotARepository> get copyWith => _$NotARepositoryCopyWithImpl<NotARepository>(this, _$identity);
+$GitNotARepositoryCopyWith<GitNotARepository> get copyWith => _$GitNotARepositoryCopyWithImpl<GitNotARepository>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotARepository&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitNotARepository&&(identical(other.path, path) || other.path == path));
 }
 
 
@@ -263,8 +263,8 @@ String toString() {
 }
 
 /// @nodoc
-abstract mixin class $NotARepositoryCopyWith<$Res> implements $GitFailureCopyWith<$Res> {
-  factory $NotARepositoryCopyWith(NotARepository value, $Res Function(NotARepository) _then) = _$NotARepositoryCopyWithImpl;
+abstract mixin class $GitNotARepositoryCopyWith<$Res> implements $GitFailureCopyWith<$Res> {
+  factory $GitNotARepositoryCopyWith(GitNotARepository value, $Res Function(GitNotARepository) _then) = _$GitNotARepositoryCopyWithImpl;
 @useResult
 $Res call({
  String path
@@ -275,17 +275,17 @@ $Res call({
 
 }
 /// @nodoc
-class _$NotARepositoryCopyWithImpl<$Res>
-    implements $NotARepositoryCopyWith<$Res> {
-  _$NotARepositoryCopyWithImpl(this._self, this._then);
+class _$GitNotARepositoryCopyWithImpl<$Res>
+    implements $GitNotARepositoryCopyWith<$Res> {
+  _$GitNotARepositoryCopyWithImpl(this._self, this._then);
 
-  final NotARepository _self;
-  final $Res Function(NotARepository) _then;
+  final GitNotARepository _self;
+  final $Res Function(GitNotARepository) _then;
 
 /// Create a copy of GitFailure
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
-  return _then(NotARepository(
+  return _then(GitNotARepository(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -297,13 +297,19 @@ as String,
 /// @nodoc
 
 
-class MergeConflict implements GitFailure {
-  const MergeConflict(final  List<String> conflictedFiles): _conflictedFiles = conflictedFiles;
+class GitMergeConflict implements GitFailure {
+  const GitMergeConflict(final  List<String> conflictedFiles): _conflictedFiles = conflictedFiles;
   
 
 /// Paths left conflicted, relative to the repository root.
+///
+/// Handed over, not copied — see `GitStatus.entries` for why, and for
+/// what it would take to make it structural.
  final  List<String> _conflictedFiles;
 /// Paths left conflicted, relative to the repository root.
+///
+/// Handed over, not copied — see `GitStatus.entries` for why, and for
+/// what it would take to make it structural.
  List<String> get conflictedFiles {
   if (_conflictedFiles is EqualUnmodifiableListView) return _conflictedFiles;
   // ignore: implicit_dynamic_type
@@ -315,13 +321,13 @@ class MergeConflict implements GitFailure {
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$MergeConflictCopyWith<MergeConflict> get copyWith => _$MergeConflictCopyWithImpl<MergeConflict>(this, _$identity);
+$GitMergeConflictCopyWith<GitMergeConflict> get copyWith => _$GitMergeConflictCopyWithImpl<GitMergeConflict>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MergeConflict&&const DeepCollectionEquality().equals(other._conflictedFiles, _conflictedFiles));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitMergeConflict&&const DeepCollectionEquality().equals(other._conflictedFiles, _conflictedFiles));
 }
 
 
@@ -337,8 +343,8 @@ String toString() {
 }
 
 /// @nodoc
-abstract mixin class $MergeConflictCopyWith<$Res> implements $GitFailureCopyWith<$Res> {
-  factory $MergeConflictCopyWith(MergeConflict value, $Res Function(MergeConflict) _then) = _$MergeConflictCopyWithImpl;
+abstract mixin class $GitMergeConflictCopyWith<$Res> implements $GitFailureCopyWith<$Res> {
+  factory $GitMergeConflictCopyWith(GitMergeConflict value, $Res Function(GitMergeConflict) _then) = _$GitMergeConflictCopyWithImpl;
 @useResult
 $Res call({
  List<String> conflictedFiles
@@ -349,17 +355,17 @@ $Res call({
 
 }
 /// @nodoc
-class _$MergeConflictCopyWithImpl<$Res>
-    implements $MergeConflictCopyWith<$Res> {
-  _$MergeConflictCopyWithImpl(this._self, this._then);
+class _$GitMergeConflictCopyWithImpl<$Res>
+    implements $GitMergeConflictCopyWith<$Res> {
+  _$GitMergeConflictCopyWithImpl(this._self, this._then);
 
-  final MergeConflict _self;
-  final $Res Function(MergeConflict) _then;
+  final GitMergeConflict _self;
+  final $Res Function(GitMergeConflict) _then;
 
 /// Create a copy of GitFailure
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') $Res call({Object? conflictedFiles = null,}) {
-  return _then(MergeConflict(
+  return _then(GitMergeConflict(
 null == conflictedFiles ? _self._conflictedFiles : conflictedFiles // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
@@ -371,8 +377,8 @@ as List<String>,
 /// @nodoc
 
 
-class AuthenticationFailed implements GitFailure {
-  const AuthenticationFailed();
+class GitAuthenticationFailed implements GitFailure {
+  const GitAuthenticationFailed();
   
 
 
@@ -382,7 +388,7 @@ class AuthenticationFailed implements GitFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthenticationFailed);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitAuthenticationFailed);
 }
 
 
@@ -403,8 +409,8 @@ String toString() {
 /// @nodoc
 
 
-class DetachedHead implements GitFailure {
-  const DetachedHead();
+class GitDetachedHead implements GitFailure {
+  const GitDetachedHead();
   
 
 
@@ -414,7 +420,7 @@ class DetachedHead implements GitFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DetachedHead);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitDetachedHead);
 }
 
 

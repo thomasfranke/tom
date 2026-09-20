@@ -7,8 +7,9 @@ void main() {
     // branch, so a new variant breaks every switch that has to handle it.
     String headline(DocumentFailure failure) => switch (failure) {
       DocumentNotFound(path: final String path) => 'Not found: $path',
-      PermissionDenied(path: final String path) => 'Denied: $path',
-      ExternalChangeConflict(path: final String path) => 'Conflict: $path',
+      DocumentPermissionDenied(path: final String path) => 'Denied: $path',
+      DocumentExternalChangeConflict(path: final String path) =>
+        'Conflict: $path',
     };
 
     test('every variant has a headline, with no default branch', () {
@@ -17,11 +18,11 @@ void main() {
         'Not found: notes/a.md',
       );
       expect(
-        headline(const PermissionDenied('notes/a.md')),
+        headline(const DocumentPermissionDenied('notes/a.md')),
         'Denied: notes/a.md',
       );
       expect(
-        headline(const ExternalChangeConflict('notes/a.md')),
+        headline(const DocumentExternalChangeConflict('notes/a.md')),
         'Conflict: notes/a.md',
       );
     });
@@ -31,9 +32,10 @@ void main() {
     // Built at runtime rather than const: const instances are canonicalised,
     // which would make these tests pass even with no `==` at all.
     DocumentNotFound notFoundAt(String path) => DocumentNotFound(path);
-    PermissionDenied deniedAt(String path) => PermissionDenied(path);
-    ExternalChangeConflict conflictAt(String path) =>
-        ExternalChangeConflict(path);
+    DocumentPermissionDenied deniedAt(String path) =>
+        DocumentPermissionDenied(path);
+    DocumentExternalChangeConflict conflictAt(String path) =>
+        DocumentExternalChangeConflict(path);
 
     test('same variant, same path', () {
       expect(notFoundAt('notes/a.md'), notFoundAt('notes/a.md'));

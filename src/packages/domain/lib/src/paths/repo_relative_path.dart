@@ -30,14 +30,33 @@ extension type const RepoRelativePath._(String value) {
   /// [value] as a path, or null when it is not one.
   ///
   /// The door a parser uses: git output that does not look like a path is a
-  /// record to skip, not an exception to throw across a boundary.
+  /// record to skip, not an exception to throw across a boundary. It is also
+  /// the door a person's typing will come through, so the rules are the
+  /// invariant itself rather than a sanity check:
+  ///
+  /// - not empty, and no `\` — git prints `/` on every platform;
+  /// - no drive letter, which is absolute on Windows however it is spelled;
+  /// - no empty segment, which is what a leading `/`, a trailing `/` and a
+  ///   `//` in the middle all amount to;
+  /// - no `.` or `..` segment. This is the one that matters: the whole point
+  ///   of the type is that joining it onto a repository root cannot leave
+  ///   the repository, and `..` is how that guarantee is lost.
   static RepoRelativePath? tryParse(String value) {
-    if (value.isEmpty || value.startsWith('/') || value.contains(r'\')) {
+    if (value.isEmpty || value.contains(r'\') || _drive.hasMatch(value)) {
       return null;
+    }
+    for (final String segment in value.split('/')) {
+      if (segment.isEmpty || segment == '.' || segment == '..') {
+        return null;
+      }
     }
     return RepoRelativePath._(value);
   }
 
+  static final RegExp _drive = RegExp(r'^[A-Za-z]:');
+
   /// The last segment — the file or folder name.
+  ///
+  /// Never empty: [tryParse] refuses a path with an empty segment.
   String get name => value.split('/').last;
 }

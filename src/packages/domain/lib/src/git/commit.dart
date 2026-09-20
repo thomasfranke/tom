@@ -3,6 +3,7 @@ library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:tom_domain/src/git/author.dart';
+import 'package:tom_domain/src/git/commit_date.dart';
 import 'package:tom_domain/src/git/commit_sha.dart';
 
 part 'commit.freezed.dart';
@@ -22,8 +23,8 @@ abstract class Commit with _$Commit {
     /// Who wrote it.
     required Author author,
 
-    /// When it was written, with the offset git recorded.
-    required DateTime date,
+    /// When it was written, and where the author's clock stood.
+    required CommitDate date,
 
     /// The first line of the message.
     required String subject,

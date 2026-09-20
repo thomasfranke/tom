@@ -2,6 +2,7 @@
 library;
 
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_infra/tom_infra.dart';
 
 /// Reads what `GitClient.status` returned.
 ///
@@ -15,8 +16,10 @@ import 'package:tom_domain/tom_domain.dart';
 /// four hundred, and porcelain v2 is a versioned grammar precisely so that a
 /// reader can ignore what it does not know.
 ///
-/// The format is the one `GitClient.status` promises: NUL-terminated
-/// entries, `# branch.*` headers first.
+/// The format is the one `GitClient.status` promises: entries terminated by
+/// [GitClient.nulSeparator], `# branch.*` headers first. The separator comes
+/// from that contract rather than being spelled again here — two copies of a
+/// format drift the day someone changes one.
 final class GitStatusParser {
   /// Creates a parser.
   ///
@@ -24,15 +27,13 @@ final class GitStatusParser {
   /// (`docs/technical/flows.md#wiring-three-lifetimes`).
   const GitStatusParser();
 
-  /// The NUL that terminates every entry of the `-z` form.
-  static final String _nul = String.fromCharCode(0);
-
   /// What git says about a detached `HEAD` in `# branch.head`.
   static const String _detached = '(detached)';
 
   /// Reads [porcelain] into a status.
   GitStatus parse(String porcelain) {
-    final List<String> fields = porcelain.split(_nul);
+    final List<String> fields = porcelain.split(GitClient.nulSeparator);
+    bool isDetached = false;
     BranchName? branch;
     BranchName? upstream;
     int ahead = 0;
@@ -45,8 +46,13 @@ final class GitStatusParser {
         continue;
       }
       if (field.startsWith('# branch.head ')) {
+        // Only this sentinel makes a status detached. A name that does not
+        // parse also leaves `branch` null, and reading that as detachment
+        // would put a scary warning on a repository sitting on an ordinary
+        // branch — the two nulls are not the same answer.
         final String name = field.substring('# branch.head '.length);
-        branch = name == _detached ? null : BranchName.tryParse(name);
+        isDetached = name == _detached;
+        branch = isDetached ? null : BranchName.tryParse(name);
       } else if (field.startsWith('# branch.upstream ')) {
         upstream = BranchName.tryParse(
           field.substring('# branch.upstream '.length),
@@ -62,8 +68,9 @@ final class GitStatusParser {
         continue;
       } else if (field.startsWith('2 ')) {
         // A rename or copy spends two fields: the record, then where the
-        // file came from. Reading one without the other is what makes a
-        // rename look like an unrelated add.
+        // file came from. The second is consumed either way, even when the
+        // record turns out to be unreadable — leaving it behind is what
+        // makes the origin of a rename look like an entry of its own.
         final String? previous = i + 1 < fields.length ? fields[++i] : null;
         _add(entries, _parseTracked(field, previousPath: previous));
       } else if (field.startsWith('1 ')) {
@@ -82,7 +89,10 @@ final class GitStatusParser {
       upstream: upstream,
       ahead: ahead,
       behind: behind,
-      entries: entries,
+      // Unmodifiable because the status outlives this method and nothing
+      // else should be able to change what it reports.
+      entries: List<StatusEntry>.unmodifiable(entries),
+      isDetached: isDetached,
     );
   }
 
@@ -106,13 +116,13 @@ final class GitStatusParser {
 
   /// A `1` or `2` record: a tracked file that changed.
   ///
-  /// `1 XY sub mH mI mW hH hI path`, with a rename score before the path on
-  /// a `2`. The path is everything after the fixed fields, so it is taken by
-  /// splitting a bounded number of times rather than on every space — a
-  /// document called `release notes.md` is ordinary.
+  /// `1 XY sub mH mI mW hH hI path`, with a rename-or-copy score before the
+  /// path on a `2`. The path is everything after the fixed fields, so it is
+  /// taken by splitting a bounded number of times rather than on every space
+  /// — a document called `release notes.md` is ordinary.
   StatusEntry? _parseTracked(String record, {String? previousPath}) {
-    final bool isRename = record.startsWith('2 ');
-    final int fixedFields = isRename ? 9 : 8;
+    final bool isRenameOrCopy = record.startsWith('2 ');
+    final int fixedFields = isRenameOrCopy ? 9 : 8;
     final List<String> parts = record.split(' ');
     if (parts.length <= fixedFields) {
       return null;
@@ -138,11 +148,15 @@ final class GitStatusParser {
       return null;
     }
 
+    // A `2` record is a rename *or* a copy, and the domain has no `copied`:
+    // a `C` lands on [FileState.added], which is the truth the product can
+    // show. So the origin is attached only to a rename — `previousPath` says
+    // "the file came from here", and for a copy the file is still there.
     return StatusEntry(
       path: path,
       state: state,
       isStaged: staged != '.',
-      previousPath: isRename && previousPath != null
+      previousPath: state == FileState.renamed && previousPath != null
           ? RepoRelativePath.tryParse(previousPath)
           : null,
     );

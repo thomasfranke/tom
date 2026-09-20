@@ -20,18 +20,35 @@ extension type const BranchName._(String value) {
   /// [value] as a branch name, or null when it is not one.
   ///
   /// The rules checked are the ones `git check-ref-format` enforces that a
-  /// person plausibly trips over: no leading or trailing `/`, no `..`, no
-  /// whitespace, no `~^:?*[`, and not ending in `.lock`. The full grammar
-  /// lives in git and is not worth restating — this catches the mistakes a
-  /// branch dialog produces.
+  /// person plausibly trips over in a branch dialog:
+  ///
+  /// - not empty, no whitespace, none of `~^:?*[\`;
+  /// - no `..`, which names a range, and no `@{`, which names a reflog entry;
+  /// - no empty segment — a leading `/`, a trailing `/` and a `//` in the
+  ///   middle are all the same mistake;
+  /// - no segment starting with `.`, ending with `.`, or ending in `.lock`.
+  ///   Git applies these per component, not to the whole name, so `feat/.wip`
+  ///   is refused for the same reason `.wip` is.
+  ///
+  /// The full grammar lives in git and is not worth restating — control
+  /// characters and the lone `@` are left to git itself, because no dialog
+  /// produces them by accident. What is checked here is checked so that a
+  /// name a user typed fails in the dialog, with a sentence, rather than
+  /// later as a raw error from `git branch`.
   static BranchName? tryParse(String value) {
     if (value.isEmpty ||
-        value.startsWith('/') ||
-        value.endsWith('/') ||
-        value.endsWith('.lock') ||
         value.contains('..') ||
+        value.contains('@{') ||
         _forbidden.hasMatch(value)) {
       return null;
+    }
+    for (final String segment in value.split('/')) {
+      if (segment.isEmpty ||
+          segment.startsWith('.') ||
+          segment.endsWith('.') ||
+          segment.endsWith('.lock')) {
+        return null;
+      }
     }
     return BranchName._(value);
   }

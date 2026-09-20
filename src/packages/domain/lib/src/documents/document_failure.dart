@@ -27,7 +27,7 @@ sealed class DocumentFailure with _$DocumentFailure implements AppFailure {
   const factory DocumentFailure.permissionDenied(
     /// The path, relative to the space root.
     String path,
-  ) = PermissionDenied;
+  ) = DocumentPermissionDenied;
 
   /// The file changed on disk while there were unsaved local edits.
   ///
@@ -37,5 +37,5 @@ sealed class DocumentFailure with _$DocumentFailure implements AppFailure {
   const factory DocumentFailure.externalChangeConflict(
     /// The path, relative to the space root.
     String path,
-  ) = ExternalChangeConflict;
+  ) = DocumentExternalChangeConflict;
 }

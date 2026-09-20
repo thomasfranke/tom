@@ -5,12 +5,14 @@ void main() {
   GitStatus statusWith({
     BranchName? branch,
     List<StatusEntry> entries = const <StatusEntry>[],
+    bool isDetached = false,
   }) => GitStatus(
     branch: branch,
     upstream: null,
     ahead: 0,
     behind: 0,
     entries: entries,
+    isDetached: isDetached,
   );
 
   StatusEntry entry({bool isStaged = false}) => StatusEntry(
@@ -24,8 +26,23 @@ void main() {
       expect(statusWith(branch: BranchName('main')).isDetached, isFalse);
     });
 
-    test('no branch means HEAD points at a commit', () {
-      expect(statusWith().isDetached, isTrue);
+    test('detachment is told, not inferred from a missing branch', () {
+      expect(statusWith(isDetached: true).isDetached, isTrue);
+    });
+
+    test('a branch this version cannot name is still not detached', () {
+      // Two different answers used to share one null: a name the parser
+      // could not read reported a detached HEAD, which would put a warning
+      // on a repository sitting on an ordinary branch.
+      expect(statusWith().branch, isNull);
+      expect(statusWith().isDetached, isFalse);
+    });
+
+    test('a named branch cannot also be detached', () {
+      expect(
+        () => statusWith(branch: BranchName('main'), isDetached: true),
+        throwsA(isA<AssertionError>()),
+      );
     });
   });
 

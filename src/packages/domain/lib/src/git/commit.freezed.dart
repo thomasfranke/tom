@@ -16,8 +16,8 @@ mixin _$Commit {
 
 /// Its object name, which is its identity.
  CommitSha get sha;/// Who wrote it.
- Author get author;/// When it was written, with the offset git recorded.
- DateTime get date;/// The first line of the message.
+ Author get author;/// When it was written, and where the author's clock stood.
+ CommitDate get date;/// The first line of the message.
  String get subject;/// Everything after the first line. Empty when there is none.
  String get body;
 /// Create a copy of Commit
@@ -50,11 +50,11 @@ abstract mixin class $CommitCopyWith<$Res>  {
   factory $CommitCopyWith(Commit value, $Res Function(Commit) _then) = _$CommitCopyWithImpl;
 @useResult
 $Res call({
- CommitSha sha, Author author, DateTime date, String subject, String body
+ CommitSha sha, Author author, CommitDate date, String subject, String body
 });
 
 
-$AuthorCopyWith<$Res> get author;
+$AuthorCopyWith<$Res> get author;$CommitDateCopyWith<$Res> get date;
 
 }
 /// @nodoc
@@ -72,7 +72,7 @@ class _$CommitCopyWithImpl<$Res>
 sha: null == sha ? _self.sha : sha // ignore: cast_nullable_to_non_nullable
 as CommitSha,author: null == author ? _self.author : author // ignore: cast_nullable_to_non_nullable
 as Author,date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
-as DateTime,subject: null == subject ? _self.subject : subject // ignore: cast_nullable_to_non_nullable
+as CommitDate,subject: null == subject ? _self.subject : subject // ignore: cast_nullable_to_non_nullable
 as String,body: null == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -85,6 +85,15 @@ $AuthorCopyWith<$Res> get author {
   
   return $AuthorCopyWith<$Res>(_self.author, (value) {
     return _then(_self.copyWith(author: value));
+  });
+}/// Create a copy of Commit
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$CommitDateCopyWith<$Res> get date {
+  
+  return $CommitDateCopyWith<$Res>(_self.date, (value) {
+    return _then(_self.copyWith(date: value));
   });
 }
 }
@@ -168,7 +177,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CommitSha sha,  Author author,  DateTime date,  String subject,  String body)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CommitSha sha,  Author author,  CommitDate date,  String subject,  String body)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Commit() when $default != null:
 return $default(_that.sha,_that.author,_that.date,_that.subject,_that.body);case _:
@@ -189,7 +198,7 @@ return $default(_that.sha,_that.author,_that.date,_that.subject,_that.body);case
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CommitSha sha,  Author author,  DateTime date,  String subject,  String body)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CommitSha sha,  Author author,  CommitDate date,  String subject,  String body)  $default,) {final _that = this;
 switch (_that) {
 case _Commit():
 return $default(_that.sha,_that.author,_that.date,_that.subject,_that.body);case _:
@@ -209,7 +218,7 @@ return $default(_that.sha,_that.author,_that.date,_that.subject,_that.body);case
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CommitSha sha,  Author author,  DateTime date,  String subject,  String body)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CommitSha sha,  Author author,  CommitDate date,  String subject,  String body)?  $default,) {final _that = this;
 switch (_that) {
 case _Commit() when $default != null:
 return $default(_that.sha,_that.author,_that.date,_that.subject,_that.body);case _:
@@ -231,8 +240,8 @@ class _Commit implements Commit {
 @override final  CommitSha sha;
 /// Who wrote it.
 @override final  Author author;
-/// When it was written, with the offset git recorded.
-@override final  DateTime date;
+/// When it was written, and where the author's clock stood.
+@override final  CommitDate date;
 /// The first line of the message.
 @override final  String subject;
 /// Everything after the first line. Empty when there is none.
@@ -268,11 +277,11 @@ abstract mixin class _$CommitCopyWith<$Res> implements $CommitCopyWith<$Res> {
   factory _$CommitCopyWith(_Commit value, $Res Function(_Commit) _then) = __$CommitCopyWithImpl;
 @override @useResult
 $Res call({
- CommitSha sha, Author author, DateTime date, String subject, String body
+ CommitSha sha, Author author, CommitDate date, String subject, String body
 });
 
 
-@override $AuthorCopyWith<$Res> get author;
+@override $AuthorCopyWith<$Res> get author;@override $CommitDateCopyWith<$Res> get date;
 
 }
 /// @nodoc
@@ -290,7 +299,7 @@ class __$CommitCopyWithImpl<$Res>
 sha: null == sha ? _self.sha : sha // ignore: cast_nullable_to_non_nullable
 as CommitSha,author: null == author ? _self.author : author // ignore: cast_nullable_to_non_nullable
 as Author,date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
-as DateTime,subject: null == subject ? _self.subject : subject // ignore: cast_nullable_to_non_nullable
+as CommitDate,subject: null == subject ? _self.subject : subject // ignore: cast_nullable_to_non_nullable
 as String,body: null == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -304,6 +313,15 @@ $AuthorCopyWith<$Res> get author {
   
   return $AuthorCopyWith<$Res>(_self.author, (value) {
     return _then(_self.copyWith(author: value));
+  });
+}/// Create a copy of Commit
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$CommitDateCopyWith<$Res> get date {
+  
+  return $CommitDateCopyWith<$Res>(_self.date, (value) {
+    return _then(_self.copyWith(date: value));
   });
 }
 }

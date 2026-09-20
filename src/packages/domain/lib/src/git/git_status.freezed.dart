@@ -14,12 +14,24 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$GitStatus {
 
-/// The branch `HEAD` points at, or null when `HEAD` is detached.
+/// The branch `HEAD` points at.
+///
+/// Null when `HEAD` is detached, and also when git named a branch this
+/// version cannot parse — [isDetached] is what tells the two apart.
  BranchName? get branch;/// The branch it tracks, or null when it tracks nothing.
  BranchName? get upstream;/// Commits this branch has that [upstream] does not.
  int get ahead;/// Commits [upstream] has that this branch does not.
  int get behind;/// Every path that differs, in the order git reported it.
- List<StatusEntry> get entries;
+///
+/// Handed over, not copied: Freezed generates element-wise equality but
+/// does not copy the collection, so a caller that kept its own reference
+/// could change what this status says — and change its `hashCode` while
+/// it sits in a set or drives a rebuild. Every producer therefore passes
+/// a list nothing else holds; `GitStatusParser` passes an unmodifiable
+/// one. Making that structural needs an immutable-collection package,
+/// which is a dependency decision and not this file's to take.
+ List<StatusEntry> get entries;/// Whether `HEAD` points at a commit rather than a branch.
+ bool get isDetached;
 /// Create a copy of GitStatus
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,16 +42,16 @@ $GitStatusCopyWith<GitStatus> get copyWith => _$GitStatusCopyWithImpl<GitStatus>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitStatus&&(identical(other.branch, branch) || other.branch == branch)&&(identical(other.upstream, upstream) || other.upstream == upstream)&&(identical(other.ahead, ahead) || other.ahead == ahead)&&(identical(other.behind, behind) || other.behind == behind)&&const DeepCollectionEquality().equals(other.entries, entries));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitStatus&&(identical(other.branch, branch) || other.branch == branch)&&(identical(other.upstream, upstream) || other.upstream == upstream)&&(identical(other.ahead, ahead) || other.ahead == ahead)&&(identical(other.behind, behind) || other.behind == behind)&&const DeepCollectionEquality().equals(other.entries, entries)&&(identical(other.isDetached, isDetached) || other.isDetached == isDetached));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,branch,upstream,ahead,behind,const DeepCollectionEquality().hash(entries));
+int get hashCode => Object.hash(runtimeType,branch,upstream,ahead,behind,const DeepCollectionEquality().hash(entries),isDetached);
 
 @override
 String toString() {
-  return 'GitStatus(branch: $branch, upstream: $upstream, ahead: $ahead, behind: $behind, entries: $entries)';
+  return 'GitStatus(branch: $branch, upstream: $upstream, ahead: $ahead, behind: $behind, entries: $entries, isDetached: $isDetached)';
 }
 
 
@@ -50,7 +62,7 @@ abstract mixin class $GitStatusCopyWith<$Res>  {
   factory $GitStatusCopyWith(GitStatus value, $Res Function(GitStatus) _then) = _$GitStatusCopyWithImpl;
 @useResult
 $Res call({
- BranchName? branch, BranchName? upstream, int ahead, int behind, List<StatusEntry> entries
+ BranchName? branch, BranchName? upstream, int ahead, int behind, List<StatusEntry> entries, bool isDetached
 });
 
 
@@ -67,14 +79,15 @@ class _$GitStatusCopyWithImpl<$Res>
 
 /// Create a copy of GitStatus
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? branch = freezed,Object? upstream = freezed,Object? ahead = null,Object? behind = null,Object? entries = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? branch = freezed,Object? upstream = freezed,Object? ahead = null,Object? behind = null,Object? entries = null,Object? isDetached = null,}) {
   return _then(_self.copyWith(
 branch: freezed == branch ? _self.branch : branch // ignore: cast_nullable_to_non_nullable
 as BranchName?,upstream: freezed == upstream ? _self.upstream : upstream // ignore: cast_nullable_to_non_nullable
 as BranchName?,ahead: null == ahead ? _self.ahead : ahead // ignore: cast_nullable_to_non_nullable
 as int,behind: null == behind ? _self.behind : behind // ignore: cast_nullable_to_non_nullable
 as int,entries: null == entries ? _self.entries : entries // ignore: cast_nullable_to_non_nullable
-as List<StatusEntry>,
+as List<StatusEntry>,isDetached: null == isDetached ? _self.isDetached : isDetached // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -159,10 +172,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( BranchName? branch,  BranchName? upstream,  int ahead,  int behind,  List<StatusEntry> entries)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( BranchName? branch,  BranchName? upstream,  int ahead,  int behind,  List<StatusEntry> entries,  bool isDetached)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _GitStatus() when $default != null:
-return $default(_that.branch,_that.upstream,_that.ahead,_that.behind,_that.entries);case _:
+return $default(_that.branch,_that.upstream,_that.ahead,_that.behind,_that.entries,_that.isDetached);case _:
   return orElse();
 
 }
@@ -180,10 +193,10 @@ return $default(_that.branch,_that.upstream,_that.ahead,_that.behind,_that.entri
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( BranchName? branch,  BranchName? upstream,  int ahead,  int behind,  List<StatusEntry> entries)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( BranchName? branch,  BranchName? upstream,  int ahead,  int behind,  List<StatusEntry> entries,  bool isDetached)  $default,) {final _that = this;
 switch (_that) {
 case _GitStatus():
-return $default(_that.branch,_that.upstream,_that.ahead,_that.behind,_that.entries);case _:
+return $default(_that.branch,_that.upstream,_that.ahead,_that.behind,_that.entries,_that.isDetached);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +213,10 @@ return $default(_that.branch,_that.upstream,_that.ahead,_that.behind,_that.entri
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( BranchName? branch,  BranchName? upstream,  int ahead,  int behind,  List<StatusEntry> entries)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( BranchName? branch,  BranchName? upstream,  int ahead,  int behind,  List<StatusEntry> entries,  bool isDetached)?  $default,) {final _that = this;
 switch (_that) {
 case _GitStatus() when $default != null:
-return $default(_that.branch,_that.upstream,_that.ahead,_that.behind,_that.entries);case _:
+return $default(_that.branch,_that.upstream,_that.ahead,_that.behind,_that.entries,_that.isDetached);case _:
   return null;
 
 }
@@ -215,10 +228,13 @@ return $default(_that.branch,_that.upstream,_that.ahead,_that.behind,_that.entri
 
 
 class _GitStatus extends GitStatus {
-  const _GitStatus({required this.branch, required this.upstream, required this.ahead, required this.behind, required final  List<StatusEntry> entries}): _entries = entries,super._();
+  const _GitStatus({required this.branch, required this.upstream, required this.ahead, required this.behind, required final  List<StatusEntry> entries, required this.isDetached}): assert(!isDetached || branch == null),_entries = entries,super._();
   
 
-/// The branch `HEAD` points at, or null when `HEAD` is detached.
+/// The branch `HEAD` points at.
+///
+/// Null when `HEAD` is detached, and also when git named a branch this
+/// version cannot parse — [isDetached] is what tells the two apart.
 @override final  BranchName? branch;
 /// The branch it tracks, or null when it tracks nothing.
 @override final  BranchName? upstream;
@@ -227,14 +243,32 @@ class _GitStatus extends GitStatus {
 /// Commits [upstream] has that this branch does not.
 @override final  int behind;
 /// Every path that differs, in the order git reported it.
+///
+/// Handed over, not copied: Freezed generates element-wise equality but
+/// does not copy the collection, so a caller that kept its own reference
+/// could change what this status says — and change its `hashCode` while
+/// it sits in a set or drives a rebuild. Every producer therefore passes
+/// a list nothing else holds; `GitStatusParser` passes an unmodifiable
+/// one. Making that structural needs an immutable-collection package,
+/// which is a dependency decision and not this file's to take.
  final  List<StatusEntry> _entries;
 /// Every path that differs, in the order git reported it.
+///
+/// Handed over, not copied: Freezed generates element-wise equality but
+/// does not copy the collection, so a caller that kept its own reference
+/// could change what this status says — and change its `hashCode` while
+/// it sits in a set or drives a rebuild. Every producer therefore passes
+/// a list nothing else holds; `GitStatusParser` passes an unmodifiable
+/// one. Making that structural needs an immutable-collection package,
+/// which is a dependency decision and not this file's to take.
 @override List<StatusEntry> get entries {
   if (_entries is EqualUnmodifiableListView) return _entries;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_entries);
 }
 
+/// Whether `HEAD` points at a commit rather than a branch.
+@override final  bool isDetached;
 
 /// Create a copy of GitStatus
 /// with the given fields replaced by the non-null parameter values.
@@ -246,16 +280,16 @@ _$GitStatusCopyWith<_GitStatus> get copyWith => __$GitStatusCopyWithImpl<_GitSta
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GitStatus&&(identical(other.branch, branch) || other.branch == branch)&&(identical(other.upstream, upstream) || other.upstream == upstream)&&(identical(other.ahead, ahead) || other.ahead == ahead)&&(identical(other.behind, behind) || other.behind == behind)&&const DeepCollectionEquality().equals(other._entries, _entries));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GitStatus&&(identical(other.branch, branch) || other.branch == branch)&&(identical(other.upstream, upstream) || other.upstream == upstream)&&(identical(other.ahead, ahead) || other.ahead == ahead)&&(identical(other.behind, behind) || other.behind == behind)&&const DeepCollectionEquality().equals(other._entries, _entries)&&(identical(other.isDetached, isDetached) || other.isDetached == isDetached));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,branch,upstream,ahead,behind,const DeepCollectionEquality().hash(_entries));
+int get hashCode => Object.hash(runtimeType,branch,upstream,ahead,behind,const DeepCollectionEquality().hash(_entries),isDetached);
 
 @override
 String toString() {
-  return 'GitStatus(branch: $branch, upstream: $upstream, ahead: $ahead, behind: $behind, entries: $entries)';
+  return 'GitStatus(branch: $branch, upstream: $upstream, ahead: $ahead, behind: $behind, entries: $entries, isDetached: $isDetached)';
 }
 
 
@@ -266,7 +300,7 @@ abstract mixin class _$GitStatusCopyWith<$Res> implements $GitStatusCopyWith<$Re
   factory _$GitStatusCopyWith(_GitStatus value, $Res Function(_GitStatus) _then) = __$GitStatusCopyWithImpl;
 @override @useResult
 $Res call({
- BranchName? branch, BranchName? upstream, int ahead, int behind, List<StatusEntry> entries
+ BranchName? branch, BranchName? upstream, int ahead, int behind, List<StatusEntry> entries, bool isDetached
 });
 
 
@@ -283,14 +317,15 @@ class __$GitStatusCopyWithImpl<$Res>
 
 /// Create a copy of GitStatus
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? branch = freezed,Object? upstream = freezed,Object? ahead = null,Object? behind = null,Object? entries = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? branch = freezed,Object? upstream = freezed,Object? ahead = null,Object? behind = null,Object? entries = null,Object? isDetached = null,}) {
   return _then(_GitStatus(
 branch: freezed == branch ? _self.branch : branch // ignore: cast_nullable_to_non_nullable
 as BranchName?,upstream: freezed == upstream ? _self.upstream : upstream // ignore: cast_nullable_to_non_nullable
 as BranchName?,ahead: null == ahead ? _self.ahead : ahead // ignore: cast_nullable_to_non_nullable
 as int,behind: null == behind ? _self.behind : behind // ignore: cast_nullable_to_non_nullable
 as int,entries: null == entries ? _self._entries : entries // ignore: cast_nullable_to_non_nullable
-as List<StatusEntry>,
+as List<StatusEntry>,isDetached: null == isDetached ? _self.isDetached : isDetached // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

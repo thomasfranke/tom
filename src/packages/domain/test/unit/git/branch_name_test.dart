@@ -49,14 +49,36 @@ void main() {
         'main?',
         'main*',
         'main[0]',
+        'main@{1}',
       ]) {
         expect(BranchName.tryParse(name), isNull, reason: name);
       }
     });
 
-    test('the .lock suffix git reserves', () {
+    test('the .lock suffix git reserves, on any component', () {
       expect(BranchName.tryParse('main.lock'), isNull);
+      expect(BranchName.tryParse('feat/wip.lock'), isNull);
     });
+
+    test('a component starting with a dot', () {
+      expect(BranchName.tryParse('.drafts'), isNull);
+      expect(BranchName.tryParse('feat/.wip'), isNull);
+    });
+
+    test('a component ending with a dot', () {
+      expect(BranchName.tryParse('docs.'), isNull);
+      expect(BranchName.tryParse('feat/docs.'), isNull);
+    });
+
+    test('an empty component', () {
+      expect(BranchName.tryParse('release//v2'), isNull);
+    });
+  });
+
+  test('a dot inside a component is ordinary', () {
+    // Version-shaped branches are common; only the edges of a component and
+    // the `..` of a range are refused.
+    expect(BranchName.tryParse('release/v1.2.3'), isNotNull);
   });
 
   test('the constructor throws, because reaching it with junk is a bug', () {

@@ -41,6 +41,22 @@ void main() {
       expect(status.isClean, isTrue);
     });
 
+    test('a branch name this version cannot read is not a detached HEAD', () {
+      // Both answers used to be `branch == null`. Reading the unparseable
+      // one as detachment would warn about a detached HEAD on a repository
+      // sitting on a perfectly ordinary branch.
+      final GitStatus status = parser.parse(
+        porcelain(<String>['# branch.head feat/weird~name']),
+      );
+
+      expect(status.branch, isNull);
+      expect(status.isDetached, isFalse);
+    });
+
+    test('a status git said nothing about is not detached either', () {
+      expect(parser.parse('').isDetached, isFalse);
+    });
+
     test('a detached HEAD has no branch', () {
       final GitStatus status = parser.parse(
         porcelain(<String>[
@@ -101,6 +117,15 @@ void main() {
       ]),
     );
 
+    test('the entries cannot be changed behind the status', () {
+      // Freezed compares element-wise but does not copy the collection, so
+      // the producer is what makes the status say the same thing tomorrow.
+      expect(
+        () => status.entries.add(status.entries.first),
+        throwsUnsupportedError,
+      );
+    });
+
     test('finds every path, and no extra one', () {
       expect(status.entries.map((StatusEntry e) => e.path.value), <String>[
         'a.md',
@@ -135,6 +160,41 @@ void main() {
         status.entries.where((StatusEntry e) => e.path.value == 'old-name.md'),
         isEmpty,
       );
+    });
+
+    test('a copy is an addition, and the source is not where it came from', () {
+      // Git spends a `2` record on a copy as well as a rename, and the
+      // domain has no `copied`. `previousPath` means "the file came from
+      // here", which for a copy is false: the source is still on disk.
+      final GitStatus copied = parser.parse(
+        porcelain(<String>[
+          '# branch.head main',
+          '2 C. N... 100644 100644 100644 '
+              'c2a29eb94540613517391de898c9f944c08748be '
+              'c2a29eb94540613517391de898c9f944c08748be C75 copy.md',
+          'origin.md',
+        ]),
+      );
+
+      final StatusEntry entry = entryFor(copied, 'copy.md');
+      expect(entry.state, FileState.added);
+      expect(entry.previousPath, isNull);
+    });
+
+    test('the source of a copy is not read as its own entry either', () {
+      final GitStatus copied = parser.parse(
+        porcelain(<String>[
+          '# branch.head main',
+          '2 C. N... 100644 100644 100644 '
+              'c2a29eb94540613517391de898c9f944c08748be '
+              'c2a29eb94540613517391de898c9f944c08748be C75 copy.md',
+          'origin.md',
+        ]),
+      );
+
+      expect(copied.entries.map((StatusEntry e) => e.path.value), <String>[
+        'copy.md',
+      ]);
     });
 
     test('a deletion in the working tree', () {

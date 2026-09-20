@@ -87,12 +87,12 @@ extension DocumentFailurePatterns on DocumentFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( DocumentNotFound value)?  notFound,TResult Function( PermissionDenied value)?  permissionDenied,TResult Function( ExternalChangeConflict value)?  externalChangeConflict,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( DocumentNotFound value)?  notFound,TResult Function( DocumentPermissionDenied value)?  permissionDenied,TResult Function( DocumentExternalChangeConflict value)?  externalChangeConflict,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case DocumentNotFound() when notFound != null:
-return notFound(_that);case PermissionDenied() when permissionDenied != null:
-return permissionDenied(_that);case ExternalChangeConflict() when externalChangeConflict != null:
+return notFound(_that);case DocumentPermissionDenied() when permissionDenied != null:
+return permissionDenied(_that);case DocumentExternalChangeConflict() when externalChangeConflict != null:
 return externalChangeConflict(_that);case _:
   return orElse();
 
@@ -111,12 +111,12 @@ return externalChangeConflict(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( DocumentNotFound value)  notFound,required TResult Function( PermissionDenied value)  permissionDenied,required TResult Function( ExternalChangeConflict value)  externalChangeConflict,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( DocumentNotFound value)  notFound,required TResult Function( DocumentPermissionDenied value)  permissionDenied,required TResult Function( DocumentExternalChangeConflict value)  externalChangeConflict,}){
 final _that = this;
 switch (_that) {
 case DocumentNotFound():
-return notFound(_that);case PermissionDenied():
-return permissionDenied(_that);case ExternalChangeConflict():
+return notFound(_that);case DocumentPermissionDenied():
+return permissionDenied(_that);case DocumentExternalChangeConflict():
 return externalChangeConflict(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -131,12 +131,12 @@ return externalChangeConflict(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( DocumentNotFound value)?  notFound,TResult? Function( PermissionDenied value)?  permissionDenied,TResult? Function( ExternalChangeConflict value)?  externalChangeConflict,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( DocumentNotFound value)?  notFound,TResult? Function( DocumentPermissionDenied value)?  permissionDenied,TResult? Function( DocumentExternalChangeConflict value)?  externalChangeConflict,}){
 final _that = this;
 switch (_that) {
 case DocumentNotFound() when notFound != null:
-return notFound(_that);case PermissionDenied() when permissionDenied != null:
-return permissionDenied(_that);case ExternalChangeConflict() when externalChangeConflict != null:
+return notFound(_that);case DocumentPermissionDenied() when permissionDenied != null:
+return permissionDenied(_that);case DocumentExternalChangeConflict() when externalChangeConflict != null:
 return externalChangeConflict(_that);case _:
   return null;
 
@@ -157,8 +157,8 @@ return externalChangeConflict(_that);case _:
 @optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path)?  notFound,TResult Function( String path)?  permissionDenied,TResult Function( String path)?  externalChangeConflict,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case DocumentNotFound() when notFound != null:
-return notFound(_that.path);case PermissionDenied() when permissionDenied != null:
-return permissionDenied(_that.path);case ExternalChangeConflict() when externalChangeConflict != null:
+return notFound(_that.path);case DocumentPermissionDenied() when permissionDenied != null:
+return permissionDenied(_that.path);case DocumentExternalChangeConflict() when externalChangeConflict != null:
 return externalChangeConflict(_that.path);case _:
   return orElse();
 
@@ -180,8 +180,8 @@ return externalChangeConflict(_that.path);case _:
 @optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path)  notFound,required TResult Function( String path)  permissionDenied,required TResult Function( String path)  externalChangeConflict,}) {final _that = this;
 switch (_that) {
 case DocumentNotFound():
-return notFound(_that.path);case PermissionDenied():
-return permissionDenied(_that.path);case ExternalChangeConflict():
+return notFound(_that.path);case DocumentPermissionDenied():
+return permissionDenied(_that.path);case DocumentExternalChangeConflict():
 return externalChangeConflict(_that.path);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -199,8 +199,8 @@ return externalChangeConflict(_that.path);}
 @optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path)?  notFound,TResult? Function( String path)?  permissionDenied,TResult? Function( String path)?  externalChangeConflict,}) {final _that = this;
 switch (_that) {
 case DocumentNotFound() when notFound != null:
-return notFound(_that.path);case PermissionDenied() when permissionDenied != null:
-return permissionDenied(_that.path);case ExternalChangeConflict() when externalChangeConflict != null:
+return notFound(_that.path);case DocumentPermissionDenied() when permissionDenied != null:
+return permissionDenied(_that.path);case DocumentExternalChangeConflict() when externalChangeConflict != null:
 return externalChangeConflict(_that.path);case _:
   return null;
 
@@ -279,8 +279,8 @@ as String,
 /// @nodoc
 
 
-class PermissionDenied implements DocumentFailure {
-  const PermissionDenied(this.path);
+class DocumentPermissionDenied implements DocumentFailure {
+  const DocumentPermissionDenied(this.path);
   
 
 /// The path, relative to the space root.
@@ -290,13 +290,13 @@ class PermissionDenied implements DocumentFailure {
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$PermissionDeniedCopyWith<PermissionDenied> get copyWith => _$PermissionDeniedCopyWithImpl<PermissionDenied>(this, _$identity);
+$DocumentPermissionDeniedCopyWith<DocumentPermissionDenied> get copyWith => _$DocumentPermissionDeniedCopyWithImpl<DocumentPermissionDenied>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PermissionDenied&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentPermissionDenied&&(identical(other.path, path) || other.path == path));
 }
 
 
@@ -312,8 +312,8 @@ String toString() {
 }
 
 /// @nodoc
-abstract mixin class $PermissionDeniedCopyWith<$Res> implements $DocumentFailureCopyWith<$Res> {
-  factory $PermissionDeniedCopyWith(PermissionDenied value, $Res Function(PermissionDenied) _then) = _$PermissionDeniedCopyWithImpl;
+abstract mixin class $DocumentPermissionDeniedCopyWith<$Res> implements $DocumentFailureCopyWith<$Res> {
+  factory $DocumentPermissionDeniedCopyWith(DocumentPermissionDenied value, $Res Function(DocumentPermissionDenied) _then) = _$DocumentPermissionDeniedCopyWithImpl;
 @override @useResult
 $Res call({
  String path
@@ -324,17 +324,17 @@ $Res call({
 
 }
 /// @nodoc
-class _$PermissionDeniedCopyWithImpl<$Res>
-    implements $PermissionDeniedCopyWith<$Res> {
-  _$PermissionDeniedCopyWithImpl(this._self, this._then);
+class _$DocumentPermissionDeniedCopyWithImpl<$Res>
+    implements $DocumentPermissionDeniedCopyWith<$Res> {
+  _$DocumentPermissionDeniedCopyWithImpl(this._self, this._then);
 
-  final PermissionDenied _self;
-  final $Res Function(PermissionDenied) _then;
+  final DocumentPermissionDenied _self;
+  final $Res Function(DocumentPermissionDenied) _then;
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
 @override @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
-  return _then(PermissionDenied(
+  return _then(DocumentPermissionDenied(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -346,8 +346,8 @@ as String,
 /// @nodoc
 
 
-class ExternalChangeConflict implements DocumentFailure {
-  const ExternalChangeConflict(this.path);
+class DocumentExternalChangeConflict implements DocumentFailure {
+  const DocumentExternalChangeConflict(this.path);
   
 
 /// The path, relative to the space root.
@@ -357,13 +357,13 @@ class ExternalChangeConflict implements DocumentFailure {
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$ExternalChangeConflictCopyWith<ExternalChangeConflict> get copyWith => _$ExternalChangeConflictCopyWithImpl<ExternalChangeConflict>(this, _$identity);
+$DocumentExternalChangeConflictCopyWith<DocumentExternalChangeConflict> get copyWith => _$DocumentExternalChangeConflictCopyWithImpl<DocumentExternalChangeConflict>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExternalChangeConflict&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentExternalChangeConflict&&(identical(other.path, path) || other.path == path));
 }
 
 
@@ -379,8 +379,8 @@ String toString() {
 }
 
 /// @nodoc
-abstract mixin class $ExternalChangeConflictCopyWith<$Res> implements $DocumentFailureCopyWith<$Res> {
-  factory $ExternalChangeConflictCopyWith(ExternalChangeConflict value, $Res Function(ExternalChangeConflict) _then) = _$ExternalChangeConflictCopyWithImpl;
+abstract mixin class $DocumentExternalChangeConflictCopyWith<$Res> implements $DocumentFailureCopyWith<$Res> {
+  factory $DocumentExternalChangeConflictCopyWith(DocumentExternalChangeConflict value, $Res Function(DocumentExternalChangeConflict) _then) = _$DocumentExternalChangeConflictCopyWithImpl;
 @override @useResult
 $Res call({
  String path
@@ -391,17 +391,17 @@ $Res call({
 
 }
 /// @nodoc
-class _$ExternalChangeConflictCopyWithImpl<$Res>
-    implements $ExternalChangeConflictCopyWith<$Res> {
-  _$ExternalChangeConflictCopyWithImpl(this._self, this._then);
+class _$DocumentExternalChangeConflictCopyWithImpl<$Res>
+    implements $DocumentExternalChangeConflictCopyWith<$Res> {
+  _$DocumentExternalChangeConflictCopyWithImpl(this._self, this._then);
 
-  final ExternalChangeConflict _self;
-  final $Res Function(ExternalChangeConflict) _then;
+  final DocumentExternalChangeConflict _self;
+  final $Res Function(DocumentExternalChangeConflict) _then;
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
 @override @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
-  return _then(ExternalChangeConflict(
+  return _then(DocumentExternalChangeConflict(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,
   ));

@@ -29,12 +29,16 @@ A single `.md` file inside a space. **The file on disk is the truth** — the en
 
 ### `GitStatus`
 
-Parsed from `git status --porcelain=v2`: `branch`, `ahead`/`behind` against the tracked remote, and `entries` — per-path state (modified / added / deleted / renamed / untracked / conflicted).
+Parsed from `git status --porcelain=v2`: `branch`, `ahead`/`behind` against the tracked remote, `entries` — per-path state (modified / added / deleted / renamed / untracked / conflicted) — and `isDetached`.
+
+`isDetached` is a field, not `branch == null`. A null `branch` has two causes: `HEAD` points at a commit, or git named a branch the parser could not read. Only the first is detachment, and showing the second as one would warn about a detached `HEAD` on a repository sitting on an ordinary branch.
 
 ### `Commit` · `Branch`
 
 `Commit`: `sha`, `author`, `date`, `subject`, `body`, parsed from `git log` with an explicit format.
 `Branch`: `name`, `isCurrent`, `upstream`.
+
+`date` is a `CommitDate` — an instant in UTC plus the offset the author's clock stood at — not a `DateTime`. A `DateTime` cannot hold an offset: it reads `2026-09-20T01:44:01-03:00` and answers the instant `04:44:01Z`, so history would show the author's Saturday night as the reader's Sunday morning. The instant is what commits sort by; the offset is what a history row displays.
 
 ### `DiffBlock`
 

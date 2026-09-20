@@ -24,7 +24,7 @@ External editing — VS Code open alongside — is an expected use case, not an 
 - **Echo suppression.** The app registers the paths of its own saves and discards watcher events for them.
 - **Debounce** (~100–300 ms) consolidates the bursts external editors produce.
 - **Same queue.** Pause and resume enter the serialized queue above, which is what guarantees ordering.
-- Document changed on disk with no local edits → reloads silently. With local edits → `ExternalChangeConflict`, and the UI offers the choice.
+- Document changed on disk with no local edits → reloads silently. With local edits → `DocumentExternalChangeConflict`, and the UI offers the choice.
 
 ## The rendered diff, layer by layer
 
@@ -50,7 +50,7 @@ A parsing and tree-comparison problem, testable with golden files and no UI invo
 
 ## Search: the index is a disposable cache
 
-FTS5 indexes the content of the `.md` files. Absolute rule: **the index never holds state that does not exist on disk.** Corrupted, deleted, schema changed → rebuild by reading the files again. That is what removes an entire class of synchronisation bugs, and why `IndexCorrupted` is a recoverable failure rather than data loss.
+FTS5 indexes the content of the `.md` files. Absolute rule: **the index never holds state that does not exist on disk.** Corrupted, deleted, schema changed → rebuild by reading the files again. That is what removes an entire class of synchronisation bugs, and why `SearchIndexCorrupted` is a recoverable failure rather than data loss.
 
 ## The space session is the single source of truth
 

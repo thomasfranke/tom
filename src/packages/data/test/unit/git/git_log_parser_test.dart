@@ -36,9 +36,65 @@ void main() {
       commit.author,
       const Author(name: 'Test', email: 'test@example.com'),
     );
-    expect(commit.date, DateTime.parse('2026-09-20T01:44:01-03:00'));
+    expect(
+      commit.date,
+      CommitDate(
+        utc: DateTime.utc(2026, 9, 20, 4, 44, 1),
+        offset: const Duration(hours: -3),
+      ),
+    );
     expect(commit.subject, 'other side');
     expect(commit.body, isEmpty);
+  });
+
+  group('the offset git recorded', () {
+    /// The commit date of a single commit parsed from [date].
+    CommitDate? dateOf(String date) => parser
+        .parse(log(<String>[commitRecord(date: date)]))
+        .singleOrNull
+        ?.date;
+
+    test('survives, because DateTime alone would discard it', () {
+      // `DateTime.parse` applies the offset and throws it away. That turns
+      // the author's Saturday night into the reader's Sunday morning, which
+      // is the wrong answer to "when was this written".
+      final CommitDate date = dateOf('2026-09-20T01:44:01-03:00')!;
+
+      expect(date.utc, DateTime.utc(2026, 9, 20, 4, 44, 1));
+      expect(date.offset, const Duration(hours: -3));
+      expect(date.authorLocal.hour, 1);
+      expect(date.authorLocal.day, 20);
+    });
+
+    test('a positive offset is read as one', () {
+      final CommitDate date = dateOf('2026-09-20T10:30:00+05:45')!;
+
+      expect(date.utc, DateTime.utc(2026, 9, 20, 4, 45));
+      expect(date.offset, const Duration(hours: 5, minutes: 45));
+      expect(date.authorLocal.hour, 10);
+      expect(date.authorLocal.minute, 30);
+    });
+
+    test('Z is a real zero offset, not a missing one', () {
+      final CommitDate date = dateOf('2026-09-20T04:44:01Z')!;
+
+      expect(date.offset, Duration.zero);
+      expect(date.authorLocal, date.utc);
+    });
+
+    test('the instant is what two commits compare by', () {
+      // Same moment, two authors, two clocks.
+      final CommitDate rio = dateOf('2026-09-20T01:44:01-03:00')!;
+      final CommitDate berlin = dateOf('2026-09-20T06:44:01+02:00')!;
+
+      expect(rio.utc, berlin.utc);
+      expect(rio, isNot(berlin));
+      expect(rio.authorLocal, isNot(berlin.authorLocal));
+    });
+
+    test('a date with no offset at all is skipped, not assumed to be UTC', () {
+      expect(dateOf('2026-09-20 04:44:01'), isNull);
+    });
   });
 
   test('keeps the order git listed, which is most recent first', () {
@@ -69,6 +125,19 @@ void main() {
     // mistaken for the end of the record.
     expect(commits.single.subject, 'Add B');
     expect(commits.single.body, 'Why: because.\nAnd a second line.');
+  });
+
+  test('a body keeps the indentation it was written with', () {
+    // The left of the body is content: in a markdown tool an indented code
+    // block or a nested list is the first thing an author writes under a
+    // subject, and trimming it changes what the commit said.
+    final List<Commit> commits = parser.parse(
+      log(<String>[
+        commitRecord(body: '    make coverage\n\nRuns the gate.\n'),
+      ]),
+    );
+
+    expect(commits.single.body, '    make coverage\n\nRuns the gate.');
   });
 
   test('a subject containing the field separator is not possible, but a '

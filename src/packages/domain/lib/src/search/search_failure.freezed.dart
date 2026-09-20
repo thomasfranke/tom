@@ -55,10 +55,10 @@ extension SearchFailurePatterns on SearchFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( IndexCorrupted value)?  indexCorrupted,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( SearchIndexCorrupted value)?  indexCorrupted,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case IndexCorrupted() when indexCorrupted != null:
+case SearchIndexCorrupted() when indexCorrupted != null:
 return indexCorrupted(_that);case _:
   return orElse();
 
@@ -77,10 +77,10 @@ return indexCorrupted(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( IndexCorrupted value)  indexCorrupted,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( SearchIndexCorrupted value)  indexCorrupted,}){
 final _that = this;
 switch (_that) {
-case IndexCorrupted():
+case SearchIndexCorrupted():
 return indexCorrupted(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -95,10 +95,10 @@ return indexCorrupted(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( IndexCorrupted value)?  indexCorrupted,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( SearchIndexCorrupted value)?  indexCorrupted,}){
 final _that = this;
 switch (_that) {
-case IndexCorrupted() when indexCorrupted != null:
+case SearchIndexCorrupted() when indexCorrupted != null:
 return indexCorrupted(_that);case _:
   return null;
 
@@ -118,7 +118,7 @@ return indexCorrupted(_that);case _:
 
 @optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  indexCorrupted,required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case IndexCorrupted() when indexCorrupted != null:
+case SearchIndexCorrupted() when indexCorrupted != null:
 return indexCorrupted();case _:
   return orElse();
 
@@ -139,7 +139,7 @@ return indexCorrupted();case _:
 
 @optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  indexCorrupted,}) {final _that = this;
 switch (_that) {
-case IndexCorrupted():
+case SearchIndexCorrupted():
 return indexCorrupted();}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -156,7 +156,7 @@ return indexCorrupted();}
 
 @optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  indexCorrupted,}) {final _that = this;
 switch (_that) {
-case IndexCorrupted() when indexCorrupted != null:
+case SearchIndexCorrupted() when indexCorrupted != null:
 return indexCorrupted();case _:
   return null;
 
@@ -168,8 +168,8 @@ return indexCorrupted();case _:
 /// @nodoc
 
 
-class IndexCorrupted implements SearchFailure {
-  const IndexCorrupted();
+class SearchIndexCorrupted implements SearchFailure {
+  const SearchIndexCorrupted();
   
 
 
@@ -179,7 +179,7 @@ class IndexCorrupted implements SearchFailure {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is IndexCorrupted);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchIndexCorrupted);
 }
 
 
