@@ -147,3 +147,17 @@ app.*.symbols
 # AI agent tooling — machine-local only. Nothing tool-specific is versioned:
 # the agent-agnostic content lives in AGENTS.md and .ai/skills/.
 .claude/
+
+# The end-to-end environment, built by `tom e2e prepare`. Real
+# repositories with real markdown in them: disposable by design, and the
+# next prepare throws it away.
+.e2e/
+
+# What ran, when, and on which version. A record of this machine, kept
+# beside the environment and not inside it — `tom e2e prepare` throws the
+# environment away on purpose.
+.e2e-results.json
+
+# Everything the last run of each scenario printed, for the failure that
+# does not happen again when you run it a second time.
+.e2e-logs/

@@ -61,6 +61,16 @@ abstract final class Layout {
   /// The em dash between a title and its subtitle: `TOM — dev`.
   static const titleSeparator = '—';
 
+  /// What every screen is headed with.
+  ///
+  /// Here rather than in `tom.dart` because a screen is drawn wherever the
+  /// work is, and a command that paints its own frame — the end-to-end
+  /// runner clears the terminal between scenarios — has to be able to put
+  /// the same header back. A header that appears on most screens reads as a
+  /// bug on the one it is missing from.
+  static const appTitle = 'TOM';
+  static const appSubtitle = 'dev';
+
   /// Between the steps of a section that is a path through screens:
   /// `Codegen › Hard`.
   static const crumbSeparator = '›';

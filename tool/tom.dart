@@ -21,6 +21,8 @@ import 'src/commands/app.dart';
 import 'src/commands/codegen.dart';
 import 'src/commands/coverage.dart';
 import 'src/commands/doctor.dart';
+import 'src/commands/e2e.dart';
+import 'src/commands/e2e_catalogue.dart';
 import 'src/commands/process.dart';
 import 'src/commands/quality.dart';
 import 'src/commands/tests.dart';
@@ -28,8 +30,8 @@ import 'src/commands/updates.dart';
 import 'src/commands/workspace.dart';
 import 'src/theme/theme.dart';
 
-const _title = 'TOM';
-const _subtitle = 'dev';
+const _title = Layout.appTitle;
+const _subtitle = Layout.appSubtitle;
 
 /// Everything the CLI can do, in the order the menu and `--help` list it.
 ///
@@ -150,6 +152,16 @@ const _commands = <_Command>[
         'pin moves it for CI too, so it stays a decision.',
   ),
   _Command(
+    'e2e',
+    'Drive the assembled app, one scenario at a time',
+    label: 'End-to-end',
+    description:
+        'Opens the app for real and walks it through a named flow, showing '
+        'which step it is on. Prepare builds the folders the scenarios run '
+        'against; the list remembers when each last passed, and on which '
+        'version of the app.',
+  ),
+  _Command(
     'verify',
     'Everything CI runs, in one pass',
     description:
@@ -166,14 +178,6 @@ const _commands = <_Command>[
 /// `integration/` — so a row maps to a path, not to a naming convention that
 /// has to be maintained separately.
 const _testKinds = <_TestKind>[
-  _TestKind(
-    'e2e',
-    'E2E',
-    perPackage: false,
-    description:
-        'Drives the assembled app end to end. Not split per package, because '
-        'there is only one app to drive.',
-  ),
   _TestKind(
     'integration',
     'Integration',
@@ -331,9 +335,16 @@ Future<void> _runUntilBack(
   String name,
   List<String> carried,
 ) async {
+  var context = carried;
   while (true) {
-    final arguments = await _promptFor(terminal, name, carried);
+    final arguments = await _promptFor(terminal, name, context);
     if (arguments == null) return;
+
+    // What the first screen decided is kept for the next round, so a run
+    // returns to the screen it was started from rather than to the one
+    // before it. Answering "which app?" again after every scenario would be
+    // a keystroke spent re-deciding something nobody changed.
+    context = _contextAfter(name, arguments, context);
 
     terminal.beginScreen();
     _printHeader(name, arguments);
@@ -356,6 +367,23 @@ Future<void> _runUntilBack(
   }
 }
 
+/// What the next round of [name]'s screen should already know.
+///
+/// Only end-to-end has two screens deep enough for this to matter: the app
+/// is chosen once and the scenarios are chosen many times.
+List<String> _contextAfter(
+  String name,
+  List<String> arguments,
+  List<String> context,
+) => switch (name) {
+  'e2e' when context.isEmpty && !_environmentWords.contains(arguments.first) =>
+    const <String>['desktop'],
+  _ => context,
+};
+
+/// The e2e arguments that are not a scenario name.
+const _environmentWords = <String>{'prepare', 'clean', 'list', 'fixtures'};
+
 /// Whether [name] shows a screen of its own — and so has one to return to
 /// after a run, and one to ask on before it.
 ///
@@ -363,6 +391,8 @@ Future<void> _runUntilBack(
 /// a command that returns to a screen it never showed would loop forever.
 bool _hasOwnScreen(String name, List<String> carried) => switch (name) {
   'build' || 'clean' || 'codegen' => true,
+  // Two screens of its own, so it always has one to return to.
+  'e2e' => true,
   // Only the per-package form asks anything; `coverage last` and
   // `coverage diff` already know what they are about.
   'coverage' => carried.isEmpty,
@@ -420,7 +450,7 @@ const _prompt = 'What do you want to run?';
 /// `test` itself is here because the screen offers its kinds rather than the
 /// command; `coverage` because someone looking for it is thinking about
 /// tests, not about the browser it happens to open.
-const _testGroup = {'test', 'coverage'};
+const _testGroup = {'test', 'coverage', 'e2e'};
 
 /// Commands the root screen lists under `Dev Tools`.
 ///
@@ -475,6 +505,12 @@ List<MenuItem<String>> get _rootItems => [
   ),
   for (final kind in _testKinds)
     MenuItem(kind.label, 'test ${kind.name}', description: kind.description),
+  // A command rather than a fourth kind: the others run a folder of Dart
+  // files, and this opens the app on a device and walks it through a flow.
+  // Same section, because it is where someone looks for it.
+  for (final command in _commands)
+    if (command.name == 'e2e')
+      MenuItem(command.label, command.name, description: command.description),
   const MenuItem.rule(),
   const MenuItem(
     'Architecture',
@@ -577,9 +613,203 @@ Future<List<String>?> _promptFor(
   'clean' => await _askCleanTarget(terminal),
   'codegen' => await _askCodegen(terminal),
   'coverage' => carried.isEmpty ? await _askCoverageTarget(terminal) : carried,
+  'e2e' => await _askE2e(terminal, carried),
   'test' => await _askTestTarget(terminal, carried),
   _ => carried,
 };
+
+/// Asks which app to drive, and then what to do with it.
+///
+/// Two screens, and each asks one thing. The first is only ever *which app*
+/// — the environment does not belong here, because a screen that asked
+/// which app and also offered two things that are not apps would be asking
+/// two questions at once.
+///
+/// Mobile is listed and disabled for the same reason the build screen lists
+/// it: `src/apps/mobile` exists, and a screen that hid it would read as a
+/// bug rather than a plan.
+Future<List<String>?> _askE2e(
+  Terminal terminal,
+  List<String> carried,
+) async {
+  const section = 'End-to-end';
+  // Already on an app: go straight back to its scenarios. This is what
+  // makes a finished run return to the list it was chosen from.
+  if (carried.isNotEmpty) {
+    return _askScenario(terminal, section: section);
+  }
+  final app = await showMenu<String>(
+    terminal,
+    title: _title,
+    titleSuffix: _subtitle,
+    section: section,
+    prompt: 'Which app?',
+    items: <MenuItem<String>>[
+      const MenuItem<String>(
+        'Desktop',
+        'desktop',
+        description:
+            'Drives the desktop app — the only one that exists today, and '
+            'the one the product is.',
+      ),
+      const MenuItem<String>.disabled(
+        'Mobile',
+        detail: 'coming soon',
+        description:
+            'src/apps/mobile is a placeholder in the workspace; there is '
+            'nothing to drive yet.',
+      ),
+      const MenuItem<String>.rule(),
+      const MenuItem<String>.back(),
+    ],
+  );
+  if (app == null) return null;
+  return _askScenario(terminal, section: section);
+}
+
+/// Asks which scenario to run, or what to do with the environment.
+///
+/// Every scenario the source declares, grouped as it declares itself, each
+/// row carrying when it last passed and on which version of the app — which
+/// is what the list is read for: *has this been checked since?*
+///
+/// A scenario that has never run is listed without a date rather than
+/// hidden. Absence is information.
+///
+/// The environment lives at the bottom of this screen and not the one
+/// before it: preparing it only matters once someone is about to run
+/// something, and this is where they are when that becomes true. The header
+/// says whether it is there, so a row that would fail for want of it says
+/// so before it is chosen.
+Future<List<String>?> _askScenario(
+  Terminal terminal, {
+  required String section,
+}) async {
+  final scenarios = discoverScenarios();
+  if (scenarios.isEmpty) {
+    stdout.writeln('No scenarios under $scenarioDirectory yet.');
+    return null;
+  }
+  final results = readResults();
+  final prepared = environmentIsPrepared();
+  final groups = <String, List<Scenario>>{};
+  for (final scenario in scenarios) {
+    groups.putIfAbsent(scenario.group, () => <Scenario>[]).add(scenario);
+  }
+
+  // Nothing that reads the environment can run without one, so those rows
+  // are shown and not selectable rather than hidden — the list is also how
+  // someone learns what exists.
+  final blocked = scenarios.where((s) => s.needsEnvironment).length;
+  final runnable = !prepared ? scenarios.length - blocked : scenarios.length;
+
+  final items = <MenuItem<String>>[
+    if (runnable == 0)
+      MenuItem<String>.disabled(
+        'All of them',
+        detail: blockedNote,
+        detailColor: palette.rowDisabled,
+        description:
+            'Nothing can run until the environment is built — Prepare, at '
+            'the bottom of this screen.',
+      )
+    else
+      MenuItem<String>(
+        'All of them',
+        _allTargets,
+        emphasized: true,
+        description: prepared
+            ? 'Runs every scenario, one at a time — each launches the app, '
+                  'and the next cannot start while the last window is still '
+                  'there.'
+            : 'Runs the $runnable that do not need the environment.',
+      ),
+    const MenuItem<String>.rule(),
+  ];
+  for (final entry in groups.entries) {
+    items.add(MenuItem<String>.section(entry.key));
+    for (final scenario in entry.value) {
+      final result = results[scenario.name];
+      final result_ = result == null
+          ? 'never run'
+          : '${result.passed ? '\u2713' : '\u2718'} '
+                '${describeWhen(result.when)} \u00b7 v${result.version} '
+                '\u00b7 ${describeElapsed(result.elapsed)}';
+      // Green for a pass, red for a failure, grey for everything else. The
+      // colour is the first thing read on this screen, and "it passed" and
+      // "it ran" are different claims.
+      final resultColor = result == null
+          ? palette.rowDisabled
+          : (result.passed ? palette.ok : palette.fail);
+      if (scenario.needsEnvironment && !prepared) {
+        items.add(
+          MenuItem<String>.disabled(
+            scenario.name,
+            detail: blockedNote,
+            detailColor: palette.rowDisabled,
+            description:
+                '${scenario.describe} — it reads the prepared folders, so '
+                'build them first with Prepare.',
+          ),
+        );
+      } else {
+        items.add(
+          MenuItem<String>(
+            scenario.name,
+            scenario.name,
+            detail: result_,
+            detailColor: resultColor,
+            description: scenario.describe,
+          ),
+        );
+      }
+    }
+  }
+  items
+    ..add(const MenuItem<String>.rule())
+    ..add(
+      MenuItem<String>.section(
+        prepared
+            ? 'Environment'
+            : 'Environment \u00b7 not built \u2014 $blocked '
+                  '${blocked == 1 ? 'scenario needs' : 'scenarios need'} it',
+      ),
+    )
+    ..add(
+      MenuItem<String>(
+        'Prepare',
+        'prepare',
+        emphasized: !prepared,
+        detail: prepared ? '\u2713 ready' : 'not built',
+        detailColor: prepared ? palette.ok : palette.rowDisabled,
+        description:
+            'Builds the folders the scenarios run against: real repositories '
+            'with real markdown in them. Destructive — it throws away what '
+            'was there, so a run cannot inherit the last one.',
+      ),
+    )
+    ..add(
+      const MenuItem<String>(
+        'Remove',
+        'clean',
+        description:
+            'Deletes the prepared folders. What ran, and when, is kept — '
+            'that is a record, not test data.',
+      ),
+    )
+    ..add(const MenuItem<String>.rule())
+    ..add(const MenuItem<String>.back());
+
+  final chosen = await showMenu<String>(
+    terminal,
+    title: _title,
+    titleSuffix: _subtitle,
+    section: section,
+    prompt: 'Which one?',
+    items: items,
+  );
+  return chosen == null ? null : <String>[chosen];
+}
 
 /// Asks which package to clear.
 ///
@@ -607,8 +837,6 @@ Future<List<String>?> _askCoverageTarget(Terminal terminal) async {
 /// Same screen as codegen's, because it is the same question: the kind was
 /// already chosen on the root screen, and what is left is scope.
 ///
-/// E2E is the exception: it drives an assembled app, so the only split that
-/// means anything there is which app — desktop or mobile — not which package.
 Future<List<String>?> _askTestTarget(
   Terminal terminal,
   List<String> carried,
@@ -619,49 +847,11 @@ Future<List<String>?> _askTestTarget(
   final kind = _testKinds.firstWhere((k) => k.name == carried.first);
   final section = 'Tests ${Layout.crumbSeparator} ${kind.label}';
 
-  final target = kind.perPackage
-      ? await _askPackage(terminal, section: section)
-      : await _askApp(terminal, section: section);
+  // Every kind left is split per package. The one that was not — end to
+  // end — is a command of its own now, with two screens of its own.
+  final target = await _askPackage(terminal, section: section);
   return target == null ? null : [kind.name, target];
 }
-
-/// Asks which app to drive, for a kind of test that has no package split.
-///
-/// Mobile is listed and disabled for the same reason the build screen lists
-/// it: `src/apps/mobile` exists, and a screen that hid it would read as a bug
-/// rather than as a plan.
-Future<String?> _askApp(Terminal terminal, {required String section}) =>
-    showMenu(
-      terminal,
-      title: _title,
-      titleSuffix: _subtitle,
-      section: section,
-      prompt: 'Which app?',
-      items: [
-        const MenuItem(
-          'All of them',
-          _allTargets,
-          description: 'Every app that has tests of this kind.',
-        ),
-        const MenuItem.rule(),
-        const MenuItem(
-          'Desktop',
-          'desktop',
-          description:
-              'Drives the desktop app — the only one that exists today, and '
-              'the one the product is.',
-        ),
-        const MenuItem.disabled(
-          'Mobile',
-          detail: 'coming soon',
-          description:
-              'src/apps/mobile is a placeholder in the workspace; there is '
-              'nothing to drive yet.',
-        ),
-        const MenuItem.rule(),
-        const MenuItem.back(description: _backDescription),
-      ],
-    );
 
 /// Asks how thoroughly to regenerate, then over which package.
 ///
@@ -911,6 +1101,16 @@ Future<int> _dispatch(String name, List<String> rest) async {
         targets: _targetsFrom(rest),
       ),
     },
+    'e2e' => switch (rest) {
+      _ when rest.contains('prepare') => await runE2ePrepare(),
+      _ when rest.contains('clean') => await runE2eClean(),
+      _ when rest.contains('fixtures') => await runE2eFixtures(),
+      _ when rest.contains('list') => await runE2eList(),
+      _ when rest.contains(_allTargets) => await runAllScenarios(),
+      [] => await runE2eList(),
+      // Anything else is a scenario name, in prose.
+      _ => await runNamedScenario(rest.join(' ')),
+    },
     'verify' => await runVerify(),
     _ => 64,
   };
@@ -921,6 +1121,11 @@ Future<int> _dispatch(String name, List<String> rest) async {
 /// Every command that takes any reads them out of one flat list, so the list
 /// is the only place that can tell a word it was given from a word it knows.
 List<String> _unrecognized(String command, List<String> arguments) {
+  // `e2e` is the exception, and it has to be: a scenario is named in prose
+  // — "Opens a docs folder inside a repository" — so there is no set of
+  // words to check it against. It validates the name itself, against what
+  // the source declares, and lists them all when it does not match.
+  if (command == 'e2e') return const <String>[];
   final words = _wordsFor(command);
   final flags = _flagsFor(command);
   return [
@@ -937,6 +1142,7 @@ Set<String> _wordsFor(String command) => switch (command) {
   'build' || 'run' => const {..._platformNames},
   'clean' => const {_allTargets, ...allTargets},
   'coverage' => const {_allTargets, ...allTargets, changed, last},
+  'e2e' => const {_allTargets, 'prepare', 'clean', 'list', 'fixtures'},
   'codegen' => const {_allTargets, ...allTargets, ..._codegenModeNames},
   'test' => const {
     _allTargets,
@@ -1098,25 +1304,17 @@ final class _CodegenMode {
 
 /// A kind of test, matching a folder under each package's `test/`.
 final class _TestKind {
-  const _TestKind(
-    this.name,
-    this.label, {
-    required this.description,
-    this.perPackage = true,
-  });
+  const _TestKind(this.name, this.label, {required this.description});
 
   final String name;
 
   /// What the footer says while this row is selected.
   final String description;
 
-  /// Whether this kind is split per package, and so worth asking about.
+  /// What the row says.
   ///
-  /// Unit and integration tests belong to a package and live under its
-  /// `test/`. E2E drives the assembled app, which is one thing — there is no
-  /// package to narrow it to.
-  final bool perPackage;
-
-  /// `E2E` rather than `E2e`: an initialism is not a word to capitalize.
+  /// Every kind left is split per package — they belong to one and live
+  /// under its `test/`. The one that was not, end to end, became a command
+  /// of its own: it opens the app on a device rather than running a folder.
   final String label;
 }

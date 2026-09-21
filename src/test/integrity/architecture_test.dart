@@ -101,6 +101,13 @@ const Set<String> flutterPackages = <String>{
 };
 
 /// The composition roots — the only packages allowed to know Flutter exists.
+///
+/// The end-to-end harness is not a fourth entry here, and the reason is
+/// worth knowing before anyone tries: an end-to-end run happens inside the
+/// app's own native runner, with the app's entitlements and its Podfile. A
+/// package of its own would need a second runner, and a second runner
+/// drifts — at which point the tests prove something about a configuration
+/// nobody ships. So the scenarios live in `apps/desktop/integration_test/`.
 const Set<String> compositionRoots = <String>{'tom_desktop', 'tom_mobile'};
 
 /// An `import` or `export`, with the URI it names.
@@ -116,18 +123,20 @@ void main() {
 
   setUpAll(() {
     workspace = findWorkspaceRoot();
-    for (final String group in <String>['packages', 'apps']) {
-      final Directory dir = Directory('${workspace.path}/$group');
-      for (final Directory entry in dir.listSync().whereType<Directory>()) {
-        final File file = File('${entry.path}/pubspec.yaml');
-        if (!file.existsSync()) {
-          continue;
-        }
-        final YamlMap doc = loadYaml(file.readAsStringSync()) as YamlMap;
-        final String name = doc['name'] as String;
-        pubspecs[name] = doc;
-        directories[name] = entry;
+    for (final Directory entry in <Directory>[
+      for (final String group in <String>['packages', 'apps'])
+        ...Directory(
+          '${workspace.path}/$group',
+        ).listSync().whereType<Directory>(),
+    ]) {
+      final File file = File('${entry.path}/pubspec.yaml');
+      if (!file.existsSync()) {
+        continue;
       }
+      final YamlMap doc = loadYaml(file.readAsStringSync()) as YamlMap;
+      final String name = doc['name'] as String;
+      pubspecs[name] = doc;
+      directories[name] = entry;
     }
   });
 

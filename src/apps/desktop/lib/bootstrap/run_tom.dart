@@ -32,32 +32,59 @@ import 'package:window_manager/window_manager.dart';
 /// and a module that could not replace a default would not be an extension
 /// point.
 Future<void> runTom({List<TomModule> modules = const <TomModule>[]}) async {
-  final List<TomModule> all = <TomModule>[const CoreModule(), ...modules];
   WidgetsFlutterBinding.ensureInitialized();
   await _prepareWindow();
-  runApp(
-    ProviderScope(
-      overrides: <Override>[
-        panelRegistryProvider.overrideWithValue(PanelRegistry(all)),
-        // The app's own wiring first, so a module's override of the same
-        // provider wins: `ProviderScope` takes the last one.
-        ...appOverrides,
-        for (final TomModule module in all) ...module.overrides,
-      ],
-      child: const TomApp(),
-    ),
+  runApp(tomApp(modules: modules));
+}
+
+/// The whole app as a widget, wired from [modules].
+///
+/// Separate from [runTom] so that something can *mount* the app rather than
+/// start the process: an end-to-end scenario restarts it to prove the recent
+/// list survived, and `runApp` called a second time does not replace a tree
+/// that is already there.
+///
+/// What it leaves out is the window — a title and a minimum size, which has
+/// no screen to assert about — and nothing else. The object graph, the
+/// modules and the overrides are the ones the product runs with.
+///
+/// [CoreModule] is first, so a module's provider override wins over the
+/// app's default: `ProviderScope` takes the last override for a provider,
+/// and a module that could not replace a default would not be an extension
+/// point.
+Widget tomApp({List<TomModule> modules = const <TomModule>[]}) {
+  final List<TomModule> all = <TomModule>[const CoreModule(), ...modules];
+  return ProviderScope(
+    overrides: <Override>[
+      panelRegistryProvider.overrideWithValue(PanelRegistry(all)),
+      // The app's own wiring first, so a module's override of the same
+      // provider wins: `ProviderScope` takes the last one.
+      ...appOverrides,
+      for (final TomModule module in all) ...module.overrides,
+    ],
+    child: const TomApp(),
   );
 }
+
+/// Whether the window has already been given its title and its size.
+///
+/// `runTom` is called more than once in a process by exactly one caller:
+/// an end-to-end scenario that restarts the app to prove something survived
+/// — the recent list, for instance. Preparing the window a second time
+/// leaves the app waiting on a handshake that already happened, and what a
+/// scenario sees is the previous screen never going away.
+bool _windowPrepared = false;
 
 /// Gives the window a title and a size the layout holds together in.
 ///
 /// Skipped where there is no window — a widget test runs the app with no
 /// platform channels, and `window_manager` would throw into a test that is
-/// about panels.
+/// about panels — and skipped the second time, for the reason above.
 Future<void> _prepareWindow() async {
-  if (!_hasWindow) {
+  if (!_hasWindow || _windowPrepared) {
     return;
   }
+  _windowPrepared = true;
   await windowManager.ensureInitialized();
   await windowManager.waitUntilReadyToShow(
     const WindowOptions(

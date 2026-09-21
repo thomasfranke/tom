@@ -17,6 +17,7 @@ final class MenuItem<T> {
     this.label,
     this.value, {
     this.detail,
+    this.detailColor,
     this.description,
     this.emphasized = false,
   }) : _kind = _Kind.item;
@@ -26,6 +27,7 @@ final class MenuItem<T> {
     : label = '',
       value = null,
       detail = null,
+      detailColor = null,
       description = null,
       emphasized = false,
       _kind = _Kind.rule;
@@ -34,6 +36,7 @@ final class MenuItem<T> {
   const MenuItem.back({this.label = Layout.backLabel, this.description})
     : value = null,
       detail = null,
+      detailColor = null,
       emphasized = false,
       _kind = _Kind.back;
 
@@ -43,8 +46,12 @@ final class MenuItem<T> {
   /// Skipped by the arrow keys, which is the difference that matters: a
   /// disabled row the cursor could land on would have to explain itself on
   /// Enter, and nobody presses Enter twice to learn nothing happens.
-  const MenuItem.disabled(this.label, {this.detail, this.description})
-    : value = null,
+  const MenuItem.disabled(
+    this.label, {
+    this.detail,
+    this.detailColor,
+    this.description,
+  }) : value = null,
       emphasized = false,
       _kind = _Kind.disabled;
 
@@ -56,6 +63,7 @@ final class MenuItem<T> {
   const MenuItem.section(this.label)
     : value = null,
       detail = null,
+      detailColor = null,
       description = null,
       emphasized = false,
       _kind = _Kind.section;
@@ -65,6 +73,20 @@ final class MenuItem<T> {
 
   /// Right-aligned metadata, such as when this entry last ran.
   final String? detail;
+
+  /// What colour to paint [detail], when its meaning is not neutral.
+  ///
+  /// A green tick against a row that passed says something the same text in
+  /// grey does not. It is a separate field rather than escape codes inside
+  /// [detail] because the alignment is computed from that string's length,
+  /// and a colour embedded in it would push every row's metadata left by
+  /// however many bytes the terminal does not draw.
+  ///
+  /// Setting it also **drops the generic marker**. A row that says what its
+  /// detail means does not want a second glyph in front of it saying only
+  /// that a detail is present — two icons on one row is one icon too many,
+  /// and the neutral one wins the eye for no reason.
+  final String? detailColor;
 
   /// What this row does, shown in the footer while the cursor is on it.
   ///
@@ -309,16 +331,21 @@ List<String> _row<T>(
   final detail = item.detail;
   if (detail == null) return [line];
 
+  // A row that colours its own detail speaks for itself; the generic marker
+  // would be a second, duller icon in front of a meaningful one.
+  final marker = item.detailColor == null ? Layout.detailMarker : '';
+
   // Right-align the metadata against the terminal edge, and drop it entirely
   // rather than wrap when the window is too narrow to hold both.
-  final detailWidth = detail.length + Layout.detailMarker.length + 1;
+  final detailWidth = detail.length + marker.length + 1;
   final gap =
       columns - Layout.labelColumn - item.label.length - detailWidth - 2;
   if (gap < 2) return [line];
 
   final spacer = ' ' * gap;
   return [
-    '$line$spacer${palette.detailIcon}${Layout.detailMarker}${Ansi.reset} '
-        '${palette.detail}$detail${Ansi.reset}',
+    '$line$spacer${palette.detailIcon}$marker${Ansi.reset}'
+        '${marker.isEmpty ? '' : ' '}'
+        '${item.detailColor ?? palette.detail}$detail${Ansi.reset}',
   ];
 }

@@ -69,5 +69,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  # The binding the end-to-end scenarios run under. `flutter test` alone
+  # runs in a fake-async zone where real file I/O and a real `Process.run`
+  # never complete, so an app that reads folders and drives git can only be
+  # driven on a device — which is what this provides.
+  integration_test:
+    sdk: flutter
+
+
 flutter:
   uses-material-design: true

@@ -17,7 +17,11 @@ const arch = 'arch';
 ///
 /// A kind is a path, not a naming convention — which is what keeps the menu
 /// and the filesystem from drifting apart.
-const testKinds = {'unit', 'integration', 'e2e'};
+///
+/// End-to-end is not one of them. It is not a folder of Dart files a runner
+/// walks: it opens the app on a device and drives a flow through it, which
+/// is a different command with a screen of its own — `tom e2e`.
+const testKinds = {'unit', 'integration'};
 
 /// Runs tests.
 ///
