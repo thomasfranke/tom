@@ -10,7 +10,7 @@ The `markdown` package (BSD-3) produces TOM's blocks. Neither fallback is taken:
 
 ## The five questions, answered by measurement
 
-The evidence is `src/apps/desktop/lib/spikes/spike_b/`, run over this repository's own documentation — 50 documents, 2277 lines, 848 top-level blocks — plus a fixture written to break the things the corpus happens not to use.
+The evidence was a report under `src/apps/desktop/lib/spikes/spike_b/`, run over this repository's own documentation — 50 documents, 2277 lines, 848 top-level blocks — plus a fixture written to break the things the corpus happens not to use. **The harness is gone**: a spike exists to answer a question, and once the answer is written down the code that produced it is a second entrypoint nobody runs. It is in the history of this file's own commit, and what re-checks the claim is the preview's tests when M0 builds it.
 
 ### 0 · Does recording positions change what is parsed?
 

@@ -45,6 +45,8 @@ Four releases in the twelve months to July 2026 (0.7.0 → 0.10.0), and 0.9.0 is
 
 The spike started on `^0.7.0` and it did not compile: `TextInputClient` had gained `onFocusReceived`. That is the risk in one sentence — a Flutter release can break it — and the same sentence is the mitigation: it was already fixed upstream before we looked. Pin an exact minor, and treat a Flutter upgrade as a reason to check this package first.
 
+The harness that measured this was removed with the spike, and `re_editor` left the app's pubspec with it: nothing imports a package until the code that needs it exists. Both come back when M0 builds source mode, which is also what will re-run the check above — until then a Flutter upgrade has nothing here to break.
+
 ## Why the numbers are from a debug build
 
 `flutter run --profile` and `flutter build --release` for macOS are **both blocked on this machine**, and not by anything in this repository: `flutter_tools` 3.44.5 verifies the engine framework with `lipo <file> -verify_arch arm64 x86_64`, and the `lipo` shipped with Xcode 27 answers *"-verify_arch requires exactly one input file"*. A correct universal binary is rejected.
