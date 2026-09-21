@@ -19,7 +19,7 @@ Record a snapshot of the changes made to the space, with a message.
 
 ## Mocks
 
-- Desktop: [committing](mocks/committing-desktop.excalidraw) — stage, describe, commit, push in one flow.
+- Desktop: [committing](mocks/committing-desktop.excalidraw) — stage, describe, commit, push in one flow. Visual design: [light](mocks/committing-desktop-light.svg) · [dark](mocks/committing-desktop-dark.svg).
 - Mobile: [capture](mocks/capture-mobile.excalidraw) — record a decision and commit it.
 
 ---

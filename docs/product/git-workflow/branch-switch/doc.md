@@ -13,7 +13,7 @@ Move between branches, or start a new one, and watch the documents update — wi
 
 ## Mocks
 
-- [branch-switcher](mocks/branch-switcher.excalidraw) — switch branches, or start one.
+- [branch-switcher](mocks/branch-switcher.excalidraw) — switch branches, or start one. Visual design: [light](mocks/branch-switcher-light.svg) · [dark](mocks/branch-switcher-dark.svg).
 
 ---
 

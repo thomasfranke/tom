@@ -18,8 +18,8 @@ Not designed yet. `documents` ([file-tree](../navigation/file-tree/doc.md)) assu
 
 ## Mocks
 
-- Desktop: [empty-state](mocks/empty-state.excalidraw) — no space open: brand, open a folder, recent.
-- Desktop: [not-a-repository](mocks/not-a-repository.excalidraw) — the one way opening a folder fails.
+- Desktop: [empty-state](mocks/empty-state.excalidraw) — no space open: brand, open a folder, recent. Visual design: [light](mocks/empty-state-light.svg) · [dark](mocks/empty-state-dark.svg), with the wordmark from [brand.md](../../technical/design/brand.md).
+- Desktop: [not-a-repository](mocks/not-a-repository.excalidraw) — the one way opening a folder fails. Visual design: [light](mocks/not-a-repository-light.svg) · [dark](mocks/not-a-repository-dark.svg).
 - Mobile: not drawn yet.
 
 ---

@@ -12,7 +12,7 @@ How the panels sit together on screen: the explorer, the editor/preview, and the
 
 ## Mocks
 
-- [shell](mocks/shell.excalidraw) — the composite view: explorer, source and preview side by side.
+- [shell](mocks/shell.excalidraw) — the composite view: explorer, source and preview side by side. Visual design: [light](mocks/shell-light.svg) · [dark](mocks/shell-dark.svg).
 
 ---
 

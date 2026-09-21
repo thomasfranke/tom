@@ -13,7 +13,7 @@ Edit the raw markdown text with a live preview alongside — deliberately not a 
 
 ## Mocks
 
-- [unsaved-changes](mocks/unsaved-changes.excalidraw) — the gap between the buffer and the file on disk.
+- [unsaved-changes](mocks/unsaved-changes.excalidraw) — the gap between the buffer and the file on disk. Visual design: [light](mocks/unsaved-changes-light.svg) · [dark](mocks/unsaved-changes-dark.svg).
 - The split view itself is shown in the [shell](../../workspace/mocks/shell.excalidraw) layout.
 
 ---

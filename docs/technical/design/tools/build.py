@@ -70,6 +70,11 @@ s = Scene(2)
 s.title("Shell — reading and editing", "The working screen · M0")
 s.window(height=H)
 s.chip("m0", CANVAS_W - 76, 15, "M0")
+# branch-switch: the current branch is always visible. The control arrives
+# with M1, so on an M0 screen it carries the chip.
+s.rect("branch", 392, 12, 190, 28, round=True)
+s.text("brancht", 408, 18, "main", size=BODY)
+s.chip("m1b", 608, 15, "M1")
 s.explorer(TREE, selected=2, search_chip="M2", height=H)
 
 CEN = CANVAS_W - EXPLORER_W
@@ -107,6 +112,8 @@ s.explorer(TREE, selected=2, height=H)
 s.rect("branch", 392, 12, 190, 28, round=True)
 s.text("brancht", 408, 18, "feat/rendered-diff", size=BODY)
 s.text("sync", 606, 18, "↑ 2  ↓ 0", size=BODY, color=LABEL)
+# push-pull: fetch and push are each their own action, never a background sync
+s.button("fetch", 760, 12, 120, "Fetch", h=28)
 s.button("push", 890, 12, 120, "Push", h=28)
 s.chip("m1", 712, 15, "M1")
 
@@ -118,6 +125,9 @@ s.bars("dl", EXPLORER_W + PAD, BODY_Y + 48,
 GX = EXPLORER_W + DOCW
 s.vline("gitdiv", GX, BODY_Y, BODY_H)
 s.caption("gith", GX + PAD, BODY_Y + 18, "CHANGES")
+# commit: everything at once, or one file at a time — "All" is the former
+s.caption("stagealll", GX + GIT_W - PAD - 44, BODY_Y + 18, "All")
+s.rect("stageall", GX + GIT_W - PAD - 14, BODY_Y + 17, 14, 14, round=True)
 y = BODY_Y + 48
 for i in range(3):
     s.rect(f"ch{i}", GX + PAD_TIGHT, y, GIT_W - 2 * PAD_TIGHT, 34, stroke=SOFT, round=True)
@@ -128,7 +138,7 @@ s.rect("msg", GX + PAD_TIGHT, BODY_Y + 232, GIT_W - 2 * PAD_TIGHT, 96, round=Tru
 s.text("msgt", GX + PAD_TIGHT + 16, BODY_Y + 246, "Summary", size=CAPTION, color=SOFT)
 s.button("commit", GX + PAD_TIGHT, BODY_Y + 344, GIT_W - 2 * PAD_TIGHT, "Commit")
 
-s.status("feat/rendered-diff", "3 changes", "in sync")
+s.status("feat/rendered-diff", "3 changes", "2 ahead")   # never "in sync" beside ↑ 2
 save(s, f"{PRODUCTS}/git-workflow/commit/mocks/committing-desktop.excalidraw")
 
 # ── 4. reading ───────────────────────────────────────────────────────────
@@ -139,6 +149,9 @@ s = Scene(4)
 s.title("Reading", "Preview only — the default for whoever does not edit · M0")
 s.window(height=H)
 s.chip("m0", CANVAS_W - 76, 15, "M0")
+s.rect("branch", 392, 12, 190, 28, round=True)
+s.text("brancht", 408, 18, "main", size=BODY)
+s.chip("m1b", 608, 15, "M1")
 s.explorer(TREE, selected=2, search_chip="M2", height=H)
 
 CEN = CANVAS_W - EXPLORER_W
@@ -156,7 +169,7 @@ for i, bh in enumerate([40, 84, 62, 84, 48]):
                RW - (32 if r < rows - 1 else 90), 8, stroke=SOFT)
     by += bh + 18
 
-s.status("~/dev/tom/docs", "roadmap.md", "read-only")
+s.status("~/dev/tom/docs", "roadmap.md", "preview only")   # a mode, not a permission
 save(s, f"{PRODUCTS}/editor/markdown-preview/mocks/reading-desktop.excalidraw")
 
 # ── 5. folder is not in a Git repository ─────────────────────────────────
@@ -187,6 +200,9 @@ s = Scene(6)
 s.title("Unsaved changes", "The gap between the buffer and the file · M0")
 s.window(height=H)
 s.chip("m0", CANVAS_W - 76, 15, "M0")
+s.rect("branch", 392, 12, 190, 28, round=True)
+s.text("brancht", 408, 18, "main", size=BODY)
+s.chip("m1b", 608, 15, "M1")
 s.explorer(TREE, selected=2, search_chip="M2", height=H)
 s.dot("dirty-tree", EXPLORER_W - 34, BODY_Y + 113)      # against the file that is dirty
 
@@ -254,6 +270,9 @@ s.title("File history", "The commits that touched this document · M1")
 s.window(height=H)
 s.explorer(TREE, selected=2, height=H)
 s.chip("m1", CANVAS_W - 76, 15, "M1")
+s.rect("branch", 392, 12, 190, 28, round=True)
+s.text("brancht", 408, 18, "feat/rendered-diff", size=BODY)
+s.text("sync", 606, 18, "↑ 2  ↓ 0", size=BODY, color=LABEL)
 
 DOCW = CANVAS_W - EXPLORER_W - GIT_W
 s.caption("doch", EXPLORER_W + PAD, BODY_Y + 16, "roadmap.md")
@@ -286,6 +305,7 @@ s.explorer(TREE, selected=2, height=H)
 s.rect("branch", 392, 12, 190, 28, round=True)
 s.text("brancht", 408, 18, "feat/rendered-diff", size=BODY)
 s.text("sync", 606, 18, "↑ 2  ↓ 3", size=BODY, color=MILESTONE["M2"])
+s.button("fetch", 760, 12, 120, "Fetch", h=28)
 s.button("push", 890, 12, 120, "Push", h=28, muted=True)
 s.chip("m1", 712, 15, "M1")
 

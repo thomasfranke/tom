@@ -28,20 +28,25 @@ docs/technical/design/
 ├── README.md              ← this file
 ├── visual-language.md     ← the colour system, light and dark
 ├── palette.svg            ← generated swatches
+├── brand.md               ← the identity: the icon and the wordmark
+├── brand.svg              ← generated sheet
+├── brand/                 ← generated SVG masters: icon, wordmark, lockup
 └── tools/
     ├── kit.py             ← wireframe tokens and components
     ├── build.py           ← wireframes, desktop
     ├── build_mobile.py    ← wireframes, mobile
     ├── palette.py         ← the palette; palette.svg + the WCAG check
+    ├── brand.py           ← the marks; brand/ + brand.svg, rasters on demand
     ├── penpot_kit.js      ← visual-design components
     ├── penpot_screens.js  ← visual-design screens
     ├── penpot_build.py    ← emits generated/penpot_bundle.js
+    ├── embed_fonts.py     ← makes a Penpot SVG export self-contained
     └── generated/         ← the bundle; regenerated, never edited
 
 docs/product/<group>/<feature>/mocks/  ← every screen, desktop and mobile, next to that feature's doc.md
 ```
 
-Colour is decided in [visual-language.md](visual-language.md), not here: the wireframes carry four values and no product palette, on purpose.
+Colour is decided in [visual-language.md](visual-language.md), not here: the wireframes carry four values and no product palette, on purpose. The identity — the icon and the wordmark — is decided in [brand.md](brand.md), and it appears only in the visual design: a wireframe's brand block is the name set in type, because a wireframe answers where the block is, not what it looks like.
 
 ## Mobile
 
@@ -128,6 +133,33 @@ The run also creates the file's design tokens — the same roles as
 system instead of typing a hex, and the `Light` / `Dark` themes repaint the
 whole file.
 
+### The library
+
+The first step of a full run builds the file's **library**, on its own page,
+`Foundations` (`penpot_library.js`):
+
+- **colours** — every role of [visual-language.md](visual-language.md), as
+  `light/<role>` and `dark/<role>`;
+- **typographies** — the type scale of `penpot_build.py`, as `type/<style>`
+  (`heading-lg`, `body-read`, `ui`, `code`, `label`…);
+- **components** — the controls the screens are made of, as masters with
+  variants: `Button` (Kind × Icon), `Icon` (Name), `Chip`, `Field`,
+  `Segmented` (Active), `Dot`, `Checkbox` (State), `Diff mark` (Kind),
+  `Branch control` (State), `Card`, `Popover`.
+
+The screens do not draw a button; `Scene.button()` places an instance of the
+`Button` master, sized and labelled for the spot, and `Scene.use()` does the
+same for any master. A change to a master on `Foundations` is a change on every
+screen, which is the whole point — and it is also why `PENPOT_ONLY` runs skip
+the library: rebuilding the masters under a few screens would orphan the
+instances on the ones left standing. Name the library in `PENPOT_ONLY`
+(`["Foundations", "Committing"]`) to rebuild both.
+
+Two Penpot facts the kit encodes: `library.components` lists one entry per
+variant set, so the other variants are reached through
+`variants.variantComponents()`; and the plugin can only draw on the active
+page, so the library step switches to `Foundations` and back.
+
 ### Why it is generated
 
 The same reason the wireframes are, plus one specific to the tool: Penpot's free
@@ -152,15 +184,29 @@ and a labelled version is the cheaper checkpoint between commits.
 ### Getting the screens into a pull request
 
 A `.penpot` file is no more reviewable in a diff than an `.excalidraw` one, and
-the boards are ~130KB each as SVG or PNG. Export them from Penpot — select the
-boards, Export, one file per board — and commit them next to the wireframe of
-the product they belong to, suffixed by mode:
+the boards are ~35–130KB each as SVG or PNG. Export them from Penpot — select
+the boards, Export, one file per board, or `board.export({ type: "svg" })`
+through the plugin runtime, which hands back the bytes (base64 them with
+`btoa`; the sandbox has no `TextDecoder`) — and commit them next to the
+wireframe of the product they belong to, suffixed by mode:
 
 ```
 docs/product/workspace/mocks/
 ├── shell.excalidraw        ← the wireframe: structure
 ├── shell-light.svg         ← the visual design, light
 └── shell-dark.svg          ← the visual design, dark
+```
+
+Then run the export through `tools/embed_fonts.py`. Penpot's SVG keeps every
+text as `<text>` and references its fonts through Penpot's own font proxy, so
+anywhere that cannot fetch it — GitHub renders an SVG as an image and loads
+nothing external, and so does any machine offline — the text falls back to a
+system font and the file stops showing what the board shows. The script inlines
+the latin faces as `data:` URIs (about +150KB per board) and is idempotent:
+
+```bash
+python3 docs/technical/design/tools/embed_fonts.py docs/product/*/mocks/*-light.svg docs/product/*/mocks/*-dark.svg \
+    docs/product/*/*/mocks/*-light.svg docs/product/*/*/mocks/*-dark.svg
 ```
 
 Same principle as the wireframes' export step: one artifact for the reviewer,

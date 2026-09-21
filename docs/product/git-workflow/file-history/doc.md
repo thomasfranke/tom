@@ -12,7 +12,7 @@ See the commits that touched the document currently open, without leaving it.
 
 ## Mocks
 
-- [file-history](mocks/file-history.excalidraw) — the commits that touched this document.
+- [file-history](mocks/file-history.excalidraw) — the commits that touched this document. Visual design: [light](mocks/file-history-light.svg) · [dark](mocks/file-history-dark.svg).
 
 ---
 

@@ -44,6 +44,9 @@ analysis_benchmark.json
 # packages file containing multi-root paths
 .packages.generated
 
+# fonts downloaded by docs/technical/design/tools/embed_fonts.py
+docs/technical/design/tools/generated/fonts/
+
 # Flutter/Dart/Pub related
 **/doc/api/
 .dart_tool/

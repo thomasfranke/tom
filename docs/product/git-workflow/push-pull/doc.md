@@ -13,7 +13,7 @@ Keep the local space in sync with the remote, with the state of that sync always
 
 ## Mocks
 
-- [push-rejected](mocks/push-rejected.excalidraw) — the remote moved first.
+- [push-rejected](mocks/push-rejected.excalidraw) — the remote moved first. Visual design: [light](mocks/push-rejected-light.svg) · [dark](mocks/push-rejected-dark.svg).
 
 ---
 

@@ -17,7 +17,7 @@ Render the document as formatted output, not raw text — the primary way anyone
 
 ## Mocks
 
-- Desktop: [reading](mocks/reading-desktop.excalidraw) — preview only, the default for whoever does not edit.
+- Desktop: [reading](mocks/reading-desktop.excalidraw) — preview only, the default for whoever does not edit. Visual design: [light](mocks/reading-desktop-light.svg) · [dark](mocks/reading-desktop-dark.svg).
 - Desktop, alongside source: shown in the [shell](../../workspace/mocks/shell.excalidraw) layout.
 - Mobile: [reading](mocks/reading-mobile.excalidraw) — a rendered document, full bleed.
 
