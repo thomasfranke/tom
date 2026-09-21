@@ -71,6 +71,7 @@ final class Terminal {
     // Raw mode delivers Ctrl-C as byte 3 rather than a signal, but the process
     // can still be killed from elsewhere — a `kill`, a parent shell going
     // down. Restoring here covers that.
+    // ignore: cancel_subscriptions, held in _signals and cancelled in restore
     final signals = ProcessSignal.sigint.watch().listen((_) {
       terminal.restore();
       exit(130);
@@ -170,7 +171,12 @@ final class Terminal {
     // Both of these keep the event loop alive on their own. Cancelling them
     // is what allows `main` to return instead of the process hanging with a
     // restored terminal and nothing left to do.
+    // Neither cancellation is awaited: this is the teardown, and there is
+    // nothing after it that could care whether it finished.
+    // ignore: discarded_futures
     _signals?.cancel();
+    // Same for this one, and for the same reason.
+    // ignore: discarded_futures
     _source?.cancel();
     _source = null;
     // Before the cursor, so what comes back is the normal screen with its

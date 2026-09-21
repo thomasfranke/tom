@@ -26,16 +26,48 @@ Future<int> exec(
   return process.exitCode;
 }
 
-/// Runs one of this repository's own scripts under the current Dart.
+/// Runs [executable] and answers what it printed, or `null` when there is no
+/// such program to run.
+///
+/// The opposite trade to [exec]: stdio is captured rather than inherited,
+/// because the caller wants the output as a value — a version string, a
+/// porcelain listing — not on screen. A missing binary comes back as `null`
+/// rather than as an exception, since "is this installed" is a question with
+/// an answer, not an error.
+Future<ProcessResult?> capture(
+  String executable,
+  List<String> arguments, {
+  Directory? workingDirectory,
+}) async {
+  try {
+    return await Process.run(
+      executable,
+      arguments,
+      workingDirectory: (workingDirectory ?? repoRoot()).path,
+    );
+  } on ProcessException {
+    return null;
+  }
+}
+
+/// The Dart to spawn, wherever this CLI spawns one.
 ///
 /// [Platform.resolvedExecutable] rather than a bare `dart`: the SDK running
-/// the CLI is the one that must run its scripts, or a machine with two of
-/// them resolves the workspace against the wrong one.
-Future<int> dart(List<String> arguments, {Directory? workingDirectory}) => exec(
-  Platform.resolvedExecutable,
-  arguments,
-  workingDirectory: workingDirectory,
-);
+/// this process is the one that must run its children, or a machine with two
+/// of them resolves the workspace against the wrong one — and the failure is
+/// silent, since the wrong SDK still builds, still tests, still generates.
+///
+/// Named rather than inlined because the scripts under `commands/` spawn
+/// their own children — build_runner, the test runner, format_coverage — and
+/// each one that spelled it `'dart'` would reintroduce the bug on its own.
+///
+/// `flutter` has no equivalent to borrow: the Dart binary inside an SDK is
+/// not the Flutter wrapper beside it, so [flutter] stays a `PATH` lookup.
+String get dartExecutable => Platform.resolvedExecutable;
+
+/// Runs one of this repository's own scripts under the current Dart.
+Future<int> dart(List<String> arguments, {Directory? workingDirectory}) =>
+    exec(dartExecutable, arguments, workingDirectory: workingDirectory);
 
 /// Runs `flutter`, which has to come from `PATH`.
 ///

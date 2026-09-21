@@ -20,10 +20,22 @@ Future<int> runFormat() async {
   return dart(['format', '--set-exit-if-changed', 'src', 'tool']);
 }
 
-/// Static analysis over the whole workspace in one pass.
+/// Static analysis over the workspace and over the CLI itself.
+///
+/// Two passes, because they are two analysis contexts. `flutter analyze`
+/// resolves the workspace in `src/`; `tool/` is not in it and has no package
+/// of its own, so it is analysed on its own terms with its own
+/// `analysis_options.yaml` — which is why this file existed for a while
+/// formatted by the gate but never analysed by it.
 Future<int> runAnalyze() async {
-  announce('Analyze');
-  return flutter(['analyze'], workingDirectory: srcDirectory);
+  announce('Analyze — workspace');
+  final workspace = await flutter(['analyze'], workingDirectory: srcDirectory);
+  if (workspace != 0) return workspace;
+
+  announce('Analyze — CLI');
+  // `--fatal-infos`, because every lint this config leaves on was left on to
+  // be obeyed. The ones that were not worth obeying are off, and say so.
+  return dart(['analyze', '--fatal-infos', 'tool']);
 }
 
 /// Everything the PR gate checks, in the order that fails cheapest first.
@@ -37,7 +49,7 @@ Future<int> runVerify() async {
     'format': runFormat,
     'analyze': runAnalyze,
     'codegen gate': runCodegenGate,
-    'tests': () => runTests(),
+    'tests': runTests,
     'coverage gate': runCoverageGate,
   };
 

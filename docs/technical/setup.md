@@ -1,6 +1,6 @@
 # Development setup
 
-**Prerequisites:** Flutter (Dart ≥ 3.12, for the workspace's `sdk` constraint) and git. Nothing else — no Melos, no global tooling, and `make` is optional. `src/.fvmrc` pins the exact version CI uses (`tom fvm` to match it locally); anything recent enough should resolve regardless.
+**Prerequisites:** Flutter (Dart ≥ 3.12, for the workspace's `sdk` constraint) and git — `tom doctor` checks for both, and says what is missing. Nothing else — no Melos, no global tooling, and `make` is optional. `src/.fvmrc` pins the exact version CI uses (`tom fvm` to match it locally); anything recent enough should resolve regardless.
 
 ```bash
 git clone https://github.com/thomasfranke/tom.git
@@ -29,7 +29,13 @@ dart run tool/tom.dart test unit       # then it asks which package
 dart run tool/tom.dart test arch       # just the layer-graph assertions
 dart run tool/tom.dart codegen hard    # delete every generated file, then regenerate
 dart run tool/tom.dart coverage domain # measure, build the HTML report, open it
+dart run tool/tom.dart doctor          # can this machine build the repository at all
+dart run tool/tom.dart updates         # the pinned SDKs, against the latest stable
 ```
+
+`tom doctor` is the first thing to run on a new machine: it reports git, the Dart the pubspecs ask for, the Flutter `src/.fvmrc` pins, and the two optional tools some commands reach for (FVM, lcov), and it fails only on what actually stops a build. It stops at the repository's own needs — the platform toolchains are `flutter doctor`'s question, and a second implementation of that check would only drift from it.
+
+`tom updates` puts the pin beside the current stable release of Flutter and Dart. It reports and changes nothing: `src/.fvmrc` is what CI builds against, so raising it raises it for everyone, which makes it a decision rather than a chore.
 
 The `Makefile` is a shortcut over the same commands, for the muscle memory and the shell completion — `make verify`, `make flutter-test`, `make setup`. It holds no logic of its own: every target is one line through `tom`, and nothing in `tool/` calls back into `make`. That direction is deliberate, because `make` is not installed on Windows and the commands have to work there.
 

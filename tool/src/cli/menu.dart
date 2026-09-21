@@ -191,10 +191,12 @@ List<String> composeFrame<T>({
       ..add('${palette.section}$section${Ansi.reset}')
       ..add('');
   }
+  // No blank line under the question: the rows below are the answer to it,
+  // and a gap there reads as two blocks rather than as one.
   if (prompt != null) {
-    lines
-      ..add('${' ' * Layout.promptColumn}${palette.prompt}$prompt${Ansi.reset}')
-      ..add('');
+    lines.add(
+      '${' ' * Layout.promptColumn}${palette.prompt}$prompt${Ansi.reset}',
+    );
   }
 
   // A row is not always one line, so each item contributes however many it
@@ -213,8 +215,10 @@ List<String> composeFrame<T>({
 /// footer that grew and shrank would push the list up and down as the cursor
 /// moved, which is the one thing a fixed label column was there to prevent.
 List<String> _footer<T>(MenuItem<T> selected, {required int columns}) {
+  // No blank line above the rule: every screen already ends its list with a
+  // rule of its own, and two rules with a gap between them read as two
+  // separators rather than as one edge under the last row.
   final lines = [
-    '',
     '${' ' * Layout.labelColumn}${palette.rule}'
         '${Layout.ruleGlyph * Layout.ruleWidth}${Ansi.reset}',
   ];

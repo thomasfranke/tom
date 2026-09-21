@@ -20,9 +20,11 @@ import 'src/cli/terminal.dart';
 import 'src/commands/app.dart';
 import 'src/commands/codegen.dart';
 import 'src/commands/coverage.dart';
+import 'src/commands/doctor.dart';
 import 'src/commands/process.dart';
 import 'src/commands/quality.dart';
 import 'src/commands/tests.dart';
+import 'src/commands/updates.dart';
 import 'src/commands/workspace.dart';
 import 'src/theme/theme.dart';
 
@@ -50,24 +52,33 @@ const _commands = <_Command>[
   ),
   _Command(
     'clean',
-    "Clear both apps' build artifacts and resolve again",
+    "Clear a package's build artifacts and resolve again",
     description:
-        'Removes each app\'s build output, then resolves the workspace again '
-        '— the resolve is not optional, since cleaning also removes '
-        '.dart_tool and nothing would build without it.',
+        'Removes the build output and the build_runner cache — from all eight '
+        'packages, or from one — keeping the measured coverage, then resolves '
+        'the workspace again. The resolve is not optional, since cleaning '
+        'also removes .dart_tool and nothing would build without it.',
   ),
   _Command(
     'codegen',
     'build_runner where a package declares it',
     description:
         'Runs build_runner over the workspace. Normal regenerates what this '
-        'branch touched; Hard deletes every generated file first and rebuilds '
-        'the lot.',
+        'branch touched; Hard deletes every .freezed.dart and .g.dart first — '
+        'both suffixes, whether or not a package has produced one yet — and '
+        'rebuilds the lot.',
   ),
   // Not "run coverage": measuring is already part of every test run, and the
   // threshold is already part of `verify`. Building the report and opening it
   // is the only thing left that nothing else does, so that is the command.
-  _Command('coverage', 'Build the coverage report and open it'),
+  _Command(
+    'coverage',
+    'Build the coverage report and open it',
+    description:
+        'Runs the suite with coverage on — the same run, and the same '
+        'progress bar, as Tests — then builds one HTML report out of every '
+        'package measured and opens it. Needs genhtml, which ships with lcov.',
+  ),
   // Hidden for the same reason as format and analyze: it is a step of
   // `verify`, not something anyone sets out to run on its own.
   _Command(
@@ -79,6 +90,15 @@ const _commands = <_Command>[
     'coverage-gate',
     'Fail if a package is under the coverage threshold',
     hidden: true,
+  ),
+  _Command(
+    'doctor',
+    'Check this machine has what the repository needs',
+    description:
+        'Reports the toolchain this repository asks for — git, the Dart the '
+        'pubspecs declare, the Flutter src/.fvmrc pins — and fails if any of '
+        'it is missing. The platform toolchains stay flutter doctor\'s '
+        'question.',
   ),
   _Command(
     'format',
@@ -104,8 +124,31 @@ const _commands = <_Command>[
     'Open the desktop app',
     description: 'Builds and launches the desktop app on this machine.',
   ),
-  _Command('setup', 'Resolve every package in the workspace', hidden: true),
+  // Labelled for what it does rather than for what it is called: `setup` is
+  // the token scripts and the Makefile commit to, but on a screen it says
+  // nothing, and the thing it runs has a name everyone already knows.
+  _Command(
+    'setup',
+    'Resolve every package in the workspace',
+    label: 'Pub get',
+    description:
+        'One pub get for all eight packages, against the single lockfile that '
+        'keeps two layers off different versions of a shared dependency. The '
+        'first thing to run after a clone, and after pulling a pubspec change.',
+  ),
   _Command('test', 'The architecture assertions, the packages, the apps'),
+  // Spelled out for the same reason as FVM: the derivation would give
+  // `Updates`, which reads as a noun — a list of them — rather than as the
+  // question the command asks.
+  _Command(
+    'updates',
+    'Compare the pinned Flutter and Dart against the latest stable',
+    label: 'Check for updates',
+    description:
+        'Puts what src/.fvmrc pins and what this machine runs beside the '
+        'current stable release. It reports and changes nothing: moving the '
+        'pin moves it for CI too, so it stays a decision.',
+  ),
   _Command(
     'verify',
     'Everything CI runs, in one pass',
@@ -319,12 +362,19 @@ Future<void> _runUntilBack(
 /// The same predicate answers both, which is what keeps them from disagreeing:
 /// a command that returns to a screen it never showed would loop forever.
 bool _hasOwnScreen(String name, List<String> carried) => switch (name) {
-  'build' || 'codegen' || 'coverage' => true,
+  'build' || 'clean' || 'codegen' => true,
+  // Only the per-package form asks anything; `coverage last` and
+  // `coverage diff` already know what they are about.
+  'coverage' => carried.isEmpty,
   // `test` asks about scope only once a kind is chosen. The whole suite has
   // nothing to ask, and neither do the architecture assertions — they are not
   // split per package.
   'test' =>
-    carried.isNotEmpty && carried.first != arch && carried.first != changed,
+    carried.isNotEmpty &&
+        carried.first != arch &&
+        carried.first != cli &&
+        carried.first != changed &&
+        carried.first != last,
   _ => false,
 };
 
@@ -378,7 +428,10 @@ const _testGroup = {'test', 'coverage'};
 /// the product: they resolve it, regenerate it, tidy it, pin its toolchain,
 /// check it before a PR. The first group is left with the two things that
 /// produce the app itself — build it, run it.
-const _devToolsGroup = {'clean', 'codegen', 'format', 'fvm', 'verify'};
+const _devToolsGroup = {'clean', 'codegen', 'format', 'verify'};
+
+/// Commands the root screen lists under `Setup`: getting a machine ready.
+const _setupGroup = {'doctor', 'fvm', 'setup', 'updates'};
 
 /// The root screen's rows.
 ///
@@ -396,8 +449,12 @@ List<MenuItem<String>> get _rootItems => [
   for (final command in _commands)
     if (!command.hidden &&
         !_testGroup.contains(command.name) &&
+        !_setupGroup.contains(command.name) &&
         !_devToolsGroup.contains(command.name))
       MenuItem(command.label, command.name, description: command.description),
+  const MenuItem.rule(),
+  const MenuItem.section('Setup'),
+  ..._setupRows,
   const MenuItem.rule(),
   const MenuItem.section('Dev Tools'),
   for (final command in _commands)
@@ -428,12 +485,37 @@ List<MenuItem<String>> get _rootItems => [
         'exists. The fastest answer to "did I just break a boundary".',
   ),
   const MenuItem(
-    'Changed in this branch',
+    'CLI',
+    'test $cli',
+    description:
+        'Drives `tom` itself — every command --help lists, the exit codes a '
+        'script depends on, and the pure functions behind them. Black box: '
+        'the CLI has no pubspec, so its tests live on the workspace side.',
+  ),
+  const MenuItem(
+    'Diff — only what changed on this branch',
     'test $changed',
     description:
         'Runs only the tests this branch\'s diff maps to, by filename: a '
         'changed lib/foo.dart runs foo_test.dart. Proves the part you touched '
         'is green — the full run is what proves the workspace is.',
+  ),
+  const MenuItem(
+    'Last — the 10 files edited most recently',
+    'test $last',
+    description:
+        'Same mapping as Diff, over what the filesystem says you touched last '
+        'rather than what git says differs from main. The one that still '
+        'answers "run what I was just working on" on a branch whose diff has '
+        'grown too large to mean that.',
+  ),
+  const MenuItem(
+    'Last coverage',
+    'coverage $last',
+    description:
+        'Runs the test the file you just changed maps to, and reports the '
+        'coverage of that file — here, in the terminal. Seconds, because the '
+        'rest of the suite never runs.',
   ),
   const MenuItem.rule(),
   const MenuItem.back(
@@ -441,6 +523,34 @@ List<MenuItem<String>> get _rootItems => [
     description: 'Leaves the CLI and restores the terminal as it was.',
   ),
 ];
+
+/// The `Setup` section's rows, alphabetically.
+///
+/// By label rather than by command name, which is the one section where the
+/// two disagree: `setup` reads as `Pub get` and `updates` as `Check for
+/// updates`, so ordering by name would put `FVM` first and produce a list
+/// that is alphabetical only to whoever wrote it. Every other group takes the
+/// order [_commands] declares, where label and name agree.
+///
+/// Sorted here rather than stored in order, so relabelling a row cannot leave
+/// the section out of order behind it.
+List<MenuItem<String>> get _setupRows =>
+    [for (final name in _setupGroup) _rowFor(name)]
+      ..sort((a, b) => a.label.compareTo(b.label));
+
+/// The root-screen row for the command called [name].
+///
+/// Read off the command rather than restated, so a row and its `--help` line
+/// cannot drift apart. Used by the sections that list their rows in an order
+/// of their own instead of taking them in the order [_commands] declares.
+MenuItem<String> _rowFor(String name) {
+  final command = _commands.firstWhere((command) => command.name == name);
+  return MenuItem(
+    command.label,
+    command.name,
+    description: command.description,
+  );
+}
 
 List<String> _rootFrame({required int columns}) => composeFrame<String>(
   title: _title,
@@ -464,11 +574,23 @@ Future<List<String>?> _promptFor(
   List<String> carried,
 ) async => switch (command) {
   'build' => await _askPlatform(terminal),
+  'clean' => await _askCleanTarget(terminal),
   'codegen' => await _askCodegen(terminal),
-  'coverage' => await _askCoverageTarget(terminal),
+  'coverage' => carried.isEmpty ? await _askCoverageTarget(terminal) : carried,
   'test' => await _askTestTarget(terminal, carried),
   _ => carried,
 };
+
+/// Asks which package to clear.
+///
+/// The same package screen as codegen's and coverage's, because it is the
+/// same question. `All of them` leads it, as it does there, and here it is
+/// also what most runs want: a clean is usually reached for precisely when
+/// nothing on disk is trusted any more.
+Future<List<String>?> _askCleanTarget(Terminal terminal) async {
+  final target = await _askPackage(terminal, section: 'Clean');
+  return target == null ? null : [target];
+}
 
 /// Asks which package to measure and report on.
 ///
@@ -738,10 +860,24 @@ Future<int> _dispatch(String name, List<String> rest) async {
     return 64;
   }
 
+  // Before anything runs. `_targetsFrom` ignores what it does not recognise,
+  // which is right for the modes and kinds travelling in the same list and
+  // wrong for everything else: it turns a typo into "none named", and none
+  // named means all of them. `tom clean cor` cleaned all eight packages.
+  final unrecognized = _unrecognized(command.name, rest);
+  if (unrecognized.isNotEmpty) {
+    stderr.writeln(
+      'tom: ${command.name} does not take "${unrecognized.first}"',
+    );
+    return 66; // EX_NOINPUT
+  }
+
   return switch (command.name) {
     'analyze' => await runAnalyze(),
     'build' => await runBuild(platform: _firstOf(rest, _platformNames)),
-    'clean' => await runClean(),
+    'clean' => await runClean(targets: _targetsFrom(rest)),
+    'doctor' => await runDoctor(),
+    'updates' => await runUpdates(),
     'format' => await runFormat(),
     'fvm' => await runFvm(),
     'setup' => await runSetup(),
@@ -749,14 +885,24 @@ Future<int> _dispatch(String name, List<String> rest) async {
       hard: rest.contains('hard'),
       targets: _targetsFrom(rest),
     ),
-    'coverage' => await runCoverageReport(
-      target: _firstOf(rest, allTargets) ?? 'desktop',
-    ),
+    'coverage' => switch (rest) {
+      // Narrowed to what was just touched, which is the case where the point
+      // is the suite that does not run.
+      _ when rest.contains(last) => await runLastCoverage(
+        count: _countFrom(rest),
+      ),
+      _ when rest.contains(changed) => await runDiffCoverage(
+        base: _baseFrom(rest),
+      ),
+      _ => await runCoverageReport(targets: _targetsFrom(rest)),
+    },
     'coverage-gate' => await runCoverageGate(threshold: _thresholdFrom(rest)),
     'codegen-gate' => await runCodegenGate(),
     'run' => await runApp(device: _firstOf(rest, _platformNames)),
     'test' => switch (rest) {
       _ when rest.contains(arch) => await runArchTests(),
+      _ when rest.contains(cli) => await runCliTests(),
+      _ when rest.contains(last) => await runLastTests(count: _countFrom(rest)),
       _ when rest.contains(changed) => await runChangedTests(
         base: _baseFrom(rest) ?? 'main',
       ),
@@ -769,6 +915,47 @@ Future<int> _dispatch(String name, List<String> rest) async {
     _ => 64,
   };
 }
+
+/// The arguments [command] does not understand.
+///
+/// Every command that takes any reads them out of one flat list, so the list
+/// is the only place that can tell a word it was given from a word it knows.
+List<String> _unrecognized(String command, List<String> arguments) {
+  final words = _wordsFor(command);
+  final flags = _flagsFor(command);
+  return [
+    for (final argument in arguments)
+      if (argument.startsWith('--')
+          ? !flags.any(argument.startsWith)
+          : !words.contains(argument))
+        argument,
+  ];
+}
+
+/// The bare words [command] accepts.
+Set<String> _wordsFor(String command) => switch (command) {
+  'build' || 'run' => const {..._platformNames},
+  'clean' => const {_allTargets, ...allTargets},
+  'coverage' => const {_allTargets, ...allTargets, changed, last},
+  'codegen' => const {_allTargets, ...allTargets, ..._codegenModeNames},
+  'test' => const {
+    _allTargets,
+    ...allTargets,
+    ...testKinds,
+    arch,
+    cli,
+    changed,
+    last,
+  },
+  _ => const {},
+};
+
+/// The flags [command] reads, by prefix — each one is `--name=value`.
+Set<String> _flagsFor(String command) => switch (command) {
+  'test' || 'coverage' => const {'--base=', '--count='},
+  'coverage-gate' => const {'--threshold='},
+  _ => const {},
+};
 
 /// The packages named in [rest], or all of them.
 ///
@@ -791,6 +978,19 @@ String? _baseFrom(List<String> arguments) {
   return argument?.substring(flag.length);
 }
 
+/// The `--count=N` an argument list carries, if any.
+///
+/// A flag rather than a bare argument, for the same reason as `--base`: a
+/// positional number in the same list as the kinds and the package names
+/// would be indistinguishable from a typo.
+int? _countFrom(List<String> arguments) {
+  const flag = '--count=';
+  final argument = arguments.where((a) => a.startsWith(flag)).firstOrNull;
+  return argument == null
+      ? null
+      : int.tryParse(argument.substring(flag.length));
+}
+
 /// The `--threshold=N` an argument list carries, if any.
 int? _thresholdFrom(List<String> arguments) {
   const flag = '--threshold=';
@@ -806,6 +1006,9 @@ String? _firstOf(List<String> arguments, Iterable<String> known) =>
 
 /// The desktop platform names, as both `build` and `run` accept them.
 const _platformNames = ['macos', 'linux', 'windows'];
+
+/// How `codegen` can be run, as the command line spells it.
+const _codegenModeNames = ['normal', 'hard'];
 
 void _printUsage() {
   stdout

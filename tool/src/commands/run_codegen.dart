@@ -34,9 +34,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import '../cli/dashboard.dart';
 import '../repo.dart';
 import '../theme/theme.dart';
 import '../tty.dart';
+import 'process.dart';
 
 const _pkgOrder = [
   'core',
@@ -48,8 +50,6 @@ const _pkgOrder = [
 ];
 
 const _apps = ['desktop', 'mobile'];
-
-const _spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
 void main(List<String> rawArgs) async {
   final force = rawArgs.contains('--force');
@@ -115,7 +115,7 @@ void main(List<String> rawArgs) async {
 
   final failedRows = rows.where((r) => r.failed).toList();
   final totalOutputs = rows.fold(0, (a, r) => a + (r.outputs ?? 0));
-  final totalElapsed = _fmtDuration(
+  final totalElapsed = formatDuration(
     DateTime.now().difference(dashboard.started),
   );
 
@@ -176,7 +176,8 @@ bool _hasBuildRunner(_Target target) {
       pubspec.readAsStringSync().contains('build_runner');
 }
 
-/// Which package labels ("core", ..., "desktop", "mobile") own at least one changed
+/// Which package labels ("core", …, "desktop", "mobile") own at least one
+/// changed
 /// file against `base`. Same 3-way diff union as
 /// tool/run_changed_tests.dart's `_changedFiles` (committed on the branch,
 /// staged/modified, or untracked), but mapped to a whole package rather than
@@ -269,7 +270,7 @@ Future<bool> _runOne(_Target target, _Row row, _Dashboard dashboard) async {
   // build_runner 2.15 dropped --delete-conflicting-outputs (it's the default
   // now) and warns on every run if passed — see the note by _succeeded above
   // on why its final log line changed shape too.
-  final process = await Process.start('dart', [
+  final process = await Process.start(dartExecutable, [
     'run',
     'build_runner',
     'build',
@@ -315,60 +316,18 @@ Future<bool> _runOne(_Target target, _Row row, _Dashboard dashboard) async {
 
 /// Redraws a fixed block — a header plus one row per package — in place,
 /// making room above it for failures printed live via [log].
-class _Dashboard {
-  _Dashboard(this.rows, this.started)
-    : _labelWidth = rows
-          .map((r) => r.label.length)
-          .reduce((a, b) => a > b ? a : b);
+class _Dashboard extends Dashboard<_Row> {
+  _Dashboard(super.rows, super.started);
 
-  final List<_Row> rows;
-  final DateTime started;
-  final int _labelWidth;
-  int _paintedLines = 0;
-  int _tick = 0;
+  @override
+  String labelOf(_Row row) => row.label;
 
-  /// Rows already printed in plain mode, so each is reported once.
-  final Set<String> _reported = {};
+  @override
+  bool isSettled(_Row row) =>
+      row.state != _RowState.queued && row.state != _RowState.running;
 
-  void render() {
-    if (isPlain) return _renderPlain();
-
-    _tick++;
-    _erase();
-    final lines = [_header(), ...rows.map(_renderRow)];
-    stdout.writeln(lines.join('\n'));
-    _paintedLines = lines.length;
-  }
-
-  /// Append-only: one line per package, the moment it stops moving. The
-  /// header is a progress readout, which in a log is the same line repeated.
-  void _renderPlain() {
-    for (final row in rows) {
-      if (row.state == _RowState.queued || row.state == _RowState.running) {
-        continue;
-      }
-      if (!_reported.add(row.label)) continue;
-      stdout.writeln(_renderRow(row));
-    }
-  }
-
-  void log(String text) {
-    if (isPlain) {
-      stdout.writeln(text);
-      return;
-    }
-    _erase();
-    stdout.writeln(text);
-    render();
-  }
-
-  void _erase() {
-    if (isPlain || _paintedLines == 0) return;
-    stdout.write('\x1B[${_paintedLines}A\x1B[J');
-    _paintedLines = 0;
-  }
-
-  String _header() {
+  @override
+  String header() {
     final doneCount = rows
         .where(
           (r) =>
@@ -396,41 +355,32 @@ class _Dashboard {
         'now on ${running.label}:';
   }
 
-  String _renderRow(_Row row) {
-    final label = row.label.padRight(_labelWidth);
+  @override
+  String renderRow(_Row row) {
+    final label = row.label.padRight(labelWidth);
     switch (row.state) {
       case _RowState.skippedNoBuildRunner:
-        return '${_mark(Status.skipped, palette.skipped)}$label  '
+        return '${statusMark(Status.skipped, palette.skipped)}$label  '
             'no build_runner';
       case _RowState.skippedNoChange:
-        return '${_mark(Status.skipped, palette.skipped)}$label  '
+        return '${statusMark(Status.skipped, palette.skipped)}$label  '
             'skipped — no change in this branch';
       case _RowState.queued:
-        return '${_mark(Status.queued, palette.queued)}$label  queued';
+        return '${statusMark(Status.queued, palette.queued)}$label  queued';
       case _RowState.running:
-        final spin = _spinner[_tick % _spinner.length];
-        final elapsed = _fmtDuration(DateTime.now().difference(row.startedAt!));
-        return '${_mark(Status.running, palette.running)}$label  '
+        final spin = spinnerFrames[tick % spinnerFrames.length];
+        final elapsed = formatDuration(
+          DateTime.now().difference(row.startedAt!),
+        );
+        return '${statusMark(Status.running, palette.running)}$label  '
             '$spin ${row.stage}  •  ⏱ $elapsed';
       case _RowState.done:
-        final elapsed = _fmtDuration(row.elapsed ?? Duration.zero);
+        final elapsed = formatDuration(row.elapsed ?? Duration.zero);
         final mark = row.failed
-            ? _mark(Status.fail, palette.fail)
-            : _mark(Status.ok, palette.ok);
+            ? statusMark(Status.fail, palette.fail)
+            : statusMark(Status.ok, palette.ok);
         final outputs = row.outputs != null ? '${row.outputs} outputs  ' : '';
         return '$mark$label  $outputs⏱ $elapsed';
     }
   }
-}
-
-/// A row's status mark, plus the margin around it.
-///
-/// Five columns, matching what the double-width emoji it replaced occupied,
-/// so nothing to its right shifts.
-String _mark(String glyph, String color) => '  $color$glyph${Ansi.reset}  ';
-
-String _fmtDuration(Duration d) {
-  final m = d.inMinutes;
-  final s = d.inSeconds % 60;
-  return m > 0 ? '${m}m${s.toString().padLeft(2, '0')}s' : '${s}s';
 }

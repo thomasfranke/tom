@@ -33,9 +33,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import '../cli/dashboard.dart';
 import '../repo.dart';
 import '../theme/theme.dart';
 import '../tty.dart';
+import 'process.dart';
 
 const _pkgOrder = [
   'core',
@@ -47,8 +49,6 @@ const _pkgOrder = [
 ];
 
 const _apps = ['desktop', 'mobile'];
-
-const _barWidth = 20;
 
 void main(List<String> rawArgs) async {
   final coverage = rawArgs.contains('--coverage');
@@ -69,7 +69,10 @@ void main(List<String> rawArgs) async {
   final root = repoRoot();
   final src = Directory('${root.path}/src');
   final targets = args.map((a) => _resolve(src, a)).toList();
-  final rows = [for (final t in targets) _Row(t.label, hasTests: _hasTests(t))];
+  final rows = [
+    for (final t in targets)
+      _Row(t.label, hasTests: _hasTests(t), fileTotal: _testFileCount(t)),
+  ];
   for (final row in rows) {
     if (!row.hasTests) row.state = _RowState.skipped;
   }
@@ -108,7 +111,7 @@ void main(List<String> rawArgs) async {
   final totalTests = totalPassed + rows.fold(0, (a, r) => a + r.failed);
   final covHit = rows.fold(0, (a, r) => a + (r.coverageHit ?? 0));
   final covTotal = rows.fold(0, (a, r) => a + (r.coverageTotal ?? 0));
-  final totalElapsed = _fmtDuration(
+  final totalElapsed = formatDuration(
     DateTime.now().difference(dashboard.started),
   );
 
@@ -146,6 +149,14 @@ class _Target {
   final Directory dir;
   final String command; // "dart" or "flutter"
   final List<String> extraArgs;
+
+  /// The program to actually spawn for [command].
+  ///
+  /// The field stays the plain name because the rest of this script branches
+  /// on it — coverage is collected one way under `dart` and another under
+  /// `flutter` — while what gets executed resolves to the SDK running this
+  /// script. See [dartExecutable] for why the two are not the same thing.
+  String get executable => command == 'dart' ? dartExecutable : command;
 }
 
 /// Parses one CLI arg: either a bare package name (the whole test/ tree runs)
@@ -167,6 +178,16 @@ _Target _resolve(Directory src, String spec) {
         'dart',
         files.isNotEmpty ? files : ['test/integrity/architecture_test.dart'],
       );
+    // Like `arch`, a folder under src/test/ rather than a package: the CLI
+    // lives in tool/, outside the workspace, so its tests cannot live beside
+    // it. See src/test/cli/cli_test.dart for why.
+    case 'cli':
+      return _Target(
+        'cli',
+        src,
+        'dart',
+        files.isNotEmpty ? files : ['test/cli'],
+      );
     default:
       if (_apps.contains(pkg)) {
         return _Target(
@@ -179,7 +200,7 @@ _Target _resolve(Directory src, String spec) {
       if (!_pkgOrder.contains(pkg)) {
         stderr.writeln(
           "Unknown package '$pkg'. Available: ${_pkgOrder.join(', ')}, "
-          "${_apps.join(', ')}, arch",
+          "${_apps.join(', ')}, arch, cli",
         );
         exit(64);
       }
@@ -195,6 +216,33 @@ _Target _resolve(Directory src, String spec) {
 // The repository root used to be counted in levels from this file. It is
 // found by marker now (see ../repo.dart), because counting is what broke when
 // this script moved into tool/src/commands/.
+
+/// How many `_test.dart` files [target] will run.
+///
+/// The same three cases [_hasTests] already distinguishes, counted rather
+/// than merely detected: an explicit list of files is its own length, a
+/// narrowed kind is a folder to walk, and an unnarrowed target is its whole
+/// `test/` tree.
+int _testFileCount(_Target target) {
+  final roots = target.extraArgs.isEmpty ? const ['test'] : target.extraArgs;
+
+  var count = 0;
+  for (final root in roots) {
+    final path = '${target.dir.path}/$root';
+    if (File(path).existsSync()) {
+      count++;
+      continue;
+    }
+    final directory = Directory(path);
+    if (!directory.existsSync()) continue;
+    count += directory
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('_test.dart'))
+        .length;
+  }
+  return count;
+}
 
 bool _hasTests(_Target target) {
   if (target.extraArgs.isNotEmpty) {
@@ -240,7 +288,7 @@ Future<void> _showCompiling() async {
 
   redraw();
   final ticker = Timer.periodic(const Duration(seconds: 1), (_) => redraw());
-  await Future.delayed(const Duration(milliseconds: 300));
+  await Future<void>.delayed(const Duration(milliseconds: 300));
   ticker.cancel();
   stdout.write('\r\x1B[K');
 }
@@ -251,18 +299,43 @@ enum _RowState { queued, skipped, running, done }
 /// run progresses. `suiteTotal` arrives from the `allSuites` event, so it
 /// stays 0 — an indeterminate bar — until package:test has parsed the suite.
 class _Row {
-  _Row(this.label, {required this.hasTests});
+  _Row(this.label, {required this.hasTests, required this.fileTotal});
   final String label;
   final bool hasTests;
+
+  /// How many test files this package will run, counted from disk before
+  /// the first one loads.
+  ///
+  /// From the filesystem rather than from package:test's events, because
+  /// it parses suites lazily: a total taken from the protocol arrives in
+  /// instalments while the bar is already moving, and a bar whose
+  /// denominator grows walks backwards. A `_test.dart` file is a suite, and
+  /// counting them is something this side can do up front.
+  final int fileTotal;
 
   _RowState state = _RowState.queued;
   DateTime? startedAt;
   Duration? elapsed;
 
-  int suiteTotal = 0;
-  int suiteDone = 0;
+  /// Test files finished — every test in them accounted for.
+  ///
+  /// Exact, not a guess. The protocol's root group says how many tests a file
+  /// holds, so a file is done when that many have come back. The heuristic
+  /// this replaced completed a file as soon as every test it had *started*
+  /// had finished, which is true between any two tests of a sequential file —
+  /// so a file was done after its first test, and the bar sat at `4/4` for
+  /// the rest of the run.
+  int filesDone = 0;
+
   int passed = 0;
   int failed = 0;
+
+  /// Set while the tests are over and `format_coverage` is still running.
+  ///
+  /// Without it the row sits at a full bar, marked running, for as long as
+  /// that takes — which reads as a run that finished and hung rather than as
+  /// the measuring step it is.
+  bool measuringCoverage = false;
 
   int? coverageHit;
   int? coverageTotal;
@@ -284,7 +357,7 @@ Future<bool> _runOne(
   final wantCoverage =
       coverage && Directory('${target.dir.path}/lib').existsSync();
   final passthrough = Platform.environment['TEST_ARGS'];
-  final process = await Process.start(target.command, [
+  final process = await Process.start(target.executable, [
     'test',
     '--reporter=json',
     if (wantCoverage && target.command == 'dart') '--coverage=coverage',
@@ -297,17 +370,14 @@ Future<bool> _runOne(
   final stderrBuf = StringBuffer();
   process.stderr.transform(utf8.decoder).listen(stderrBuf.write);
 
-  // File-completion is a heuristic: package:test's protocol has no explicit
-  // "this suite is done" event, so a suite counts as complete once every
-  // test started for it has also finished. That is exactly right for suites
-  // whose tests are all known up front — true for every test file in this
-  // project — and simply under-counts, rather than crashing, for anything
-  // stranger.
   final suitePath = <int, String>{};
-  final suiteStarted = <int, int>{};
-  final suiteDone = <int, int>{};
-  final suiteComplete = <int>{};
   final testSuite = <int, int>{};
+
+  // How many tests each file holds, and how many have come back — the pair
+  // that says when a file is actually done.
+  final suiteTests = <int, int>{};
+  final suiteFinished = <int, int>{};
+  final suiteComplete = <int>{};
   final testName = <int, String>{};
   final testError = <int, String>{};
 
@@ -316,16 +386,32 @@ Future<bool> _runOne(
       .transform(const LineSplitter())
       .forEach((line) {
         if (line.trim().isEmpty) return;
-        Map<String, dynamic> event;
+
+        // A line that is not an event is skipped rather than fatal: the
+        // runner occasionally prints something that is not JSON, and a
+        // dashboard that died over it would lose a passing suite. Typed
+        // rather than a bare catch, because there are exactly two ways this
+        // fails — the text is not JSON, or the JSON is not an object — and a
+        // bare catch would also swallow a bug in the handling below.
+        final Object? decoded;
         try {
-          event = jsonDecode(line) as Map<String, dynamic>;
-        } catch (_) {
-          return; // a non-JSON line (rare) — ignore rather than crash the run
+          decoded = jsonDecode(line);
+        } on FormatException {
+          return;
         }
+        if (decoded is! Map<String, dynamic>) return;
+        final event = decoded;
 
         switch (event['type']) {
-          case 'allSuites':
-            row.suiteTotal = event['count'] as int;
+          case 'group':
+            // The root group of a file — the one with no parent — counts every
+            // test in it. Nested groups count their own share of the same
+            // tests, so reading those too would multiply the total.
+            final group = event['group'] as Map<String, dynamic>;
+            if (group['parentID'] == null) {
+              suiteTests[group['suiteID'] as int] =
+                  group['testCount'] as int? ?? 0;
+            }
           case 'suite':
             final suite = event['suite'] as Map<String, dynamic>;
             suitePath[suite['id'] as int] = suite['path'] as String;
@@ -335,7 +421,6 @@ Future<bool> _runOne(
             final suiteId = test['suiteID'] as int;
             testSuite[id] = suiteId;
             testName[id] = test['name'] as String? ?? 'test';
-            suiteStarted[suiteId] = (suiteStarted[suiteId] ?? 0) + 1;
           case 'error':
             final id = event['testID'] as int?;
             if (id != null) {
@@ -350,11 +435,15 @@ Future<bool> _runOne(
             final skipped = event['skipped'] as bool? ?? false;
             final suiteId = testSuite[id];
 
-            if (suiteId != null) {
-              suiteDone[suiteId] = (suiteDone[suiteId] ?? 0) + 1;
-              if (suiteDone[suiteId]! >= (suiteStarted[suiteId] ?? 0)) {
+            // Hidden tests — the one package:test emits for loading a file —
+            // are not in the root group's count, so counting them here would
+            // finish a file one test early.
+            if (suiteId != null && !hidden) {
+              suiteFinished[suiteId] = (suiteFinished[suiteId] ?? 0) + 1;
+              final total = suiteTests[suiteId];
+              if (total != null && suiteFinished[suiteId]! >= total) {
                 suiteComplete.add(suiteId);
-                row.suiteDone = suiteComplete.length;
+                row.filesDone = suiteComplete.length;
               }
             }
 
@@ -380,9 +469,12 @@ Future<bool> _runOne(
   }
 
   if (wantCoverage) {
+    row.measuringCoverage = true;
+    dashboard.render();
     final cov = await _collectCoverage(target);
     row.coverageHit = cov?.hit;
     row.coverageTotal = cov?.total;
+    row.measuringCoverage = false;
     dashboard.render();
   }
 
@@ -401,7 +493,7 @@ Future<bool> _runOne(
 /// threshold — see the same constant in `tool/coverage_gate.dart`.
 Future<({int hit, int total})?> _collectCoverage(_Target target) async {
   if (target.command == 'dart') {
-    final result = await Process.run('dart', [
+    final result = await Process.run(dartExecutable, [
       'run',
       'coverage:format_coverage',
       '--lcov',
@@ -430,50 +522,44 @@ Future<({int hit, int total})?> _collectCoverage(_Target target) async {
 
 /// Redraws a fixed block — a header plus one row per package — in place,
 /// making room above it for failures printed live via [logFailure]/[log].
-class _Dashboard {
-  _Dashboard(this.rows, this.started)
-    : _labelWidth = rows
-          .map((r) => r.label.length)
-          .reduce((a, b) => a > b ? a : b);
+class _Dashboard extends Dashboard<_Row> {
+  _Dashboard(super.rows, super.started);
 
-  final List<_Row> rows;
-  final DateTime started;
   final List<String> failures = [];
-  final int _labelWidth;
-  int _paintedLines = 0;
 
-  /// Rows already printed in plain mode, so each is reported once.
-  final Set<String> _reported = {};
+  @override
+  String labelOf(_Row row) => row.label;
 
-  void render() {
-    if (isPlain) return _renderPlain();
+  @override
+  bool isSettled(_Row row) =>
+      row.state == _RowState.done || row.state == _RowState.skipped;
 
-    _erase();
-    final lines = [
-      _header(),
-      ...rows.map((r) => _renderRow(r, _countsWidth())),
-    ];
-    stdout.writeln(lines.join('\n'));
-    _paintedLines = lines.length;
-  }
+  /// Files finished over files to run — the pair the bar is drawn from.
+  String _fileCounts(_Row row) => '${row.filesDone}/${row.fileTotal}';
 
-  /// Append-only: one line per package, the moment it stops moving.
+  /// Tests passed over tests run.
+  String _testCounts(_Row row) => '${row.passed}/${row.passed + row.failed}';
+
+  /// How wide the files column will ever need to be.
   ///
-  /// No header and no repainting — the header is a progress readout, and in a
-  /// log a progress readout is just the same line over and over. The totals
-  /// still arrive at the end, from the summary the caller prints.
-  void _renderPlain() {
-    for (final row in rows) {
-      final settled =
-          row.state == _RowState.done || row.state == _RowState.skipped;
-      if (!settled || !_reported.add(row.label)) continue;
-      stdout.writeln(_renderRow(row, _countsWidth()));
-    }
-  }
+  /// Known before anything runs, because both halves are: a row's widest
+  /// spelling is the one where every file is done. That matters in a log,
+  /// where each row is printed once as it settles and never repainted — a
+  /// width measured only over the rows finished so far leaves the first ones
+  /// narrow and the column ragged for good.
+  late final int _filesWidth = rows
+      .map((row) => '${row.fileTotal}/${row.fileTotal}'.length)
+      .fold(0, (a, b) => a > b ? a : b);
 
-  int _countsWidth() => rows
-      .where((r) => r.state == _RowState.done)
-      .map((r) => '${r.passed}/${r.passed + r.failed}'.length)
+  /// How wide the tests column has to be for the rows that have settled.
+  ///
+  /// Measured as they arrive, unlike the files column, because nothing says
+  /// up front how many tests a file holds. Re-measured on every paint, so an
+  /// interactive run stays aligned; a log cannot, and that is the cost of
+  /// printing a row before the next one exists.
+  int get _testsWidth => rows
+      .where((row) => row.state == _RowState.done)
+      .map((row) => _testCounts(row).length)
       .fold(0, (a, b) => a > b ? a : b);
 
   void logFailure(String pkg, String path, String name, String? error) {
@@ -486,25 +572,10 @@ class _Dashboard {
     log(buf.toString().trimRight());
   }
 
-  void log(String text) {
-    if (isPlain) {
-      stdout.writeln(text);
-      return;
-    }
-    _erase();
-    stdout.writeln(text);
-    render();
-  }
-
-  void _erase() {
-    if (isPlain || _paintedLines == 0) return;
-    stdout.write('\x1B[${_paintedLines}A\x1B[J');
-    _paintedLines = 0;
-  }
-
   // Stays "Running tests" even once everything is done — "Summary" is the
   // one below, with the totals; switching this one too would print it twice.
-  String _header() {
+  @override
+  String header() {
     final doneRows = rows.where(
       (r) => r.state == _RowState.done || r.state == _RowState.skipped,
     );
@@ -543,53 +614,46 @@ class _Dashboard {
         : 0;
 
     final etaMs = (avgMs * remaining - runningMs).clamp(0.0, avgMs * remaining);
-    final eta = _fmtDuration(Duration(milliseconds: etaMs.round()));
+    final eta = formatDuration(Duration(milliseconds: etaMs.round()));
     return '• Running tests — $doneCount/${rows.length} packages, ~$eta remaining:';
   }
 
-  String _renderRow(_Row row, int countsWidth) {
-    final label = row.label.padRight(_labelWidth);
+  @override
+  String renderRow(_Row row) {
+    final label = row.label.padRight(labelWidth);
     switch (row.state) {
       case _RowState.skipped:
-        return '${_mark(Status.skipped, palette.skipped)}$label  no tests yet';
+        return '${statusMark(Status.skipped, palette.skipped)}$label  '
+            'no tests yet';
       case _RowState.queued:
-        return '${_mark(Status.queued, palette.queued)}$label  ${_bar(0, 0)}';
+        return '${statusMark(Status.queued, palette.queued)}$label  '
+            '${progressBar(0, 0)}';
       case _RowState.running:
-        final elapsed = _fmtDuration(DateTime.now().difference(row.startedAt!));
-        final total = row.suiteTotal > 0 ? '${row.suiteTotal}' : '?';
-        return '${_mark(Status.running, palette.running)}$label  '
-            '${_bar(row.suiteDone, row.suiteTotal)} '
-            '${row.suiteDone}/$total  •  +${row.passed} ✗${row.failed}  '
+        final elapsed = formatDuration(
+          DateTime.now().difference(row.startedAt!),
+        );
+        final progress = row.measuringCoverage
+            ? 'measuring coverage…'
+            : '${_fileCounts(row)} files';
+        return '${statusMark(Status.running, palette.running)}$label  '
+            '${progressBar(row.filesDone, row.fileTotal)} '
+            '$progress  •  +${row.passed} ✗${row.failed}  '
             '•  ⏱ $elapsed';
       case _RowState.done:
-        final elapsed = _fmtDuration(row.elapsed ?? Duration.zero);
-        final total = row.passed + row.failed;
-        final counts = '${row.passed}/$total'.padRight(countsWidth);
+        final elapsed = formatDuration(row.elapsed ?? Duration.zero);
+        // Both counts, in the same order and the same unit as while it ran:
+        // the files the bar measured, then the tests inside them. One turning
+        // into the other at the finish line read as the number changing its
+        // mind — and a file short of its total is how a suite that failed to
+        // load shows up at all.
+        final files = _fileCounts(row).padRight(_filesWidth);
+        final tests = _testCounts(row).padRight(_testsWidth);
         final mark = row.failed == 0
-            ? _mark(Status.ok, palette.ok)
-            : _mark(Status.fail, palette.fail);
+            ? statusMark(Status.ok, palette.ok)
+            : statusMark(Status.fail, palette.fail);
         final cov = row.coverage != null ? '◔ ${row.coverage!.round()}%  ' : '';
-        return '$mark$label  ${_bar(1, 1)} $counts  $cov⏱ $elapsed';
+        return '$mark$label  ${progressBar(row.filesDone, row.fileTotal)} '
+            '$files files  •  $tests tests  $cov⏱ $elapsed';
     }
   }
-
-  String _bar(int done, int total) {
-    final filled = total > 0
-        ? ((done / total) * _barWidth).round().clamp(0, _barWidth)
-        : 0;
-    return '█' * filled + '░' * (_barWidth - filled);
-  }
-}
-
-/// A row's status mark, plus the margin around it.
-///
-/// Five columns in total — two of indent, one for the glyph, two of gap —
-/// which is what the double-width emoji it replaced occupied. Keeping the
-/// width identical is what stops every column to its right from shifting.
-String _mark(String glyph, String color) => '  $color$glyph${Ansi.reset}  ';
-
-String _fmtDuration(Duration d) {
-  final m = d.inMinutes;
-  final s = d.inSeconds % 60;
-  return m > 0 ? '${m}m${s.toString().padLeft(2, '0')}s' : '${s}s';
 }

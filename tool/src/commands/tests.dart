@@ -78,3 +78,37 @@ Future<int> runChangedTests({String base = 'main', bool coverage = true}) =>
       if (coverage) '--coverage',
       base,
     ]);
+
+/// The argument that selects the recency-driven run.
+const last = 'last';
+
+/// Runs the tests that the most recently edited files map to.
+///
+/// The same mapping as [runChangedTests] — a changed `lib/foo.dart` runs
+/// `foo_test.dart` — over a different set of files: what the filesystem says
+/// was touched last, rather than what git says differs from a commit.
+///
+/// That is the case the diff run cannot serve. A branch whose diff has grown
+/// to two hundred files no longer describes the last hour of work on it, and
+/// a file edited and then edited back to what the commit already holds is
+/// invisible to git and is exactly what someone means by "run what I was just
+/// working on". [count] defaults to ten, about a sitting's worth.
+Future<int> runLastTests({int? count, bool coverage = true}) => dart([
+  'run',
+  'tool/src/commands/run_changed_tests.dart',
+  if (coverage) '--coverage',
+  count == null ? '--last' : '--last=$count',
+]);
+
+/// The argument that selects the CLI's own tests.
+const cli = 'cli';
+
+/// Runs the tests for `tom` itself.
+///
+/// They live in `src/test/cli/`, not beside the CLI, because `tool/` holds no
+/// pubspec — a tool that resolves the workspace cannot require the workspace
+/// to be resolved before it runs, so it can take no dependency on
+/// `package:test`. The workspace side has that dependency already and drives
+/// the CLI as a process.
+Future<int> runCliTests({bool coverage = false}) =>
+    dart(['run', _runner, if (coverage) '--coverage', cli]);

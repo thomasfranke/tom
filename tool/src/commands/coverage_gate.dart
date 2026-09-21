@@ -16,8 +16,10 @@
 
 import 'dart:io';
 
+import '../cli/dashboard.dart';
 import '../repo.dart';
 import '../theme/theme.dart';
+import 'process.dart';
 
 // Freezed's generated toString/copyWith/props are never exercised directly —
 // the tests hit the hand-written factories, not the generated methods by
@@ -68,7 +70,7 @@ void main(List<String> args) async {
 
     if (!hasCode) {
       stdout.writeln(
-        '${_mark(Status.skipped, palette.skipped)}$label  '
+        '${statusMark(Status.skipped, palette.skipped)}$label  '
         'no lib/src yet, not gated',
       );
       continue;
@@ -77,7 +79,7 @@ void main(List<String> args) async {
     final _Coverage? result = await _measure(dir);
     if (result == null) {
       stdout.writeln(
-        '${_mark(Status.skipped, palette.skipped)}$label  '
+        '${statusMark(Status.skipped, palette.skipped)}$label  '
         'no tests yet, not gated',
       );
       continue;
@@ -86,7 +88,7 @@ void main(List<String> args) async {
     if (!result.testsPassed) {
       overallFail = true;
       stdout.writeln(
-        '${_mark(Status.fail, palette.fail)}$label  '
+        '${statusMark(Status.fail, palette.fail)}$label  '
         'tests failed, coverage not measured',
       );
       continue;
@@ -98,8 +100,8 @@ void main(List<String> args) async {
     linesHit += result.linesHit;
     linesFound += result.linesFound;
     final String mark = ok
-        ? _mark(Status.ok, palette.ok)
-        : _mark(Status.fail, palette.fail);
+        ? statusMark(Status.ok, palette.ok)
+        : statusMark(Status.fail, palette.fail);
     stdout.writeln(
       '$mark$label  ${result.percentage.toStringAsFixed(1)}% '
       '(${result.linesHit}/${result.linesFound} lines)',
@@ -112,17 +114,12 @@ void main(List<String> args) async {
   if (linesFound > 0) {
     stdout.writeln('    • ◔ ${(linesHit / linesFound * 100).round()}%');
   }
-  stdout.writeln(
-    '    • ${overallFail ? '${palette.fail}${Status.fail}${Ansi.reset} failed' : '${palette.ok}${Status.ok}${Ansi.reset} passed'}',
-  );
+  final verdict = overallFail
+      ? '${palette.fail}${Status.fail}${Ansi.reset} failed'
+      : '${palette.ok}${Status.ok}${Ansi.reset} passed';
+  stdout.writeln('    • $verdict');
   exit(overallFail ? 1 : 0);
 }
-
-/// A row's status mark, plus the margin around it.
-///
-/// Five columns, matching what the double-width emoji it replaced occupied,
-/// so nothing to its right shifts.
-String _mark(String glyph, String color) => '  $color$glyph${Ansi.reset}  ';
 
 double _threshold(List<String> args) {
   for (final String arg in args) {
@@ -176,7 +173,7 @@ Future<_Coverage?> _measure(Directory dir) async {
 
   final Directory coverageDir = Directory('${dir.path}/coverage');
   try {
-    final ProcessResult testRun = await Process.run('dart', <String>[
+    final ProcessResult testRun = await Process.run(dartExecutable, <String>[
       'test',
       '--coverage=coverage',
     ], workingDirectory: dir.path);
@@ -186,7 +183,7 @@ Future<_Coverage?> _measure(Directory dir) async {
       return const _Coverage(false, 0, 0);
     }
 
-    final ProcessResult format = await Process.run('dart', <String>[
+    final ProcessResult format = await Process.run(dartExecutable, <String>[
       'run',
       'coverage:format_coverage',
       '--lcov',

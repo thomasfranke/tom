@@ -4,8 +4,8 @@ library;
 
 import 'dart:io';
 
-import '../repo.dart';
 import 'process.dart';
+import 'toolchain.dart';
 
 /// Resolves every package in the workspace.
 ///
@@ -17,16 +17,38 @@ Future<int> runSetup() async {
   return flutter(['pub', 'get'], workingDirectory: srcDirectory);
 }
 
-/// Clears build artifacts from both apps, then resolves again.
+/// Clears build artifacts from [targets], then resolves again.
 ///
-/// The resolve is not optional: `flutter clean` removes `.dart_tool`, so
-/// stopping halfway leaves a workspace that cannot build at all.
-Future<int> runClean() async {
-  for (final app in apps) {
-    final directory = directoryFor(app);
+/// All eight by default, not just the two apps: a pure Dart layer accumulates
+/// its own
+/// `.dart_tool` — the build_runner cache, the resolvers, the test runner's —
+/// and it is the largest thing here by far, tens of megabytes per package.
+/// It is also the cache that goes stale in ways nothing else clears: `tom
+/// codegen hard` deletes the generated files and regenerates them, but the
+/// cache the generator reads is not among them.
+///
+/// `flutter clean` rather than deleting the directories by hand, in a
+/// workspace member too: it removes the `.dart_tool` of the directory it runs
+/// in and no other, so the root's `package_config.json` — the one thing the
+/// whole workspace resolves through — is left for [runSetup] to rewrite
+/// rather than destroyed eight times over.
+///
+/// What it leaves behind is `coverage/`, and that is the wanted behaviour
+/// rather than an oversight to correct later: the coverage gate reuses an
+/// `lcov.info` it finds instead of running every package's suite a second
+/// time, so clearing it would cost the next `verify` a full extra run.
+///
+/// The resolve at the end is not optional: `flutter clean` removes
+/// `.dart_tool`, so stopping halfway leaves a workspace that cannot build at
+/// all. It runs even when [targets] named a single package — resolving the
+/// whole workspace is one cached `pub get`, and the alternative is a command
+/// that sometimes leaves the tree resolved and sometimes does not.
+Future<int> runClean({List<String> targets = allTargets}) async {
+  for (final target in targets) {
+    final directory = directoryFor(target);
     if (!directory.existsSync()) continue;
 
-    announce('Clean — $app');
+    announce('Clean — $target');
     final code = await flutter(['clean'], workingDirectory: directory);
     if (code != 0) return code;
   }
@@ -37,13 +59,14 @@ Future<int> runClean() async {
 /// Pins the Flutter version this workspace is built against.
 ///
 /// `src/.fvmrc` is the single source of truth — the GitHub workflows and VS
-/// Code read the same file — so the version is taken from there rather than
-/// passed in. It lives inside `src/` because that is the actual Flutter
-/// project root; FVM pins per project, and the repository root is not one.
+/// Code read the same file, and so do `tom doctor` and `tom updates` — so the
+/// version is taken from there rather than passed in. It lives inside `src/`
+/// because that is the actual Flutter project root; FVM pins per project, and
+/// the repository root is not one.
 Future<int> runFvm() async {
-  final version = _pinnedVersion();
+  final version = pinnedFlutterVersion();
   if (version == null) {
-    stderr.writeln('tom: could not read the Flutter version from src/.fvmrc');
+    stderr.writeln('tom: could not read the Flutter version from $fvmrcPath');
     return 66; // EX_NOINPUT
   }
 
@@ -53,18 +76,4 @@ Future<int> runFvm() async {
   if (activated != 0) return activated;
 
   return exec('fvm', ['use', version], workingDirectory: srcDirectory);
-}
-
-/// The `flutter` entry of `src/.fvmrc`, or `null` if it is not readable.
-///
-/// Parsed by hand rather than with a YAML or JSON package: `tool/` depends on
-/// nothing but the SDK, and one well-known key does not justify losing that.
-String? _pinnedVersion() {
-  final file = File('${repoRoot().path}/src/.fvmrc');
-  if (!file.existsSync()) return null;
-
-  final match = RegExp(
-    r'"flutter"\s*:\s*"([^"]+)"',
-  ).firstMatch(file.readAsStringSync());
-  return match?.group(1);
 }

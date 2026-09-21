@@ -29,9 +29,11 @@ DEVICE ?= macos
 ARGS ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help tom setup clean format analyze verify flutter-test flutter-test-arch \
+.PHONY: help tom setup clean doctor updates format analyze verify flutter-test \
+        flutter-test-arch \
         flutter-test-packages flutter-test-app flutter-test-diff \
-        coverage coverage-gate runner runner-hard runner-watch fvm run \
+        flutter-test-last flutter-test-cli \
+        coverage coverage-last coverage-diff coverage-gate runner runner-hard runner-watch fvm run \
         build build-linux build-macos build-windows
 
 ##############################
@@ -52,11 +54,19 @@ tom: ## Open the navigable CLI (ARGS="test core" to run a command directly)
 setup: ## Resolve the whole workspace (one get for every package)
 	@$(TOM) setup
 
-clean: ## Clean build artifacts and re-resolve
-	@$(TOM) clean
+clean: ## Clean build artifacts and re-resolve (PKG=<name> for one package)
+	@$(TOM) clean $(PKG)
 
 fvm: ## Pin the Flutter version declared in src/.fvmrc for this workspace
 	@$(TOM) fvm
+
+doctor: ## Check this machine has what the repository needs to build
+	@$(TOM) doctor
+
+# Reports only. Moving the pin moves it for CI too, so it stays a decision —
+# runUpdates in tool/src/commands/updates.dart.
+updates: ## Compare the pinned Flutter and Dart against the latest stable
+	@$(TOM) updates
 
 ##############################
 ### *** Quality *** ###
@@ -85,6 +95,11 @@ flutter-test: ## Run every test, live (PKG=<name> restricts, KIND=unit|integrati
 flutter-test-arch: ## Assert the layer graph matches what the pubspecs declare
 	@$(TOM) test arch
 
+# The CLI's tests live on the workspace side because tool/ has no pubspec —
+# src/test/cli/cli_test.dart says why.
+flutter-test-cli: ## Test the tom CLI itself
+	@$(TOM) test cli
+
 # Also the framework-independence proof: no Flutter binding is available here,
 # so a layer that quietly grew a Flutter dependency fails rather than ships.
 flutter-test-packages: ## Pure Dart tests, package by package
@@ -98,8 +113,22 @@ flutter-test-app: ## Flutter tests for the apps (desktop, mobile)
 flutter-test-diff: ## Test only what this branch's diff maps to (BASE=main)
 	@$(TOM) test diff $(if $(BASE),--base=$(BASE))
 
+# Same mapping, different question: what the filesystem says you touched last,
+# not what git says differs from a commit.
+flutter-test-last: ## Test what the 10 most recently edited files map to (N=<count>)
+	@$(TOM) test last $(if $(N),--count=$(N))
+
 coverage: ## Coverage report, opened in the browser (PKG=<name> for one package)
 	@$(TOM) coverage $(PKG)
+
+# The point is the suite that does not run: the test the file you just edited
+# maps to, and the coverage of that file. Printed here, not rendered — the
+# answer is three lines long.
+coverage-last: ## Coverage of the file edited most recently, in the terminal (N=<count>)
+	@$(TOM) coverage last $(if $(N),--count=$(N))
+
+coverage-diff: ## Coverage of what this branch changed, in the terminal (BASE=main)
+	@$(TOM) coverage diff $(if $(BASE),--base=$(BASE))
 
 # A package with no lib/src yet, or with code but no tests yet, is skipped
 # rather than counted against: the gate is about tests falling behind code.
