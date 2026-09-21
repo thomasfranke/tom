@@ -27,6 +27,7 @@ Internal format (known in the community as an *ADR — Architecture Decision Rec
 | [017](017-tom-is-the-entry-point-and-make-is-a-face.md) | `tom` is the development entry point; `make` is a face over it |
 | [018](018-source-mode-uses-re-editor.md) | Source mode is built on `re_editor` (the verdict of Spike A) |
 | [019](019-blocks-come-from-the-markdown-package.md) | Blocks come from the `markdown` package, positions included (Spike B) |
+| [020](020-the-macos-app-is-not-sandboxed.md) | The macOS app is not sandboxed, which rules out the Mac App Store |
 
 ---
 

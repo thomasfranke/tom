@@ -4,3 +4,7 @@
 /// Nothing outside `lib/src/` is importable from another package, so this
 /// file is the whole public surface.
 library;
+
+export 'src/home/home_notifier.dart';
+export 'src/home/home_providers.dart';
+export 'src/home/home_state.dart';

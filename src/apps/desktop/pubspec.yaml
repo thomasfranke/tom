@@ -18,6 +18,12 @@ resolution: workspace
 
 dependencies:
   cupertino_icons: ^1.0.8
+
+  # The native "open folder" dialog. A Flutter plugin, so it can only live
+  # here — which is why nothing below takes a folder from anywhere but its
+  # own arguments.
+  file_selector: ^1.1.0
+
   flutter:
     sdk: flutter
 

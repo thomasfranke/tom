@@ -3,3 +3,7 @@
 /// Nothing outside `lib/src/` is importable from another package, so this
 /// file is the whole public surface.
 library;
+
+export 'src/spaces/open_space.dart';
+export 'src/spaces/recent_spaces.dart';
+export 'src/use_case.dart';

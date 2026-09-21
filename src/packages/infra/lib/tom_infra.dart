@@ -1,5 +1,5 @@
-/// Technical capabilities behind contracts — git, filesystem, markdown,
-/// search. Implementations never leave this package.
+/// Technical capabilities behind contracts — git, filesystem, settings,
+/// markdown, search. Implementations never leave this package.
 ///
 /// Nothing outside `lib/src/` is importable from another package, so this
 /// file is the whole public surface.
@@ -13,3 +13,8 @@ export 'src/filesystem/filesystem_failure.dart';
 export 'src/git_client/dart_io/dart_io_git_client.dart';
 export 'src/git_client/git_client.dart';
 export 'src/git_client/git_client_failure.dart';
+export 'src/git_client/git_client_for.dart';
+export 'src/settings/json_file/application_support.dart';
+export 'src/settings/json_file/json_file_settings.dart';
+export 'src/settings/settings.dart';
+export 'src/settings/settings_failure.dart';

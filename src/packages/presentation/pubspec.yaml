@@ -10,6 +10,11 @@ environment:
 resolution: workspace
 
 dependencies:
+  freezed_annotation: ^3.1.0
+  # The pure Dart half of Riverpod. `flutter_riverpod` is the app's; this
+  # package must not see a widget, and rule 6 allows state here and in the
+  # composition root, nowhere else (Decision 7).
+  riverpod: ^3.4.3
   tom_application:
     path: ../application
   tom_core:
@@ -18,5 +23,7 @@ dependencies:
     path: ../domain
 
 dev_dependencies:
+  build_runner: ^2.15.1
+  freezed: 3.2.5
   lints: ^6.0.0
   test: ^1.25.6

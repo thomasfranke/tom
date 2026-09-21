@@ -13,7 +13,7 @@ core ← domain ← application ← presentation
 | `tom_core` | `Result`, `AppFailure`, ports every layer needs (`Observability`) | nothing | no |
 | `tom_domain` | entities, value objects, failures, repository contracts, `BlockDiffer` | `tom_core` | no |
 | `tom_application` | use cases | `tom_core`, `tom_domain` | no |
-| `tom_infra` | capability contracts **and** their implementations — git, filesystem, markdown, search | `tom_core` | no |
+| `tom_infra` | capability contracts **and** their implementations — git, filesystem, settings, markdown, search | `tom_core` | no |
 | `tom_data` | parsers, repository implementations | `tom_core`, `tom_domain`, `tom_infra` | no |
 | `tom_presentation` | space session, notifiers, view state | `tom_core`, `tom_domain`, `tom_application` | no |
 | `tom_desktop` | composition root, widgets | all of the above | **yes** |

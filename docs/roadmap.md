@@ -23,7 +23,7 @@ Timebox: about one weekend each. Goal: decide, not build.
 **M0 — Foundation**
 
 - [x] [Workspace](product/workspace/doc.md) — the panel layout, and the extension contract under it: `TomModule`, `PanelDescriptor`, `runTom(modules: [])` ([flows](technical/flows.md#panels-are-registered-never-hardcoded)); `window_manager` for the title and the minimum size. The built-in panels are registered by a `CoreModule` and are placeholders until the four items below replace them — which is a change to that list and to nothing else
-- [ ] [Home](product/home/doc.md) — open a folder, recent spaces, the not-a-repository error; `file_selector`, `shared_preferences`
+- [x] [Home](product/home/doc.md) — open a folder, recent spaces, the not-a-repository error; `file_selector`. **Not** `shared_preferences`: it is a Flutter plugin and settings belong to `tom_infra`, which is pure Dart, so the capability is one JSON file in the platform's application-support folder ([dependencies](technical/dependencies.md)). Clone by URL is still M3, and the button is on screen disabled rather than absent
 - [ ] [File tree](product/navigation/file-tree/doc.md) — `dart:io` directory listing + `path`, no new package
 - [ ] [Markdown preview](product/editor/markdown-preview/doc.md) — `markdown` (AST), `flutter_markdown_plus` (inline rendering), `re_highlight` (code highlighting)
 - [ ] [Source-mode editing](product/editor/source-mode/doc.md) — includes saving to disk; `re_editor` (Spike A)
@@ -49,7 +49,7 @@ All four run Git through the system binary via `dart:io Process` behind a `GitCl
 - [ ] [Formatting shortcuts](product/editor/formatting-shortcuts/doc.md) — `re_editor`'s text-manipulation API, no new package
 - [ ] [Export](product/export/doc.md) — PDF/HTML; package not yet chosen — [Decision 13](technical/decisions/013-stack-is-flutter-and-dart.md) notes it's a separate problem in Flutter, budget for it
 - [ ] [Home](product/home/doc.md) — clone by URL; `dart:io Process` (`git clone`) with progress reporting
-- [ ] Packaging: Windows (msix), macOS (dmg), Linux (AppImage/deb) — tooling not yet chosen *(distribution, not a product)*
+- [ ] Packaging: Windows (msix), macOS (dmg), Linux (AppImage/deb) — tooling not yet chosen *(distribution, not a product)*. The Mac App Store is **out**, and now explicitly: the app cannot be sandboxed and drive the user's own git ([Decision 20](technical/decisions/020-the-macos-app-is-not-sandboxed.md))
 - [ ] Landing page + a polished README + a GIF of the rendered diff *(marketing, not a product)*
 
 ### Phase 2 — Traction

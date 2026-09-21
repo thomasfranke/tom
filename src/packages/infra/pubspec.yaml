@@ -11,6 +11,7 @@ resolution: workspace
 
 dependencies:
   freezed_annotation: ^3.1.0
+  meta: ^1.16.0
   tom_core:
     path: ../core
 

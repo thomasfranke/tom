@@ -6,10 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:tom_desktop/bootstrap/core_module.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
+import 'package:tom_desktop/bootstrap/providers.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_desktop/home/home_screen.dart';
 import 'package:tom_desktop/shell/tom_shell.dart';
 import 'package:tom_desktop/theme/tom_metrics.dart';
 import 'package:tom_desktop/theme/tom_theme.dart';
+import 'package:tom_presentation/tom_presentation.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// Starts TOM with [modules] added to the app's own.
@@ -36,6 +39,9 @@ Future<void> runTom({List<TomModule> modules = const <TomModule>[]}) async {
     ProviderScope(
       overrides: <Override>[
         panelRegistryProvider.overrideWithValue(PanelRegistry(all)),
+        // The app's own wiring first, so a module's override of the same
+        // provider wins: `ProviderScope` takes the last one.
+        ...appOverrides,
         for (final TomModule module in all) ...module.overrides,
       ],
       child: const TomApp(),
@@ -88,6 +94,24 @@ class TomApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     theme: tomTheme(Brightness.light),
     darkTheme: tomTheme(Brightness.dark),
-    home: const TomShell(),
+    home: const _WindowContents(),
   );
+}
+
+/// Home, or the shell, depending on whether a space is open.
+///
+/// **Not navigation.** There is no route and no stack: with a space open the
+/// window *is* the shell, and without one it is Home ([Decision
+/// 6](../../../../../docs/technical/decisions/006-no-navigation-package.md)
+/// keeps `Navigator` for dialogs). Which of the two is showing is a fact
+/// about the session, so it is read from the state rather than pushed onto
+/// anything.
+class _WindowContents extends ConsumerWidget {
+  const _WindowContents();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      ref.watch(homeProvider) is HomeOpened
+      ? const TomShell()
+      : const HomeScreen();
 }

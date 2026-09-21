@@ -21,6 +21,7 @@ void main() {
   late String root;
   late DocumentRepositoryImpl documents;
   late SpaceRepositoryImpl spaces;
+  late Space space;
 
   /// What [result] holds, or a failure of the test if it did not succeed.
   T valueOf<T>(Result<T> result) => switch (result) {
@@ -50,14 +51,14 @@ void main() {
     // The normal case: the user opened `docs/` inside a repository.
     root = '$repositoryRoot/docs';
     Directory(root).createSync();
-    final Space space = Space(
-      root: root,
-      repositoryRoot: repositoryRoot,
-      name: 'docs',
-    );
+    space = Space(root: root, repositoryRoot: repositoryRoot, name: 'docs');
     const Filesystem filesystem = DartIoFilesystem();
     documents = DocumentRepositoryImpl(filesystem: filesystem, space: space);
-    spaces = SpaceRepositoryImpl(filesystem: filesystem, space: space);
+    spaces = SpaceRepositoryImpl(
+      filesystem: filesystem,
+      gitClientFor: (String folder) =>
+          DartIoGitClient(workingDirectory: folder),
+    );
   });
 
   tearDown(() => tempDir.deleteSync(recursive: true));
@@ -158,7 +159,7 @@ void main() {
       write('adr/001.md', '# One\n');
       write('adr/002.md', '# Two\n');
 
-      final List<SpaceEntry> entries = valueOf(await spaces.entries());
+      final List<SpaceEntry> entries = valueOf(await spaces.entries(space));
 
       expect(entries.map((SpaceEntry entry) => entry.path.value), <String>[
         'adr',
@@ -174,7 +175,7 @@ void main() {
       write('.ai/skills.md', '# Skills\n');
 
       final List<String> paths = valueOf(
-        await spaces.entries(),
+        await spaces.entries(space),
       ).map((SpaceEntry entry) => entry.path.value).toList();
 
       expect(paths, contains('.ai'));
@@ -187,7 +188,7 @@ void main() {
       Link('$root/alias.md').createSync('$root/guide.md');
 
       final SpaceEntry entry = valueOf(
-        await spaces.entries(),
+        await spaces.entries(space),
       ).firstWhere((SpaceEntry entry) => entry.name == 'alias.md');
 
       expect(entry.type, SpaceEntryType.link);
@@ -197,11 +198,11 @@ void main() {
     test('a space whose folder is gone reports it as such', () async {
       Directory(root).deleteSync(recursive: true);
 
-      expect(failureOf(await spaces.entries()), isA<SpaceFolderMissing>());
+      expect(failureOf(await spaces.entries(space)), isA<SpaceFolderMissing>());
     });
 
     test('an empty space lists nothing, and does not fail', () async {
-      expect(valueOf(await spaces.entries()), isEmpty);
+      expect(valueOf(await spaces.entries(space)), isEmpty);
     });
   });
 }

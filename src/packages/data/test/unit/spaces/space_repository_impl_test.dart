@@ -24,7 +24,11 @@ void main() {
 
   setUp(() {
     filesystem = _RecordingFilesystem();
-    repository = SpaceRepositoryImpl(filesystem: filesystem, space: space);
+    repository = SpaceRepositoryImpl(
+      filesystem: filesystem,
+      gitClientFor: (String folder) =>
+          throw StateError('open() is not what these tests exercise'),
+    );
   });
 
   /// What [result] holds, or a failure of the test if it did not succeed.
@@ -51,7 +55,7 @@ void main() {
         _file('/code/app/docs/guide.md'),
       ];
 
-      expect(pathsOf(valueOf(await repository.entries())), <String>[
+      expect(pathsOf(valueOf(await repository.entries(space))), <String>[
         'guide.md',
       ]);
     });
@@ -67,7 +71,7 @@ void main() {
         _file('/code/app/docs/adr/002.md'),
       ];
 
-      expect(pathsOf(valueOf(await repository.entries())), <String>[
+      expect(pathsOf(valueOf(await repository.entries(space))), <String>[
         'adr',
         'adr/001.md',
         'adr/002.md',
@@ -82,7 +86,7 @@ void main() {
         _link('/code/app/docs/shared'),
       ];
 
-      final List<SpaceEntry> entries = valueOf(await repository.entries());
+      final List<SpaceEntry> entries = valueOf(await repository.entries(space));
 
       expect(pathsOf(entries), <String>['logo.png', 'shared']);
       expect(entries.last.type, SpaceEntryType.link);
@@ -94,7 +98,7 @@ void main() {
         _file('/code/app/docs/a.md'),
       ];
 
-      final List<SpaceEntry> entries = valueOf(await repository.entries());
+      final List<SpaceEntry> entries = valueOf(await repository.entries(space));
 
       expect(
         () => entries.add(
@@ -125,7 +129,7 @@ void main() {
 
     test('is not in the tree', () async {
       expect(
-        pathsOf(valueOf(await repository.entries())),
+        pathsOf(valueOf(await repository.entries(space))),
         isNot(contains('.git')),
       );
     });
@@ -135,7 +139,7 @@ void main() {
       // asking the capability for a recursive listing: a `.git/` holds more
       // entries than every document the product will ever show, and
       // filtering them out afterwards means reading them first.
-      await repository.entries();
+      await repository.entries(space);
 
       expect(filesystem.listed, isNot(contains('/code/app/docs/.git')));
     });
@@ -143,7 +147,7 @@ void main() {
     test('every other dotfolder is kept, and walked', () async {
       // A team's own tooling is documentation too
       // (`docs/product/navigation/file-tree/doc.md`).
-      expect(pathsOf(valueOf(await repository.entries())), <String>[
+      expect(pathsOf(valueOf(await repository.entries(space))), <String>[
         '.ai',
         '.ai/skills.md',
         'guide.md',
@@ -155,7 +159,7 @@ void main() {
         _file('/code/app/docs/.git'),
       ];
 
-      expect(valueOf(await repository.entries()), isEmpty);
+      expect(valueOf(await repository.entries(space)), isEmpty);
     });
   });
 
@@ -169,7 +173,7 @@ void main() {
 
       // The folder itself is still shown — it exists, it just cannot be
       // opened — and everything beside it survives.
-      expect(pathsOf(valueOf(await repository.entries())), <String>[
+      expect(pathsOf(valueOf(await repository.entries(space))), <String>[
         'private',
         'guide.md',
       ]);
@@ -179,7 +183,7 @@ void main() {
       filesystem.unreadable.add('/code/app/docs');
 
       expect(
-        failureOf(await repository.entries()),
+        failureOf(await repository.entries(space)),
         const SpaceAccessDenied('/code/app/docs'),
       );
     });
@@ -187,7 +191,7 @@ void main() {
     test('a space whose folder is gone says so', () async {
       // Home offers to forget it rather than reporting a fault.
       expect(
-        failureOf(await repository.entries()),
+        failureOf(await repository.entries(space)),
         const SpaceFolderMissing('/code/app/docs'),
       );
     });
@@ -199,14 +203,14 @@ void main() {
       );
 
       expect(
-        failureOf(await repository.entries()),
+        failureOf(await repository.entries(space)),
         const SpaceOperationFailed('/code/app/docs', 'EIO'),
       );
     });
 
     test('no infrastructure failure reaches the caller', () async {
       expect(
-        failureOf(await repository.entries()),
+        failureOf(await repository.entries(space)),
         isNot(isA<FilesystemFailure>()),
       );
     });

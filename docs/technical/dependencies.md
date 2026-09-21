@@ -6,7 +6,7 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 
 | Package | License | Role |
 |---|---|---|
-| `flutter_riverpod` + `riverpod_annotation` | MIT | State; providers per space/document/panel |
+| `flutter_riverpod` (app) + `riverpod` (presentation) | MIT | State; providers per space/document/panel. Two packages, one split: `tom_presentation` is pure Dart and takes the plain `riverpod`, the app takes the Flutter one. Note that Riverpod 3 does not export `Override` from its main barrel — it is in `misc.dart` |
 | `freezed` + `freezed_annotation` | MIT | Mandatory for immutable entities, multi-field value objects, view-state and sealed hierarchies ([Decision 16](decisions/016-freezed-is-mandatory-for-immutable-data.md)) — `GitStatus`, `Commit`, `DiffBlock`… as they get built; already in use for the `AppFailure` hierarchies (`GitFailure`, `DocumentFailure`, `SearchFailure`, `FilesystemFailure`) in `tom_core`/`tom_domain`/`tom_infra` |
 | `riverpod_generator`, `riverpod_lint`, `custom_lint`, `build_runner` | MIT | Dev-time (codegen and lints) |
 
@@ -44,9 +44,10 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 | Package | License | Role |
 |---|---|---|
 | `window_manager` | MIT | Window control (title, minimum size, persisted position) |
-| `file_selector` | BSD-3 | Native "open folder" dialog |
+| `file_selector` | BSD-3 | Native "open folder" dialog — **in use**, `^1.1.0`. A plugin, so it lives only in `tom_desktop`; nothing below takes a folder from anywhere but its own arguments |
 | `url_launcher` | BSD-3 | Open external links from the preview in the browser |
-| `shared_preferences` *(or JSON in app-support)* | BSD-3 | App settings (recent spaces, theme) |
+| ~~`shared_preferences`~~ | — | **Not taken.** It is a Flutter plugin, and settings belong to `tom_infra`, which is pure Dart so that six of the seven packages run under `dart test` ([Decision 14](decisions/014-each-layer-is-its-own-package.md)). Taking it would push the capability up into `tom_desktop` to store a list of folder paths |
+| *(no package)* | — | App settings are one JSON file in the platform's application-support folder — this table's own second option. `JsonFileSettings` writes it through the `Filesystem` capability, which already lands a file atomically; the folder comes from the platform's conventions rather than from `path_provider`, another Flutter plugin |
 
 ## Deliberately excluded
 

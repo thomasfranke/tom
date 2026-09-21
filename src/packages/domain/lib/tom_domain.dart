@@ -22,6 +22,8 @@ export 'src/git/status_entry.dart';
 export 'src/paths/repo_relative_path.dart';
 export 'src/paths/space_relative_path.dart';
 export 'src/search/search_failure.dart';
+export 'src/spaces/recent_space.dart';
+export 'src/spaces/recent_spaces_repository.dart';
 export 'src/spaces/space.dart';
 export 'src/spaces/space_entry.dart';
 export 'src/spaces/space_entry_type.dart';

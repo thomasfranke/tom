@@ -1,25 +1,35 @@
-/// The domain's space contract, fulfilled by the filesystem capability.
+/// The domain's space contract, fulfilled by the filesystem and by git.
 library;
 
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_infra/tom_infra.dart';
 
-/// [SpaceRepository] over the [Filesystem] capability.
+/// [SpaceRepository] over the [Filesystem] and [GitClient] capabilities.
 ///
-/// The file tree's policy lives here: `.git/` is out, every other dotfolder
-/// is in (`docs/product/navigation/file-tree/doc.md`). The capability
-/// filters nothing on purpose — it has no idea what a space is — so this is
-/// the layer that knows.
+/// Two jobs that look unrelated and are not. Opening a folder asks git where
+/// the repository is; listing one asks the disk what is inside. Both are
+/// about the *folder* a space is, which is why they are one contract and why
+/// the failures they produce send the user to another space rather than to
+/// another file.
+///
+/// The file tree's policy lives here too: `.git/` is out, every other
+/// dotfolder is in (`docs/product/navigation/file-tree/doc.md`). The
+/// capability filters nothing on purpose — it has no idea what a space is —
+/// so this is the layer that knows.
 final class SpaceRepositoryImpl implements SpaceRepository {
-  /// Creates a repository over [filesystem], for [space].
-  const SpaceRepositoryImpl({required this.filesystem, required this.space});
+  /// Creates a repository over [filesystem], making git clients with
+  /// [gitClientFor].
+  const SpaceRepositoryImpl({
+    required this.filesystem,
+    required this.gitClientFor,
+  });
 
   /// What lists the disk.
   final Filesystem filesystem;
 
-  /// The space being listed.
-  final Space space;
+  /// How to get a git client for a folder the user just picked.
+  final GitClientFor gitClientFor;
 
   /// What git keeps its repository in, and the one name the tree hides.
   ///
@@ -29,9 +39,41 @@ final class SpaceRepositoryImpl implements SpaceRepository {
   static const String _gitDirectory = '.git';
 
   @override
-  Future<Result<List<SpaceEntry>>> entries() async {
+  Future<Result<Space>> open(String folder) async {
+    // The disk is asked first, and the order is the whole point: a folder
+    // that is not there and a folder that holds no repository send the user
+    // somewhere different — forget this space, against open another one —
+    // and git reports both as "not a repository".
+    final Result<bool> exists = await filesystem.directoryExists(folder);
+    switch (exists) {
+      case Failure<bool>(failure: final AppFailure failure):
+        return Failure<Space>(_asSpaceFailure(failure));
+      case Success<bool>(value: false):
+        return Failure<Space>(SpaceFolderMissing(folder));
+      case Success<bool>():
+        break;
+    }
+
+    final Result<String> root = await gitClientFor(folder).repositoryRoot();
+    return switch (root) {
+      Success<String>(value: final String repositoryRoot) => Success<Space>(
+        Space(
+          root: folder,
+          repositoryRoot: repositoryRoot,
+          name: Space.nameOfFolder(folder),
+        ),
+      ),
+      Failure<String>(failure: final AppFailure failure) => Failure<Space>(
+        _asGitFailure(failure, folder),
+      ),
+    };
+  }
+
+  @override
+  Future<Result<List<SpaceEntry>>> entries(Space space) async {
     final List<SpaceEntry> collected = <SpaceEntry>[];
     final Result<void> walked = await _walk(
+      space,
       space.root,
       collected,
       isRoot: true,
@@ -62,6 +104,7 @@ final class SpaceRepositoryImpl implements SpaceRepository {
   /// not the file tree. [isRoot] is what makes the space's own folder the
   /// exception — a space whose root cannot be read has nothing to show.
   Future<Result<void>> _walk(
+    Space space,
     String directory,
     List<SpaceEntry> into, {
     required bool isRoot,
@@ -72,7 +115,7 @@ final class SpaceRepositoryImpl implements SpaceRepository {
     if (listed case Failure<List<FilesystemEntry>>(
       failure: final AppFailure failure,
     )) {
-      return isRoot ? Failure<void>(_asSpaceFailure(failure)) : _skipped;
+      return isRoot ? Failure<void>(_asSpaceFailure(failure)) : _walked;
     }
     for (final FilesystemEntry entry
         in (listed as Success<List<FilesystemEntry>>).value) {
@@ -82,14 +125,14 @@ final class SpaceRepositoryImpl implements SpaceRepository {
       }
       into.add(SpaceEntry(path: path, type: _asSpaceEntryType(entry.type)));
       if (entry.type == FilesystemEntryType.directory) {
-        await _walk(entry.path, into, isRoot: false);
+        await _walk(space, entry.path, into, isRoot: false);
       }
     }
-    return _skipped;
+    return _walked;
   }
 
   /// A walk that produced whatever it could — the only success this has.
-  static const Result<void> _skipped = Success<void>(null);
+  static const Result<void> _walked = Success<void>(null);
 
   /// The same kind, in the product's vocabulary.
   ///
@@ -136,4 +179,30 @@ final class SpaceRepositoryImpl implements SpaceRepository {
     // else.
     _ => failure,
   };
+
+  /// What git reported about [folder], in the product's vocabulary.
+  ///
+  /// Only the failures `repositoryRoot` can produce are named; anything else
+  /// keeps the command and the stderr, which is what the UI's "details"
+  /// disclosure shows.
+  ///
+  /// [GitClientNotARepository] carries the path git was asked about, and
+  /// that is the one this hands on — it is the folder the user picked, and
+  /// naming anything else would point them at a place they did not choose.
+  static AppFailure _asGitFailure(AppFailure failure, String folder) =>
+      switch (failure) {
+        GitClientNotARepository() => GitNotARepository(folder),
+        GitClientExecutableNotFound() => const GitNotInstalled(),
+        GitClientTimedOut(command: final String command) => GitTimedOut(
+          command,
+        ),
+        GitClientCommandFailed(
+          command: final String command,
+          stderr: final String stderr,
+        ) =>
+          GitCommandFailed(command, stderr),
+        // The rest cannot come from asking where the repository is: there is
+        // nothing to merge, nothing to push and no remote involved.
+        _ => failure,
+      };
 }
