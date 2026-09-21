@@ -5,26 +5,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_desktop/brand/tom_wordmark.dart';
-import 'package:tom_desktop/home/folder_picker.dart';
+import 'package:tom_desktop/screens/home/folder_picker.dart';
 import 'package:tom_desktop/theme/tom_colors.dart';
 import 'package:tom_desktop/theme/tom_metrics.dart';
+import 'package:tom_desktop/widgets/milestone_chip.dart';
+import 'package:tom_desktop/widgets/tom_wordmark.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 
 /// What the design fixes about this screen.
 ///
-/// Transcribed from
-/// [`homeEmpty()` and `homeNotARepo()`](../../../../../docs/technical/design/tools/penpot_screens.js),
-/// which are what the mocks in `docs/product/home/mocks/` are generated
-/// from — so these are the drawing's own numbers rather than a reading of
-/// the picture, and **when the two disagree the drawing is right**
-/// (`docs/technical/design/README.md`).
+/// The drawing's own numbers rather than a reading of the picture, from what
+/// generates `docs/product/home/mocks/` — and when code and drawing disagree
+/// the drawing is right.
 ///
-/// The design targets a 1440×900 window. Everything horizontal is centred
-/// and everything vertical is a gap between two things, so the layout holds
-/// at any size; the one number that would not survive is where the block
-/// sits in the empty space, and [_Canvas] keeps that as a proportion.
+/// It targets a 1440×900 window, and everything here is either centred or a
+/// gap between two things, so the layout holds at any size; [_Canvas] keeps
+/// the one number that would not survive as a proportion.
 abstract final class _Mock {
   /// The width the ways in share.
   static const double column = 440;
@@ -36,12 +33,10 @@ abstract final class _Mock {
   static const double controlRadius = 8;
   static const double cardRadius = 10;
 
-  /// The milestone chip, and the gutter that keeps the column centred
-  /// despite it: the design hangs the chip *outside* the column rather than
-  /// inside, so the clone control lines up with the one above it.
-  static const double chip = 30;
-  static const double chipHeight = 20;
-  static const double chipGutter = chip + TomMetrics.padTight;
+  /// The gutter that keeps the column centred despite the milestone chip:
+  /// the design hangs it *outside* the column rather than inside, so the
+  /// clone control still lines up with the one above it.
+  static const double chipGutter = 30 + TomMetrics.padTight;
 
   /// One row of the recent list.
   static const double row = 60;
@@ -114,11 +109,6 @@ class HomeScreen extends ConsumerWidget {
                 below: 288.5,
                 child: _Refused(failure: failure),
               ),
-              // Nothing, deliberately: the shell has taken over and this
-              // frame is on its way out. A spinner here would be an
-              // animation that never ends, because nothing is coming —
-              // which is also what made a widget test hang.
-              HomeOpened() => const SizedBox.shrink(),
             },
           ),
           const _StatusStrip(),
@@ -241,7 +231,7 @@ class _Welcome extends ConsumerWidget {
               child: _Secondary(label: 'Clone from URL'),
             ),
             SizedBox(width: TomMetrics.padTight),
-            _Chip(label: 'M3'),
+            MilestoneChip(label: 'M3'),
           ],
         ),
         if (recents.isNotEmpty) ...<Widget>[
@@ -528,9 +518,7 @@ class _Primary extends StatelessWidget {
     properties
       ..add(StringProperty('label', label))
       ..add(DoubleProperty('width', width))
-      ..add(
-        ObjectFlagProperty<VoidCallback>.has('onPressed', onPressed),
-      );
+      ..add(ObjectFlagProperty<VoidCallback>.has('onPressed', onPressed));
   }
 
   @override
@@ -580,43 +568,6 @@ class _Secondary extends StatelessWidget {
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
       ),
       child: Text(label),
-    );
-  }
-}
-
-/// The milestone something arrives in.
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label});
-
-  /// The milestone.
-  final String label;
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(StringProperty('label', label));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final TomColors colors = TomColors.of(context);
-    return Container(
-      width: _Mock.chip,
-      height: _Mock.chipHeight,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        border: Border.all(color: colors.borderStrong),
-        borderRadius: BorderRadius.circular(_Mock.cardRadius),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 10,
-          height: 1.4,
-          fontWeight: FontWeight.w600,
-          color: colors.textMuted,
-        ),
-      ),
     );
   }
 }

@@ -9,6 +9,8 @@ import 'package:tom_desktop/bootstrap/panel_placement.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/theme/tom_colors.dart';
 import 'package:tom_desktop/theme/tom_metrics.dart';
+import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/tom_presentation.dart';
 
 /// The window: explorer, document area, aside and status bar, all at once.
 ///
@@ -135,27 +137,77 @@ class _Region extends StatelessWidget {
 }
 
 /// The bar above everything: what space is open, and the global actions.
-class _TopBar extends StatelessWidget {
+///
+/// The design writes it `repository / folder`, because a space is a folder
+/// and three checkouts all have a `docs/`. The folder is the emphasis and
+/// the repository the context, which is what the two weights say.
+///
+/// The branch control beside it, with Fetch and Push, arrives with M1 — it
+/// belongs to another product, and absent beats a control that cannot say
+/// which branch this is.
+class _TopBar extends ConsumerWidget {
   const _TopBar();
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: TomMetrics.topBar,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: TomMetrics.pad),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          'TOM',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: TomColors.of(context).textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final SpaceSessionState? session = ref.watch(spaceSessionProvider);
+    final TomColors colors = TomColors.of(context);
+    return SizedBox(
+      height: TomMetrics.topBar,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: TomMetrics.pad + _spaceInset,
+        ),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: session == null
+              // Nothing, which is what the design draws with no space open —
+              // and the shell only shows with one anyway.
+              ? const SizedBox.shrink()
+              : Row(
+                  children: <Widget>[
+                    Text(
+                      Space.nameOfFolder(session.space.repositoryRoot),
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.4,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        '/',
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.4,
+                          color: colors.textMuted,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      session.space.name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.4,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
+
+/// How much further in than the panels the chrome's own text sits.
+///
+/// Both bars carry it, and so does Home's status line: the name and the
+/// status read as one column down the left edge.
+const double _spaceInset = 4;
 
 /// The strip below everything: branch, ahead/behind, counts.
 class _StatusBar extends StatelessWidget {
@@ -178,7 +230,9 @@ class _StatusBar extends StatelessWidget {
       child: ColoredBox(
         color: colors.surfaceSunken,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: TomMetrics.padTight),
+          padding: const EdgeInsets.symmetric(
+            horizontal: TomMetrics.pad + _spaceInset,
+          ),
           child: Row(
             children: <Widget>[
               for (final PanelDescriptor panel in registry.at(

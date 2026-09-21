@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_desktop/brand/tom_wordmark.dart';
-import 'package:tom_desktop/home/home_screen.dart';
+import 'package:tom_desktop/screens/home/home_screen.dart';
 import 'package:tom_desktop/theme/tom_theme.dart';
+import 'package:tom_desktop/widgets/tom_wordmark.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 

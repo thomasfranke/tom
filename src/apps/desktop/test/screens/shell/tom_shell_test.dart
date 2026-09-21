@@ -2,33 +2,79 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tom_application/tom_application.dart';
+import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/bootstrap/core_module.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/panel_placement.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
-import 'package:tom_desktop/shell/tom_shell.dart';
+import 'package:tom_desktop/screens/shell/tom_shell.dart';
 import 'package:tom_desktop/theme/tom_colors.dart';
 import 'package:tom_desktop/theme/tom_metrics.dart';
 import 'package:tom_desktop/theme/tom_theme.dart';
+import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/tom_presentation.dart';
 
 void main() {
+  /// What the registry is built from, read when the shell first asks.
+  ///
+  /// A variable rather than an argument baked into an override, because the
+  /// container is made once per test: see [pumpShell].
+  List<TomModule> registered = const <TomModule>[CoreModule()];
+  late ProviderContainer container;
+
+  setUp(() {
+    registered = const <TomModule>[CoreModule()];
+    // One container per test, not one per mount: a test that pumps twice —
+    // the same shell in the other mode — would otherwise leave the first
+    // one alive, and a provider still scheduling its own disposal is a
+    // timer the test framework fails on.
+    container = ProviderContainer(
+      overrides: <Override>[
+        panelRegistryProvider.overrideWith(
+          (Ref ref) => PanelRegistry(registered),
+        ),
+        listSpaceEntriesProvider.overrideWithValue(
+          const ListSpaceEntries(
+            spaces: _NothingInIt(),
+            observability: _Silent(),
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+  });
+
   /// Mounts the shell with [modules] registered, in a window of [size].
+  ///
+  /// With [space] open when one is given, over a space that holds nothing:
+  /// these tests are about the layout and the chrome, and a tree with
+  /// content in it would make them about the tree
+  /// (`test/screens/file_tree/file_tree_panel_test.dart` is where that
+  /// lives).
+  ///
+  /// [modules] is read when the registry is first built, which is the first
+  /// mount — a second pump in the same test is the same shell in another
+  /// theme, never another set of panels.
   Future<void> pumpShell(
     WidgetTester tester, {
     List<TomModule> modules = const <TomModule>[CoreModule()],
     Size size = const Size(1280, 800),
     Brightness brightness = Brightness.light,
+    Space? space,
   }) async {
     tester.view
       ..physicalSize = size
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    registered = modules;
+    if (space != null) {
+      container.read(spaceSessionProvider.notifier).open(space);
+    }
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: <Override>[
-          panelRegistryProvider.overrideWithValue(PanelRegistry(modules)),
-        ],
+      UncontrolledProviderScope(
+        container: container,
         child: MaterialApp(theme: tomTheme(brightness), home: const TomShell()),
       ),
     );
@@ -173,6 +219,59 @@ void main() {
     });
   });
 
+  group('the chrome', () {
+    testWidgets('the top bar names the repository, then the folder', (
+      WidgetTester tester,
+    ) async {
+      // A space is a folder, not a repository (rule 12), and the folder alone
+      // is ambiguous: three checkouts all have a `docs/`.
+      await pumpShell(
+        tester,
+        space: Space(
+          root: '/code/app/docs',
+          repositoryRoot: '/code/app',
+          name: 'docs',
+        ),
+      );
+
+      expect(find.text('app'), findsOneWidget);
+      expect(find.text('docs'), findsOneWidget);
+      expect(
+        tester.getCenter(find.text('app')).dx,
+        lessThan(tester.getCenter(find.text('docs')).dx),
+      );
+    });
+
+    testWidgets('a repository opened at its own root says so once', (
+      WidgetTester tester,
+    ) async {
+      // Root and repositoryRoot are the same folder, and the design draws
+      // both halves anyway: `notes / notes` is the honest answer, and hiding
+      // one would make the bar mean two different things.
+      await pumpShell(
+        tester,
+        space: Space(
+          root: '/code/notes',
+          repositoryRoot: '/code/notes',
+          name: 'notes',
+        ),
+      );
+
+      expect(find.text('notes'), findsNWidgets(2));
+    });
+
+    testWidgets('with no space open the top bar carries no name', (
+      WidgetTester tester,
+    ) async {
+      // The shell only shows with a space open; a name invented for this
+      // state would be a name for a window nobody can reach.
+      await pumpShell(tester);
+
+      expect(find.text('/'), findsNothing);
+      expect(find.text('no space open'), findsOneWidget);
+    });
+  });
+
   group('the theme', () {
     testWidgets('both modes render, and differ', (WidgetTester tester) async {
       // A colour added in one mode without its counterpart is a bug, not a
@@ -191,6 +290,30 @@ void main() {
       expect(light.accent, isNot(dark.accent));
     });
   });
+}
+
+/// A space that holds nothing, so the explorer has nothing to draw.
+final class _NothingInIt implements SpaceRepository {
+  const _NothingInIt();
+
+  @override
+  Future<Result<Space>> open(String folder) async => throw UnimplementedError();
+
+  @override
+  Future<Result<List<SpaceEntry>>> entries(Space space) async =>
+      const Success<List<SpaceEntry>>(<SpaceEntry>[]);
+}
+
+/// The no-op observability, which is also the shipping default.
+final class _Silent implements Observability {
+  const _Silent();
+
+  @override
+  Future<void> capture(
+    Object error,
+    StackTrace stackTrace, {
+    required String layer,
+  }) async {}
 }
 
 /// A module that contributes exactly what it was given.

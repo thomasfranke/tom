@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/providers.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
-import 'package:tom_desktop/home/folder_picker.dart';
+import 'package:tom_desktop/screens/home/folder_picker.dart';
 import 'package:tom_infra/tom_infra.dart';
 
 /// A module that answers the folder dialog, and keeps its own preferences.
