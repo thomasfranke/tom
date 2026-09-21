@@ -21,6 +21,10 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # State, and one of only two packages above the pure Dart layers.
+  # Riverpod lives in presentation and here, never below (Decision 7).
+  flutter_riverpod: ^3.4.3
+
   # The block parser, and the verdict of Spike B
   # (docs/technical/decisions/019-...). It belongs in tom_infra behind a
   # capability contract when M0 builds the preview; it is here for now
@@ -49,6 +53,10 @@ dependencies:
     path: ../../packages/infra
   tom_presentation:
     path: ../../packages/presentation
+
+  # Window control: title, and a minimum size the layout holds together in
+  # (docs/product/workspace/doc.md).
+  window_manager: ^0.5.2
 
 dev_dependencies:
   flutter_lints: ^6.0.0

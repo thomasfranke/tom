@@ -1,56 +1,16 @@
 /// The composition root.
 ///
-/// This is the one place in the workspace allowed to know both a contract and
-/// the thing that satisfies it. Every other package receives its dependencies
-/// through constructors and never learns which implementation it was handed,
-/// which is the property the package graph exists to guarantee and what
-/// `src/test/architecture_test.dart` checks on every run.
+/// Three lines, and that is the claim: everything the app is made of arrives
+/// through [runTom], and a module added to that list is the only way to
+/// change what the app does without changing the app
+/// ([Decision 12](../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
+///
+/// The wiring itself lives in `bootstrap/`, where it can be read and tested;
+/// this file exists so that `flutter run` has an entrypoint and so that the
+/// shape of the entrypoint is obvious at a glance.
 library;
 
-import 'package:flutter/material.dart';
+import 'package:tom_desktop/bootstrap/run_tom.dart';
 
-/// Builds the object graph and starts the app.
-///
-/// Wiring goes here: construct the infrastructure implementations, hand them
-/// to the repositories, hand those to the use cases, and expose the result to
-/// presentation. Nothing is wired yet — the layers are empty by design, and
-/// the first thing to arrive is the extensible shell (M0, `docs/mvp.md`).
-void main() => runApp(const TomApp());
-
-/// The application shell.
-class TomApp extends StatelessWidget {
-  /// Creates the application shell.
-  const TomApp({super.key});
-
-  @override
-  Widget build(BuildContext context) => const MaterialApp(
-    title: 'TOM',
-    debugShowCheckedModeBanner: false,
-    home: _Placeholder(),
-  );
-}
-
-/// Deliberately not the app.
-///
-/// It exists so `flutter run` proves the workspace resolves and builds end to
-/// end. What replaces it is registered through modules rather than hardcoded
-/// here — see `docs/technical/flows.md`.
-class _Placeholder extends StatelessWidget {
-  const _Placeholder();
-
-  @override
-  Widget build(BuildContext context) => const Scaffold(
-    body: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Text('TOM', style: TextStyle(fontSize: 40)),
-          SizedBox(height: 8),
-          Text('Team-Oriented Markdown'),
-          SizedBox(height: 24),
-          Text('Skeleton only — no milestone has been built yet.'),
-        ],
-      ),
-    ),
-  );
-}
+/// Starts the app with no extra modules.
+void main() => runTom();

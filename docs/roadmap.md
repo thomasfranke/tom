@@ -22,7 +22,7 @@ Timebox: about one weekend each. Goal: decide, not build.
 
 **M0 — Foundation**
 
-- [ ] [Workspace](product/workspace/doc.md) — the panel layout: `runTom(modules: [])`, panels via `PanelDescriptor` ([flows](technical/flows.md#panels-are-registered-never-hardcoded)); `window_manager` for window control
+- [x] [Workspace](product/workspace/doc.md) — the panel layout, and the extension contract under it: `TomModule`, `PanelDescriptor`, `runTom(modules: [])` ([flows](technical/flows.md#panels-are-registered-never-hardcoded)); `window_manager` for the title and the minimum size. The built-in panels are registered by a `CoreModule` and are placeholders until the four items below replace them — which is a change to that list and to nothing else
 - [ ] [Home](product/home/doc.md) — open a folder, recent spaces, the not-a-repository error; `file_selector`, `shared_preferences`
 - [ ] [File tree](product/navigation/file-tree/doc.md) — `dart:io` directory listing + `path`, no new package
 - [ ] [Markdown preview](product/editor/markdown-preview/doc.md) — `markdown` (AST), `flutter_markdown_plus` (inline rendering), `re_highlight` (code highlighting)
