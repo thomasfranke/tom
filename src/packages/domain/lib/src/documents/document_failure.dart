@@ -40,6 +40,21 @@ sealed class DocumentFailure with _$DocumentFailure implements AppFailure {
     String path,
   ) = DocumentNotUtf8;
 
+  /// Reading or writing failed in a way the product has no name for.
+  ///
+  /// The typed fallback, in the same spirit as `GitCommandFailed`:
+  /// unexpected, but still a [DocumentFailure] rather than an exception, so
+  /// the guarantee that nothing throws across a boundary holds without
+  /// enumerating every way a disk can refuse. A variant promoted out of here
+  /// is a variant that earned a name.
+  const factory DocumentFailure.operationFailed(
+    /// The path, relative to the space root.
+    String path,
+
+    /// What the machine reported, verbatim. For diagnostics — never parsed.
+    String description,
+  ) = DocumentOperationFailed;
+
   /// The file changed on disk while there were unsaved local edits.
   ///
   /// Editing alongside VS Code is an expected use case, not an error

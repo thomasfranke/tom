@@ -7,6 +7,7 @@ library;
 
 export 'src/documents/document.dart';
 export 'src/documents/document_failure.dart';
+export 'src/documents/document_repository.dart';
 export 'src/git/author.dart';
 export 'src/git/branch.dart';
 export 'src/git/branch_name.dart';
@@ -22,3 +23,7 @@ export 'src/paths/repo_relative_path.dart';
 export 'src/paths/space_relative_path.dart';
 export 'src/search/search_failure.dart';
 export 'src/spaces/space.dart';
+export 'src/spaces/space_entry.dart';
+export 'src/spaces/space_entry_type.dart';
+export 'src/spaces/space_failure.dart';
+export 'src/spaces/space_repository.dart';

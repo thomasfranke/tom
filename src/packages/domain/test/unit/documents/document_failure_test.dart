@@ -9,6 +9,7 @@ void main() {
       DocumentNotFound(path: final String path) => 'Not found: $path',
       DocumentPermissionDenied(path: final String path) => 'Denied: $path',
       DocumentNotUtf8(path: final String path) => 'Not UTF-8: $path',
+      DocumentOperationFailed(path: final String path) => 'Failed: $path',
       DocumentExternalChangeConflict(path: final String path) =>
         'Conflict: $path',
     };
@@ -30,6 +31,10 @@ void main() {
         headline(const DocumentExternalChangeConflict('notes/a.md')),
         'Conflict: notes/a.md',
       );
+      expect(
+        headline(const DocumentOperationFailed('notes/a.md', 'EIO')),
+        'Failed: notes/a.md',
+      );
     });
   });
 
@@ -42,6 +47,8 @@ void main() {
     DocumentExternalChangeConflict conflictAt(String path) =>
         DocumentExternalChangeConflict(path);
     DocumentNotUtf8 notUtf8At(String path) => DocumentNotUtf8(path);
+    DocumentOperationFailed failedAt(String path, String description) =>
+        DocumentOperationFailed(path, description);
 
     test('same variant, same path', () {
       expect(notFoundAt('notes/a.md'), notFoundAt('notes/a.md'));
@@ -68,6 +75,10 @@ void main() {
       expect(deniedAt('notes/a.md'), isNot(deniedAt('notes/b.md')));
       expect(conflictAt('notes/a.md'), isNot(conflictAt('notes/b.md')));
       expect(notUtf8At('notes/a.md'), isNot(notUtf8At('notes/b.md')));
+      expect(
+        failedAt('notes/a.md', 'EIO'),
+        isNot(failedAt('notes/a.md', 'ENOSPC')),
+      );
     });
 
     test('the same path under a different variant is a different failure', () {

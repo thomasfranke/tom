@@ -87,13 +87,14 @@ extension DocumentFailurePatterns on DocumentFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( DocumentNotFound value)?  notFound,TResult Function( DocumentPermissionDenied value)?  permissionDenied,TResult Function( DocumentNotUtf8 value)?  notUtf8,TResult Function( DocumentExternalChangeConflict value)?  externalChangeConflict,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( DocumentNotFound value)?  notFound,TResult Function( DocumentPermissionDenied value)?  permissionDenied,TResult Function( DocumentNotUtf8 value)?  notUtf8,TResult Function( DocumentOperationFailed value)?  operationFailed,TResult Function( DocumentExternalChangeConflict value)?  externalChangeConflict,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case DocumentNotFound() when notFound != null:
 return notFound(_that);case DocumentPermissionDenied() when permissionDenied != null:
 return permissionDenied(_that);case DocumentNotUtf8() when notUtf8 != null:
-return notUtf8(_that);case DocumentExternalChangeConflict() when externalChangeConflict != null:
+return notUtf8(_that);case DocumentOperationFailed() when operationFailed != null:
+return operationFailed(_that);case DocumentExternalChangeConflict() when externalChangeConflict != null:
 return externalChangeConflict(_that);case _:
   return orElse();
 
@@ -112,13 +113,14 @@ return externalChangeConflict(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( DocumentNotFound value)  notFound,required TResult Function( DocumentPermissionDenied value)  permissionDenied,required TResult Function( DocumentNotUtf8 value)  notUtf8,required TResult Function( DocumentExternalChangeConflict value)  externalChangeConflict,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( DocumentNotFound value)  notFound,required TResult Function( DocumentPermissionDenied value)  permissionDenied,required TResult Function( DocumentNotUtf8 value)  notUtf8,required TResult Function( DocumentOperationFailed value)  operationFailed,required TResult Function( DocumentExternalChangeConflict value)  externalChangeConflict,}){
 final _that = this;
 switch (_that) {
 case DocumentNotFound():
 return notFound(_that);case DocumentPermissionDenied():
 return permissionDenied(_that);case DocumentNotUtf8():
-return notUtf8(_that);case DocumentExternalChangeConflict():
+return notUtf8(_that);case DocumentOperationFailed():
+return operationFailed(_that);case DocumentExternalChangeConflict():
 return externalChangeConflict(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -133,13 +135,14 @@ return externalChangeConflict(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( DocumentNotFound value)?  notFound,TResult? Function( DocumentPermissionDenied value)?  permissionDenied,TResult? Function( DocumentNotUtf8 value)?  notUtf8,TResult? Function( DocumentExternalChangeConflict value)?  externalChangeConflict,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( DocumentNotFound value)?  notFound,TResult? Function( DocumentPermissionDenied value)?  permissionDenied,TResult? Function( DocumentNotUtf8 value)?  notUtf8,TResult? Function( DocumentOperationFailed value)?  operationFailed,TResult? Function( DocumentExternalChangeConflict value)?  externalChangeConflict,}){
 final _that = this;
 switch (_that) {
 case DocumentNotFound() when notFound != null:
 return notFound(_that);case DocumentPermissionDenied() when permissionDenied != null:
 return permissionDenied(_that);case DocumentNotUtf8() when notUtf8 != null:
-return notUtf8(_that);case DocumentExternalChangeConflict() when externalChangeConflict != null:
+return notUtf8(_that);case DocumentOperationFailed() when operationFailed != null:
+return operationFailed(_that);case DocumentExternalChangeConflict() when externalChangeConflict != null:
 return externalChangeConflict(_that);case _:
   return null;
 
@@ -157,12 +160,13 @@ return externalChangeConflict(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path)?  notFound,TResult Function( String path)?  permissionDenied,TResult Function( String path)?  notUtf8,TResult Function( String path)?  externalChangeConflict,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path)?  notFound,TResult Function( String path)?  permissionDenied,TResult Function( String path)?  notUtf8,TResult Function( String path,  String description)?  operationFailed,TResult Function( String path)?  externalChangeConflict,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case DocumentNotFound() when notFound != null:
 return notFound(_that.path);case DocumentPermissionDenied() when permissionDenied != null:
 return permissionDenied(_that.path);case DocumentNotUtf8() when notUtf8 != null:
-return notUtf8(_that.path);case DocumentExternalChangeConflict() when externalChangeConflict != null:
+return notUtf8(_that.path);case DocumentOperationFailed() when operationFailed != null:
+return operationFailed(_that.path,_that.description);case DocumentExternalChangeConflict() when externalChangeConflict != null:
 return externalChangeConflict(_that.path);case _:
   return orElse();
 
@@ -181,12 +185,13 @@ return externalChangeConflict(_that.path);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path)  notFound,required TResult Function( String path)  permissionDenied,required TResult Function( String path)  notUtf8,required TResult Function( String path)  externalChangeConflict,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path)  notFound,required TResult Function( String path)  permissionDenied,required TResult Function( String path)  notUtf8,required TResult Function( String path,  String description)  operationFailed,required TResult Function( String path)  externalChangeConflict,}) {final _that = this;
 switch (_that) {
 case DocumentNotFound():
 return notFound(_that.path);case DocumentPermissionDenied():
 return permissionDenied(_that.path);case DocumentNotUtf8():
-return notUtf8(_that.path);case DocumentExternalChangeConflict():
+return notUtf8(_that.path);case DocumentOperationFailed():
+return operationFailed(_that.path,_that.description);case DocumentExternalChangeConflict():
 return externalChangeConflict(_that.path);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -201,12 +206,13 @@ return externalChangeConflict(_that.path);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path)?  notFound,TResult? Function( String path)?  permissionDenied,TResult? Function( String path)?  notUtf8,TResult? Function( String path)?  externalChangeConflict,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path)?  notFound,TResult? Function( String path)?  permissionDenied,TResult? Function( String path)?  notUtf8,TResult? Function( String path,  String description)?  operationFailed,TResult? Function( String path)?  externalChangeConflict,}) {final _that = this;
 switch (_that) {
 case DocumentNotFound() when notFound != null:
 return notFound(_that.path);case DocumentPermissionDenied() when permissionDenied != null:
 return permissionDenied(_that.path);case DocumentNotUtf8() when notUtf8 != null:
-return notUtf8(_that.path);case DocumentExternalChangeConflict() when externalChangeConflict != null:
+return notUtf8(_that.path);case DocumentOperationFailed() when operationFailed != null:
+return operationFailed(_that.path,_that.description);case DocumentExternalChangeConflict() when externalChangeConflict != null:
 return externalChangeConflict(_that.path);case _:
   return null;
 
@@ -409,6 +415,76 @@ class _$DocumentNotUtf8CopyWithImpl<$Res>
 @override @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
   return _then(DocumentNotUtf8(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class DocumentOperationFailed implements DocumentFailure {
+  const DocumentOperationFailed(this.path, this.description);
+  
+
+/// The path, relative to the space root.
+@override final  String path;
+/// What the machine reported, verbatim. For diagnostics — never parsed.
+ final  String description;
+
+/// Create a copy of DocumentFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$DocumentOperationFailedCopyWith<DocumentOperationFailed> get copyWith => _$DocumentOperationFailedCopyWithImpl<DocumentOperationFailed>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentOperationFailed&&(identical(other.path, path) || other.path == path)&&(identical(other.description, description) || other.description == description));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,path,description);
+
+@override
+String toString() {
+  return 'DocumentFailure.operationFailed(path: $path, description: $description)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $DocumentOperationFailedCopyWith<$Res> implements $DocumentFailureCopyWith<$Res> {
+  factory $DocumentOperationFailedCopyWith(DocumentOperationFailed value, $Res Function(DocumentOperationFailed) _then) = _$DocumentOperationFailedCopyWithImpl;
+@override @useResult
+$Res call({
+ String path, String description
+});
+
+
+
+
+}
+/// @nodoc
+class _$DocumentOperationFailedCopyWithImpl<$Res>
+    implements $DocumentOperationFailedCopyWith<$Res> {
+  _$DocumentOperationFailedCopyWithImpl(this._self, this._then);
+
+  final DocumentOperationFailed _self;
+  final $Res Function(DocumentOperationFailed) _then;
+
+/// Create a copy of DocumentFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? description = null,}) {
+  return _then(DocumentOperationFailed(
+null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

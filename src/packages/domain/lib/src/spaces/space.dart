@@ -107,6 +107,28 @@ abstract class Space with _$Space {
         : null;
   }
 
+  /// [absolutePath] as a path inside this space, or null when it is not one.
+  ///
+  /// The way back from what a directory listing reports: the filesystem
+  /// capability answers in absolute paths, because it knows nothing about
+  /// spaces. Null for the root itself, which names no entry, and for
+  /// anything outside the folder — including a sibling that merely shares a
+  /// prefix.
+  ///
+  /// Both sides are compared normalized, for the reason the constructor's
+  /// invariant gives; what comes back is spelled with `/`, like every other
+  /// [SpaceRelativePath].
+  SpaceRelativePath? relativize(String absolutePath) {
+    final String normalizedRoot = _normalize(root);
+    final String normalized = _normalize(absolutePath);
+    if (!normalized.startsWith('$normalizedRoot/')) {
+      return null;
+    }
+    return SpaceRelativePath.tryParse(
+      normalized.substring(normalizedRoot.length + 1),
+    );
+  }
+
   /// Where [path] is on disk.
   ///
   /// The only form the filesystem capability accepts, and the reason the

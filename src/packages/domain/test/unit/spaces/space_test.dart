@@ -141,6 +141,44 @@ void main() {
     });
   });
 
+  group('relativize', () {
+    test('turns what a listing reports back into a space path', () {
+      expect(
+        nested.relativize('/code/app/docs/adr/001.md')?.value,
+        'adr/001.md',
+      );
+    });
+
+    test('accepts the other platform spelling', () {
+      final Space windows = Space(
+        root: r'C:\code\app\docs',
+        repositoryRoot: r'C:\code\app',
+        name: 'docs',
+      );
+
+      expect(windows.relativize(r'C:\code\app\docs\a.md')?.value, 'a.md');
+      expect(windows.relativize('c:/code/app/docs/a.md')?.value, 'a.md');
+    });
+
+    test('answers null for the root itself, which names no entry', () {
+      expect(nested.relativize('/code/app/docs'), isNull);
+    });
+
+    test('answers null for anything outside the space', () {
+      expect(nested.relativize('/code/app/lib/main.dart'), isNull);
+      expect(nested.relativize('/etc/passwd'), isNull);
+    });
+
+    test('is not fooled by a sibling with a shared prefix', () {
+      expect(nested.relativize('/code/app/docs-old/a.md'), isNull);
+    });
+
+    test('round-trips with absolutePathOf', () {
+      final SpaceRelativePath path = SpaceRelativePath('adr/001.md');
+      expect(nested.relativize(nested.absolutePathOf(path)), path);
+    });
+  });
+
   group('absolutePathOf', () {
     test('joins onto the root the user opened', () {
       expect(
