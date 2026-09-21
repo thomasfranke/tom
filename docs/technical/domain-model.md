@@ -33,6 +33,10 @@ The two halves of the split above, as types. `SpaceRelativePath` is what the fil
 
 `Space` is the only converter: `toRepoRelative` prefixes, `toSpaceRelative` strips and answers **null** for a path the space does not contain. Null is an ordinary answer, not a failure — git reports the whole repository, so a status on a space opened at `docs/` routinely names source files the tree does not show.
 
+### `SpaceEntry`
+
+One line of the file tree: a `SpaceRelativePath` and what lives at it — file, directory, or a link, reported as itself because a listing never follows one. Deliberately not a `Document`: a listing knows where things are, not what is in them, and reading every file of a space to draw its tree is work a documentation tool cannot afford.
+
 ### `GitStatus`
 
 Parsed from `git status --porcelain=v2`: `branch`, `ahead`/`behind` against the tracked remote, `entries` — per-path state (modified / added / deleted / renamed / untracked / conflicted) — and `isDetached`.
@@ -51,6 +55,12 @@ Parsed from `git status --porcelain=v2`: `branch`, `ahead`/`behind` against the 
 The domain's git contract, fulfilled by `GitRepositoryImpl` in `tom_data` over the `GitClient` capability. Entities in, entities out — never process output: the implementation hands the text to a parser and the `GitClientFailure` to a translation that is exhaustive by construction. Every path on it is repository-relative, in both directions.
 
 `GitFailure` gained two variants the capability could already report and the domain could not name: `pushRejected` (its own outcome, because the product shows it as one) and `timedOut`. `GitDetachedHead` is produced by no command — git commits happily on a detached `HEAD`; it is a state `status()` reports and a use case refuses to act on.
+
+### `DocumentRepository` · `SpaceRepository`
+
+Two contracts, one per space, because they fail differently: a document that cannot be read sends the user to another document (`DocumentFailure`), a folder that cannot be read sends them to another space (`SpaceFailure` — `folderMissing`, `accessDenied`, `operationFailed`). Both are fulfilled in `tom_data` over the `Filesystem` capability, which works in absolute paths and knows nothing about spaces; `Space` is what converts, in both directions, and holding one is what makes a repository belong to a space.
+
+`SpaceRepository.entries()` carries the file tree's policy: **`.git/` is out and is never descended into**, every other dotfolder is in. Not descending is the load-bearing half — a recursive listing walks into `.git/` before anything can filter it, and a mature repository keeps more entries there than the product will ever show — so the walk goes one level at a time and decides before it descends. The result is depth-first and sorted, so a tree can be built by walking the list once.
 
 ### `DiffBlock`
 

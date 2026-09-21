@@ -5,7 +5,9 @@
 /// file is the whole public surface.
 library;
 
+export 'src/documents/document_repository_impl.dart';
 export 'src/git/git_branch_parser.dart';
 export 'src/git/git_log_parser.dart';
 export 'src/git/git_repository_impl.dart';
 export 'src/git/git_status_parser.dart';
+export 'src/spaces/space_repository_impl.dart';
