@@ -7,4 +7,5 @@ library;
 
 export 'src/git/git_branch_parser.dart';
 export 'src/git/git_log_parser.dart';
+export 'src/git/git_repository_impl.dart';
 export 'src/git/git_status_parser.dart';
