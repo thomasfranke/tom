@@ -2,10 +2,12 @@
 library;
 
 import 'package:flutter/widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/panel_placement.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+
+part 'panel_registry.g.dart';
 
 /// Every registered panel, by region.
 ///
@@ -82,9 +84,8 @@ void mergeSortByOrder(List<PanelDescriptor> panels) {
 /// Overridden by `runTom` at the root of the app. It has no default: a shell
 /// built without one is a wiring mistake, and failing loudly at startup is
 /// better than drawing an empty window.
-final Provider<PanelRegistry> panelRegistryProvider = Provider<PanelRegistry>(
-  (Ref ref) => throw StateError(
-    'No PanelRegistry in scope. The app starts through runTom(), which '
-    'installs one.',
-  ),
+@Riverpod(keepAlive: true)
+PanelRegistry panelRegistry(Ref ref) => throw StateError(
+  'No PanelRegistry in scope. The app starts through runTom(), which '
+  'installs one.',
 );
