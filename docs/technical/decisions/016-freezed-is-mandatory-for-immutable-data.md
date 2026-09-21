@@ -27,4 +27,4 @@ Every immutable data class that is an **entity, value object with more than one 
 
 ## Revisit when
 
-Spike B settles `Block`'s shape ([domain-model.md](../domain-model.md#block--the-central-unknown--spike-b)). If performance during parsing pushes `Block` toward a mutable builder, that is a documented exception then, not a reason to weaken this rule now.
+Spike B settled `Block`'s shape ([Decision 19](019-blocks-come-from-the-markdown-package.md), [domain-model.md](../domain-model.md#block)): a span, its text and its kind — three immutable fields, so this rule applies to it with nothing to except.

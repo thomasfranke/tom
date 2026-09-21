@@ -66,7 +66,7 @@ Presentation receives an ordered list of blocks, not a document. Each is rendere
 
 Rendering the document as one opaque widget tree would make the rendered diff impossible to express and would have to be undone at M2. Inline markdown *inside* a block is delegated to the markdown package, where CommonMark's real complexity lives; the app owns block-level layout only.
 
-Known hazard, and a question for Spike B: reference links and footnotes are defined at document scope, so a block rendered in isolation loses them unless the document's reference map travels with it ([domain model](domain-model.md)).
+That hazard is now measured ([Decision 19](decisions/019-blocks-come-from-the-markdown-package.md)): reference links and footnotes are defined at document scope, and they behave differently. **Reference links survive** — the parser's `linkReferences` map travels with the blocks and the output is identical. **Footnotes do not**: `[^ref]` in an isolated block renders as literal text, because its definition is a different block. Every other construct in this repository's 848 blocks renders identically alone. Deciding what the preview does about footnotes is M2's, and there is a failing case waiting for it.
 
 ## Panels are registered, never hardcoded
 

@@ -14,12 +14,12 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 
 | Package | License | Role |
 |---|---|---|
-| `markdown` | BSD-3 | The official Dart parser; exposes an AST (`Node`/`Element`) — the foundation of the preview and of diff v1 |
+| `markdown` | BSD-3 | The official Dart parser — **chosen**, `^7.3.0` ([Decision 19](decisions/019-blocks-come-from-the-markdown-package.md)). The AST has no source positions; they are recovered by extending each block syntax |
 | `flutter_markdown_plus` | BSD | Renders the inline content **inside** a block; block-level layout and decoration are ours, which is what the rendered diff needs ([flows](flows.md#the-preview-is-assembled-block-by-block)) |
 | `diff_match_patch` or `diffutil_dart` | Apache/MIT | Textual diff (Myers) for diff v0 and block alignment in v1 |
 | `re_highlight` | MIT | Syntax highlighting for code blocks in the preview — no longer a choice between two, since `re_editor` already brings it ([Decision 18](decisions/018-source-mode-uses-re-editor.md)) |
 
-> If Spike B rules out the `markdown` package, the named fallbacks are our own block parser and, failing that, a Rust parser over `dart:ffi` ([Decision 13](decisions/013-stack-is-flutter-and-dart.md)). Neither is in the stack today.
+> Spike B is answered and **neither fallback is taken** — no hand-written block parser, no Rust parser over `dart:ffi` ([Decision 13](decisions/013-stack-is-flutter-and-dart.md)). What the package costs instead is one subclass per block syntax to recover positions, and a footnote in an isolated block that renders as literal text.
 
 ## Editor (source mode)
 

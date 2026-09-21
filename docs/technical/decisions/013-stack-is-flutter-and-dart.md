@@ -16,7 +16,7 @@ A web stack inside a native shell is genuinely stronger on the two hardest probl
 
 | | Web stack | Dart |
 |---|---|---|
-| Markdown parsing | `remark` / `mdast` exposes source positions natively | Whether the `markdown` package does is the entire question of **Spike B** |
+| Markdown parsing | `remark` / `mdast` exposes source positions natively | The `markdown` package does not — but they are recoverable, which is what **Spike B** found ([Decision 19](019-blocks-come-from-the-markdown-package.md)) |
 | Source editor | CodeMirror 6 and Monaco are mature and desktop-grade | `re_editor` is a promising package, still under test in **Spike A** |
 | Rendering | `markdown-it` plus CSS; KaTeX and mermaid are one dependency away | A widget tree we assemble ourselves |
 | PDF | Falls out of the webview | A separate problem entirely |
@@ -37,7 +37,7 @@ Three things decide it anyway.
 
 Choosing Dart does not forfeit the Rust ecosystem. A crate compiles to a native library and is reached over `dart:ffi` behind an ordinary infrastructure contract ([Decision 7](007-external-dependencies-behind-contracts.md)). That matters most for markdown parsing, where `pulldown-cmark`, `comrak` and `markdown-rs` all expose source positions that the Dart ecosystem may not.
 
-It is the **third** option for Spike B, behind the `markdown` package alone and our own block parser with inline delegated to it ([domain model](../domain-model.md)). It is not the plan, and the price is real: a Rust toolchain in CI for every target, cross-compilation, and the loss of `dart test` as a self-contained proof that the core is framework-independent. It is named here so that it is not discovered *after* a hand-written parser has already been paid for.
+It was the **third** option for Spike B, behind the `markdown` package alone and our own block parser with inline delegated to it. The spike took the first ([Decision 19](019-blocks-come-from-the-markdown-package.md)), so this stays hypothetical. The price would have been real: a Rust toolchain in CI for every target, cross-compilation, and the loss of `dart test` as a self-contained proof that the core is framework-independent. It is named here so that it is not discovered *after* a hand-written parser has already been paid for.
 
 FFI is on this project's path regardless — `libgit2` is the scheduled implementation of `GitClientInterface` for mobile ([Decision 2](002-git-via-system-binary.md)).
 

@@ -1,6 +1,6 @@
 # Domain model (emerging)
 
-> **Partial, and deliberately so.** Several entities can only be settled by experiment — the shape of `Block` is an *output* of Spike B, not an input to it. What follows is what is **settled**, what is **open with the question formulated**, and how the gaps get filled. A partial, honest model is more useful than a complete, invented one.
+> **Partial, and deliberately so.** Several entities can only be settled by experiment, never by a design session — `Block` was the largest of them, and it is now settled by measurement rather than by argument ([Decision 19](decisions/019-blocks-come-from-the-markdown-package.md)). What follows is what is **settled**, what is **open with the question formulated**, and how the gaps get filled. A partial, honest model is more useful than a complete, invented one.
 
 Which DDD patterns apply here, and which are explicitly out: [Decision 15](decisions/015-ddd-is-applied-selectively.md).
 
@@ -62,25 +62,29 @@ Two contracts, one per space, because they fail differently: a document that can
 
 `SpaceRepository.entries()` carries the file tree's policy: **`.git/` is out and is never descended into**, every other dotfolder is in. Not descending is the load-bearing half — a recursive listing walks into `.git/` before anything can filter it, and a mature repository keeps more entries there than the product will ever show — so the walk goes one level at a time and decides before it descends. The result is depth-first and sorted, so a tree can be built by walking the list once.
 
+### `Block`
+
+**Settled by [Spike B](decisions/019-blocks-come-from-the-markdown-package.md).** A block is *where it is, what it says, and what kind of thing it is* — not a package AST node, which could not cross into the domain anyway ([Decision 7](decisions/007-external-dependencies-behind-contracts.md)).
+
+| Field | Type | Notes |
+|---|---|---|
+| `startLine` · `endLine` | int | Zero-based, inclusive, into the document's lines. Recovered from the parser, which does not report them — see the decision for how, and for why it is subclasses rather than wrappers |
+| `source` | string | The document's own lines for that span. A slice, not a second copy: raw text and structure without duplicated state |
+| `kind` | enum | paragraph · heading · list · table · code · quote · rule · html |
+
+**Granularity is top level.** A list is one block and a table is one block. Measured over this repository: 848 blocks across 2277 lines, 668 of them a single line, none longer than 20. Sub-block granularity is a diff v2 question and starts from here.
+
+**There is no identity.** A heading path is not one — 288 distinct paths for 848 blocks, 285 of them holding more than one block — so `BlockDiffer` aligns by position and similarity, and may use the heading path only as a coarse bucket. This is the constraint that shapes the differ.
+
+**Structure is re-derived, not stored.** Parsing a block's span costs nothing measurable (0–3% over a plain parse for the whole document), so a block that needs rendering is parsed then, with the document's link reference map in scope.
+
+**One construct does not survive isolation: footnotes.** A block carrying `[^ref]` renders it as literal text, because the definition is another block and the reference map does not carry it. Reference links do survive, because `linkReferences` can travel with the block. The parser also synthesises a footnotes `section` node that corresponds to no lines at all, so a block list must tolerate a node with no span. What to do about footnotes is M2's, not settled here.
+
 ### `DiffBlock`
 
 The output of `BlockDiffer` and the reason the product exists: a block paired with a classification — `unchanged` · `added` · `removed` · `modified`. `modified` also carries the before and after sides, so the UI can render intra-block changes later (diff v2).
 
 ## Open — with the question formulated
-
-### `Block` — the central unknown → **Spike B**
-
-Our own entity, translated from the `markdown` package AST by a parser in `tom_data` ([Decision 7](decisions/007-external-dependencies-behind-contracts.md): the domain never sees a package type). What it contains determines what `BlockDiffer` can do. In order of consequence:
-
-1. **Granularity.** Is a nested list item its own block, or part of the parent list? A table row, or the whole table? Fine granularity gives precise diffs but noisy alignment; coarse gives clean alignment but "the whole list changed".
-2. **Source positions.** Does the AST expose offsets reliably? Without them, mapping a rendered block back to the source is guesswork.
-3. **Raw text vs. structure.** Similarity comparison needs text; rendering needs structure; keeping both duplicates state.
-4. **Identity.** Is there anything stable to identify a block across revisions (a heading path, a content hash), or is alignment purely positional + similarity?
-5. **Isolated rendering.** Can one block be rendered given only its source? Reference links and footnotes are document-scoped, so a block alone loses them unless the reference map travels with it. This decides whether the preview can be assembled block by block ([flows](flows.md)).
-
-**If the package cannot carry it**, two fallbacks in order: our own block-level parser (line-based rules for paragraph, heading, list, code fence and table, with inline delegated to the package, where CommonMark's real complexity lives); then, only if that fails, a Rust parser over `dart:ffi` ([Decision 13](decisions/013-stack-is-flutter-and-dart.md)), where `pulldown-cmark`, `comrak` and `markdown-rs` all expose source positions. A complete hand-written CommonMark parser is not on the list.
-
-Until answered, `Block` stays a placeholder. **Do not design `BlockDiffer` before the spike reports.**
 
 ### Space configuration → settled for now: nothing is written
 
@@ -100,6 +104,6 @@ Not modelled yet. Open: how a link resolves (relative to the space? a filename a
 
 ## How this gets filled in
 
-By evidence, not by a design session: **Spike B** answers `Block`; **M0** answers document loading and dirty state; **M2** refines `DiffBlock`; **M3** brings `Wikilink`; the conflict model waits for post-MVP.
+By evidence, not by a design session: **Spike B** answered `Block` ([Decision 19](decisions/019-blocks-come-from-the-markdown-package.md)); **M0** answers document loading and dirty state; **M2** refines `DiffBlock`; **M3** brings `Wikilink`; the conflict model waits for post-MVP.
 
 When a milestone or spike answers a question, move it from *Open* to *Settled* in the same PR that implements it, and delete the question. The document shrinks in uncertainty as it grows in content.

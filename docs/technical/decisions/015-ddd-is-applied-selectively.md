@@ -22,7 +22,7 @@ Adopt the tactical patterns that earn their keep, and say plainly which ones do 
 
 **Repositories as a domain concept.** `DocumentRepository` is declared in `tom_domain` and speaks in entities. It is not the same thing as an infrastructure contract: `GitClient` and `FileSystem` speak in processes and bytes, live in `tom_infra` with their implementations ([Decision 7](007-external-dependencies-behind-contracts.md)), and `tom_data` is where the two meet. The domain therefore knows neither git nor disk, and infrastructure never learns what a `Document` is.
 
-**Domain services** for logic that belongs to no single entity. `BlockDiffer` is the example, and possibly the only one for a long while. Its shape waits on Spike B ([domain model](../domain-model.md)).
+**Domain services** for logic that belongs to no single entity. `BlockDiffer` is the example, and possibly the only one for a long while. Spike B has since settled what it works on ([Decision 19](019-blocks-come-from-the-markdown-package.md)): blocks carry no stable identity, so it aligns by position and similarity.
 
 **Entities with identity.** A `Document` is identified by its path, not by its content — two files with identical text are two documents, and the same file edited is still the same document.
 

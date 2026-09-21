@@ -21,6 +21,12 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # The block parser, and the verdict of Spike B
+  # (docs/technical/decisions/019-...). It belongs in tom_infra behind a
+  # capability contract when M0 builds the preview; it is here for now
+  # because the spike that chose it is here.
+  markdown: ^7.3.0
+
   # Source mode, and the highlighting rules it reads markdown through —
   # the verdict of Spike A (docs/technical/decisions/018-...). Pinned to a
   # minor: the package tracks Flutter closely, and a Flutter upgrade is the
