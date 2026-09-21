@@ -25,6 +25,7 @@ Internal format (known in the community as an *ADR — Architecture Decision Rec
 | [015](015-ddd-is-applied-selectively.md) | DDD is applied selectively |
 | [016](016-freezed-is-mandatory-for-immutable-data.md) | Freezed is mandatory for immutable data classes |
 | [017](017-tom-is-the-entry-point-and-make-is-a-face.md) | `tom` is the development entry point; `make` is a face over it |
+| [018](018-source-mode-uses-re-editor.md) | Source mode is built on `re_editor` (the verdict of Spike A) |
 
 ---
 

@@ -21,6 +21,13 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Source mode, and the highlighting rules it reads markdown through —
+  # the verdict of Spike A (docs/technical/decisions/018-...). Pinned to a
+  # minor: the package tracks Flutter closely, and a Flutter upgrade is the
+  # moment to check it first.
+  re_editor: ^0.10.0
+  re_highlight: ^0.0.3
+
   # The whole graph, because this is the composition root: the one place
   # allowed to see an implementation and hand it to whatever declared the
   # contract. No package below may depend on a package above it.

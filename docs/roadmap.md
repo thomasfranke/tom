@@ -13,7 +13,7 @@ Phase 3 · Mobile          iOS and Android, post-1.0 (Decision 8 reserves the sh
 
 Timebox: about one weekend each. Goal: decide, not build.
 
-- [ ] **Spike A — Editor.** Can `re_editor` carry source mode? Test with a 2000+ line md file, desktop shortcuts, selection, find/replace, typing latency. Fallback: a custom `TextField`.
+- [x] **Spike A — Editor.** ✅ **`re_editor` carries source mode** — [Decision 18](technical/decisions/018-source-mode-uses-re-editor.md). Measured against the fallback on the same machine and document: 4.4ms build p50 while typing and 0.6% of frames over budget, against the `TextField`'s 38.8ms and 96.2%. It holds at ten times the file size the spike asked for. The fallback is withdrawn; what the package does *not* ship — the find panel and the selection toolbar — is ours to write.
 - [ ] **Spike B — The `markdown` AST.** Does the package AST (`Node`/`Element`) carry enough information (source positions, block granularity) for the block diff (v1)? Test: parse two sibling md files, align blocks, classify unchanged/added/removed/modified. Fallback: our own parser, or enriching the AST through post-processing. The questions this spike must answer are listed in [the domain model](technical/domain-model.md); the shape of `Block` is its main deliverable, and whether a block can be rendered in isolation decides how the preview is assembled.
 
 ### Phase 1 — MVP
@@ -80,6 +80,7 @@ Feedback comes from use, not from research. The maintainer is the first user and
 - [ ] Binary signing (Windows/macOS certificate cost) — needed for launch, or later?
 - [ ] PDF/HTML export package — not yet chosen (M3, [Decision 13](technical/decisions/013-stack-is-flutter-and-dart.md))
 - [ ] Packaging tooling per platform: msix / dmg / AppImage / deb — not yet chosen (M3)
+- [ ] **macOS profile and release builds are blocked** by a `flutter_tools` 3.44.5 / Xcode 27 incompatibility: the tool verifies the engine framework with `lipo <file> -verify_arch arm64 x86_64`, and Xcode 27's `lipo` refuses more than one architecture there. Debug builds are unaffected. Blocks M3 packaging and any release-mode measurement; found during Spike A ([Decision 18](technical/decisions/018-source-mode-uses-re-editor.md))
 
 ---
 

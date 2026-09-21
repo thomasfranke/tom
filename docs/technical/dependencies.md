@@ -17,7 +17,7 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 | `markdown` | BSD-3 | The official Dart parser; exposes an AST (`Node`/`Element`) — the foundation of the preview and of diff v1 |
 | `flutter_markdown_plus` | BSD | Renders the inline content **inside** a block; block-level layout and decoration are ours, which is what the rendered diff needs ([flows](flows.md#the-preview-is-assembled-block-by-block)) |
 | `diff_match_patch` or `diffutil_dart` | Apache/MIT | Textual diff (Myers) for diff v0 and block alignment in v1 |
-| `re_highlight` or `flutter_highlight` | MIT | Syntax highlighting for code blocks in the preview |
+| `re_highlight` | MIT | Syntax highlighting for code blocks in the preview — no longer a choice between two, since `re_editor` already brings it ([Decision 18](decisions/018-source-mode-uses-re-editor.md)) |
 
 > If Spike B rules out the `markdown` package, the named fallbacks are our own block parser and, failing that, a Rust parser over `dart:ffi` ([Decision 13](decisions/013-stack-is-flutter-and-dart.md)). Neither is in the stack today.
 
@@ -25,8 +25,10 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 
 | Package | License | Role |
 |---|---|---|
-| `re_editor` | MIT | Desktop-oriented code editor — main candidate (**Spike A**, see [roadmap.md](../roadmap.md)) |
-| *(fallback)* custom `TextField` | — | Plan B if the spike fails |
+| `re_editor` | MIT | Desktop-oriented code editor — **chosen**, `^0.10.0` ([Decision 18](decisions/018-source-mode-uses-re-editor.md)) |
+| `re_highlight` | MIT | Syntax highlighting rules and themes; `re_editor` reads markdown through it |
+
+> Spike A is answered. The fallback — a plain `TextField` — is **withdrawn**: measured side by side it misses 96% of frames while typing a 131KB document, against `re_editor`'s 0.6%. What `re_editor` does not ship is the find/replace panel and the selection toolbar; those are ours, and they have to be in TOM's visual language anyway.
 
 ## Local infrastructure
 
