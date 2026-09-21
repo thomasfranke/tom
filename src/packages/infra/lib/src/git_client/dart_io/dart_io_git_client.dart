@@ -141,8 +141,35 @@ final class DartIoGitClient implements GitClient {
       _gitVoid(<String>['add', '--', ...paths.map(_pathspec)]);
 
   @override
-  Future<Result<void>> unstage(List<String> paths) =>
-      _gitVoid(<String>['restore', '--staged', '--', ...paths.map(_pathspec)]);
+  Future<Result<void>> unstage(List<String> paths) async {
+    final Result<void> result = await _gitVoid(<String>[
+      'restore',
+      '--staged',
+      '--',
+      ...paths.map(_pathspec),
+    ]);
+    // `restore --staged` rewrites the index from `HEAD`, so before the first
+    // commit there is nothing to restore from and git calls it fatal — on a
+    // freshly initialised repository, which is a normal state for a space.
+    // Every staged path is an addition there by definition, and taking it
+    // back out of the index is exactly what unstaging means.
+    // `--ignore-unmatch` keeps the two branches behaving alike: `restore`
+    // succeeds on a path that was not staged, and so must this.
+    return switch (result) {
+      Failure<void>(failure: GitClientCommandFailed(:final String stderr))
+          when _unbornHead.hasMatch(stderr) =>
+        _gitVoid(<String>[
+          'rm',
+          '--cached',
+          '--quiet',
+          '-r',
+          '--ignore-unmatch',
+          '--',
+          ...paths.map(_pathspec),
+        ]),
+      _ => result,
+    };
+  }
 
   @override
   Future<Result<void>> commit(String message) =>
@@ -426,9 +453,13 @@ final class DartIoGitClient implements GitClient {
     multiLine: true,
   );
 
-  /// The branch exists but carries no commit yet.
+  /// `HEAD` names no commit — the branch exists but carries none yet.
+  ///
+  /// Three phrasings for one state: `log` says the first, `rev-parse` the
+  /// second, and `restore --staged` the third.
   static final RegExp _unbornHead = RegExp(
-    'does not have any commits yet|bad default revision',
+    r'does not have any commits yet|bad default revision'
+    r"|could not resolve 'HEAD'",
     caseSensitive: false,
   );
 }

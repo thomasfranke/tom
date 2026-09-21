@@ -297,6 +297,34 @@ void main() {
       expect(File('$repoPath/b.md').existsSync(), isTrue);
     });
 
+    test('unstaging works before the first commit', () async {
+      // The state every new space starts in. `restore --staged` rebuilds the
+      // index from `HEAD`, which does not exist yet, so the client has to
+      // take the path back out of the index another way.
+      final String fresh = '$base/fresh';
+      initRepository(fresh);
+      File('$fresh/b.md').writeAsStringSync('# B\n');
+      final DartIoGitClient client = DartIoGitClient(workingDirectory: fresh);
+      await client.stage(<String>['b.md']);
+
+      expect(await client.unstage(<String>['b.md']), isA<Success<void>>());
+
+      expect(valueOf(await client.status()), contains('? b.md'));
+      expect(File('$fresh/b.md').existsSync(), isTrue);
+    });
+
+    test('unstaging a path that was not staged is not a failure', () async {
+      // `restore --staged` succeeds on one, so the unborn-HEAD path must
+      // too — otherwise the same gesture fails depending on whether the
+      // repository has a commit.
+      final String fresh = '$base/fresh-untouched';
+      initRepository(fresh);
+      File('$fresh/b.md').writeAsStringSync('# B\n');
+      final DartIoGitClient client = DartIoGitClient(workingDirectory: fresh);
+
+      expect(await client.unstage(<String>['b.md']), isA<Success<void>>());
+    });
+
     test('committing nothing fails with GitClientCommandFailed', () async {
       final AppFailure failure = failureOf(await client.commit('Empty'));
 
