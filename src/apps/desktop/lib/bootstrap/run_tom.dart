@@ -8,8 +8,8 @@ import 'package:tom_desktop/bootstrap/core_module.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/bootstrap/providers.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
-import 'package:tom_desktop/home/home_screen.dart';
-import 'package:tom_desktop/shell/tom_shell.dart';
+import 'package:tom_desktop/screens/home/home_screen.dart';
+import 'package:tom_desktop/screens/shell/tom_shell.dart';
 import 'package:tom_desktop/theme/tom_metrics.dart';
 import 'package:tom_desktop/theme/tom_theme.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -129,16 +129,17 @@ class TomApp extends StatelessWidget {
 ///
 /// **Not navigation.** There is no route and no stack: with a space open the
 /// window *is* the shell, and without one it is Home ([Decision
-/// 6](../../../../../docs/technical/decisions/006-no-navigation-package.md)
-/// keeps `Navigator` for dialogs). Which of the two is showing is a fact
-/// about the session, so it is read from the state rather than pushed onto
-/// anything.
+/// 6](../../../../../docs/technical/decisions/006-no-navigation-package.md)).
+///
+/// The question goes to the session and not to Home, which is a screen and
+/// has no business knowing what replaced it ([Decision
+/// 9](../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).
 class _WindowContents extends ConsumerWidget {
   const _WindowContents();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
-      ref.watch(homeProvider) is HomeOpened
-      ? const TomShell()
-      : const HomeScreen();
+      ref.watch(spaceSessionProvider) == null
+      ? const HomeScreen()
+      : const TomShell();
 }

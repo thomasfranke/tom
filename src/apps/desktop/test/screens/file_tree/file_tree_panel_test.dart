@@ -1,0 +1,344 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:tom_application/tom_application.dart';
+import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
+import 'package:tom_desktop/theme/tom_colors.dart';
+import 'package:tom_desktop/theme/tom_metrics.dart';
+import 'package:tom_desktop/theme/tom_theme.dart';
+import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/tom_presentation.dart';
+
+void main() {
+  late _Spaces spaces;
+
+  final Space docs = Space(
+    root: '/code/app/docs',
+    repositoryRoot: '/code/app',
+    name: 'docs',
+  );
+
+  SpaceEntry entry(String path, SpaceEntryType type) =>
+      SpaceEntry(path: SpaceRelativePath(path), type: type);
+
+  /// A space with a folder, a document inside it, an image and a link.
+  final List<SpaceEntry> held = <SpaceEntry>[
+    entry('guides', SpaceEntryType.directory),
+    entry('guides/writing.md', SpaceEntryType.file),
+    entry('logo.svg', SpaceEntryType.file),
+    entry('elsewhere', SpaceEntryType.link),
+    entry('index.md', SpaceEntryType.file),
+  ];
+
+  late ProviderContainer container;
+
+  setUp(() {
+    spaces = _Spaces();
+    // One container per test, not one per mount: a test that pumps twice —
+    // the same panel in the other mode — would otherwise leave the first
+    // one alive, and a provider still scheduling its own disposal is a timer
+    // the test framework fails on.
+    container = ProviderContainer(
+      overrides: <Override>[
+        listSpaceEntriesProvider.overrideWithValue(
+          ListSpaceEntries(spaces: spaces, observability: const _Silent()),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+  });
+
+  /// Mounts the panel at the width the shell gives it, with [space] open.
+  ///
+  /// The panel is placed at the left edge and nowhere else, because the test
+  /// below measures indentation in absolute pixels — the design fixes where
+  /// a row's text starts, and that is only checkable against a known origin.
+  Future<void> pumpPanel(
+    WidgetTester tester, {
+    Space? space,
+    Brightness brightness = Brightness.light,
+  }) async {
+    tester.view
+      ..physicalSize = const Size(1280, 800)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    if (space != null) {
+      container.read(spaceSessionProvider.notifier).open(space);
+    }
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: tomTheme(brightness),
+          home: const Scaffold(
+            body: Row(
+              children: <Widget>[
+                SizedBox(width: TomMetrics.explorer, child: FileTreePanel()),
+                Expanded(child: SizedBox.shrink()),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  /// The style the row showing [name] is drawn in.
+  TextStyle styleOf(WidgetTester tester, String name) =>
+      tester.widget<Text>(find.text(name)).style!;
+
+  group('the panel itself', () {
+    testWidgets('it names itself, and offers search as an M2 control', (
+      WidgetTester tester,
+    ) async {
+      // On screen and disabled rather than absent, the way Home draws
+      // cloning: the design puts it here, and a control that appears later
+      // moves everything under it.
+      await pumpPanel(tester);
+
+      expect(find.text('EXPLORER'), findsOneWidget);
+      expect(find.text('Search'), findsOneWidget);
+      expect(find.text('M2'), findsOneWidget);
+    });
+
+    testWidgets('with no space open it shows nothing else at all', (
+      WidgetTester tester,
+    ) async {
+      await pumpPanel(tester);
+
+      expect(find.byType(ListView), findsNothing);
+      expect(find.text('This folder holds nothing yet.'), findsNothing);
+    });
+  });
+
+  group('with a space open', () {
+    testWidgets('every entry is on screen, folders and files alike', (
+      WidgetTester tester,
+    ) async {
+      // The tree shows what the folder holds, `.git/` aside — which the walk
+      // never even descends into (docs/product/navigation/file-tree/doc.md).
+      spaces.answer = Success<List<SpaceEntry>>(held);
+
+      await pumpPanel(tester, space: docs);
+
+      expect(find.text('guides'), findsOneWidget);
+      expect(find.text('writing.md'), findsOneWidget);
+      expect(find.text('logo.svg'), findsOneWidget);
+      expect(find.text('elsewhere'), findsOneWidget);
+      expect(find.text('index.md'), findsOneWidget);
+    });
+
+    testWidgets('a row is drawn one indent in for each level', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = Success<List<SpaceEntry>>(held);
+
+      await pumpPanel(tester, space: docs);
+
+      expect(tester.getTopLeft(find.text('guides')).dx, TomMetrics.pad);
+      expect(
+        tester.getTopLeft(find.text('writing.md')).dx,
+        TomMetrics.pad + 16,
+      );
+    });
+
+    testWidgets('an open folder points down, a closed one points right', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = Success<List<SpaceEntry>>(held);
+
+      await pumpPanel(tester, space: docs);
+      expect(find.text('▾'), findsOneWidget);
+
+      await tester.tap(find.text('guides'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('▸'), findsOneWidget);
+      // And what was inside it is gone.
+      expect(find.text('writing.md'), findsNothing);
+    });
+
+    testWidgets('a folder opens again on a second click', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = Success<List<SpaceEntry>>(held);
+      await pumpPanel(tester, space: docs);
+
+      await tester.tap(find.text('guides'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('guides'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('writing.md'), findsOneWidget);
+    });
+
+    testWidgets('a document opens, and the row says it is the current one', (
+      WidgetTester tester,
+    ) async {
+      // The accent marks *the current thing* and the weight says it a second
+      // time: colour is never the only signal
+      // (docs/technical/design/visual-language.md).
+      spaces.answer = Success<List<SpaceEntry>>(held);
+      await pumpPanel(tester, space: docs);
+
+      await tester.tap(find.text('index.md'));
+      await tester.pumpAndSettle();
+
+      final TomColors colors = TomColors.of(
+        tester.element(find.byType(FileTreePanel)),
+      );
+      expect(styleOf(tester, 'index.md').color, colors.accent);
+      expect(styleOf(tester, 'index.md').fontWeight, FontWeight.w600);
+      expect(styleOf(tester, 'guides').color, isNot(colors.accent));
+    });
+
+    testWidgets('a file the editor cannot open is muted and does not react', (
+      WidgetTester tester,
+    ) async {
+      // Two signals, not one: it is quieter, and it has no hover or press of
+      // its own — a row that answered a click with nothing would read as the
+      // app being broken.
+      spaces.answer = Success<List<SpaceEntry>>(held);
+      await pumpPanel(tester, space: docs);
+      final TomColors colors = TomColors.of(
+        tester.element(find.byType(FileTreePanel)),
+      );
+
+      expect(styleOf(tester, 'logo.svg').color, colors.textMuted);
+      expect(
+        find.ancestor(
+          of: find.text('logo.svg'),
+          matching: find.byType(InkWell),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.ancestor(
+          of: find.text('index.md'),
+          matching: find.byType(InkWell),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a link is drawn as itself and opens nothing', (
+      WidgetTester tester,
+    ) async {
+      // The listing never followed it, so nothing knows what is on the other
+      // side — or whether there is one.
+      spaces.answer = Success<List<SpaceEntry>>(held);
+      await pumpPanel(tester, space: docs);
+      final TomColors colors = TomColors.of(
+        tester.element(find.byType(FileTreePanel)),
+      );
+
+      expect(styleOf(tester, 'elsewhere').color, colors.textMuted);
+      expect(
+        find.ancestor(
+          of: find.text('elsewhere'),
+          matching: find.byType(InkWell),
+        ),
+        findsNothing,
+      );
+    });
+  });
+
+  group('when there is nothing to show', () {
+    testWidgets('an empty space says so, instead of looking broken', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = const Success<List<SpaceEntry>>(<SpaceEntry>[]);
+
+      await pumpPanel(tester, space: docs);
+
+      expect(find.text('This folder holds nothing yet.'), findsOneWidget);
+    });
+
+    testWidgets('a folder that is gone is named as that, not as an error', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = const Failure<List<SpaceEntry>>(
+        SpaceFolderMissing('/code/app/docs'),
+      );
+
+      await pumpPanel(tester, space: docs);
+
+      expect(find.text('This folder is no longer there.'), findsOneWidget);
+    });
+
+    testWidgets('a folder TOM may not read says which problem it is', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = const Failure<List<SpaceEntry>>(
+        SpaceAccessDenied('/code/app/docs'),
+      );
+
+      await pumpPanel(tester, space: docs);
+
+      expect(
+        find.text('TOM is not allowed to read this folder.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('anything else is still said out loud', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = const Failure<List<SpaceEntry>>(
+        UnexpectedFailure('the disk caught fire'),
+      );
+
+      await pumpPanel(tester, space: docs);
+
+      expect(find.text('This folder could not be read.'), findsOneWidget);
+    });
+  });
+
+  group('both modes', () {
+    testWidgets('a row takes its colour from the mode it is drawn in', (
+      WidgetTester tester,
+    ) async {
+      // A colour added in one mode without its counterpart is a bug, not a
+      // follow-up (docs/technical/design/visual-language.md). The row asks
+      // for a role and never for a mode, which is what this checks: the same
+      // widget, two themes, two colours.
+      spaces.answer = Success<List<SpaceEntry>>(held);
+
+      await pumpPanel(tester, space: docs);
+      final Color light = styleOf(tester, 'guides').color!;
+
+      await pumpPanel(tester, space: docs, brightness: Brightness.dark);
+
+      expect(styleOf(tester, 'guides').color, isNot(light));
+      expect(styleOf(tester, 'guides').color, TomColors.dark.textPrimary);
+    });
+  });
+}
+
+/// A space repository that answers what it was told to.
+final class _Spaces implements SpaceRepository {
+  Result<List<SpaceEntry>> answer = const Success<List<SpaceEntry>>(
+    <SpaceEntry>[],
+  );
+
+  @override
+  Future<Result<Space>> open(String folder) async => throw UnimplementedError();
+
+  @override
+  Future<Result<List<SpaceEntry>>> entries(Space space) async => answer;
+}
+
+/// The no-op observability, which is also the shipping default.
+final class _Silent implements Observability {
+  const _Silent();
+
+  @override
+  Future<void> capture(
+    Object error,
+    StackTrace stackTrace, {
+    required String layer,
+  }) async {}
+}

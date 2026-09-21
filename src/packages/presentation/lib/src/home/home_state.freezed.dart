@@ -55,15 +55,14 @@ extension HomeStatePatterns on HomeState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( HomeInitial value)?  initial,TResult Function( HomeLoading value)?  loading,TResult Function( HomeReady value)?  ready,TResult Function( HomeFailed value)?  failed,TResult Function( HomeOpened value)?  opened,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( HomeInitial value)?  initial,TResult Function( HomeLoading value)?  loading,TResult Function( HomeReady value)?  ready,TResult Function( HomeFailed value)?  failed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case HomeInitial() when initial != null:
 return initial(_that);case HomeLoading() when loading != null:
 return loading(_that);case HomeReady() when ready != null:
 return ready(_that);case HomeFailed() when failed != null:
-return failed(_that);case HomeOpened() when opened != null:
-return opened(_that);case _:
+return failed(_that);case _:
   return orElse();
 
 }
@@ -81,15 +80,14 @@ return opened(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( HomeInitial value)  initial,required TResult Function( HomeLoading value)  loading,required TResult Function( HomeReady value)  ready,required TResult Function( HomeFailed value)  failed,required TResult Function( HomeOpened value)  opened,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( HomeInitial value)  initial,required TResult Function( HomeLoading value)  loading,required TResult Function( HomeReady value)  ready,required TResult Function( HomeFailed value)  failed,}){
 final _that = this;
 switch (_that) {
 case HomeInitial():
 return initial(_that);case HomeLoading():
 return loading(_that);case HomeReady():
 return ready(_that);case HomeFailed():
-return failed(_that);case HomeOpened():
-return opened(_that);}
+return failed(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -103,15 +101,14 @@ return opened(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( HomeInitial value)?  initial,TResult? Function( HomeLoading value)?  loading,TResult? Function( HomeReady value)?  ready,TResult? Function( HomeFailed value)?  failed,TResult? Function( HomeOpened value)?  opened,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( HomeInitial value)?  initial,TResult? Function( HomeLoading value)?  loading,TResult? Function( HomeReady value)?  ready,TResult? Function( HomeFailed value)?  failed,}){
 final _that = this;
 switch (_that) {
 case HomeInitial() when initial != null:
 return initial(_that);case HomeLoading() when loading != null:
 return loading(_that);case HomeReady() when ready != null:
 return ready(_that);case HomeFailed() when failed != null:
-return failed(_that);case HomeOpened() when opened != null:
-return opened(_that);case _:
+return failed(_that);case _:
   return null;
 
 }
@@ -128,14 +125,13 @@ return opened(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<RecentSpace> recents)?  ready,TResult Function( AppFailure failure,  List<RecentSpace> recents)?  failed,TResult Function( Space space)?  opened,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<RecentSpace> recents)?  ready,TResult Function( AppFailure failure,  List<RecentSpace> recents)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case HomeInitial() when initial != null:
 return initial();case HomeLoading() when loading != null:
 return loading();case HomeReady() when ready != null:
 return ready(_that.recents);case HomeFailed() when failed != null:
-return failed(_that.failure,_that.recents);case HomeOpened() when opened != null:
-return opened(_that.space);case _:
+return failed(_that.failure,_that.recents);case _:
   return orElse();
 
 }
@@ -153,14 +149,13 @@ return opened(_that.space);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<RecentSpace> recents)  ready,required TResult Function( AppFailure failure,  List<RecentSpace> recents)  failed,required TResult Function( Space space)  opened,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<RecentSpace> recents)  ready,required TResult Function( AppFailure failure,  List<RecentSpace> recents)  failed,}) {final _that = this;
 switch (_that) {
 case HomeInitial():
 return initial();case HomeLoading():
 return loading();case HomeReady():
 return ready(_that.recents);case HomeFailed():
-return failed(_that.failure,_that.recents);case HomeOpened():
-return opened(_that.space);}
+return failed(_that.failure,_that.recents);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -174,14 +169,13 @@ return opened(_that.space);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<RecentSpace> recents)?  ready,TResult? Function( AppFailure failure,  List<RecentSpace> recents)?  failed,TResult? Function( Space space)?  opened,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<RecentSpace> recents)?  ready,TResult? Function( AppFailure failure,  List<RecentSpace> recents)?  failed,}) {final _that = this;
 switch (_that) {
 case HomeInitial() when initial != null:
 return initial();case HomeLoading() when loading != null:
 return loading();case HomeReady() when ready != null:
 return ready(_that.recents);case HomeFailed() when failed != null:
-return failed(_that.failure,_that.recents);case HomeOpened() when opened != null:
-return opened(_that.space);case _:
+return failed(_that.failure,_that.recents);case _:
   return null;
 
 }
@@ -397,81 +391,6 @@ as List<RecentSpace>,
 }
 
 
-}
-
-/// @nodoc
-
-
-class HomeOpened implements HomeState {
-  const HomeOpened(this.space);
-  
-
- final  Space space;
-
-/// Create a copy of HomeState
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$HomeOpenedCopyWith<HomeOpened> get copyWith => _$HomeOpenedCopyWithImpl<HomeOpened>(this, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is HomeOpened&&(identical(other.space, space) || other.space == space));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,space);
-
-@override
-String toString() {
-  return 'HomeState.opened(space: $space)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class $HomeOpenedCopyWith<$Res> implements $HomeStateCopyWith<$Res> {
-  factory $HomeOpenedCopyWith(HomeOpened value, $Res Function(HomeOpened) _then) = _$HomeOpenedCopyWithImpl;
-@useResult
-$Res call({
- Space space
-});
-
-
-$SpaceCopyWith<$Res> get space;
-
-}
-/// @nodoc
-class _$HomeOpenedCopyWithImpl<$Res>
-    implements $HomeOpenedCopyWith<$Res> {
-  _$HomeOpenedCopyWithImpl(this._self, this._then);
-
-  final HomeOpened _self;
-  final $Res Function(HomeOpened) _then;
-
-/// Create a copy of HomeState
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? space = null,}) {
-  return _then(HomeOpened(
-null == space ? _self.space : space // ignore: cast_nullable_to_non_nullable
-as Space,
-  ));
-}
-
-/// Create a copy of HomeState
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$SpaceCopyWith<$Res> get space {
-  
-  return $SpaceCopyWith<$Res>(_self.space, (value) {
-    return _then(_self.copyWith(space: value));
-  });
-}
 }
 
 // dart format on

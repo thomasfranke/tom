@@ -1,0 +1,30 @@
+/// Reading what a space holds, for the file tree to draw.
+library;
+
+import 'package:tom_application/src/use_case.dart';
+import 'package:tom_core/tom_core.dart';
+import 'package:tom_domain/tom_domain.dart';
+
+/// Everything a [Space] holds, in the order a tree shows it.
+///
+/// The whole space in one call, which is affordable because a space is a
+/// documentation folder and `.git/` is never descended into. Reading it once
+/// is also what makes expanding a folder instant.
+///
+/// What it costs is a listing that ages: nothing here notices a file created
+/// outside TOM until the watcher arrives ([Decision
+/// 10](../../../../../../docs/technical/decisions/010-watcher-and-git-cooperate-by-protocol.md)).
+final class ListSpaceEntries with UseCase {
+  /// Creates the use case.
+  const ListSpaceEntries({required this.spaces, required this.observability});
+
+  /// Where the folder is read.
+  final SpaceRepository spaces;
+
+  @override
+  final Observability observability;
+
+  /// What [space] holds.
+  Future<Result<List<SpaceEntry>>> call(Space space) =>
+      guard(() => spaces.entries(space));
+}

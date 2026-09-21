@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_desktop/bootstrap/run_tom.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'e2e_module.dart';
 
 /// Drives the assembled app.
@@ -158,6 +159,16 @@ final class TomRobot {
     await settle();
   }
 
+  /// Clicks the row of the file tree that shows [name].
+  ///
+  /// Scoped to the explorer rather than to the window: the space's own folder
+  /// is named in the top bar too, and a tap that found the chrome instead of
+  /// the tree would pass while doing nothing.
+  Future<void> clickInTheTree(String name) async {
+    await tester.tap(_inTheTree(name));
+    await settle();
+  }
+
   // ── What the user sees ────────────────────────────────────────────────
 
   /// Asserts Home is showing, with nothing open.
@@ -180,6 +191,65 @@ final class TomRobot {
     );
     expect(find.text('Choose folder…'), findsNothing);
   }
+
+  /// Asserts the tree shows [names], each exactly once.
+  ///
+  /// The wait is the same race as everywhere else, read forwards: opening a
+  /// space walks the folder, and the shell is on screen before that answer
+  /// has arrived.
+  Future<void> seesInTheTree(List<String> names) async {
+    await _waitUntil(() => _showing(_inTheTree(names.first)));
+    for (final String name in names) {
+      expect(
+        _inTheTree(name),
+        findsOneWidget,
+        reason: '$name is not in the tree',
+      );
+    }
+  }
+
+  /// Asserts the tree does not show [name].
+  void seesNotInTheTree(String name) {
+    expect(
+      _inTheTree(name),
+      findsNothing,
+      reason: '$name should not be in the tree',
+    );
+  }
+
+  /// Asserts the status bar names [path] as the document that is open.
+  Future<void> seesTheOpenDocument(String path) async {
+    await _waitUntil(() => _showing(find.text(path)));
+    expect(
+      find.text(path),
+      findsOneWidget,
+      reason: 'the status bar does not name $path',
+    );
+  }
+
+  /// Asserts the top bar says which repository the space is a folder of.
+  ///
+  /// A space is a folder, not a repository (rule 12), and the bar is where
+  /// the difference is visible: `app / docs`, not `docs` alone.
+  void seesTheSpaceIsIn(String repository) {
+    expect(
+      find.text(repository),
+      findsWidgets,
+      reason: 'the top bar does not name the repository the space is in',
+    );
+    // In the chrome and not in the tree: the repository is *above* the space,
+    // so a folder of that name inside it would be a different thing.
+    seesNotInTheTree(repository);
+  }
+
+  /// Whatever the file tree shows as [name].
+  ///
+  /// Scoped to the panel, because the space's folder is named in the chrome
+  /// as well and a finder that matched either would assert nothing.
+  Finder _inTheTree(String name) => find.descendant(
+    of: find.byType(FileTreePanel),
+    matching: find.text(name),
+  );
 
   /// Asserts the refusal screen is showing, for a folder with no repository.
   Future<void> seesNotARepository(String folder) async {

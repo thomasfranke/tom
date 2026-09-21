@@ -67,7 +67,7 @@ void main() {
     return container.read(homeProvider);
   }
 
-  HomeNotifier notifier() => container.read(homeProvider.notifier);
+  Home notifier() => container.read(homeProvider.notifier);
 
   group('arriving', () {
     test('it starts by reading the list, not by waiting to be asked', () {
@@ -90,13 +90,27 @@ void main() {
   });
 
   group('opening a folder', () {
-    test('a space takes Home out of the way', () async {
+    test('a space that opened is written to the session', () async {
+      // Not to Home's own state: which space is open is what the whole
+      // window is built on, so it lives in one place (Decision 9). Home
+      // stays on `loading` and goes away with it.
       await settled();
       spaces.answer = Success<Space>(opened);
 
       await notifier().open('/code/app/docs');
 
-      expect(container.read(homeProvider), HomeState.opened(opened));
+      expect(container.read(spaceSessionProvider)?.space, opened);
+      expect(container.read(homeProvider), isA<HomeLoading>());
+    });
+
+    test('and no document is showing yet', () async {
+      // The file tree is on screen and nothing has been clicked.
+      await settled();
+      spaces.answer = Success<Space>(opened);
+
+      await notifier().open('/code/app/docs');
+
+      expect(container.read(spaceSessionProvider)?.openDocument, isNull);
     });
 
     test('a folder outside a repository keeps the failure itself', () async {

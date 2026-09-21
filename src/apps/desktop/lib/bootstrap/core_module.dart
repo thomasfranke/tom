@@ -7,21 +7,21 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/panel_placement.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
+import 'package:tom_desktop/screens/shell/status_panel.dart';
 import 'package:tom_desktop/theme/tom_colors.dart';
 import 'package:tom_desktop/theme/tom_metrics.dart';
 
 /// The built-in panels.
 ///
-/// **The whole point of this file is that it is not special**
-/// ([Decision 12](../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)):
-/// the explorer, the editor, the diff and the git panel are registered by a
-/// module, not wired into the shell, and they go through the same
-/// [PanelDescriptor] a third party would use. One path for everything, so
-/// the mechanism cannot rot from disuse — it is exercised on every run.
+/// **The whole point of this file is that it is not special** ([Decision
+/// 12](../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)):
+/// the app's own panels go through the same [PanelDescriptor] a third party
+/// would use, so the mechanism cannot rot from disuse.
 ///
-/// What is here now is placeholders. They are registered rather than drawn
-/// in the shell precisely so that replacing them with the real file tree and
-/// the real editor is a change to *this* list and to nothing else.
+/// It has been paid for twice already — the file tree and the status bar
+/// replaced their placeholders and neither touched the shell. The editor and
+/// the preview go the same way.
 class CoreModule implements TomModule {
   /// Creates the module.
   const CoreModule();
@@ -38,8 +38,7 @@ class CoreModule implements TomModule {
       id: 'tom.explorer',
       title: 'Explorer',
       placement: PanelPlacement.explorer,
-      builder: (BuildContext context) =>
-          const _Placeholder(label: 'EXPLORER', detail: 'File tree — M0'),
+      builder: (BuildContext context) => const FileTreePanel(),
     ),
     PanelDescriptor(
       id: 'tom.editor',
@@ -64,7 +63,7 @@ class CoreModule implements TomModule {
       id: 'tom.status',
       title: 'Status',
       placement: PanelPlacement.statusBar,
-      builder: (BuildContext context) => const _StatusPlaceholder(),
+      builder: (BuildContext context) => const StatusPanel(),
     ),
   ];
 }
@@ -110,15 +109,4 @@ class _Placeholder extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The status bar's placeholder.
-class _StatusPlaceholder extends StatelessWidget {
-  const _StatusPlaceholder();
-
-  @override
-  Widget build(BuildContext context) => Text(
-    'no space open',
-    style: TextStyle(color: TomColors.of(context).textMuted, fontSize: 12),
-  );
 }
