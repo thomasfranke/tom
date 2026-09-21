@@ -55,6 +55,25 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
   /// allowed.
   const factory GitFailure.detachedHead() = GitDetachedHead;
 
+  /// The remote refused a push because it had moved on first.
+  ///
+  /// Its own outcome rather than a generic failure: the product shows it as
+  /// one, with pulling as the way out
+  /// (`docs/product/git-workflow/push-pull/doc.md`).
+  const factory GitFailure.pushRejected() = GitPushRejected;
+
+  /// A git command ran past the time it was allowed and was killed.
+  ///
+  /// Named because it is the one failure the user can neither fix nor
+  /// retry into a different answer — a repository large enough, or a remote
+  /// slow enough, that the operation needs more time than a desktop action
+  /// may take. Infrastructure kills the process first, so the space's queue
+  /// is moving again by the time this arrives.
+  const factory GitFailure.timedOut(
+    /// The command as it was run, for the "details" disclosure in the UI.
+    String command,
+  ) = GitTimedOut;
+
   /// A git command failed in a way the product has no vocabulary for.
   ///
   /// The typed fallback: unexpected, but still a `GitFailure` rather than an

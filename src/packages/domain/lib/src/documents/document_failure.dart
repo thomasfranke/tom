@@ -29,6 +29,17 @@ sealed class DocumentFailure with _$DocumentFailure implements AppFailure {
     String path,
   ) = DocumentPermissionDenied;
 
+  /// The file is not valid UTF-8 text.
+  ///
+  /// TOM writes a document back where it read it, so a file it cannot decode
+  /// losslessly is one it refuses to open rather than one it opens with
+  /// replacement characters that would be saved over the bytes they stood
+  /// for.
+  const factory DocumentFailure.notUtf8(
+    /// The path, relative to the space root.
+    String path,
+  ) = DocumentNotUtf8;
+
   /// The file changed on disk while there were unsaved local edits.
   ///
   /// Editing alongside VS Code is an expected use case, not an error

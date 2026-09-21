@@ -12,6 +12,8 @@ void main() {
         '${files.length} conflicted files',
       GitAuthenticationFailed() => 'Authentication failed',
       GitDetachedHead() => 'Detached HEAD',
+      GitPushRejected() => 'The remote moved first',
+      GitTimedOut(command: final String command) => 'Timed out: $command',
       GitCommandFailed(command: final String command) => 'Failed: $command',
     };
 
@@ -27,6 +29,8 @@ void main() {
         'Authentication failed',
       );
       expect(headline(const GitDetachedHead()), 'Detached HEAD');
+      expect(headline(const GitPushRejected()), 'The remote moved first');
+      expect(headline(const GitTimedOut('git push')), 'Timed out: git push');
       expect(
         headline(const GitCommandFailed('git push', 'rejected')),
         'Failed: git push',
@@ -80,6 +84,19 @@ void main() {
 
     test('different path', () {
       expect(at('/tmp/space'), isNot(at('/tmp/other')));
+    });
+  });
+
+  group('GitTimedOut compares by value', () {
+    GitTimedOut timedOutOn(String command) => GitTimedOut(command);
+
+    test('same command', () {
+      expect(timedOutOn('git push'), timedOutOn('git push'));
+      expect(timedOutOn('git push').hashCode, timedOutOn('git push').hashCode);
+    });
+
+    test('different command', () {
+      expect(timedOutOn('git push'), isNot(timedOutOn('git pull')));
     });
   });
 

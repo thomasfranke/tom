@@ -8,6 +8,7 @@ void main() {
     String headline(DocumentFailure failure) => switch (failure) {
       DocumentNotFound(path: final String path) => 'Not found: $path',
       DocumentPermissionDenied(path: final String path) => 'Denied: $path',
+      DocumentNotUtf8(path: final String path) => 'Not UTF-8: $path',
       DocumentExternalChangeConflict(path: final String path) =>
         'Conflict: $path',
     };
@@ -20,6 +21,10 @@ void main() {
       expect(
         headline(const DocumentPermissionDenied('notes/a.md')),
         'Denied: notes/a.md',
+      );
+      expect(
+        headline(const DocumentNotUtf8('notes/a.md')),
+        'Not UTF-8: notes/a.md',
       );
       expect(
         headline(const DocumentExternalChangeConflict('notes/a.md')),
@@ -36,6 +41,7 @@ void main() {
         DocumentPermissionDenied(path);
     DocumentExternalChangeConflict conflictAt(String path) =>
         DocumentExternalChangeConflict(path);
+    DocumentNotUtf8 notUtf8At(String path) => DocumentNotUtf8(path);
 
     test('same variant, same path', () {
       expect(notFoundAt('notes/a.md'), notFoundAt('notes/a.md'));
@@ -50,17 +56,24 @@ void main() {
         conflictAt('notes/a.md').hashCode,
         conflictAt('notes/a.md').hashCode,
       );
+      expect(notUtf8At('notes/a.md'), notUtf8At('notes/a.md'));
+      expect(
+        notUtf8At('notes/a.md').hashCode,
+        notUtf8At('notes/a.md').hashCode,
+      );
     });
 
     test('same variant, different path', () {
       expect(notFoundAt('notes/a.md'), isNot(notFoundAt('notes/b.md')));
       expect(deniedAt('notes/a.md'), isNot(deniedAt('notes/b.md')));
       expect(conflictAt('notes/a.md'), isNot(conflictAt('notes/b.md')));
+      expect(notUtf8At('notes/a.md'), isNot(notUtf8At('notes/b.md')));
     });
 
     test('the same path under a different variant is a different failure', () {
       expect(notFoundAt('notes/a.md'), isNot(deniedAt('notes/a.md')));
       expect(deniedAt('notes/a.md'), isNot(conflictAt('notes/a.md')));
+      expect(notUtf8At('notes/a.md'), isNot(deniedAt('notes/a.md')));
     });
   });
 }

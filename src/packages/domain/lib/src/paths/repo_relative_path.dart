@@ -1,10 +1,14 @@
 /// A path as git reports it: relative to the repository root.
 library;
 
+import 'package:tom_domain/src/paths/relative_path_syntax.dart';
+import 'package:tom_domain/src/paths/space_relative_path.dart';
+
 /// A path relative to the repository root, with `/` separators.
 ///
 /// The most probable bug in this application is path confusion — `root`
-/// against `repositoryRoot`, relative against absolute ([Decision
+/// against `repositoryRoot` ([SpaceRelativePath] is the other side),
+/// relative against absolute ([Decision
 /// 15](../../../../../../docs/technical/decisions/015-ddd-is-applied-selectively.md)).
 /// A distinct type is what makes passing the wrong one a compile error
 /// instead of something a user finds.
@@ -32,28 +36,11 @@ extension type const RepoRelativePath._(String value) {
   /// The door a parser uses: git output that does not look like a path is a
   /// record to skip, not an exception to throw across a boundary. It is also
   /// the door a person's typing will come through, so the rules are the
-  /// invariant itself rather than a sanity check:
-  ///
-  /// - not empty, and no `\` — git prints `/` on every platform;
-  /// - no drive letter, which is absolute on Windows however it is spelled;
-  /// - no empty segment, which is what a leading `/`, a trailing `/` and a
-  ///   `//` in the middle all amount to;
-  /// - no `.` or `..` segment. This is the one that matters: the whole point
-  ///   of the type is that joining it onto a repository root cannot leave
-  ///   the repository, and `..` is how that guarantee is lost.
-  static RepoRelativePath? tryParse(String value) {
-    if (value.isEmpty || value.contains(r'\') || _drive.hasMatch(value)) {
-      return null;
-    }
-    for (final String segment in value.split('/')) {
-      if (segment.isEmpty || segment == '.' || segment == '..') {
-        return null;
-      }
-    }
-    return RepoRelativePath._(value);
-  }
-
-  static final RegExp _drive = RegExp(r'^[A-Za-z]:');
+  /// invariant itself rather than a sanity check — they are listed on
+  /// [isRelativePathSyntax], and shared with [SpaceRelativePath] so that
+  /// relaxing one cannot silently leave the other behind.
+  static RepoRelativePath? tryParse(String value) =>
+      isRelativePathSyntax(value) ? RepoRelativePath._(value) : null;
 
   /// The last segment — the file or folder name.
   ///
