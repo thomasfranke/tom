@@ -628,10 +628,7 @@ Future<List<String>?> _promptFor(
 /// Mobile is listed and disabled for the same reason the build screen lists
 /// it: `src/apps/mobile` exists, and a screen that hid it would read as a
 /// bug rather than a plan.
-Future<List<String>?> _askE2e(
-  Terminal terminal,
-  List<String> carried,
-) async {
+Future<List<String>?> _askE2e(Terminal terminal, List<String> carried) async {
   const section = 'End-to-end';
   // Already on an app: go straight back to its scenarios. This is what
   // makes a finished run return to the list it was chosen from.

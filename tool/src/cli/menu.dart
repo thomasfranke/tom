@@ -52,8 +52,8 @@ final class MenuItem<T> {
     this.detailColor,
     this.description,
   }) : value = null,
-      emphasized = false,
-      _kind = _Kind.disabled;
+       emphasized = false,
+       _kind = _Kind.disabled;
 
   /// A heading that groups the rows below it. Not selectable.
   ///

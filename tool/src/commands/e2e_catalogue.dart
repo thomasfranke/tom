@@ -226,8 +226,7 @@ String describeElapsed(Duration elapsed) =>
 /// comparable to a release.
 String describeWhen(DateTime when) {
   final local = when.toLocal();
-  final date =
-      '${local.year}-${_two(local.month)}-${_two(local.day)}';
+  final date = '${local.year}-${_two(local.month)}-${_two(local.day)}';
   final days = DateTime.now().difference(local).inDays;
   final relative = switch (days) {
     <= 0 => 'today',

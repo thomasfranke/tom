@@ -76,10 +76,7 @@ Future<int> runScenario(
 
   final process = await Process.start('flutter', <String>[
     'test',
-    '$scenarioDirectory/${scenario.file}'.replaceFirst(
-      'src/apps/desktop/',
-      '',
-    ),
+    '$scenarioDirectory/${scenario.file}'.replaceFirst('src/apps/desktop/', ''),
     '-d',
     'macos',
     '--plain-name',
