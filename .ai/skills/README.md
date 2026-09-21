@@ -1,8 +1,11 @@
 # Skills — TOM
 
-Three skills holding the project's operational conventions, one folder each
+Four skills holding the project's operational conventions, one folder each
 with a `SKILL.md`. They cover procedure — how work is done here — not product
-or architecture, which live in [`docs/`](../../docs/about.md).
+or architecture, which live in [`docs/`](../../docs/about.md). `tom-code-review`
+is the one that comes closest to the line: it does not restate the rules, it
+says how a diff is checked against them and which ones the tooling already
+proves.
 
 ## They do not load themselves
 
@@ -35,7 +38,7 @@ one that doesn't reads straight past it into the markdown.
 ## Maintenance
 
 The skills mirror `CONTRIBUTING.md` and the decisions. When a convention
-changes — new scopes, merge policy, release format — update all three:
+changes — new scopes, merge policy, release format — update all of them:
 `CONTRIBUTING.md`, the corresponding skill, and, if it is an architectural
 decision, a file in `docs/technical/decisions/`. Because `tom-pro` references the skills
 by path instead of copying them, it follows along automatically.
