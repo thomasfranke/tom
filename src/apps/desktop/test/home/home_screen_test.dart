@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/brand/tom_wordmark.dart';
 import 'package:tom_desktop/home/home_screen.dart';
 import 'package:tom_desktop/theme/tom_theme.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -63,7 +64,10 @@ void main() {
     ) async {
       await pumpHome(tester);
 
-      expect(find.text('TOM'), findsOneWidget);
+      // The wordmark, not the name set in type: the O is the commit on the
+      // trunk, and a `Text('TOM')` here would pass while the screen showed
+      // the wrong mark (`docs/technical/design/brand.md`, rule 1).
+      expect(find.byType(TomWordmark), findsOneWidget);
       expect(
         find.text('A Git client built for documentation, not code.'),
         findsOneWidget,
@@ -93,7 +97,7 @@ void main() {
     ) async {
       await pumpHome(tester);
 
-      expect(find.text('Recent'), findsNothing);
+      expect(find.text('RECENT'), findsNothing);
     });
   });
 
@@ -105,7 +109,7 @@ void main() {
     ) async {
       await pumpHome(tester);
 
-      expect(find.text('Recent'), findsOneWidget);
+      expect(find.text('RECENT'), findsOneWidget);
       expect(find.text('docs'), findsOneWidget);
       expect(find.text('/code/app/docs'), findsOneWidget);
     });
@@ -135,7 +139,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(recents.forgotten, <String>['/code/app/docs']);
-      expect(find.text('Recent'), findsNothing);
+      expect(find.text('RECENT'), findsNothing);
     });
   });
 
@@ -184,9 +188,14 @@ void main() {
       expect(find.text('That folder is no longer there'), findsOneWidget);
     });
 
-    testWidgets('and the recent list is still there to click', (
+    testWidgets('and the recent list is not offered underneath it', (
       WidgetTester tester,
     ) async {
+      // Both mocks draw this screen with the retry and the one line about
+      // repositories, and nothing else
+      // (`docs/product/home/mocks/not-a-repository.excalidraw`). It is a
+      // state to move on from in one click, and a second list of choices
+      // under the button would make the button look optional.
       recents.stored = <RecentSpace>[remembered];
       spaces.answer = const Failure<Space>(GitNotARepository('/loose'));
       await pumpHome(tester);
@@ -197,8 +206,8 @@ void main() {
       await container.read(homeProvider.notifier).open('/loose');
       await tester.pumpAndSettle();
 
-      expect(find.text('Recent'), findsOneWidget);
-      expect(find.text('docs'), findsOneWidget);
+      expect(find.text('RECENT'), findsNothing);
+      expect(find.text('docs'), findsNothing);
     });
   });
 }
