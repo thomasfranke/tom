@@ -38,6 +38,11 @@ The test carries three checks the mechanisms above cannot make:
 ## Inside a package
 
 - **One barrel**, `lib/tom_<name>.dart`; everything else under `lib/src/`, which no other package may import. What the barrel exports *is* the public API.
+- **A name carries its role, in the class and in the file.** A use case is named for the operation with the role last and is invoked through a named method: `OpenSpaceUseCase` in `open_space_usecase.dart`, called as `open(…)` rather than `call`. That is the shape the Flutter team's own architecture sample uses — `BookingCreateUseCase.createFrom(…)` in [compass_app](https://github.com/flutter/samples/tree/main/compass_app/app/lib/domain/use_cases).
+
+  The same goes for every role the reader needs in order to use the thing: `SpaceRepository`, `HomeState`, `FileTreePanel`, `GitFailure`, `MarkdownParser`, and — when a store forces a shape that is not a domain type — `Dto` and `Dao` ([Decision 21](decisions/021-dtos-and-daos-when-they-are-real.md)).
+
+  Two words still stay out, and for the same reason the others go in. A **domain type keeps the domain's word**: `Space`, not `SpaceEntity`; `Document`, not `DocumentModel` — the suffix would be a second name for a concept the product already named. And `Impl` names no *how*: an implementation is named after what makes it different (`dart_io/`, `markdown_package/`, `MarkdownBlockReader`), which is what tells two of them apart when the second arrives.
 - `tom_infra` organises by **capability, not by technology**: `src/git_client/` holds the contract, its failures, and one subfolder per implementation (`process/`, later `libgit2/`). A second implementation is a sibling folder, and the composition root is the only file that changes.
 - **No type from a dependency crosses a contract.** A `ProcessException` dies inside `process/` and leaves as a `GitClientFailure`. If it escaped, the caller would be handling exceptions from a library it is not supposed to know about, and the folder would be decoration.
 - **A comment is two or three lines.** One sentence saying what the thing is, then the reason it is that way — and there it stops. The exceptions are real but rare: a rule whose only home is this dartdoc ([the canonical form of a rule is the code that implements it](README.md#the-link-dont-restate-rule)), or a trap that costs an afternoon to rediscover. Anything longer is usually two comments, or a paragraph that belongs in `docs/technical/` with a link from here. Keep it prose — cutting a paragraph into a list of fragments is not the same as making it short.
@@ -48,6 +53,10 @@ The test carries three checks the mechanisms above cannot make:
   - `integrity/` — asserts something about the codebase itself, not its runtime behavior (the layer graph, a barrel's exports). Workspace-wide checks live here too: `src/test/architecture_test.dart` is `src/test/integrity/architecture_test.dart`.
 
   Below that folder, the path matches `lib/src/` exactly, filename plus `_test`: `lib/src/filesystem/dart_io/dart_io_filesystem.dart` (integration, real disk) is tested by `test/integration/filesystem/dart_io/dart_io_filesystem_test.dart`. The layout answers "where are this file's tests, and what kind" without a search.
+
+  **Exactly** means exactly: no test file named after a theme rather than its subject, and no second file for the same subject in the same kind. One subject can have a file under two kinds — `json_file_settings.dart` has a unit test for the failures a real disk will not produce on demand, and an integration test against a real one — because the kind is part of the path.
+
+  The one exception, and it needs no other: a test whose subject is the **stack** rather than a class. `data/test/integration/spaces/opening_end_to_end_test.dart` wires real disk, real git and a real settings file the way the composition root does and asks the question the user asks. It mirrors nothing because it is about no one file, and it is the only test that fails when the pieces are each right and do not fit.
 
 ## Errors across boundaries
 
