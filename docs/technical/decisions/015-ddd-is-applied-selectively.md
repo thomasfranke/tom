@@ -1,6 +1,6 @@
 # Decision 15 — DDD is applied selectively
 
-**Status:** accepted
+**Status:** accepted — the naming bullet below is revised by [Decision 21](021-dtos-and-daos-when-they-are-real.md) (`Dto` and `Dao` are in) and [Decision 23](023-domain-types-say-entity-or-value-object.md) (`Entity` and `ValueObject` are in). Everything else stands.
 
 ## Context
 
@@ -16,19 +16,21 @@ Adopt the tactical patterns that earn their keep, and say plainly which ones do 
 
 ### In
 
-**Value objects for identifiers and paths.** The most probable bug in this entire application is path confusion: `root` against `repositoryRoot`, relative against absolute, and git reporting paths relative to the repository while navigation stays inside the space folder. With `String` everywhere, that is a runtime error a user finds. With `RepoRelativePath` and `AbsolutePath` as distinct types, passing one where the other belongs does not compile. Same reasoning for `BranchName`, `CommitSha` and `SpaceName`: the invariant is validated once, at construction, and never checked again.
+**Value objects for identifiers and paths.** The most probable bug in this entire application is path confusion: `root` against `repositoryRoot`, relative against absolute, and git reporting paths relative to the repository while navigation stays inside the space folder. With `String` everywhere, that is a runtime error a user finds. With `RepoRelativePathValueObject` and `AbsolutePath` as distinct types, passing one where the other belongs does not compile. Same reasoning for `BranchNameValueObject`, `CommitShaValueObject` and `SpaceName`: the invariant is validated once, at construction, and never checked again.
 
-**Ubiquitous language, enforced by naming.** The vocabulary already exists in the documentation — Space, Document, Block, DiffBlock — and the code uses exactly those words. No `FileModel`, no `DocDto`, no `SpaceEntity`. If a concept needs renaming, the docs and the code are renamed together, in the same pull request.
+**Ubiquitous language, enforced by naming.** The vocabulary already exists in the documentation — Space, Document, Block, DiffBlock — and the code uses exactly those words. No `FileModel`: a suffix may not replace the product's word for a concept. If a concept needs renaming, the docs and the code are renamed together, in the same pull request.
 
-**Repositories as a domain concept.** `DocumentRepository` is declared in `tom_domain` and speaks in entities. It is not the same thing as an infrastructure contract: `GitClient` and `FileSystem` speak in processes and bytes, live in `tom_infra` with their implementations ([Decision 7](007-external-dependencies-behind-contracts.md)), and `tom_data` is where the two meet. The domain therefore knows neither git nor disk, and infrastructure never learns what a `Document` is.
+> **Revised.** This bullet originally also ruled out `DocDto` and `SpaceEntity`. Both are now in, for the opposite reason to the one that kept them out: a suffix that names the *role* is not a second name for the concept, it is the one thing a reader cannot recover from the call site. See [Decision 21](021-dtos-and-daos-when-they-are-real.md) and [Decision 23](023-domain-types-say-entity-or-value-object.md).
+
+**Repositories as a domain concept.** `DocumentRepository` is declared in `tom_domain` and speaks in entities. It is not the same thing as an infrastructure contract: `GitClient` and `FileSystem` speak in processes and bytes, live in `tom_infra` with their implementations ([Decision 7](007-external-dependencies-behind-contracts.md)), and `tom_data` is where the two meet. The domain therefore knows neither git nor disk, and infrastructure never learns what a `DocumentEntity` is.
 
 **Domain services** for logic that belongs to no single entity. `BlockDiffer` is the example, and possibly the only one for a long while. Spike B has since settled what it works on ([Decision 19](019-blocks-come-from-the-markdown-package.md)): blocks carry no stable identity, so it aligns by position and similarity.
 
-**Entities with identity.** A `Document` is identified by its path, not by its content — two files with identical text are two documents, and the same file edited is still the same document.
+**Entities with identity.** A `DocumentEntity` is identified by its path, not by its content — two files with identical text are two documents, and the same file edited is still the same document.
 
 ### Out
 
-**Aggregates with a transactional boundary.** The classic form — a root controlling all access so invariants hold across a commit — needs a transaction to protect. Here a write is "save this file to disk". Routing every document change through `Space` would add a bottleneck for a file tree of hundreds of entries and protect nothing.
+**Aggregates with a transactional boundary.** The classic form — a root controlling all access so invariants hold across a commit — needs a transaction to protect. Here a write is "save this file to disk". Routing every document change through `SpaceEntity` would add a bottleneck for a file tree of hundreds of entries and protect nothing.
 
 **Domain events.** There is no second bounded context to notify and no eventual consistency to reconcile. The one thing resembling an event, the filesystem watcher, is already handled by an explicit protocol ([Decision 10](010-watcher-and-git-cooperate-by-protocol.md)) and belongs to infrastructure.
 

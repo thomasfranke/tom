@@ -28,6 +28,9 @@ Internal format (known in the community as an *ADR — Architecture Decision Rec
 | [018](018-source-mode-uses-re-editor.md) | Source mode is built on `re_editor` (the verdict of Spike A) |
 | [019](019-blocks-come-from-the-markdown-package.md) | Blocks come from the `markdown` package, positions included (Spike B) |
 | [020](020-the-macos-app-is-not-sandboxed.md) | The macOS app is not sandboxed, which rules out the Mac App Store |
+| [021](021-dtos-and-daos-when-they-are-real.md) | DTOs and DAOs are named as such, when they are real |
+| [022](022-capability-contracts-live-in-the-data-layer.md) | A capability contract, its DTOs and its failures live in `tom_data`; `tom_infra` holds adapters |
+| [023](023-domain-types-say-entity-or-value-object.md) | A domain type says whether it is an entity or a value object |
 
 ---
 

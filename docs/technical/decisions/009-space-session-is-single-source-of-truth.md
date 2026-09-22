@@ -6,7 +6,7 @@
 The panels (explorer, editor, diff, git) are all views over the same open repo. If each notifier fetched its own state independently, post-operation coordination (a commit affects status, history, the file tree and the open document) would become hand-rolled cascading invalidation — a well-known and hard-to-trace class of bug.
 
 ## Decision
-A **root session provider** (`spaceSessionProvider`) is the single source of truth for the open space in presentation: it holds the space, current branch, `GitStatus` and ahead/behind. Panels derive from it instead of fetching space state themselves, and git operations write to it instead of triggering invalidation scattered across the app.
+A **root session provider** (`spaceSessionProvider`) is the single source of truth for the open space in presentation: it holds the space, current branch, `GitStatusValueObject` and ahead/behind. Panels derive from it instead of fetching space state themselves, and git operations write to it instead of triggering invalidation scattered across the app.
 
 How that plays out — derivation with `select`, what stays panel-local, one session per space — is in [flows.md](../flows.md#the-space-session-is-the-single-source-of-truth).
 

@@ -54,7 +54,7 @@ FTS5 indexes the content of the `.md` files. Absolute rule: **the index never ho
 
 ## The space session is the single source of truth
 
-- One session per open space holds what the whole app shares: root, current branch, `GitStatus`, ahead/behind ([Decision 9](decisions/009-space-session-is-single-source-of-truth.md)). Git operations write to it; panels **derive** from it. No scattered `ref.invalidate`.
+- One session per open space holds what the whole app shares: root, current branch, `GitStatusValueObject`, ahead/behind ([Decision 9](decisions/009-space-session-is-single-source-of-truth.md)). Git operations write to it; panels **derive** from it. No scattered `ref.invalidate`.
 - `SpaceChanged` has a single recipient: the session reloads, and everything derived reacts.
 - **One notifier per panel**, with explicit states — `initial / loading / data / error(AppFailure)`. Panel-local state (scroll, selection, a commit message being typed) stays in the notifier; shared state stays in the session.
 - **No business logic in a notifier**: it calls a use case and turns `Result` into state. That is all.
