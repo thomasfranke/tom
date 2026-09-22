@@ -16,7 +16,7 @@ import 'package:tom_domain/src/documents/parsed_document_value_object.dart';
 /// Asynchronous like every other contract here, though the work is pure
 /// CPU — it leaves room for an isolate the day a document is large enough to
 /// drop a frame, and costs a keyword until then.
-abstract interface class BlockReader {
+abstract interface class BlockReaderPort {
   /// The blocks of [document], in order.
   ///
   /// Total by contract: a construct the parser cannot place is left out

@@ -1,7 +1,7 @@
 /// A path as git reports it: relative to the repository root.
 library;
 
-import 'package:tom_domain/src/paths/relative_path_syntax.dart';
+import 'package:tom_domain/src/paths/relative_path_syntax_rule.dart';
 import 'package:tom_domain/src/paths/space_relative_path_value_object.dart';
 
 /// A path relative to the repository root, with `/` separators.

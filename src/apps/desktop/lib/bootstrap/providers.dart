@@ -70,7 +70,7 @@ DocumentRepositoryFor documentRepositoryFor(Ref ref) {
 
 /// What splits a document into blocks.
 @Riverpod(keepAlive: true)
-BlockReader blockReader(Ref ref) =>
+BlockReaderPort blockReader(Ref ref) =>
     const MarkdownBlockReader(parser: MarkdownPackageParser());
 
 /// The overrides that turn the contracts above into the app's own wiring.

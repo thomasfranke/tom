@@ -158,7 +158,7 @@ final class _Documents implements DocumentRepository {
 }
 
 /// A reader that splits nothing: one heading block, whatever it is given.
-final class _Blocks implements BlockReader {
+final class _Blocks implements BlockReaderPort {
   const _Blocks();
 
   @override

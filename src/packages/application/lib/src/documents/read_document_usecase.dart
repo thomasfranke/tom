@@ -25,7 +25,7 @@ final class ReadDocumentUseCase with UseCase {
   final DocumentRepositoryFor documentsFor;
 
   /// What splits a document into blocks.
-  final BlockReader blocks;
+  final BlockReaderPort blocks;
 
   @override
   final Observability observability;

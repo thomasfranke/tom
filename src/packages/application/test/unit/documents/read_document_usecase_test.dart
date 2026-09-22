@@ -192,7 +192,7 @@ final class _ThrowingDocuments implements DocumentRepository {
 }
 
 /// A reader that answers what it was told to, and remembers being asked.
-final class _Blocks implements BlockReader {
+final class _Blocks implements BlockReaderPort {
   _Blocks({required this.answer});
 
   final Result<ParsedDocumentValueObject, DocumentFailure> answer;

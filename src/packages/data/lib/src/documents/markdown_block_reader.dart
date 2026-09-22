@@ -9,13 +9,13 @@ import 'package:tom_data/src/capabilities/markdown_parser/markdown_span_dto.dart
 import 'package:tom_data/src/capabilities/markdown_parser/markdown_span_kind_enum.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// [BlockReader] over the [MarkdownParser] capability.
+/// [BlockReaderPort] over the [MarkdownParser] capability.
 ///
 /// Two translations and nothing else. Spans into blocks: the capability
 /// reports where each construct is and this slices the document's own lines
 /// for it, so a block's text stays a view of the document rather than a
 /// second copy. Failures into the product's vocabulary.
-final class MarkdownBlockReader implements BlockReader {
+final class MarkdownBlockReader implements BlockReaderPort {
   /// Creates a reader over [parser].
   const MarkdownBlockReader({required this.parser});
 

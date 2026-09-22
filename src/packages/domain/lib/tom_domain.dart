@@ -6,7 +6,7 @@
 library;
 
 export 'src/documents/block_kind_enum.dart';
-export 'src/documents/block_reader.dart';
+export 'src/documents/block_reader_port.dart';
 export 'src/documents/block_value_object.dart';
 export 'src/documents/document_entity.dart';
 export 'src/documents/document_failure.dart';

@@ -1,7 +1,7 @@
 /// A path as the app navigates it: relative to the space root.
 library;
 
-import 'package:tom_domain/src/paths/relative_path_syntax.dart';
+import 'package:tom_domain/src/paths/relative_path_syntax_rule.dart';
 
 /// A path relative to the space root, with `/` separators.
 ///
