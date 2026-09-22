@@ -40,17 +40,20 @@ class PreviewNotifier extends _$PreviewNotifier {
   }
 
   /// Reads [path] inside [space] and shows what it holds.
-  Future<void> _load(Space space, SpaceRelativePath path) async {
-    final Result<ParsedDocument, AppFailure> read = await readDocument.read(
-      space,
-      path,
-    );
+  Future<void> _load(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async {
+    final Result<ParsedDocumentValueObject, AppFailure> read =
+        await readDocument.read(space, path);
     state = switch (read) {
-      Success<ParsedDocument, AppFailure>(
-        value: final ParsedDocument document,
+      Success<ParsedDocumentValueObject, AppFailure>(
+        value: final ParsedDocumentValueObject document,
       ) =>
         PreviewState.ready(document),
-      Failure<ParsedDocument, AppFailure>(failure: final AppFailure failure) =>
+      Failure<ParsedDocumentValueObject, AppFailure>(
+        failure: final AppFailure failure,
+      ) =>
         PreviewState.failed(failure),
     };
   }

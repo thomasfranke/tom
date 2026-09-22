@@ -10,21 +10,24 @@ void main() {
   late _Spaces spaces;
   late ProviderContainer container;
 
-  final Space docs = Space(
+  final SpaceEntity docs = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
     name: 'docs',
   );
-  final Space other = Space(
+  final SpaceEntity other = SpaceEntity(
     root: '/code/notes',
     repositoryRoot: '/code/notes',
     name: 'notes',
   );
 
-  SpaceEntry entry(String path, SpaceEntryTypeEnum type) =>
-      SpaceEntry(path: SpaceRelativePath(path), type: type);
+  SpaceEntryValueObject entry(String path, SpaceEntryTypeEnum type) =>
+      SpaceEntryValueObject(
+        path: SpaceRelativePathValueObject(path),
+        type: type,
+      );
 
-  final List<SpaceEntry> held = <SpaceEntry>[
+  final List<SpaceEntryValueObject> held = <SpaceEntryValueObject>[
     entry('guides', SpaceEntryTypeEnum.directory),
     entry('guides/writing.md', SpaceEntryTypeEnum.file),
     entry('logo.svg', SpaceEntryTypeEnum.file),
@@ -67,7 +70,7 @@ void main() {
   }
 
   /// Opens [space], the way Home does.
-  void open(Space space) =>
+  void open(SpaceEntity space) =>
       container.read(spaceSessionProvider.notifier).open(space);
 
   FileTreeNotifier notifier() => container.read(fileTreeProvider.notifier);
@@ -90,7 +93,7 @@ void main() {
 
   group('when a space opens', () {
     test('it reads the folder without being asked to', () async {
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       start();
       open(docs);
 
@@ -103,11 +106,11 @@ void main() {
         'elsewhere',
         'index.md',
       ]);
-      expect(spaces.listings, <Space>[docs]);
+      expect(spaces.listings, <SpaceEntity>[docs]);
     });
 
     test('every folder starts open', () async {
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       start();
       open(docs);
       await Future<void>.delayed(Duration.zero);
@@ -123,9 +126,10 @@ void main() {
       () async {
         // An empty tree would say the space holds nothing, which is a
         // different claim from "the folder could not be read".
-        spaces.answer = const Failure<List<SpaceEntry>, SpaceFailure>(
-          SpaceFolderMissing('/code/app/docs'),
-        );
+        spaces.answer =
+            const Failure<List<SpaceEntryValueObject>, SpaceFailure>(
+              SpaceFolderMissing('/code/app/docs'),
+            );
         start();
         open(docs);
         await Future<void>.delayed(Duration.zero);
@@ -138,7 +142,7 @@ void main() {
     );
 
     test('another space is read again, from scratch', () async {
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       start();
       open(docs);
       await Future<void>.delayed(Duration.zero);
@@ -147,7 +151,7 @@ void main() {
       open(other);
       await Future<void>.delayed(Duration.zero);
 
-      expect(spaces.listings, <Space>[docs, other]);
+      expect(spaces.listings, <SpaceEntity>[docs, other]);
       // The closed folder went with the space it belonged to: a set of paths
       // from another space would hide folders that happen to share a name.
       expect(
@@ -159,7 +163,7 @@ void main() {
 
   group('clicking a row', () {
     setUp(() async {
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       start();
       open(docs);
       await Future<void>.delayed(Duration.zero);
@@ -185,7 +189,7 @@ void main() {
       // every click would put the disk in the way of a chevron.
       notifier().activate(entry('guides', SpaceEntryTypeEnum.directory));
 
-      expect(spaces.listings, <Space>[docs]);
+      expect(spaces.listings, <SpaceEntity>[docs]);
     });
 
     test('a markdown file becomes the document the window shows', () {
@@ -193,7 +197,7 @@ void main() {
 
       expect(
         container.read(spaceSessionProvider)?.openDocument,
-        SpaceRelativePath('index.md'),
+        SpaceRelativePathValueObject('index.md'),
       );
     });
 
@@ -202,7 +206,7 @@ void main() {
       // opening a document must not send the tree back to the disk.
       notifier().activate(entry('index.md', SpaceEntryTypeEnum.file));
 
-      expect(spaces.listings, <Space>[docs]);
+      expect(spaces.listings, <SpaceEntity>[docs]);
       expect(container.read(fileTreeProvider), isA<FileTreeReady>());
     });
 
@@ -237,18 +241,22 @@ void main() {
 /// A space repository that answers what it was told to, and remembers who
 /// asked.
 final class _Spaces implements SpaceRepository {
-  Result<List<SpaceEntry>, SpaceFailure> answer =
-      const Success<List<SpaceEntry>, SpaceFailure>(<SpaceEntry>[]);
+  Result<List<SpaceEntryValueObject>, SpaceFailure> answer =
+      const Success<List<SpaceEntryValueObject>, SpaceFailure>(
+        <SpaceEntryValueObject>[],
+      );
 
   /// Every space this was asked to list, in order.
-  final List<Space> listings = <Space>[];
+  final List<SpaceEntity> listings = <SpaceEntity>[];
 
   @override
-  Future<Result<Space, AppFailure>> open(String folder) async =>
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
       throw UnimplementedError();
 
   @override
-  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async {
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async {
     listings.add(space);
     return answer;
   }

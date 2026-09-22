@@ -1,4 +1,4 @@
-/// Turning the log format `GitClient` asks for into [Commit]s.
+/// Turning the log format `GitClient` asks for into [CommitEntity]s.
 library;
 
 import 'package:tom_data/src/capabilities/git_client/git_client.dart';
@@ -24,9 +24,9 @@ final class GitLogParser {
   static const int _fieldCount = 6;
 
   /// Reads [log] into commits, most recent first, as git ordered them.
-  List<Commit> parse(String log) => <Commit>[
+  List<CommitEntity> parse(String log) => <CommitEntity>[
     for (final String record in log.split(GitClient.recordSeparator))
-      if (_parseRecord(record) case final Commit commit) commit,
+      if (_parseRecord(record) case final CommitEntity commit) commit,
   ];
 
   /// One record: sha, author name, author email, ISO date, subject, body.
@@ -40,21 +40,21 @@ final class GitLogParser {
   /// formatting; the left side is content, and in a markdown tool it is
   /// load-bearing — a body opening with an indented code block or a nested
   /// list means the indentation.
-  Commit? _parseRecord(String record) {
+  CommitEntity? _parseRecord(String record) {
     final List<String> fields = record.trimLeft().split(
       GitClient.unitSeparator,
     );
     if (fields.length != _fieldCount) {
       return null;
     }
-    final CommitSha? sha = CommitSha.tryParse(fields[0]);
-    final CommitDate? date = _parseDate(fields[3]);
+    final CommitShaValueObject? sha = CommitShaValueObject.tryParse(fields[0]);
+    final CommitDateValueObject? date = _parseDate(fields[3]);
     if (sha == null || date == null) {
       return null;
     }
-    return Commit(
+    return CommitEntity(
       sha: sha,
-      author: Author(name: fields[1], email: fields[2]),
+      author: AuthorValueObject(name: fields[1], email: fields[2]),
       date: date,
       subject: fields[4],
       body: fields[5].trimRight(),
@@ -68,7 +68,7 @@ final class GitLogParser {
   /// `04:44:01Z` and the author's Saturday night becomes the reader's Sunday
   /// morning. The offset is read off the tail of the text instead, which is
   /// the only place it still exists.
-  CommitDate? _parseDate(String value) {
+  CommitDateValueObject? _parseDate(String value) {
     final DateTime? utc = DateTime.tryParse(value);
     if (utc == null) {
       return null;
@@ -79,13 +79,13 @@ final class GitLogParser {
     }
     // A `Z` tail is a real zero offset, not a missing one.
     if (offset.namedGroup('sign') == null) {
-      return CommitDate(utc: utc.toUtc(), offset: Duration.zero);
+      return CommitDateValueObject(utc: utc.toUtc(), offset: Duration.zero);
     }
     final Duration magnitude = Duration(
       hours: int.parse(offset.namedGroup('hours')!),
       minutes: int.parse(offset.namedGroup('minutes')!),
     );
-    return CommitDate(
+    return CommitDateValueObject(
       utc: utc.toUtc(),
       offset: offset.namedGroup('sign') == '-' ? -magnitude : magnitude,
     );

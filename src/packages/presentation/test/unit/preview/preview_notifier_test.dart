@@ -10,26 +10,31 @@ void main() {
   late _Documents documents;
   late ProviderContainer container;
 
-  final Space docs = Space(
+  final SpaceEntity docs = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
     name: 'docs',
   );
-  final SpaceRelativePath writing = SpaceRelativePath('guides/writing.md');
-  final SpaceRelativePath index = SpaceRelativePath('index.md');
-
-  ParsedDocument parsedOf(SpaceRelativePath path) => ParsedDocument(
-    document: Document(path: path, content: '# ${path.name}\n'),
-    blocks: <Block>[
-      Block(
-        startLine: 0,
-        endLine: 0,
-        source: '# ${path.name}',
-        kind: BlockKindEnum.heading,
-      ),
-    ],
-    linkDefinitions: '',
+  final SpaceRelativePathValueObject writing = SpaceRelativePathValueObject(
+    'guides/writing.md',
   );
+  final SpaceRelativePathValueObject index = SpaceRelativePathValueObject(
+    'index.md',
+  );
+
+  ParsedDocumentValueObject parsedOf(SpaceRelativePathValueObject path) =>
+      ParsedDocumentValueObject(
+        document: DocumentEntity(path: path, content: '# ${path.name}\n'),
+        blocks: <BlockValueObject>[
+          BlockValueObject(
+            startLine: 0,
+            endLine: 0,
+            source: '# ${path.name}',
+            kind: BlockKindEnum.heading,
+          ),
+        ],
+        linkDefinitions: '',
+      );
 
   setUp(() {
     documents = _Documents();
@@ -37,7 +42,7 @@ void main() {
       overrides: <Override>[
         readDocumentProvider.overrideWithValue(
           ReadDocumentUseCase(
-            documentsFor: (Space space) => documents,
+            documentsFor: (SpaceEntity space) => documents,
             blocks: const _Blocks(),
             observability: const _Silent(),
           ),
@@ -54,7 +59,7 @@ void main() {
   }
 
   /// Opens [space] and shows [document], the way the tree does.
-  void show(Space space, SpaceRelativePath? document) {
+  void show(SpaceEntity space, SpaceRelativePathValueObject? document) {
     container.read(spaceSessionProvider.notifier).open(space);
     if (document != null) {
       container.read(spaceSessionProvider.notifier).show(document);
@@ -92,7 +97,7 @@ void main() {
       (container.read(previewProvider) as PreviewReady).document,
       parsedOf(writing),
     );
-    expect(documents.asked, <SpaceRelativePath>[writing]);
+    expect(documents.asked, <SpaceRelativePathValueObject>[writing]);
   });
 
   test('choosing another document reads that one', () async {
@@ -103,7 +108,7 @@ void main() {
     container.read(spaceSessionProvider.notifier).show(index);
     await settle();
 
-    expect(documents.asked, <SpaceRelativePath>[writing, index]);
+    expect(documents.asked, <SpaceRelativePathValueObject>[writing, index]);
     expect(
       (container.read(previewProvider) as PreviewReady).document,
       parsedOf(index),
@@ -113,7 +118,7 @@ void main() {
   test('a document that is gone is a failure, not an empty page', () async {
     // An empty page would say the document holds nothing, which is a
     // different claim from "it is not there".
-    documents.answer = Failure<Document, DocumentFailure>(
+    documents.answer = Failure<DocumentEntity, DocumentFailure>(
       DocumentNotFound(writing.value),
     );
     start();
@@ -130,22 +135,25 @@ void main() {
 /// A repository that answers what it was told to, and remembers what it was
 /// asked for.
 final class _Documents implements DocumentRepository {
-  Result<Document, DocumentFailure>? answer;
+  Result<DocumentEntity, DocumentFailure>? answer;
 
   /// What this was asked to read, in order.
-  final List<SpaceRelativePath> asked = <SpaceRelativePath>[];
+  final List<SpaceRelativePathValueObject> asked =
+      <SpaceRelativePathValueObject>[];
 
   @override
-  Future<Result<Document, DocumentFailure>> read(SpaceRelativePath path) async {
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
+  ) async {
     asked.add(path);
     return answer ??
-        Success<Document, DocumentFailure>(
-          Document(path: path, content: '# ${path.name}\n'),
+        Success<DocumentEntity, DocumentFailure>(
+          DocumentEntity(path: path, content: '# ${path.name}\n'),
         );
   }
 
   @override
-  Future<Result<void, DocumentFailure>> write(Document document) async =>
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
       throw UnimplementedError();
 }
 
@@ -154,13 +162,13 @@ final class _Blocks implements BlockReader {
   const _Blocks();
 
   @override
-  Future<Result<ParsedDocument, DocumentFailure>> read(
-    Document document,
-  ) async => Success<ParsedDocument, DocumentFailure>(
-    ParsedDocument(
+  Future<Result<ParsedDocumentValueObject, DocumentFailure>> read(
+    DocumentEntity document,
+  ) async => Success<ParsedDocumentValueObject, DocumentFailure>(
+    ParsedDocumentValueObject(
       document: document,
-      blocks: <Block>[
-        Block(
+      blocks: <BlockValueObject>[
+        BlockValueObject(
           startLine: 0,
           endLine: 0,
           source: '# ${document.path.name}',

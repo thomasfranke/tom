@@ -125,7 +125,7 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<RecentSpace> recents)?  ready,TResult Function( AppFailure failure,  List<RecentSpace> recents)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<RecentSpaceEntity> recents)?  ready,TResult Function( AppFailure failure,  List<RecentSpaceEntity> recents)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case HomeInitial() when initial != null:
 return initial();case HomeLoading() when loading != null:
@@ -149,7 +149,7 @@ return failed(_that.failure,_that.recents);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<RecentSpace> recents)  ready,required TResult Function( AppFailure failure,  List<RecentSpace> recents)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<RecentSpaceEntity> recents)  ready,required TResult Function( AppFailure failure,  List<RecentSpaceEntity> recents)  failed,}) {final _that = this;
 switch (_that) {
 case HomeInitial():
 return initial();case HomeLoading():
@@ -169,7 +169,7 @@ return failed(_that.failure,_that.recents);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<RecentSpace> recents)?  ready,TResult? Function( AppFailure failure,  List<RecentSpace> recents)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<RecentSpaceEntity> recents)?  ready,TResult? Function( AppFailure failure,  List<RecentSpaceEntity> recents)?  failed,}) {final _that = this;
 switch (_that) {
 case HomeInitial() when initial != null:
 return initial();case HomeLoading() when loading != null:
@@ -251,11 +251,11 @@ String toString() {
 
 
 class HomeReady implements HomeState {
-  const HomeReady(final  List<RecentSpace> recents): _recents = recents;
+  const HomeReady(final  List<RecentSpaceEntity> recents): _recents = recents;
   
 
- final  List<RecentSpace> _recents;
- List<RecentSpace> get recents {
+ final  List<RecentSpaceEntity> _recents;
+ List<RecentSpaceEntity> get recents {
   if (_recents is EqualUnmodifiableListView) return _recents;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_recents);
@@ -292,7 +292,7 @@ abstract mixin class $HomeReadyCopyWith<$Res> implements $HomeStateCopyWith<$Res
   factory $HomeReadyCopyWith(HomeReady value, $Res Function(HomeReady) _then) = _$HomeReadyCopyWithImpl;
 @useResult
 $Res call({
- List<RecentSpace> recents
+ List<RecentSpaceEntity> recents
 });
 
 
@@ -312,7 +312,7 @@ class _$HomeReadyCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') $Res call({Object? recents = null,}) {
   return _then(HomeReady(
 null == recents ? _self._recents : recents // ignore: cast_nullable_to_non_nullable
-as List<RecentSpace>,
+as List<RecentSpaceEntity>,
   ));
 }
 
@@ -323,12 +323,12 @@ as List<RecentSpace>,
 
 
 class HomeFailed implements HomeState {
-  const HomeFailed({required this.failure, required final  List<RecentSpace> recents}): _recents = recents;
+  const HomeFailed({required this.failure, required final  List<RecentSpaceEntity> recents}): _recents = recents;
   
 
  final  AppFailure failure;
- final  List<RecentSpace> _recents;
- List<RecentSpace> get recents {
+ final  List<RecentSpaceEntity> _recents;
+ List<RecentSpaceEntity> get recents {
   if (_recents is EqualUnmodifiableListView) return _recents;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_recents);
@@ -365,7 +365,7 @@ abstract mixin class $HomeFailedCopyWith<$Res> implements $HomeStateCopyWith<$Re
   factory $HomeFailedCopyWith(HomeFailed value, $Res Function(HomeFailed) _then) = _$HomeFailedCopyWithImpl;
 @useResult
 $Res call({
- AppFailure failure, List<RecentSpace> recents
+ AppFailure failure, List<RecentSpaceEntity> recents
 });
 
 
@@ -386,7 +386,7 @@ class _$HomeFailedCopyWithImpl<$Res>
   return _then(HomeFailed(
 failure: null == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as AppFailure,recents: null == recents ? _self._recents : recents // ignore: cast_nullable_to_non_nullable
-as List<RecentSpace>,
+as List<RecentSpaceEntity>,
   ));
 }
 

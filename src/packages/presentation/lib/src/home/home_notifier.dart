@@ -46,8 +46,8 @@ class HomeNotifier extends _$HomeNotifier {
 
   /// Reads the recent list.
   Future<void> load() async {
-    final Result<List<RecentSpace>, AppFailure> listed = await listRecentSpaces
-        .list();
+    final Result<List<RecentSpaceEntity>, AppFailure> listed =
+        await listRecentSpaces.list();
     state = HomeState.ready(_recentsOf(listed));
   }
 
@@ -62,8 +62,10 @@ class HomeNotifier extends _$HomeNotifier {
   /// folder, the others are still there to click.
   Future<void> open(String folder) async {
     state = const HomeState.loading();
-    final Result<Space, AppFailure> opened = await openSpace.open(folder);
-    if (opened case Success<Space, AppFailure>(value: final Space space)) {
+    final Result<SpaceEntity, AppFailure> opened = await openSpace.open(folder);
+    if (opened case Success<SpaceEntity, AppFailure>(
+      value: final SpaceEntity space,
+    )) {
       // Home stays on `loading`, the honest state for a screen being
       // replaced: re-reading the recent list here would write to a notifier
       // the window has already disposed.
@@ -73,7 +75,7 @@ class HomeNotifier extends _$HomeNotifier {
     // The list is re-read rather than remembered: opening may have changed
     // it, and the screen the user lands on should show what is there.
     state = HomeState.failed(
-      failure: (opened as Failure<Space, AppFailure>).failure,
+      failure: (opened as Failure<SpaceEntity, AppFailure>).failure,
       recents: _recentsOf(await listRecentSpaces.list()),
     );
   }
@@ -89,7 +91,7 @@ class HomeNotifier extends _$HomeNotifier {
   /// A list that cannot be read is an empty list and never an error screen:
   /// Home's job with no recents is to offer the folder picker, which it does
   /// anyway.
-  static List<RecentSpace> _recentsOf(
-    Result<List<RecentSpace>, AppFailure> listed,
-  ) => listed.valueOrNull ?? const <RecentSpace>[];
+  static List<RecentSpaceEntity> _recentsOf(
+    Result<List<RecentSpaceEntity>, AppFailure> listed,
+  ) => listed.valueOrNull ?? const <RecentSpaceEntity>[];
 }

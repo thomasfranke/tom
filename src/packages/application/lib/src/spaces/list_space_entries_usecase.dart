@@ -5,7 +5,7 @@ import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// Everything a [Space] holds, in the order a tree shows it.
+/// Everything a [SpaceEntity] holds, in the order a tree shows it.
 ///
 /// The whole space in one call, which is affordable because a space is a
 /// documentation folder and `.git/` is never descended into. Reading it once
@@ -28,6 +28,7 @@ final class ListSpaceEntriesUseCase with UseCase {
   final Observability observability;
 
   /// What [space] holds.
-  Future<Result<List<SpaceEntry>, AppFailure>> list(Space space) =>
-      guard(() => spaces.entries(space));
+  Future<Result<List<SpaceEntryValueObject>, AppFailure>> list(
+    SpaceEntity space,
+  ) => guard(() => spaces.entries(space));
 }

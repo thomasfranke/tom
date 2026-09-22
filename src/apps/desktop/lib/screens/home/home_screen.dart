@@ -98,7 +98,7 @@ class HomeScreen extends ConsumerWidget {
               ),
               // The ground is only under the empty state: it is drawn off the
               // wordmark, and the refusal does not show one.
-              HomeReady(recents: final List<RecentSpace> recents) =>
+              HomeReady(recents: final List<RecentSpaceEntity> recents) =>
                 CommitTrunk(
                   // The line's own history is the only history this screen
                   // has: the spaces that were opened, newest first. Invented
@@ -132,8 +132,8 @@ class HomeScreen extends ConsumerWidget {
 ///
 /// Three at most: the line has room for three before it reaches the status
 /// bar, and a fourth would be a list rather than a ground.
-List<TrunkCommit> _commits(List<RecentSpace> recents) => <TrunkCommit>[
-  for (final RecentSpace recent in recents.take(3))
+List<TrunkCommit> _commits(List<RecentSpaceEntity> recents) => <TrunkCommit>[
+  for (final RecentSpaceEntity recent in recents.take(3))
     TrunkCommit(subject: recent.name, meta: _ago(recent.lastOpened)),
 ];
 
@@ -220,12 +220,12 @@ class _Welcome extends ConsumerWidget {
   const _Welcome({required this.recents});
 
   /// What to offer going back to.
-  final List<RecentSpace> recents;
+  final List<RecentSpaceEntity> recents;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<RecentSpace>('recents', recents));
+    properties.add(IterableProperty<RecentSpaceEntity>('recents', recents));
   }
 
   @override
@@ -409,12 +409,12 @@ class _RecentList extends ConsumerWidget {
   const _RecentList({required this.recents});
 
   /// What to show, newest first.
-  final List<RecentSpace> recents;
+  final List<RecentSpaceEntity> recents;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<RecentSpace>('recents', recents));
+    properties.add(IterableProperty<RecentSpaceEntity>('recents', recents));
   }
 
   @override
@@ -444,7 +444,7 @@ class _RecentList extends ConsumerWidget {
             ),
             child: Column(
               children: <Widget>[
-                for (final (int i, RecentSpace recent)
+                for (final (int i, RecentSpaceEntity recent)
                     in recents.indexed) ...<Widget>[
                   if (i > 0)
                     Padding(
@@ -469,12 +469,12 @@ class _RecentRow extends ConsumerWidget {
   const _RecentRow({required this.recent});
 
   /// The space this row offers.
-  final RecentSpace recent;
+  final RecentSpaceEntity recent;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<RecentSpace>('recent', recent));
+    properties.add(DiagnosticsProperty<RecentSpaceEntity>('recent', recent));
   }
 
   @override
@@ -517,8 +517,9 @@ class _RecentRow extends ConsumerWidget {
               ),
             ),
             // Where the design puts the branch this space is on. It is not
-            // drawn yet and the row says why: a `RecentSpace` is what can be
-            // remembered *without asking git*, and a branch for every row is
+            // drawn yet and the row says why: a `RecentSpaceEntity` is what
+            // can be remembered *without asking git*, and a branch for every
+            // row is
             // a disk read per row of a list the user may not click.
             IconButton(
               tooltip: 'Forget this space',

@@ -16,12 +16,14 @@ void main() {
   late _Documents documents;
   late ProviderContainer container;
 
-  final Space docs = Space(
+  final SpaceEntity docs = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
     name: 'docs',
   );
-  final SpaceRelativePath writing = SpaceRelativePath('guides/writing.md');
+  final SpaceRelativePathValueObject writing = SpaceRelativePathValueObject(
+    'guides/writing.md',
+  );
 
   setUp(() {
     documents = _Documents();
@@ -29,7 +31,7 @@ void main() {
       overrides: <Override>[
         readDocumentProvider.overrideWithValue(
           ReadDocumentUseCase(
-            documentsFor: (Space space) => documents,
+            documentsFor: (SpaceEntity space) => documents,
             blocks: const _Blocks(),
             observability: const _Silent(),
           ),
@@ -42,7 +44,7 @@ void main() {
   /// Mounts the panel, with [document] open when one is given.
   Future<void> pumpPreview(
     WidgetTester tester, {
-    SpaceRelativePath? document,
+    SpaceRelativePathValueObject? document,
   }) async {
     tester.view
       ..physicalSize = const Size(1280, 800)
@@ -108,7 +110,7 @@ void main() {
   testWidgets('a document that is gone is named as that', (
     WidgetTester tester,
   ) async {
-    documents.answer = Failure<Document, DocumentFailure>(
+    documents.answer = Failure<DocumentEntity, DocumentFailure>(
       DocumentNotFound(writing.value),
     );
 
@@ -120,7 +122,7 @@ void main() {
   testWidgets('a file TOM cannot read says which problem it is', (
     WidgetTester tester,
   ) async {
-    documents.answer = Failure<Document, DocumentFailure>(
+    documents.answer = Failure<DocumentEntity, DocumentFailure>(
       DocumentNotUtf8(writing.value),
     );
 
@@ -136,19 +138,19 @@ void main() {
 /// A repository answering with whatever content the test set.
 final class _Documents implements DocumentRepository {
   String content = '';
-  Result<Document, DocumentFailure>? answer;
+  Result<DocumentEntity, DocumentFailure>? answer;
 
   @override
-  Future<Result<Document, DocumentFailure>> read(
-    SpaceRelativePath path,
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
   ) async =>
       answer ??
-      Success<Document, DocumentFailure>(
-        Document(path: path, content: content),
+      Success<DocumentEntity, DocumentFailure>(
+        DocumentEntity(path: path, content: content),
       );
 
   @override
-  Future<Result<void, DocumentFailure>> write(Document document) async =>
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
       throw UnimplementedError();
 }
 
@@ -158,8 +160,9 @@ final class _Blocks implements BlockReader {
   const _Blocks();
 
   @override
-  Future<Result<ParsedDocument, DocumentFailure>> read(Document document) =>
-      _reader.read(document);
+  Future<Result<ParsedDocumentValueObject, DocumentFailure>> read(
+    DocumentEntity document,
+  ) => _reader.read(document);
 
   static const MarkdownBlockReader _reader = MarkdownBlockReader(
     parser: MarkdownPackageParser(),

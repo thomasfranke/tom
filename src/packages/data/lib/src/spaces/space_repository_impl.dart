@@ -44,7 +44,7 @@ final class SpaceRepositoryImpl implements SpaceRepository {
   static const String _gitDirectory = '.git';
 
   @override
-  Future<Result<Space, AppFailure>> open(String folder) async {
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async {
     // The disk is asked first, and the order is the whole point: a folder
     // that is not there and a folder that holds no repository send the user
     // somewhere different — forget this space, against open another one —
@@ -54,9 +54,9 @@ final class SpaceRepositoryImpl implements SpaceRepository {
         .mapFailure(_asSpaceFailure);
     switch (exists) {
       case Failure<bool, SpaceFailure>(failure: final SpaceFailure failure):
-        return Failure<Space, AppFailure>(failure);
+        return Failure<SpaceEntity, AppFailure>(failure);
       case Success<bool, SpaceFailure>(value: false):
-        return Failure<Space, AppFailure>(SpaceFolderMissing(folder));
+        return Failure<SpaceEntity, AppFailure>(SpaceFolderMissing(folder));
       case Success<bool, SpaceFailure>():
         break;
     }
@@ -64,10 +64,10 @@ final class SpaceRepositoryImpl implements SpaceRepository {
     return gitClientFor(folder)
         .repositoryRoot()
         .map(
-          (String repositoryRoot) => Space(
+          (String repositoryRoot) => SpaceEntity(
             root: folder,
             repositoryRoot: repositoryRoot,
-            name: Space.nameOfFolder(folder),
+            name: SpaceEntity.nameOfFolder(folder),
           ),
         )
         .mapFailure(
@@ -76,15 +76,19 @@ final class SpaceRepositoryImpl implements SpaceRepository {
   }
 
   @override
-  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async {
-    final List<SpaceEntry> collected = <SpaceEntry>[];
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async {
+    final List<SpaceEntryValueObject> collected = <SpaceEntryValueObject>[];
     final Result<void, SpaceFailure> walked = await _walk(
       space,
       space.root,
       collected,
       isRoot: true,
     );
-    return walked.map((_) => List<SpaceEntry>.unmodifiable(collected));
+    return walked.map(
+      (_) => List<SpaceEntryValueObject>.unmodifiable(collected),
+    );
   }
 
   /// Lists [directory], appending what it holds to [into], deepest last.
@@ -104,9 +108,9 @@ final class SpaceRepositoryImpl implements SpaceRepository {
   /// not the file tree. [isRoot] is what makes the space's own folder the
   /// exception — a space whose root cannot be read has nothing to show.
   Future<Result<void, SpaceFailure>> _walk(
-    Space space,
+    SpaceEntity space,
     String directory,
-    List<SpaceEntry> into, {
+    List<SpaceEntryValueObject> into, {
     required bool isRoot,
   }) async {
     final Result<List<FilesystemEntryDto>, FilesystemFailure> listed =
@@ -121,11 +125,16 @@ final class SpaceRepositoryImpl implements SpaceRepository {
     for (final FilesystemEntryDto entry
         in (listed as Success<List<FilesystemEntryDto>, FilesystemFailure>)
             .value) {
-      final SpaceRelativePath? path = space.relativize(entry.path);
+      final SpaceRelativePathValueObject? path = space.relativize(entry.path);
       if (path == null || path.name == _gitDirectory) {
         continue;
       }
-      into.add(SpaceEntry(path: path, type: _asSpaceEntryTypeEnum(entry.type)));
+      into.add(
+        SpaceEntryValueObject(
+          path: path,
+          type: _asSpaceEntryTypeEnum(entry.type),
+        ),
+      );
       if (entry.type == FilesystemEntryTypeEnum.directory) {
         await _walk(space, entry.path, into, isRoot: false);
       }

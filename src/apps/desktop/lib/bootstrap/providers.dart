@@ -64,7 +64,7 @@ RecentSpacesRepository recentSpacesRepository(Ref ref) =>
 @Riverpod(keepAlive: true)
 DocumentRepositoryFor documentRepositoryFor(Ref ref) {
   final Filesystem filesystem = ref.watch(filesystemProvider);
-  return (Space space) =>
+  return (SpaceEntity space) =>
       DocumentRepositoryImpl(filesystem: filesystem, space: space);
 }
 

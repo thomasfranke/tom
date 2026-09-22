@@ -21,7 +21,7 @@ void main() {
   late String root;
   late DocumentRepositoryImpl documents;
   late SpaceRepositoryImpl spaces;
-  late Space space;
+  late SpaceEntity space;
 
   /// What [result] holds, or a failure of the test if it did not succeed.
   T valueOf<T, F extends AppFailure>(Result<T, F> result) => switch (result) {
@@ -51,7 +51,11 @@ void main() {
     // The normal case: the user opened `docs/` inside a repository.
     root = '$repositoryRoot/docs';
     Directory(root).createSync();
-    space = Space(root: root, repositoryRoot: repositoryRoot, name: 'docs');
+    space = SpaceEntity(
+      root: root,
+      repositoryRoot: repositoryRoot,
+      name: 'docs',
+    );
     const Filesystem filesystem = DartIoFilesystem();
     documents = DocumentRepositoryImpl(filesystem: filesystem, space: space);
     spaces = SpaceRepositoryImpl(
@@ -67,17 +71,19 @@ void main() {
     test('reads what is on disk, byte for byte', () async {
       write('guide.md', '# Guide\r\n\r\nBody\n\n');
 
-      final Document document = valueOf(
-        await documents.read(SpaceRelativePath('guide.md')),
+      final DocumentEntity document = valueOf(
+        await documents.read(SpaceRelativePathValueObject('guide.md')),
       );
 
       expect(document.content, '# Guide\r\n\r\nBody\n\n');
-      expect(document.path, SpaceRelativePath('guide.md'));
+      expect(document.path, SpaceRelativePathValueObject('guide.md'));
     });
 
     test('a file that is not there names the document', () async {
       expect(
-        failureOf(await documents.read(SpaceRelativePath('missing.md'))),
+        failureOf(
+          await documents.read(SpaceRelativePathValueObject('missing.md')),
+        ),
         isA<DocumentNotFound>().having(
           (DocumentNotFound failure) => failure.path,
           'path',
@@ -91,7 +97,7 @@ void main() {
       // the capability said, and what the operating system said. The path the
       // user sees is space-relative; the absolute one is further down.
       final AppFailure failure = failureOf(
-        await documents.read(SpaceRelativePath('missing.md')),
+        await documents.read(SpaceRelativePathValueObject('missing.md')),
       );
 
       expect(failure.chain, hasLength(3));
@@ -105,7 +111,9 @@ void main() {
       File('$root/binary.md').writeAsBytesSync(<int>[0xff, 0xfe, 0x00]);
 
       expect(
-        failureOf(await documents.read(SpaceRelativePath('binary.md'))),
+        failureOf(
+          await documents.read(SpaceRelativePathValueObject('binary.md')),
+        ),
         isA<DocumentNotUtf8>().having(
           (DocumentNotUtf8 failure) => failure.path,
           'path',
@@ -116,7 +124,10 @@ void main() {
 
     test('a path outside the space cannot be spelled', () async {
       // The type is the guard: there is no way to ask for `../secrets.md`.
-      expect(() => SpaceRelativePath('../secrets.md'), throwsArgumentError);
+      expect(
+        () => SpaceRelativePathValueObject('../secrets.md'),
+        throwsArgumentError,
+      );
     });
   });
 
@@ -124,7 +135,10 @@ void main() {
     test('lands on disk where the space says', () async {
       valueOf(
         await documents.write(
-          Document(path: SpaceRelativePath('guide.md'), content: '# Guide\n'),
+          DocumentEntity(
+            path: SpaceRelativePathValueObject('guide.md'),
+            content: '# Guide\n',
+          ),
         ),
       );
 
@@ -135,7 +149,10 @@ void main() {
       // Saving into a folder the user just named is a create.
       valueOf(
         await documents.write(
-          Document(path: SpaceRelativePath('adr/001.md'), content: '# One\n'),
+          DocumentEntity(
+            path: SpaceRelativePathValueObject('adr/001.md'),
+            content: '# One\n',
+          ),
         ),
       );
 
@@ -147,12 +164,17 @@ void main() {
 
       valueOf(
         await documents.write(
-          Document(path: SpaceRelativePath('guide.md'), content: '# New\n'),
+          DocumentEntity(
+            path: SpaceRelativePathValueObject('guide.md'),
+            content: '# New\n',
+          ),
         ),
       );
 
       expect(
-        valueOf(await documents.read(SpaceRelativePath('guide.md'))).content,
+        valueOf(
+          await documents.read(SpaceRelativePathValueObject('guide.md')),
+        ).content,
         '# New\n',
       );
     });
@@ -162,13 +184,18 @@ void main() {
 
       valueOf(
         await documents.write(
-          Document(path: SpaceRelativePath('guia.md'), content: content),
+          DocumentEntity(
+            path: SpaceRelativePathValueObject('guia.md'),
+            content: content,
+          ),
         ),
       );
 
       expect(utf8.decode(File('$root/guia.md').readAsBytesSync()), content);
       expect(
-        valueOf(await documents.read(SpaceRelativePath('guia.md'))).content,
+        valueOf(
+          await documents.read(SpaceRelativePathValueObject('guia.md')),
+        ).content,
         content,
       );
     });
@@ -180,14 +207,14 @@ void main() {
       write('adr/001.md', '# One\n');
       write('adr/002.md', '# Two\n');
 
-      final List<SpaceEntry> entries = valueOf(await spaces.entries(space));
+      final List<SpaceEntryValueObject> entries = valueOf(
+        await spaces.entries(space),
+      );
 
-      expect(entries.map((SpaceEntry entry) => entry.path.value), <String>[
-        'adr',
-        'adr/001.md',
-        'adr/002.md',
-        'guide.md',
-      ]);
+      expect(
+        entries.map((SpaceEntryValueObject entry) => entry.path.value),
+        <String>['adr', 'adr/001.md', 'adr/002.md', 'guide.md'],
+      );
     });
 
     test('hides a real .git and keeps the other dotfolders', () async {
@@ -197,7 +224,7 @@ void main() {
 
       final List<String> paths = valueOf(
         await spaces.entries(space),
-      ).map((SpaceEntry entry) => entry.path.value).toList();
+      ).map((SpaceEntryValueObject entry) => entry.path.value).toList();
 
       expect(paths, contains('.ai'));
       expect(paths, contains('.ai/skills.md'));
@@ -208,9 +235,9 @@ void main() {
       write('guide.md', '# Guide\n');
       Link('$root/alias.md').createSync('$root/guide.md');
 
-      final SpaceEntry entry = valueOf(
+      final SpaceEntryValueObject entry = valueOf(
         await spaces.entries(space),
-      ).firstWhere((SpaceEntry entry) => entry.name == 'alias.md');
+      ).firstWhere((SpaceEntryValueObject entry) => entry.name == 'alias.md');
 
       expect(entry.type, SpaceEntryTypeEnum.link);
       expect(entry.isDocument, isFalse);

@@ -68,7 +68,7 @@ abstract final class _Design {
 /// here to filter.
 ///
 /// A humble widget: what a click means and which document is open live in
-/// [FileTree] and the session, so everything here is layout.
+/// [FileTreeNotifier] and the session, so everything here is layout.
 class FileTreePanel extends ConsumerWidget {
   /// Creates the panel.
   const FileTreePanel({super.key});
@@ -249,7 +249,7 @@ class _Rows extends ConsumerWidget {
     if (rows.isEmpty) {
       return const _Note('This folder holds nothing yet.');
     }
-    final SpaceRelativePath? open = ref.watch(
+    final SpaceRelativePathValueObject? open = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => session?.openDocument,
       ),

@@ -34,7 +34,7 @@ class FileTreeNotifier extends _$FileTreeNotifier {
     // The space only, not the session: showing another document must not
     // re-read the folder, and watching the whole session would do that on
     // every click.
-    final Space? space = ref.watch(
+    final SpaceEntity? space = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => session?.space,
       ),
@@ -54,7 +54,7 @@ class FileTreeNotifier extends _$FileTreeNotifier {
   /// anything else does nothing: the tree shows every file and the editor
   /// opens only what it can read
   /// (`docs/product/navigation/file-tree/doc.md`).
-  void activate(SpaceEntry entry) {
+  void activate(SpaceEntryValueObject entry) {
     if (entry.type == SpaceEntryTypeEnum.directory) {
       _toggle(entry.path);
       return;
@@ -65,18 +65,18 @@ class FileTreeNotifier extends _$FileTreeNotifier {
   }
 
   /// Reads [space] and shows what it holds.
-  Future<void> _load(Space space) async {
-    final Result<List<SpaceEntry>, AppFailure> listed = await listSpaceEntries
-        .list(space);
+  Future<void> _load(SpaceEntity space) async {
+    final Result<List<SpaceEntryValueObject>, AppFailure> listed =
+        await listSpaceEntries.list(space);
     state = switch (listed) {
-      Success<List<SpaceEntry>, AppFailure>(
-        value: final List<SpaceEntry> entries,
+      Success<List<SpaceEntryValueObject>, AppFailure>(
+        value: final List<SpaceEntryValueObject> entries,
       ) =>
         FileTreeState.ready(
-          entries: List<SpaceEntry>.unmodifiable(entries),
-          collapsed: const <SpaceRelativePath>{},
+          entries: List<SpaceEntryValueObject>.unmodifiable(entries),
+          collapsed: const <SpaceRelativePathValueObject>{},
         ),
-      Failure<List<SpaceEntry>, AppFailure>(
+      Failure<List<SpaceEntryValueObject>, AppFailure>(
         failure: final AppFailure failure,
       ) =>
         FileTreeState.failed(failure),
@@ -87,18 +87,18 @@ class FileTreeNotifier extends _$FileTreeNotifier {
   ///
   /// Does nothing before the space has been read: there is no folder to
   /// toggle, and a set kept across a load would describe a tree that is gone.
-  void _toggle(SpaceRelativePath folder) {
+  void _toggle(SpaceRelativePathValueObject folder) {
     if (state case FileTreeReady(
-      entries: final List<SpaceEntry> entries,
-      collapsed: final Set<SpaceRelativePath> collapsed,
+      entries: final List<SpaceEntryValueObject> entries,
+      collapsed: final Set<SpaceRelativePathValueObject> collapsed,
     )) {
-      final Set<SpaceRelativePath> next = collapsed.toSet();
+      final Set<SpaceRelativePathValueObject> next = collapsed.toSet();
       if (!next.remove(folder)) {
         next.add(folder);
       }
       state = FileTreeState.ready(
         entries: entries,
-        collapsed: Set<SpaceRelativePath>.unmodifiable(next),
+        collapsed: Set<SpaceRelativePathValueObject>.unmodifiable(next),
       );
     }
   }

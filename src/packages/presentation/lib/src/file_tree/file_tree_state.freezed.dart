@@ -125,7 +125,7 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<SpaceEntry> entries,  Set<SpaceRelativePath> collapsed)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<SpaceEntryValueObject> entries,  Set<SpaceRelativePathValueObject> collapsed)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case FileTreeInitial() when initial != null:
 return initial();case FileTreeLoading() when loading != null:
@@ -149,7 +149,7 @@ return failed(_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<SpaceEntry> entries,  Set<SpaceRelativePath> collapsed)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<SpaceEntryValueObject> entries,  Set<SpaceRelativePathValueObject> collapsed)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
 switch (_that) {
 case FileTreeInitial():
 return initial();case FileTreeLoading():
@@ -169,7 +169,7 @@ return failed(_that.failure);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<SpaceEntry> entries,  Set<SpaceRelativePath> collapsed)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<SpaceEntryValueObject> entries,  Set<SpaceRelativePathValueObject> collapsed)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
 switch (_that) {
 case FileTreeInitial() when initial != null:
 return initial();case FileTreeLoading() when loading != null:
@@ -251,7 +251,7 @@ String toString() {
 
 
 class FileTreeReady implements FileTreeState {
-  const FileTreeReady({required final  List<SpaceEntry> entries, required final  Set<SpaceRelativePath> collapsed}): _entries = entries,_collapsed = collapsed;
+  const FileTreeReady({required final  List<SpaceEntryValueObject> entries, required final  Set<SpaceRelativePathValueObject> collapsed}): _entries = entries,_collapsed = collapsed;
   
 
 /// Everything the space holds, in the order a tree shows it.
@@ -259,13 +259,13 @@ class FileTreeReady implements FileTreeState {
 /// The whole space rather than one level, so expanding a folder is a
 /// filter over a list. Handed over unmodifiable, never copied — Freezed
 /// compares collections element-wise and copies nothing.
- final  List<SpaceEntry> _entries;
+ final  List<SpaceEntryValueObject> _entries;
 /// Everything the space holds, in the order a tree shows it.
 ///
 /// The whole space rather than one level, so expanding a folder is a
 /// filter over a list. Handed over unmodifiable, never copied — Freezed
 /// compares collections element-wise and copies nothing.
- List<SpaceEntry> get entries {
+ List<SpaceEntryValueObject> get entries {
   if (_entries is EqualUnmodifiableListView) return _entries;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_entries);
@@ -275,12 +275,12 @@ class FileTreeReady implements FileTreeState {
 ///
 /// Closed rather than open, so a space opens showing what it holds and
 /// an empty set is the ordinary first state.
- final  Set<SpaceRelativePath> _collapsed;
+ final  Set<SpaceRelativePathValueObject> _collapsed;
 /// The folders the user has closed.
 ///
 /// Closed rather than open, so a space opens showing what it holds and
 /// an empty set is the ordinary first state.
- Set<SpaceRelativePath> get collapsed {
+ Set<SpaceRelativePathValueObject> get collapsed {
   if (_collapsed is EqualUnmodifiableSetView) return _collapsed;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableSetView(_collapsed);
@@ -317,7 +317,7 @@ abstract mixin class $FileTreeReadyCopyWith<$Res> implements $FileTreeStateCopyW
   factory $FileTreeReadyCopyWith(FileTreeReady value, $Res Function(FileTreeReady) _then) = _$FileTreeReadyCopyWithImpl;
 @useResult
 $Res call({
- List<SpaceEntry> entries, Set<SpaceRelativePath> collapsed
+ List<SpaceEntryValueObject> entries, Set<SpaceRelativePathValueObject> collapsed
 });
 
 
@@ -337,8 +337,8 @@ class _$FileTreeReadyCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') $Res call({Object? entries = null,Object? collapsed = null,}) {
   return _then(FileTreeReady(
 entries: null == entries ? _self._entries : entries // ignore: cast_nullable_to_non_nullable
-as List<SpaceEntry>,collapsed: null == collapsed ? _self._collapsed : collapsed // ignore: cast_nullable_to_non_nullable
-as Set<SpaceRelativePath>,
+as List<SpaceEntryValueObject>,collapsed: null == collapsed ? _self._collapsed : collapsed // ignore: cast_nullable_to_non_nullable
+as Set<SpaceRelativePathValueObject>,
   ));
 }
 

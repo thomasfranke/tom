@@ -6,19 +6,19 @@ import 'package:tom_domain/tom_domain.dart';
 void main() {
   late _RecordingObservability observability;
 
-  final Space docs = Space(
+  final SpaceEntity docs = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
     name: 'docs',
   );
 
-  final List<SpaceEntry> held = <SpaceEntry>[
-    SpaceEntry(
-      path: SpaceRelativePath('guides'),
+  final List<SpaceEntryValueObject> held = <SpaceEntryValueObject>[
+    SpaceEntryValueObject(
+      path: SpaceRelativePathValueObject('guides'),
       type: SpaceEntryTypeEnum.directory,
     ),
-    SpaceEntry(
-      path: SpaceRelativePath('guides/writing.md'),
+    SpaceEntryValueObject(
+      path: SpaceRelativePathValueObject('guides/writing.md'),
       type: SpaceEntryTypeEnum.file,
     ),
   ];
@@ -27,7 +27,7 @@ void main() {
 
   /// The use case over a repository that answers [answer].
   ListSpaceEntriesUseCase listingWith(
-    Result<List<SpaceEntry>, SpaceFailure> answer,
+    Result<List<SpaceEntryValueObject>, SpaceFailure> answer,
   ) => ListSpaceEntriesUseCase(
     spaces: _Spaces(answer: answer),
     observability: observability,
@@ -36,16 +36,20 @@ void main() {
   test('it hands back what the space holds, in the order given', () async {
     // In order, because the order *is* the tree: a folder immediately
     // followed by what is inside it.
-    final Result<List<SpaceEntry>, AppFailure> result = await listingWith(
-      Success<List<SpaceEntry>, SpaceFailure>(held),
-    ).list(docs);
+    final Result<List<SpaceEntryValueObject>, AppFailure> result =
+        await listingWith(
+          Success<List<SpaceEntryValueObject>, SpaceFailure>(held),
+        ).list(docs);
 
-    expect((result as Success<List<SpaceEntry>, AppFailure>).value, held);
+    expect(
+      (result as Success<List<SpaceEntryValueObject>, AppFailure>).value,
+      held,
+    );
   });
 
   test('the space it was asked about reaches the repository', () async {
     final _Spaces spaces = _Spaces(
-      answer: Success<List<SpaceEntry>, SpaceFailure>(held),
+      answer: Success<List<SpaceEntryValueObject>, SpaceFailure>(held),
     );
 
     await ListSpaceEntriesUseCase(
@@ -61,21 +65,22 @@ void main() {
       // The file tree shows this as its own line, and relabelling it would
       // put "an unexpected error occurred" on a screen where the product has
       // something specific to say.
-      final Result<List<SpaceEntry>, AppFailure> result = await listingWith(
-        const Failure<List<SpaceEntry>, SpaceFailure>(
-          SpaceFolderMissing('/code/app/docs'),
-        ),
-      ).list(docs);
+      final Result<List<SpaceEntryValueObject>, AppFailure> result =
+          await listingWith(
+            const Failure<List<SpaceEntryValueObject>, SpaceFailure>(
+              SpaceFolderMissing('/code/app/docs'),
+            ),
+          ).list(docs);
 
       expect(
-        (result as Failure<List<SpaceEntry>, AppFailure>).failure,
+        (result as Failure<List<SpaceEntryValueObject>, AppFailure>).failure,
         const SpaceFolderMissing('/code/app/docs'),
       );
     });
 
     test('and nothing is reported to observability', () async {
       await listingWith(
-        const Failure<List<SpaceEntry>, SpaceFailure>(
+        const Failure<List<SpaceEntryValueObject>, SpaceFailure>(
           SpaceAccessDenied('/code/app/docs'),
         ),
       ).list(docs);
@@ -86,14 +91,14 @@ void main() {
 
   group('an exception becomes a failure', () {
     test('it never escapes the use case', () async {
-      final Result<List<SpaceEntry>, AppFailure> result =
+      final Result<List<SpaceEntryValueObject>, AppFailure> result =
           await ListSpaceEntriesUseCase(
             spaces: _ThrowingSpaces(),
             observability: observability,
           ).list(docs);
 
       expect(
-        (result as Failure<List<SpaceEntry>, AppFailure>).failure,
+        (result as Failure<List<SpaceEntryValueObject>, AppFailure>).failure,
         isA<UnexpectedFailure>(),
       );
     });
@@ -118,15 +123,17 @@ void main() {
 final class _Spaces implements SpaceRepository {
   _Spaces({required this.answer});
 
-  final Result<List<SpaceEntry>, SpaceFailure> answer;
-  Space? asked;
+  final Result<List<SpaceEntryValueObject>, SpaceFailure> answer;
+  SpaceEntity? asked;
 
   @override
-  Future<Result<Space, AppFailure>> open(String folder) async =>
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
       throw UnimplementedError();
 
   @override
-  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async {
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async {
     asked = space;
     return answer;
   }
@@ -135,12 +142,13 @@ final class _Spaces implements SpaceRepository {
 /// A repository that breaks its contract by throwing.
 final class _ThrowingSpaces implements SpaceRepository {
   @override
-  Future<Result<Space, AppFailure>> open(String folder) async =>
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
       throw UnimplementedError();
 
   @override
-  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async =>
-      throw StateError('the disk caught fire');
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async => throw StateError('the disk caught fire');
 }
 
 /// An [Observability] that keeps what it was handed.

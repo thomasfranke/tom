@@ -77,9 +77,9 @@ void main() {
     });
 
     test('reports its branch and a clean tree', () async {
-      final GitStatus status = valueOf(await repository.status());
+      final GitStatusValueObject status = valueOf(await repository.status());
 
-      expect(status.branch, BranchName('main'));
+      expect(status.branch, BranchNameValueObject('main'));
       expect(status.isClean, isTrue);
       expect(status.isDetached, isFalse);
       expect(status.upstream, isNull);
@@ -90,10 +90,13 @@ void main() {
     setUp(() => write('guide.md', '# Guide\n'));
 
     test('shows up as untracked, unstaged', () async {
-      final GitStatus status = valueOf(await repository.status());
+      final GitStatusValueObject status = valueOf(await repository.status());
 
       expect(status.isClean, isFalse);
-      expect(status.entries.single.path, RepoRelativePath('guide.md'));
+      expect(
+        status.entries.single.path,
+        RepoRelativePathValueObject('guide.md'),
+      );
       expect(status.entries.single.state, FileStateEnum.untracked);
       expect(status.entries.single.isStaged, isFalse);
       expect(status.hasStagedChanges, isFalse);
@@ -101,12 +104,12 @@ void main() {
 
     test('is staged as a whole file, and git agrees', () async {
       valueOf(
-        await repository.stage(<RepoRelativePath>[
-          RepoRelativePath('guide.md'),
+        await repository.stage(<RepoRelativePathValueObject>[
+          RepoRelativePathValueObject('guide.md'),
         ]),
       );
 
-      final GitStatus status = valueOf(await repository.status());
+      final GitStatusValueObject status = valueOf(await repository.status());
       expect(status.entries.single.state, FileStateEnum.added);
       expect(status.entries.single.isStaged, isTrue);
       expect(status.hasStagedChanges, isTrue);
@@ -114,13 +117,13 @@ void main() {
 
     test('unstaging puts it back where it was', () async {
       valueOf(
-        await repository.stage(<RepoRelativePath>[
-          RepoRelativePath('guide.md'),
+        await repository.stage(<RepoRelativePathValueObject>[
+          RepoRelativePathValueObject('guide.md'),
         ]),
       );
       valueOf(
-        await repository.unstage(<RepoRelativePath>[
-          RepoRelativePath('guide.md'),
+        await repository.unstage(<RepoRelativePathValueObject>[
+          RepoRelativePathValueObject('guide.md'),
         ]),
       );
 
@@ -135,8 +138,8 @@ void main() {
     setUp(() async {
       write('docs/guide.md', '# Guide\n');
       valueOf(
-        await repository.stage(<RepoRelativePath>[
-          RepoRelativePath('docs/guide.md'),
+        await repository.stage(<RepoRelativePathValueObject>[
+          RepoRelativePathValueObject('docs/guide.md'),
         ]),
       );
       valueOf(await repository.commit('docs: add the guide'));
@@ -147,7 +150,7 @@ void main() {
     });
 
     test('the commit is in the history, as an entity', () async {
-      final List<Commit> commits = valueOf(await repository.history());
+      final List<CommitEntity> commits = valueOf(await repository.history());
 
       expect(commits, hasLength(1));
       expect(commits.single.subject, 'docs: add the guide');
@@ -158,9 +161,11 @@ void main() {
     });
 
     test('the author date keeps the offset git recorded', () async {
-      // The reason `CommitDate` exists: a `DateTime` would have applied the
-      // offset and thrown it away.
-      final CommitDate date = valueOf(await repository.history()).single.date;
+      // The reason `CommitDateValueObject` exists: a `DateTime` would have
+      // applied the offset and thrown it away.
+      final CommitDateValueObject date = valueOf(
+        await repository.history(),
+      ).single.date;
 
       expect(date.utc.isUtc, isTrue);
       expect(
@@ -173,17 +178,19 @@ void main() {
     test('a history narrowed to a path sees only that path', () async {
       write('docs/other.md', '# Other\n');
       valueOf(
-        await repository.stage(<RepoRelativePath>[
-          RepoRelativePath('docs/other.md'),
+        await repository.stage(<RepoRelativePathValueObject>[
+          RepoRelativePathValueObject('docs/other.md'),
         ]),
       );
       valueOf(await repository.commit('docs: add another'));
 
-      final List<Commit> commits = valueOf(
-        await repository.history(path: RepoRelativePath('docs/guide.md')),
+      final List<CommitEntity> commits = valueOf(
+        await repository.history(
+          path: RepoRelativePathValueObject('docs/guide.md'),
+        ),
       );
 
-      expect(commits.map((Commit commit) => commit.subject), <String>[
+      expect(commits.map((CommitEntity commit) => commit.subject), <String>[
         'docs: add the guide',
       ]);
     });
@@ -191,13 +198,15 @@ void main() {
     test('a limit caps what comes back, newest first', () async {
       write('docs/other.md', '# Other\n');
       valueOf(
-        await repository.stage(<RepoRelativePath>[
-          RepoRelativePath('docs/other.md'),
+        await repository.stage(<RepoRelativePathValueObject>[
+          RepoRelativePathValueObject('docs/other.md'),
         ]),
       );
       valueOf(await repository.commit('docs: add another'));
 
-      final List<Commit> commits = valueOf(await repository.history(limit: 1));
+      final List<CommitEntity> commits = valueOf(
+        await repository.history(limit: 1),
+      );
 
       expect(commits.single.subject, 'docs: add another');
     });
@@ -209,7 +218,7 @@ void main() {
         valueOf(
           await repository.contentAt(
             revision: 'HEAD',
-            path: RepoRelativePath('docs/guide.md'),
+            path: RepoRelativePathValueObject('docs/guide.md'),
           ),
         ),
         '# Guide\n',
@@ -221,42 +230,53 @@ void main() {
     setUp(() async {
       write('guide.md', '# Guide\n');
       valueOf(
-        await repository.stage(<RepoRelativePath>[
-          RepoRelativePath('guide.md'),
+        await repository.stage(<RepoRelativePathValueObject>[
+          RepoRelativePathValueObject('guide.md'),
         ]),
       );
       valueOf(await repository.commit('docs: add the guide'));
     });
 
     test('listing says which one is current', () async {
-      final List<Branch> branches = valueOf(await repository.branches());
+      final List<BranchEntity> branches = valueOf(await repository.branches());
 
-      expect(branches.single.name, BranchName('main'));
+      expect(branches.single.name, BranchNameValueObject('main'));
       expect(branches.single.isCurrent, isTrue);
       expect(branches.single.upstream, isNull);
     });
 
     test('creating one switches to it, as the product expects', () async {
-      valueOf(await repository.createBranch(BranchName('feat/rendered-diff')));
+      valueOf(
+        await repository.createBranch(
+          BranchNameValueObject('feat/rendered-diff'),
+        ),
+      );
 
       expect(
         valueOf(await repository.status()).branch,
-        BranchName('feat/rendered-diff'),
+        BranchNameValueObject('feat/rendered-diff'),
       );
     });
 
     test('switching back moves HEAD', () async {
-      valueOf(await repository.createBranch(BranchName('feat/rendered-diff')));
-      valueOf(await repository.switchBranch(BranchName('main')));
+      valueOf(
+        await repository.createBranch(
+          BranchNameValueObject('feat/rendered-diff'),
+        ),
+      );
+      valueOf(await repository.switchBranch(BranchNameValueObject('main')));
 
-      expect(valueOf(await repository.status()).branch, BranchName('main'));
+      expect(
+        valueOf(await repository.status()).branch,
+        BranchNameValueObject('main'),
+      );
       expect(valueOf(await repository.branches()), hasLength(2));
     });
 
     test('a detached HEAD is reported as one', () async {
       git(<String>['checkout', '--quiet', '--detach', 'HEAD']);
 
-      final GitStatus status = valueOf(await repository.status());
+      final GitStatusValueObject status = valueOf(await repository.status());
       expect(status.isDetached, isTrue);
       expect(status.branch, isNull);
     });

@@ -125,7 +125,7 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  empty,TResult Function()?  loading,TResult Function( ParsedDocument document)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  empty,TResult Function()?  loading,TResult Function( ParsedDocumentValueObject document)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case PreviewEmpty() when empty != null:
 return empty();case PreviewLoading() when loading != null:
@@ -149,7 +149,7 @@ return failed(_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  empty,required TResult Function()  loading,required TResult Function( ParsedDocument document)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  empty,required TResult Function()  loading,required TResult Function( ParsedDocumentValueObject document)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
 switch (_that) {
 case PreviewEmpty():
 return empty();case PreviewLoading():
@@ -169,7 +169,7 @@ return failed(_that.failure);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  empty,TResult? Function()?  loading,TResult? Function( ParsedDocument document)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  empty,TResult? Function()?  loading,TResult? Function( ParsedDocumentValueObject document)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
 switch (_that) {
 case PreviewEmpty() when empty != null:
 return empty();case PreviewLoading() when loading != null:
@@ -254,7 +254,7 @@ class PreviewReady implements PreviewState {
   const PreviewReady(this.document);
   
 
- final  ParsedDocument document;
+ final  ParsedDocumentValueObject document;
 
 /// Create a copy of PreviewState
 /// with the given fields replaced by the non-null parameter values.
@@ -286,11 +286,11 @@ abstract mixin class $PreviewReadyCopyWith<$Res> implements $PreviewStateCopyWit
   factory $PreviewReadyCopyWith(PreviewReady value, $Res Function(PreviewReady) _then) = _$PreviewReadyCopyWithImpl;
 @useResult
 $Res call({
- ParsedDocument document
+ ParsedDocumentValueObject document
 });
 
 
-$ParsedDocumentCopyWith<$Res> get document;
+$ParsedDocumentValueObjectCopyWith<$Res> get document;
 
 }
 /// @nodoc
@@ -306,7 +306,7 @@ class _$PreviewReadyCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') $Res call({Object? document = null,}) {
   return _then(PreviewReady(
 null == document ? _self.document : document // ignore: cast_nullable_to_non_nullable
-as ParsedDocument,
+as ParsedDocumentValueObject,
   ));
 }
 
@@ -314,9 +314,9 @@ as ParsedDocument,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$ParsedDocumentCopyWith<$Res> get document {
+$ParsedDocumentValueObjectCopyWith<$Res> get document {
   
-  return $ParsedDocumentCopyWith<$Res>(_self.document, (value) {
+  return $ParsedDocumentValueObjectCopyWith<$Res>(_self.document, (value) {
     return _then(_self.copyWith(document: value));
   });
 }

@@ -11,7 +11,7 @@ part 'markdown_span_dto.freezed.dart';
 /// A DTO because it exists to cross the contract and is not a domain type
 /// ([Decision
 /// 21](../../../../../../docs/technical/decisions/021-dtos-and-daos-when-they-are-real.md)):
-/// the domain's word is `Block`, and this package may not name one.
+/// the domain's word is `BlockValueObject`, and this package may not name one.
 ///
 /// Positions and a kind, never a parse tree — that is what lets a second
 /// implementation owe the same answer.

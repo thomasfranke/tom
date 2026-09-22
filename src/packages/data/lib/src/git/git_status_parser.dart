@@ -1,4 +1,4 @@
-/// Turning `status --porcelain=v2 -z` into a [GitStatus].
+/// Turning `status --porcelain=v2 -z` into a [GitStatusValueObject].
 library;
 
 import 'package:tom_data/src/capabilities/git_client/git_client.dart';
@@ -31,14 +31,14 @@ final class GitStatusParser {
   static const String _detached = '(detached)';
 
   /// Reads [porcelain] into a status.
-  GitStatus parse(String porcelain) {
+  GitStatusValueObject parse(String porcelain) {
     final List<String> fields = porcelain.split(GitClient.nulSeparator);
     bool isDetached = false;
-    BranchName? branch;
-    BranchName? upstream;
+    BranchNameValueObject? branch;
+    BranchNameValueObject? upstream;
     int ahead = 0;
     int behind = 0;
-    final List<StatusEntry> entries = <StatusEntry>[];
+    final List<StatusEntryValueObject> entries = <StatusEntryValueObject>[];
 
     for (int i = 0; i < fields.length; i++) {
       final String field = fields[i];
@@ -52,9 +52,9 @@ final class GitStatusParser {
         // branch — the two nulls are not the same answer.
         final String name = field.substring('# branch.head '.length);
         isDetached = name == _detached;
-        branch = isDetached ? null : BranchName.tryParse(name);
+        branch = isDetached ? null : BranchNameValueObject.tryParse(name);
       } else if (field.startsWith('# branch.upstream ')) {
-        upstream = BranchName.tryParse(
+        upstream = BranchNameValueObject.tryParse(
           field.substring('# branch.upstream '.length),
         );
       } else if (field.startsWith('# branch.ab ')) {
@@ -84,20 +84,23 @@ final class GitStatusParser {
       // and one arriving anyway is not something to report.
     }
 
-    return GitStatus(
+    return GitStatusValueObject(
       branch: branch,
       upstream: upstream,
       ahead: ahead,
       behind: behind,
       // Unmodifiable because the status outlives this method and nothing
       // else should be able to change what it reports.
-      entries: List<StatusEntry>.unmodifiable(entries),
+      entries: List<StatusEntryValueObject>.unmodifiable(entries),
       isDetached: isDetached,
     );
   }
 
   /// Appends [entry] when there was one to make.
-  void _add(List<StatusEntry> entries, StatusEntry? entry) {
+  void _add(
+    List<StatusEntryValueObject> entries,
+    StatusEntryValueObject? entry,
+  ) {
     if (entry != null) {
       entries.add(entry);
     }
@@ -120,7 +123,7 @@ final class GitStatusParser {
   /// path on a `2`. The path is everything after the fixed fields, so it is
   /// taken by splitting a bounded number of times rather than on every space
   /// — a document called `release notes.md` is ordinary.
-  StatusEntry? _parseTracked(String record, {String? previousPath}) {
+  StatusEntryValueObject? _parseTracked(String record, {String? previousPath}) {
     final bool isRenameOrCopy = record.startsWith('2 ');
     final int fixedFields = isRenameOrCopy ? 9 : 8;
     final List<String> parts = record.split(' ');
@@ -131,9 +134,8 @@ final class GitStatusParser {
     if (xy.length != 2) {
       return null;
     }
-    final RepoRelativePath? path = RepoRelativePath.tryParse(
-      parts.skip(fixedFields).join(' '),
-    );
+    final RepoRelativePathValueObject? path =
+        RepoRelativePathValueObject.tryParse(parts.skip(fixedFields).join(' '));
     if (path == null) {
       return null;
     }
@@ -152,12 +154,12 @@ final class GitStatusParser {
     // a `C` lands on [FileStateEnum.added], which is the truth the product can
     // show. So the origin is attached only to a rename — `previousPath` says
     // "the file came from here", and for a copy the file is still there.
-    return StatusEntry(
+    return StatusEntryValueObject(
       path: path,
       state: state,
       isStaged: staged != '.',
       previousPath: state == FileStateEnum.renamed && previousPath != null
-          ? RepoRelativePath.tryParse(previousPath)
+          ? RepoRelativePathValueObject.tryParse(previousPath)
           : null,
     );
   }
@@ -166,18 +168,17 @@ final class GitStatusParser {
   ///
   /// `u XY sub m1 m2 m3 mW h1 h2 h3 path` — ten fixed fields, and the XY
   /// says *how* both sides claim it, which the product does not distinguish.
-  StatusEntry? _parseUnmerged(String record) {
+  StatusEntryValueObject? _parseUnmerged(String record) {
     const int fixedFields = 10;
     final List<String> parts = record.split(' ');
     if (parts.length <= fixedFields) {
       return null;
     }
-    final RepoRelativePath? path = RepoRelativePath.tryParse(
-      parts.skip(fixedFields).join(' '),
-    );
+    final RepoRelativePathValueObject? path =
+        RepoRelativePathValueObject.tryParse(parts.skip(fixedFields).join(' '));
     return path == null
         ? null
-        : StatusEntry(
+        : StatusEntryValueObject(
             path: path,
             state: FileStateEnum.conflicted,
             isStaged: false,
@@ -185,13 +186,12 @@ final class GitStatusParser {
   }
 
   /// A `? ` record: a file git was never told about.
-  StatusEntry? _parseUntracked(String record) {
-    final RepoRelativePath? path = RepoRelativePath.tryParse(
-      record.substring(2),
-    );
+  StatusEntryValueObject? _parseUntracked(String record) {
+    final RepoRelativePathValueObject? path =
+        RepoRelativePathValueObject.tryParse(record.substring(2));
     return path == null
         ? null
-        : StatusEntry(
+        : StatusEntryValueObject(
             path: path,
             state: FileStateEnum.untracked,
             isStaged: false,

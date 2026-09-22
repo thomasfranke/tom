@@ -16,7 +16,7 @@ void main() {
 
   // A space that is a folder *inside* a repository — the normal case, and
   // the one a path bug shows up in.
-  final Space space = Space(
+  final SpaceEntity space = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
     name: 'docs',
@@ -53,7 +53,7 @@ void main() {
     test('resolves the path against the space, not the repository', () async {
       filesystem.content = '# Guide\n';
 
-      await repository.read(SpaceRelativePath('adr/001.md'));
+      await repository.read(SpaceRelativePathValueObject('adr/001.md'));
 
       expect(filesystem.readPath, '/code/app/docs/adr/001.md');
     });
@@ -61,11 +61,11 @@ void main() {
     test('hands back a document keyed by the path that was asked', () async {
       filesystem.content = '# Guide\n';
 
-      final Document document = valueOf(
-        await repository.read(SpaceRelativePath('adr/001.md')),
+      final DocumentEntity document = valueOf(
+        await repository.read(SpaceRelativePathValueObject('adr/001.md')),
       );
 
-      expect(document.path, SpaceRelativePath('adr/001.md'));
+      expect(document.path, SpaceRelativePathValueObject('adr/001.md'));
       expect(document.content, '# Guide\n');
     });
 
@@ -74,7 +74,9 @@ void main() {
       filesystem.content = '# Title\r\n\r\nBody\n\n';
 
       expect(
-        valueOf(await repository.read(SpaceRelativePath('a.md'))).content,
+        valueOf(
+          await repository.read(SpaceRelativePathValueObject('a.md')),
+        ).content,
         '# Title\r\n\r\nBody\n\n',
       );
     });
@@ -83,7 +85,10 @@ void main() {
   group('writing', () {
     test('writes the content where the document says', () async {
       await repository.write(
-        Document(path: SpaceRelativePath('adr/001.md'), content: '# One\n'),
+        DocumentEntity(
+          path: SpaceRelativePathValueObject('adr/001.md'),
+          content: '# One\n',
+        ),
       );
 
       expect(filesystem.writtenPath, '/code/app/docs/adr/001.md');
@@ -98,7 +103,10 @@ void main() {
       expect(
         failureOf(
           await repository.write(
-            Document(path: SpaceRelativePath('adr/001.md'), content: '# One\n'),
+            DocumentEntity(
+              path: SpaceRelativePathValueObject('adr/001.md'),
+              content: '# One\n',
+            ),
           ),
         ),
         named<DocumentPermissionDenied>('adr/001.md'),
@@ -110,7 +118,9 @@ void main() {
     /// The repository's answer to a filesystem that failed with [failure].
     Future<AppFailure> translationOf(FilesystemFailure failure) async {
       filesystem.failure = failure;
-      return failureOf(await repository.read(SpaceRelativePath('adr/001.md')));
+      return failureOf(
+        await repository.read(SpaceRelativePathValueObject('adr/001.md')),
+      );
     }
 
     test('a missing file names the document, not the disk', () async {

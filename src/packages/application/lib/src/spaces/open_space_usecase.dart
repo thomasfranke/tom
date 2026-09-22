@@ -11,7 +11,7 @@ import 'package:tom_domain/tom_domain.dart';
 /// specific about (`docs/product/home/doc.md`):
 ///
 /// - **A space is a folder, not a repository.** Opening `docs/` inside a
-///   code repository is the normal case, and the [Space] that comes back
+///   code repository is the normal case, and the [SpaceEntity] that comes back
 ///   carries both paths so git and the file tree each use the right one.
 /// - **Failing is a named state, not a crash.** A folder outside any
 ///   repository answers `GitNotARepository`, which Home explains; a folder
@@ -49,11 +49,15 @@ final class OpenSpaceUseCase with UseCase {
   /// fails the open: a folder that is not a repository is not a place to
   /// return to, and a preferences file that cannot be written is not a
   /// reason to refuse a session.
-  Future<Result<Space, AppFailure>> open(String folder) => guard(() async {
-    final Result<Space, AppFailure> opened = await spaces.open(folder);
-    if (opened case Success<Space, AppFailure>(value: final Space space)) {
-      await recents.remember(space);
-    }
-    return opened;
-  });
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) => guard(
+    () async {
+      final Result<SpaceEntity, AppFailure> opened = await spaces.open(folder);
+      if (opened case Success<SpaceEntity, AppFailure>(
+        value: final SpaceEntity space,
+      )) {
+        await recents.remember(space);
+      }
+      return opened;
+    },
+  );
 }

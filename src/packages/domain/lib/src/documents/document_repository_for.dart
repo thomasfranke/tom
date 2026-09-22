@@ -2,7 +2,7 @@
 library;
 
 import 'package:tom_domain/src/documents/document_repository.dart';
-import 'package:tom_domain/src/spaces/space.dart';
+import 'package:tom_domain/src/spaces/space_entity.dart';
 
 /// Builds the [DocumentRepository] that belongs to [space].
 ///
@@ -14,4 +14,4 @@ import 'package:tom_domain/src/spaces/space.dart';
 /// is one: a class here would be a name wrapped around a constructor call
 /// ([Decision
 /// 15](../../../../../../docs/technical/decisions/015-ddd-is-applied-selectively.md)).
-typedef DocumentRepositoryFor = DocumentRepository Function(Space space);
+typedef DocumentRepositoryFor = DocumentRepository Function(SpaceEntity space);

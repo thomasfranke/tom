@@ -42,11 +42,11 @@ final class _Recents implements RecentSpacesRepository {
   final List<String> forgotten = <String>[];
 
   @override
-  Future<Result<List<RecentSpace>, Never>> list() async =>
-      const Success<List<RecentSpace>, Never>(<RecentSpace>[]);
+  Future<Result<List<RecentSpaceEntity>, Never>> list() async =>
+      const Success<List<RecentSpaceEntity>, Never>(<RecentSpaceEntity>[]);
 
   @override
-  Future<Result<void, Never>> remember(Space space) async =>
+  Future<Result<void, Never>> remember(SpaceEntity space) async =>
       const Success<void, Never>(null);
 
   @override
@@ -62,11 +62,11 @@ final class _Recents implements RecentSpacesRepository {
 /// the only way left to break it — and what the use case's guard is for.
 final class _ThrowingRecents implements RecentSpacesRepository {
   @override
-  Future<Result<List<RecentSpace>, Never>> list() async =>
-      const Success<List<RecentSpace>, Never>(<RecentSpace>[]);
+  Future<Result<List<RecentSpaceEntity>, Never>> list() async =>
+      const Success<List<RecentSpaceEntity>, Never>(<RecentSpaceEntity>[]);
 
   @override
-  Future<Result<void, Never>> remember(Space space) async =>
+  Future<Result<void, Never>> remember(SpaceEntity space) async =>
       const Success<void, Never>(null);
 
   @override

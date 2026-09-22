@@ -6,17 +6,22 @@ import 'package:tom_domain/tom_domain.dart';
 void main() {
   late _RecordingObservability observability;
 
-  final Space docs = Space(
+  final SpaceEntity docs = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
     name: 'docs',
   );
-  final SpaceRelativePath path = SpaceRelativePath('guides/writing.md');
-  final Document document = Document(path: path, content: '# Title\n');
-  final ParsedDocument parsed = ParsedDocument(
+  final SpaceRelativePathValueObject path = SpaceRelativePathValueObject(
+    'guides/writing.md',
+  );
+  final DocumentEntity document = DocumentEntity(
+    path: path,
+    content: '# Title\n',
+  );
+  final ParsedDocumentValueObject parsed = ParsedDocumentValueObject(
     document: document,
-    blocks: const <Block>[
-      Block(
+    blocks: const <BlockValueObject>[
+      BlockValueObject(
         startLine: 0,
         endLine: 0,
         source: '# Title',
@@ -31,49 +36,61 @@ void main() {
   /// The use case over a repository and a reader answering what they are
   /// told to.
   ReadDocumentUseCase readingWith({
-    required Result<Document, DocumentFailure> read,
-    Result<ParsedDocument, DocumentFailure>? blocks,
+    required Result<DocumentEntity, DocumentFailure> read,
+    Result<ParsedDocumentValueObject, DocumentFailure>? blocks,
   }) => ReadDocumentUseCase(
-    documentsFor: (Space space) => _Documents(answer: read),
+    documentsFor: (SpaceEntity space) => _Documents(answer: read),
     blocks: _Blocks(
-      answer: blocks ?? Success<ParsedDocument, DocumentFailure>(parsed),
+      answer:
+          blocks ?? Success<ParsedDocumentValueObject, DocumentFailure>(parsed),
     ),
     observability: observability,
   );
 
   test('it hands back the document, split into blocks', () async {
-    final Result<ParsedDocument, AppFailure> result = await readingWith(
-      read: Success<Document, DocumentFailure>(document),
-    ).read(docs, path);
+    final Result<ParsedDocumentValueObject, AppFailure> result =
+        await readingWith(
+          read: Success<DocumentEntity, DocumentFailure>(document),
+        ).read(docs, path);
 
-    expect((result as Success<ParsedDocument, AppFailure>).value, parsed);
+    expect(
+      (result as Success<ParsedDocumentValueObject, AppFailure>).value,
+      parsed,
+    );
   });
 
   test('the repository is built for the space it was asked about', () async {
     // A repository is per space, and handing the wrong one a relative path
     // would read a file from another folder.
-    final List<Space> asked = <Space>[];
+    final List<SpaceEntity> asked = <SpaceEntity>[];
 
     await ReadDocumentUseCase(
-      documentsFor: (Space space) {
+      documentsFor: (SpaceEntity space) {
         asked.add(space);
-        return _Documents(answer: Success<Document, DocumentFailure>(document));
+        return _Documents(
+          answer: Success<DocumentEntity, DocumentFailure>(document),
+        );
       },
-      blocks: _Blocks(answer: Success<ParsedDocument, DocumentFailure>(parsed)),
+      blocks: _Blocks(
+        answer: Success<ParsedDocumentValueObject, DocumentFailure>(parsed),
+      ),
       observability: observability,
     ).read(docs, path);
 
-    expect(asked, <Space>[docs]);
+    expect(asked, <SpaceEntity>[docs]);
   });
 
   group('an expected failure stays expected', () {
     test('a document that is gone is passed through', () async {
-      final Result<ParsedDocument, AppFailure> result = await readingWith(
-        read: Failure<Document, DocumentFailure>(DocumentNotFound(path.value)),
-      ).read(docs, path);
+      final Result<ParsedDocumentValueObject, AppFailure> result =
+          await readingWith(
+            read: Failure<DocumentEntity, DocumentFailure>(
+              DocumentNotFound(path.value),
+            ),
+          ).read(docs, path);
 
       expect(
-        (result as Failure<ParsedDocument, AppFailure>).failure,
+        (result as Failure<ParsedDocumentValueObject, AppFailure>).failure,
         DocumentNotFound(path.value),
       );
     });
@@ -82,12 +99,12 @@ void main() {
       // Reading and parsing fail differently, and the second one has
       // nothing to say about a file that was never read.
       final _Blocks blocks = _Blocks(
-        answer: Success<ParsedDocument, DocumentFailure>(parsed),
+        answer: Success<ParsedDocumentValueObject, DocumentFailure>(parsed),
       );
 
       await ReadDocumentUseCase(
-        documentsFor: (Space space) => _Documents(
-          answer: Failure<Document, DocumentFailure>(
+        documentsFor: (SpaceEntity space) => _Documents(
+          answer: Failure<DocumentEntity, DocumentFailure>(
             DocumentNotFound(path.value),
           ),
         ),
@@ -99,22 +116,25 @@ void main() {
     });
 
     test('a parse that broke is passed through too', () async {
-      final Result<ParsedDocument, AppFailure> result = await readingWith(
-        read: Success<Document, DocumentFailure>(document),
-        blocks: const Failure<ParsedDocument, DocumentFailure>(
-          DocumentOperationFailed('guides/writing.md'),
-        ),
-      ).read(docs, path);
+      final Result<ParsedDocumentValueObject, AppFailure> result =
+          await readingWith(
+            read: Success<DocumentEntity, DocumentFailure>(document),
+            blocks: const Failure<ParsedDocumentValueObject, DocumentFailure>(
+              DocumentOperationFailed('guides/writing.md'),
+            ),
+          ).read(docs, path);
 
       expect(
-        (result as Failure<ParsedDocument, AppFailure>).failure,
+        (result as Failure<ParsedDocumentValueObject, AppFailure>).failure,
         const DocumentOperationFailed('guides/writing.md'),
       );
     });
 
     test('and nothing is reported to observability', () async {
       await readingWith(
-        read: Failure<Document, DocumentFailure>(DocumentNotFound(path.value)),
+        read: Failure<DocumentEntity, DocumentFailure>(
+          DocumentNotFound(path.value),
+        ),
       ).read(docs, path);
 
       expect(observability.captured, isEmpty);
@@ -123,17 +143,19 @@ void main() {
 
   group('an exception becomes a failure', () {
     test('it never escapes the use case, and is reported', () async {
-      final Result<ParsedDocument, AppFailure> result =
+      final Result<ParsedDocumentValueObject, AppFailure> result =
           await ReadDocumentUseCase(
-            documentsFor: (Space space) => _ThrowingDocuments(),
+            documentsFor: (SpaceEntity space) => _ThrowingDocuments(),
             blocks: _Blocks(
-              answer: Success<ParsedDocument, DocumentFailure>(parsed),
+              answer: Success<ParsedDocumentValueObject, DocumentFailure>(
+                parsed,
+              ),
             ),
             observability: observability,
           ).read(docs, path);
 
       expect(
-        (result as Failure<ParsedDocument, AppFailure>).failure,
+        (result as Failure<ParsedDocumentValueObject, AppFailure>).failure,
         isA<UnexpectedFailure>(),
       );
       expect(observability.captured.single.layer, 'application');
@@ -145,27 +167,27 @@ void main() {
 final class _Documents implements DocumentRepository {
   const _Documents({required this.answer});
 
-  final Result<Document, DocumentFailure> answer;
+  final Result<DocumentEntity, DocumentFailure> answer;
 
   @override
-  Future<Result<Document, DocumentFailure>> read(
-    SpaceRelativePath path,
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
   ) async => answer;
 
   @override
-  Future<Result<void, DocumentFailure>> write(Document document) async =>
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
       throw UnimplementedError();
 }
 
 /// A repository that breaks its contract by throwing.
 final class _ThrowingDocuments implements DocumentRepository {
   @override
-  Future<Result<Document, DocumentFailure>> read(
-    SpaceRelativePath path,
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
   ) async => throw StateError('the disk caught fire');
 
   @override
-  Future<Result<void, DocumentFailure>> write(Document document) async =>
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
       throw UnimplementedError();
 }
 
@@ -173,12 +195,12 @@ final class _ThrowingDocuments implements DocumentRepository {
 final class _Blocks implements BlockReader {
   _Blocks({required this.answer});
 
-  final Result<ParsedDocument, DocumentFailure> answer;
-  final List<Document> asked = <Document>[];
+  final Result<ParsedDocumentValueObject, DocumentFailure> answer;
+  final List<DocumentEntity> asked = <DocumentEntity>[];
 
   @override
-  Future<Result<ParsedDocument, DocumentFailure>> read(
-    Document document,
+  Future<Result<ParsedDocumentValueObject, DocumentFailure>> read(
+    DocumentEntity document,
   ) async {
     asked.add(document);
     return answer;

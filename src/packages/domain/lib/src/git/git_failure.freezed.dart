@@ -382,12 +382,12 @@ class GitMergeConflict implements GitFailure {
 
 /// Paths left conflicted, relative to the repository root.
 ///
-/// Handed over, not copied — see `GitStatus.entries` for why, and for
+/// Handed over, not copied — see `GitStatusValueObject.entries` for why, and for
 /// what it would take to make it structural.
  final  List<String> _conflictedFiles;
 /// Paths left conflicted, relative to the repository root.
 ///
-/// Handed over, not copied — see `GitStatus.entries` for why, and for
+/// Handed over, not copied — see `GitStatusValueObject.entries` for why, and for
 /// what it would take to make it structural.
  List<String> get conflictedFiles {
   if (_conflictedFiles is EqualUnmodifiableListView) return _conflictedFiles;

@@ -2,9 +2,9 @@
 library;
 
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_domain/src/documents/document.dart';
+import 'package:tom_domain/src/documents/document_entity.dart';
 import 'package:tom_domain/src/documents/document_failure.dart';
-import 'package:tom_domain/src/documents/parsed_document.dart';
+import 'package:tom_domain/src/documents/parsed_document_value_object.dart';
 
 /// Turns a document into its blocks.
 ///
@@ -23,5 +23,7 @@ abstract interface class BlockReader {
   /// rather than guessed at, and a document that holds nothing readable is
   /// an empty list. Only something genuinely broken fails, as
   /// `DocumentOperationFailed`.
-  Future<Result<ParsedDocument, DocumentFailure>> read(Document document);
+  Future<Result<ParsedDocumentValueObject, DocumentFailure>> read(
+    DocumentEntity document,
+  );
 }

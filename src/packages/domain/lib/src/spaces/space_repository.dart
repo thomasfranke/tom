@@ -2,13 +2,13 @@
 library;
 
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_domain/src/spaces/space.dart';
-import 'package:tom_domain/src/spaces/space_entry.dart';
+import 'package:tom_domain/src/spaces/space_entity.dart';
+import 'package:tom_domain/src/spaces/space_entry_value_object.dart';
 import 'package:tom_domain/src/spaces/space_failure.dart';
 
 /// The folders spaces are made of, as the product talks about them.
 ///
-/// One instance for the app, not one per space: a `Space` is data, so it
+/// One instance for the app, not one per space: a `SpaceEntity` is data, so it
 /// travels as an argument rather than as a lifetime. That also makes [open]
 /// belong here — a repository that could list a space but not produce one
 /// would need a factory beside it, and factories are a pattern this project
@@ -24,7 +24,7 @@ abstract interface class SpaceRepository {
   ///
   /// **A space is a folder, not a repository.** The user opens `docs/` and
   /// git still runs against the repository above it, which is why the
-  /// answer is a [Space] carrying both paths rather than one
+  /// answer is a [SpaceEntity] carrying both paths rather than one
   /// (`docs/product/home/doc.md`).
   ///
   /// Two ways it fails, and they send the user somewhere different:
@@ -42,7 +42,7 @@ abstract interface class SpaceRepository {
   /// and Home switches over both. Narrowing this would mean copying git's
   /// variants into [SpaceFailure], which is the duplication two vocabularies
   /// exist to avoid.
-  Future<Result<Space, AppFailure>> open(String folder);
+  Future<Result<SpaceEntity, AppFailure>> open(String folder);
 
   /// Everything [space] holds, in the order a tree shows it.
   ///
@@ -63,6 +63,8 @@ abstract interface class SpaceRepository {
   ///
   /// Files of every kind are reported, not only `.md` — what the tree draws
   /// and what the editor will open are two different questions, and
-  /// `SpaceEntry.isDocument` answers the second.
-  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space);
+  /// `SpaceEntryValueObject.isDocument` answers the second.
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  );
 }

@@ -28,5 +28,6 @@ final class ListRecentSpacesUseCase with UseCase {
   final Observability observability;
 
   /// The remembered spaces.
-  Future<Result<List<RecentSpace>, AppFailure>> list() => guard(recents.list);
+  Future<Result<List<RecentSpaceEntity>, AppFailure>> list() =>
+      guard(recents.list);
 }

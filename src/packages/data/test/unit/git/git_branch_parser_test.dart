@@ -24,20 +24,23 @@ void main() {
   }) => <String>[name, current ? '*' : ' ', upstream].join(unit);
 
   test('marks the branch HEAD points at', () {
-    final List<Branch> parsed = parser.parse(
+    final List<BranchEntity> parsed = parser.parse(
       branches(<String>[
         branchRecord('main', current: true, upstream: 'origin/main'),
         branchRecord('draft'),
       ]),
     );
 
-    expect(parsed.map((Branch b) => b.name.value), <String>['main', 'draft']);
+    expect(parsed.map((BranchEntity b) => b.name.value), <String>[
+      'main',
+      'draft',
+    ]);
     expect(parsed.first.isCurrent, isTrue);
     expect(parsed.last.isCurrent, isFalse);
   });
 
   test('a branch that tracks nothing has no upstream', () {
-    final List<Branch> parsed = parser.parse(
+    final List<BranchEntity> parsed = parser.parse(
       branches(<String>[branchRecord('draft')]),
     );
 
@@ -45,19 +48,19 @@ void main() {
   });
 
   test('an upstream is kept as the short name git printed', () {
-    final List<Branch> parsed = parser.parse(
+    final List<BranchEntity> parsed = parser.parse(
       branches(<String>[branchRecord('main', upstream: 'origin/main')]),
     );
 
-    expect(parsed.single.upstream, BranchName('origin/main'));
+    expect(parsed.single.upstream, BranchNameValueObject('origin/main'));
   });
 
   test('a slash in a branch name is ordinary', () {
-    final List<Branch> parsed = parser.parse(
+    final List<BranchEntity> parsed = parser.parse(
       branches(<String>[branchRecord('feat/rendered-diff-v0')]),
     );
 
-    expect(parsed.single.name, BranchName('feat/rendered-diff-v0'));
+    expect(parsed.single.name, BranchNameValueObject('feat/rendered-diff-v0'));
   });
 
   group('what it refuses to guess at', () {
@@ -66,22 +69,22 @@ void main() {
     });
 
     test('a record with the wrong field count is skipped', () {
-      final List<Branch> parsed = parser.parse(
+      final List<BranchEntity> parsed = parser.parse(
         branches(<String>['main$unit*', branchRecord('draft')]),
       );
 
-      expect(parsed.single.name, BranchName('draft'));
+      expect(parsed.single.name, BranchNameValueObject('draft'));
     });
 
     test('a name git would not accept is skipped', () {
-      final List<Branch> parsed = parser.parse(
+      final List<BranchEntity> parsed = parser.parse(
         branches(<String>[
           <String>['bad..name', ' ', ''].join(unit),
           branchRecord('draft'),
         ]),
       );
 
-      expect(parsed.single.name, BranchName('draft'));
+      expect(parsed.single.name, BranchNameValueObject('draft'));
     });
   });
 }

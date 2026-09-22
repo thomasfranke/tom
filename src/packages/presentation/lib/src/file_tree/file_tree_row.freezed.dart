@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 mixin _$FileTreeRow {
 
 /// What the space holds here.
- SpaceEntry get entry;/// How far in it is drawn — 0 at the top level.
+ SpaceEntryValueObject get entry;/// How far in it is drawn — 0 at the top level.
 ///
 /// Derived from the path rather than counted during the walk, so a bug
 /// in the walk cannot indent the tree wrongly.
@@ -54,11 +54,11 @@ abstract mixin class $FileTreeRowCopyWith<$Res>  {
   factory $FileTreeRowCopyWith(FileTreeRow value, $Res Function(FileTreeRow) _then) = _$FileTreeRowCopyWithImpl;
 @useResult
 $Res call({
- SpaceEntry entry, int depth, bool isExpanded
+ SpaceEntryValueObject entry, int depth, bool isExpanded
 });
 
 
-$SpaceEntryCopyWith<$Res> get entry;
+$SpaceEntryValueObjectCopyWith<$Res> get entry;
 
 }
 /// @nodoc
@@ -74,7 +74,7 @@ class _$FileTreeRowCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') @override $Res call({Object? entry = null,Object? depth = null,Object? isExpanded = null,}) {
   return _then(_self.copyWith(
 entry: null == entry ? _self.entry : entry // ignore: cast_nullable_to_non_nullable
-as SpaceEntry,depth: null == depth ? _self.depth : depth // ignore: cast_nullable_to_non_nullable
+as SpaceEntryValueObject,depth: null == depth ? _self.depth : depth // ignore: cast_nullable_to_non_nullable
 as int,isExpanded: null == isExpanded ? _self.isExpanded : isExpanded // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -83,9 +83,9 @@ as bool,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SpaceEntryCopyWith<$Res> get entry {
+$SpaceEntryValueObjectCopyWith<$Res> get entry {
   
-  return $SpaceEntryCopyWith<$Res>(_self.entry, (value) {
+  return $SpaceEntryValueObjectCopyWith<$Res>(_self.entry, (value) {
     return _then(_self.copyWith(entry: value));
   });
 }
@@ -170,7 +170,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SpaceEntry entry,  int depth,  bool isExpanded)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SpaceEntryValueObject entry,  int depth,  bool isExpanded)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FileTreeRow() when $default != null:
 return $default(_that.entry,_that.depth,_that.isExpanded);case _:
@@ -191,7 +191,7 @@ return $default(_that.entry,_that.depth,_that.isExpanded);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SpaceEntry entry,  int depth,  bool isExpanded)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SpaceEntryValueObject entry,  int depth,  bool isExpanded)  $default,) {final _that = this;
 switch (_that) {
 case _FileTreeRow():
 return $default(_that.entry,_that.depth,_that.isExpanded);case _:
@@ -211,7 +211,7 @@ return $default(_that.entry,_that.depth,_that.isExpanded);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SpaceEntry entry,  int depth,  bool isExpanded)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SpaceEntryValueObject entry,  int depth,  bool isExpanded)?  $default,) {final _that = this;
 switch (_that) {
 case _FileTreeRow() when $default != null:
 return $default(_that.entry,_that.depth,_that.isExpanded);case _:
@@ -230,7 +230,7 @@ class _FileTreeRow extends FileTreeRow {
   
 
 /// What the space holds here.
-@override final  SpaceEntry entry;
+@override final  SpaceEntryValueObject entry;
 /// How far in it is drawn — 0 at the top level.
 ///
 /// Derived from the path rather than counted during the walk, so a bug
@@ -272,11 +272,11 @@ abstract mixin class _$FileTreeRowCopyWith<$Res> implements $FileTreeRowCopyWith
   factory _$FileTreeRowCopyWith(_FileTreeRow value, $Res Function(_FileTreeRow) _then) = __$FileTreeRowCopyWithImpl;
 @override @useResult
 $Res call({
- SpaceEntry entry, int depth, bool isExpanded
+ SpaceEntryValueObject entry, int depth, bool isExpanded
 });
 
 
-@override $SpaceEntryCopyWith<$Res> get entry;
+@override $SpaceEntryValueObjectCopyWith<$Res> get entry;
 
 }
 /// @nodoc
@@ -292,7 +292,7 @@ class __$FileTreeRowCopyWithImpl<$Res>
 @override @pragma('vm:prefer-inline') $Res call({Object? entry = null,Object? depth = null,Object? isExpanded = null,}) {
   return _then(_FileTreeRow(
 entry: null == entry ? _self.entry : entry // ignore: cast_nullable_to_non_nullable
-as SpaceEntry,depth: null == depth ? _self.depth : depth // ignore: cast_nullable_to_non_nullable
+as SpaceEntryValueObject,depth: null == depth ? _self.depth : depth // ignore: cast_nullable_to_non_nullable
 as int,isExpanded: null == isExpanded ? _self.isExpanded : isExpanded // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -302,9 +302,9 @@ as bool,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SpaceEntryCopyWith<$Res> get entry {
+$SpaceEntryValueObjectCopyWith<$Res> get entry {
   
-  return $SpaceEntryCopyWith<$Res>(_self.entry, (value) {
+  return $SpaceEntryValueObjectCopyWith<$Res>(_self.entry, (value) {
     return _then(_self.copyWith(entry: value));
   });
 }

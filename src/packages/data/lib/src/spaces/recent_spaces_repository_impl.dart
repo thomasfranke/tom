@@ -42,47 +42,47 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
   static const int _limit = 10;
 
   @override
-  Future<Result<List<RecentSpace>, Never>> list() async {
+  Future<Result<List<RecentSpaceEntity>, Never>> list() async {
     // `valueOrNull` is the contract in one word: a store nobody can read is
     // an empty list, and Home still offers to open a folder.
     final Result<String?, SettingsFailure> stored = await settings.read(_key);
-    return Success<List<RecentSpace>, Never>(_decode(stored.valueOrNull));
+    return Success<List<RecentSpaceEntity>, Never>(_decode(stored.valueOrNull));
   }
 
   @override
-  Future<Result<void, Never>> remember(Space space) async {
-    final List<RecentSpace> kept = await _current();
-    final List<RecentSpace> updated = <RecentSpace>[
-      RecentSpace(
+  Future<Result<void, Never>> remember(SpaceEntity space) async {
+    final List<RecentSpaceEntity> kept = await _current();
+    final List<RecentSpaceEntity> updated = <RecentSpaceEntity>[
+      RecentSpaceEntity(
         root: space.root,
         name: space.name,
         lastOpened: DateTime.now().toUtc(),
       ),
       // A space is identified by its folder, so opening one that is already
       // remembered moves it to the front rather than adding a second row.
-      ...kept.where((RecentSpace recent) => recent.root != space.root),
+      ...kept.where((RecentSpaceEntity recent) => recent.root != space.root),
     ];
     return _store(updated.take(_limit).toList());
   }
 
   @override
   Future<Result<void, Never>> forget(String root) async {
-    final List<RecentSpace> kept = await _current();
+    final List<RecentSpaceEntity> kept = await _current();
     return _store(
-      kept.where((RecentSpace recent) => recent.root != root).toList(),
+      kept.where((RecentSpaceEntity recent) => recent.root != root).toList(),
     );
   }
 
   /// What is stored now, or nothing if it cannot be read.
-  Future<List<RecentSpace>> _current() async =>
-      (await list()).valueOrNull ?? <RecentSpace>[];
+  Future<List<RecentSpaceEntity>> _current() async =>
+      (await list()).valueOrNull ?? <RecentSpaceEntity>[];
 
   /// Writes [recents], reporting success whatever the store did.
-  Future<Result<void, Never>> _store(List<RecentSpace> recents) async {
+  Future<Result<void, Never>> _store(List<RecentSpaceEntity> recents) async {
     await settings.write(
       _key,
       jsonEncode(<Map<String, Object?>>[
-        for (final RecentSpace recent in recents)
+        for (final RecentSpaceEntity recent in recents)
           <String, Object?>{
             'root': recent.root,
             'name': recent.name,
@@ -98,27 +98,27 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
   /// Total, like every other parser in this package: one malformed row must
   /// not cost the user the other nine. A row missing a field, carrying a
   /// date nobody can parse, or of the wrong shape entirely is a row to drop.
-  static List<RecentSpace> _decode(String? text) {
+  static List<RecentSpaceEntity> _decode(String? text) {
     if (text == null || text.isEmpty) {
-      return <RecentSpace>[];
+      return <RecentSpaceEntity>[];
     }
     final Object? decoded = _tryDecode(text);
     if (decoded is! List<Object?>) {
-      return <RecentSpace>[];
+      return <RecentSpaceEntity>[];
     }
-    final List<RecentSpace> recents =
-        <RecentSpace>[
+    final List<RecentSpaceEntity> recents =
+        <RecentSpaceEntity>[
           for (final Object? row in decoded)
-            if (_rowToRecent(row) case final RecentSpace recent) recent,
+            if (_rowToRecent(row) case final RecentSpaceEntity recent) recent,
         ]..sort(
-          (RecentSpace a, RecentSpace b) =>
+          (RecentSpaceEntity a, RecentSpaceEntity b) =>
               b.lastOpened.compareTo(a.lastOpened),
         );
     return recents;
   }
 
   /// One row as an entry, or null when it is not one.
-  static RecentSpace? _rowToRecent(Object? row) {
+  static RecentSpaceEntity? _rowToRecent(Object? row) {
     if (row is! Map<String, Object?>) {
       return null;
     }
@@ -130,7 +130,11 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
     if (root is! String || name is! String || lastOpened == null) {
       return null;
     }
-    return RecentSpace(root: root, name: name, lastOpened: lastOpened.toUtc());
+    return RecentSpaceEntity(
+      root: root,
+      name: name,
+      lastOpened: lastOpened.toUtc(),
+    );
   }
 
   /// [text] as JSON, or null when it is not.

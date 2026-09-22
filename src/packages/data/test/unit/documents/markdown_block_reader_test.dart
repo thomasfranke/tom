@@ -5,8 +5,10 @@ import 'package:tom_domain/tom_domain.dart';
 
 void main() {
   /// The document `content` is, at a fixed path.
-  Document documentOf(String content) =>
-      Document(path: SpaceRelativePath('guides/writing.md'), content: content);
+  DocumentEntity documentOf(String content) => DocumentEntity(
+    path: SpaceRelativePathValueObject('guides/writing.md'),
+    content: content,
+  );
 
   /// The reader over a parser answering [answer].
   MarkdownBlockReader readerOf(
@@ -36,20 +38,21 @@ void main() {
         ),
       );
 
-      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
-        documentOf(content),
-      );
+      final Result<ParsedDocumentValueObject, DocumentFailure> result =
+          await reader.read(documentOf(content));
 
       expect(
-        (result as Success<ParsedDocument, DocumentFailure>).value.blocks,
-        <Block>[
-          const Block(
+        (result as Success<ParsedDocumentValueObject, DocumentFailure>)
+            .value
+            .blocks,
+        <BlockValueObject>[
+          const BlockValueObject(
             startLine: 0,
             endLine: 0,
             source: '# Title',
             kind: BlockKindEnum.heading,
           ),
-          const Block(
+          const BlockValueObject(
             startLine: 2,
             endLine: 2,
             source: 'Some prose.',
@@ -75,12 +78,11 @@ void main() {
         ),
       );
 
-      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
-        documentOf('```\ncode();\n```\n'),
-      );
+      final Result<ParsedDocumentValueObject, DocumentFailure> result =
+          await reader.read(documentOf('```\ncode();\n```\n'));
 
       expect(
-        (result as Success<ParsedDocument, DocumentFailure>)
+        (result as Success<ParsedDocumentValueObject, DocumentFailure>)
             .value
             .blocks
             .single
@@ -101,12 +103,11 @@ void main() {
         ),
       );
 
-      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
-        documentOf(''),
-      );
+      final Result<ParsedDocumentValueObject, DocumentFailure> result =
+          await reader.read(documentOf(''));
 
       expect(
-        (result as Success<ParsedDocument, DocumentFailure>)
+        (result as Success<ParsedDocumentValueObject, DocumentFailure>)
             .value
             .linkDefinitions,
         '[d]: https://tom.dev',
@@ -114,19 +115,20 @@ void main() {
     });
 
     test('the document comes back with its blocks', () async {
-      final Document document = documentOf('Prose.\n');
+      final DocumentEntity document = documentOf('Prose.\n');
       final MarkdownBlockReader reader = readerOf(
         const Success<MarkdownOutlineDto, MarkdownParserFailure>(
           MarkdownOutlineDto(spans: <MarkdownSpanDto>[], linkDefinitions: ''),
         ),
       );
 
-      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
-        document,
-      );
+      final Result<ParsedDocumentValueObject, DocumentFailure> result =
+          await reader.read(document);
 
       expect(
-        (result as Success<ParsedDocument, DocumentFailure>).value.document,
+        (result as Success<ParsedDocumentValueObject, DocumentFailure>)
+            .value
+            .document,
         document,
       );
     });
@@ -147,19 +149,21 @@ void main() {
         ),
       );
 
-      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
-        documentOf(
-          List<String>.filled(
-            MarkdownSpanKindEnum.values.length,
-            'x',
-          ).join('\n'),
-        ),
-      );
+      final Result<ParsedDocumentValueObject, DocumentFailure> result =
+          await reader.read(
+            documentOf(
+              List<String>.filled(
+                MarkdownSpanKindEnum.values.length,
+                'x',
+              ).join('\n'),
+            ),
+          );
 
       expect(
-        (result as Success<ParsedDocument, DocumentFailure>).value.blocks.map(
-          (Block block) => block.kind.name,
-        ),
+        (result as Success<ParsedDocumentValueObject, DocumentFailure>)
+            .value
+            .blocks
+            .map((BlockValueObject block) => block.kind.name),
         MarkdownSpanKindEnum.values.map(
           (MarkdownSpanKindEnum kind) => kind.name,
         ),
@@ -178,14 +182,14 @@ void main() {
         const Failure<MarkdownOutlineDto, MarkdownParserFailure>(reported),
       );
 
-      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
-        documentOf('anything'),
-      );
+      final Result<ParsedDocumentValueObject, DocumentFailure> result =
+          await reader.read(documentOf('anything'));
 
       // The variant names the document and nothing else; "stack overflow" is
       // the parser's word and stays in the cause.
       final DocumentFailure failure =
-          (result as Failure<ParsedDocument, DocumentFailure>).failure;
+          (result as Failure<ParsedDocumentValueObject, DocumentFailure>)
+              .failure;
       expect(
         failure,
         const DocumentOperationFailed('guides/writing.md', cause: reported),

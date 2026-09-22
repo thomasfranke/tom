@@ -41,7 +41,7 @@ class StatusPanel extends ConsumerWidget {
       children: <Widget>[
         Text(_shortened(session.space.root), style: style),
         if (session.openDocument
-            case final SpaceRelativePath document) ...<Widget>[
+            case final SpaceRelativePathValueObject document) ...<Widget>[
           const SizedBox(width: _gap),
           Text(document.value, style: style),
         ],

@@ -3,7 +3,7 @@ library;
 
 /// Whether [value] is a well-formed relative path with `/` separators.
 ///
-/// Internal to `paths/`: `RepoRelativePath` and `SpaceRelativePath` differ in
+/// Internal to `paths/`: `RepoRelativePathValueObject` and `SpaceRelativePathValueObject` differ in
 /// what they are relative *to*, never in what a path may look like, and a
 /// second copy of these rules would drift the day one of them is relaxed.
 /// The rules are the invariant itself, not a sanity check:

@@ -29,13 +29,13 @@ sealed class FileTreeState with _$FileTreeState {
     /// The whole space rather than one level, so expanding a folder is a
     /// filter over a list. Handed over unmodifiable, never copied — Freezed
     /// compares collections element-wise and copies nothing.
-    required List<SpaceEntry> entries,
+    required List<SpaceEntryValueObject> entries,
 
     /// The folders the user has closed.
     ///
     /// Closed rather than open, so a space opens showing what it holds and
     /// an empty set is the ordinary first state.
-    required Set<SpaceRelativePath> collapsed,
+    required Set<SpaceRelativePathValueObject> collapsed,
   }) = FileTreeReady;
 
   /// The space's folder could not be read at all.
@@ -56,7 +56,7 @@ extension FileTreeRows on FileTreeReady {
   List<FileTreeRow> get rows {
     final List<FileTreeRow> visible = <FileTreeRow>[];
     String? closed;
-    for (final SpaceEntry entry in entries) {
+    for (final SpaceEntryValueObject entry in entries) {
       final String path = entry.path.value;
       if (closed != null && path.startsWith(closed)) {
         continue;

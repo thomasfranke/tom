@@ -29,7 +29,7 @@ sealed class HomeState with _$HomeState {
   ///
   /// An empty list is an ordinary state, not an empty-list error: it is the
   /// first run.
-  const factory HomeState.ready(List<RecentSpace> recents) = HomeReady;
+  const factory HomeState.ready(List<RecentSpaceEntity> recents) = HomeReady;
 
   /// A folder was picked and could not be opened.
   ///
@@ -39,6 +39,6 @@ sealed class HomeState with _$HomeState {
   /// the other rows are still there to click.
   const factory HomeState.failed({
     required AppFailure failure,
-    required List<RecentSpace> recents,
+    required List<RecentSpaceEntity> recents,
   }) = HomeFailed;
 }

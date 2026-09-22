@@ -2,12 +2,12 @@
 library;
 
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_domain/src/git/branch.dart';
-import 'package:tom_domain/src/git/branch_name.dart';
-import 'package:tom_domain/src/git/commit.dart';
+import 'package:tom_domain/src/git/branch_entity.dart';
+import 'package:tom_domain/src/git/branch_name_value_object.dart';
+import 'package:tom_domain/src/git/commit_entity.dart';
 import 'package:tom_domain/src/git/git_failure.dart';
-import 'package:tom_domain/src/git/git_status.dart';
-import 'package:tom_domain/src/paths/repo_relative_path.dart';
+import 'package:tom_domain/src/git/git_status_value_object.dart';
+import 'package:tom_domain/src/paths/repo_relative_path_value_object.dart';
 
 /// Git, in the product's own vocabulary, for one space.
 ///
@@ -18,24 +18,24 @@ import 'package:tom_domain/src/paths/repo_relative_path.dart';
 ///
 /// Entities in, entities out — never process output. What runs git is a
 /// capability in `tom_infra` that returns text, and `tom_data` is where the
-/// text becomes a [GitStatus] and a `GitClientFailure` becomes a
+/// text becomes a [GitStatusValueObject] and a `GitClientFailure` becomes a
 /// `GitFailure`; the package graph makes that translation mandatory rather
 /// than customary
 /// ([layers](../../../../../../docs/technical/layers.md#errors-across-boundaries)).
 ///
 /// **Every path here is relative to the repository root**, in both
 /// directions — which is not the same thing as relative to the space, and is
-/// why [RepoRelativePath] is a type. A space opened at `docs/` inside a code
+/// why [RepoRelativePathValueObject] is a type. A space opened at `docs/` inside a code
 /// repository gets a status naming source files it does not contain;
 /// converting, and deciding what to do with what falls outside, belongs to
-/// the caller that holds the `Space`.
+/// the caller that holds the `SpaceEntity`.
 abstract interface class GitRepository {
   /// Where the repository stands: branch, distance from the remote, and
   /// everything that differs.
   ///
   /// A reading, not a subscription — it is stale as soon as anything writes
   /// to disk, and keeping it current is the watcher's job.
-  Future<Result<GitStatus, GitFailure>> status();
+  Future<Result<GitStatusValueObject, GitFailure>> status();
 
   /// The commits reachable from `HEAD`, newest first.
   ///
@@ -47,13 +47,13 @@ abstract interface class GitRepository {
   ///
   /// A repository with no commits yet answers with an empty list: a fresh
   /// `git init` is a normal state for a space, not a failure to report.
-  Future<Result<List<Commit>, GitFailure>> history({
-    RepoRelativePath? path,
+  Future<Result<List<CommitEntity>, GitFailure>> history({
+    RepoRelativePathValueObject? path,
     int? limit,
   });
 
   /// Every local branch, with which one is current and what each tracks.
-  Future<Result<List<Branch>, GitFailure>> branches();
+  Future<Result<List<BranchEntity>, GitFailure>> branches();
 
   /// The content of [path] as of [revision].
   ///
@@ -62,7 +62,7 @@ abstract interface class GitRepository {
   /// what the diff screens offer to compare against.
   Future<Result<String, GitFailure>> contentAt({
     required String revision,
-    required RepoRelativePath path,
+    required RepoRelativePathValueObject path,
   });
 
   /// Adds [paths] to the index.
@@ -71,10 +71,14 @@ abstract interface class GitRepository {
   /// (`docs/product/git-workflow/commit/doc.md`). An empty list stages
   /// nothing and succeeds — "stage the selection" with nothing selected is
   /// not an error.
-  Future<Result<void, GitFailure>> stage(List<RepoRelativePath> paths);
+  Future<Result<void, GitFailure>> stage(
+    List<RepoRelativePathValueObject> paths,
+  );
 
   /// Removes [paths] from the index, leaving the working tree alone.
-  Future<Result<void, GitFailure>> unstage(List<RepoRelativePath> paths);
+  Future<Result<void, GitFailure>> unstage(
+    List<RepoRelativePathValueObject> paths,
+  );
 
   /// Records what is staged, with [message].
   ///
@@ -87,14 +91,14 @@ abstract interface class GitRepository {
   /// ("the app switches to it immediately",
   /// `docs/product/git-workflow/branch-switch/doc.md`), so a caller never
   /// has to remember to follow this with [switchBranch].
-  Future<Result<void, GitFailure>> createBranch(BranchName name);
+  Future<Result<void, GitFailure>> createBranch(BranchNameValueObject name);
 
   /// Moves `HEAD` to [name].
   ///
   /// Refused by git when uncommitted changes would be overwritten; the
   /// product offers the choice before asking
   /// (`docs/product/git-workflow/branch-switch/doc.md`).
-  Future<Result<void, GitFailure>> switchBranch(BranchName name);
+  Future<Result<void, GitFailure>> switchBranch(BranchNameValueObject name);
 
   /// Updates the remote-tracking branches without touching the working tree.
   ///

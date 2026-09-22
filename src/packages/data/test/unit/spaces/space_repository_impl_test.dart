@@ -15,7 +15,7 @@ void main() {
   late _RecordingFilesystem filesystem;
   late SpaceRepositoryImpl repository;
 
-  final Space space = Space(
+  final SpaceEntity space = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
     name: 'docs',
@@ -45,8 +45,8 @@ void main() {
   };
 
   /// The paths of [entries], as the tree would read them.
-  List<String> pathsOf(List<SpaceEntry> entries) =>
-      entries.map((SpaceEntry entry) => entry.path.value).toList();
+  List<String> pathsOf(List<SpaceEntryValueObject> entries) =>
+      entries.map((SpaceEntryValueObject entry) => entry.path.value).toList();
 
   group('what the tree gets', () {
     test('paths are relative to the space, not to the disk', () async {
@@ -85,11 +85,16 @@ void main() {
         _link('/code/app/docs/shared'),
       ];
 
-      final List<SpaceEntry> entries = valueOf(await repository.entries(space));
+      final List<SpaceEntryValueObject> entries = valueOf(
+        await repository.entries(space),
+      );
 
       expect(pathsOf(entries), <String>['logo.png', 'shared']);
       expect(entries.last.type, SpaceEntryTypeEnum.link);
-      expect(entries.every((SpaceEntry entry) => entry.isDocument), isFalse);
+      expect(
+        entries.every((SpaceEntryValueObject entry) => entry.isDocument),
+        isFalse,
+      );
     });
 
     test('what comes back cannot be changed under the caller', () async {
@@ -97,12 +102,14 @@ void main() {
         _file('/code/app/docs/a.md'),
       ];
 
-      final List<SpaceEntry> entries = valueOf(await repository.entries(space));
+      final List<SpaceEntryValueObject> entries = valueOf(
+        await repository.entries(space),
+      );
 
       expect(
         () => entries.add(
-          SpaceEntry(
-            path: SpaceRelativePath('b.md'),
+          SpaceEntryValueObject(
+            path: SpaceRelativePathValueObject('b.md'),
             type: SpaceEntryTypeEnum.file,
           ),
         ),

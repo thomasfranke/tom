@@ -45,8 +45,8 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
   const factory GitFailure.mergeConflict(
     /// Paths left conflicted, relative to the repository root.
     ///
-    /// Handed over, not copied — see `GitStatus.entries` for why, and for
-    /// what it would take to make it structural.
+    /// Handed over, not copied — see `GitStatusValueObject.entries` for why,
+    /// and for what it would take to make it structural.
     List<String> conflictedFiles, {
     AppFailure? cause,
   }) = GitMergeConflict;

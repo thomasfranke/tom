@@ -2,8 +2,8 @@
 library;
 
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_domain/src/spaces/recent_space.dart';
-import 'package:tom_domain/src/spaces/space.dart';
+import 'package:tom_domain/src/spaces/recent_space_entity.dart';
+import 'package:tom_domain/src/spaces/space_entity.dart';
 
 /// What the user opened before, so returning is one click
 /// (`docs/product/home/doc.md`).
@@ -29,13 +29,13 @@ abstract interface class RecentSpacesRepository {
   /// because Home's answer to that is to offer to forget it rather than to
   /// hide it (`docs/product/home/doc.md`). Checking would also mean touching
   /// the disk once per row of a list the user may not click.
-  Future<Result<List<RecentSpace>, Never>> list();
+  Future<Result<List<RecentSpaceEntity>, Never>> list();
 
   /// Records that [space] was just opened, moving it to the front.
   ///
   /// Opening a space that is already remembered updates it rather than
   /// adding a second row: a space is identified by its folder.
-  Future<Result<void, Never>> remember(Space space);
+  Future<Result<void, Never>> remember(SpaceEntity space);
 
   /// Drops the entry for [root], if there is one.
   ///

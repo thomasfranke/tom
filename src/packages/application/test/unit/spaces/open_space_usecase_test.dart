@@ -7,7 +7,7 @@ void main() {
   late _RecordingObservability observability;
   late _Recents recents;
 
-  final Space opened = Space(
+  final SpaceEntity opened = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
     name: 'docs',
@@ -19,7 +19,7 @@ void main() {
   });
 
   /// The use case over a repository that answers [answer].
-  OpenSpaceUseCase openingWith(Result<Space, AppFailure> answer) =>
+  OpenSpaceUseCase openingWith(Result<SpaceEntity, AppFailure> answer) =>
       OpenSpaceUseCase(
         spaces: _Spaces(answer: answer),
         recents: recents,
@@ -28,16 +28,16 @@ void main() {
 
   group('what it hands back', () {
     test('the space the repository opened', () async {
-      final Result<Space, AppFailure> result = await openingWith(
-        Success<Space, AppFailure>(opened),
+      final Result<SpaceEntity, AppFailure> result = await openingWith(
+        Success<SpaceEntity, AppFailure>(opened),
       ).open('/code/app/docs');
 
-      expect((result as Success<Space, AppFailure>).value, opened);
+      expect((result as Success<SpaceEntity, AppFailure>).value, opened);
     });
 
     test('the folder it was asked about reaches the repository', () async {
       final _Spaces spaces = _Spaces(
-        answer: Success<Space, AppFailure>(opened),
+        answer: Success<SpaceEntity, AppFailure>(opened),
       );
 
       await OpenSpaceUseCase(
@@ -56,23 +56,23 @@ void main() {
     // "that folder is not inside a Git repository"; it must never show "an
     // unexpected error occurred".
     test('a folder outside any repository is passed through', () async {
-      final Result<Space, AppFailure> result = await openingWith(
-        const Failure<Space, AppFailure>(GitNotARepository('/loose')),
+      final Result<SpaceEntity, AppFailure> result = await openingWith(
+        const Failure<SpaceEntity, AppFailure>(GitNotARepository('/loose')),
       ).open('/loose');
 
       expect(
-        (result as Failure<Space, AppFailure>).failure,
+        (result as Failure<SpaceEntity, AppFailure>).failure,
         const GitNotARepository('/loose'),
       );
     });
 
     test('a folder that is gone is passed through', () async {
-      final Result<Space, AppFailure> result = await openingWith(
-        const Failure<Space, AppFailure>(SpaceFolderMissing('/gone')),
+      final Result<SpaceEntity, AppFailure> result = await openingWith(
+        const Failure<SpaceEntity, AppFailure>(SpaceFolderMissing('/gone')),
       ).open('/gone');
 
       expect(
-        (result as Failure<Space, AppFailure>).failure,
+        (result as Failure<SpaceEntity, AppFailure>).failure,
         const SpaceFolderMissing('/gone'),
       );
     });
@@ -81,7 +81,7 @@ void main() {
       // Reporting an expected failure would fill the log with the product
       // working correctly, and hide the one entry that mattered.
       await openingWith(
-        const Failure<Space, AppFailure>(GitNotARepository('/loose')),
+        const Failure<SpaceEntity, AppFailure>(GitNotARepository('/loose')),
       ).open('/loose');
 
       expect(observability.captured, isEmpty);
@@ -91,15 +91,15 @@ void main() {
   group('what gets remembered', () {
     test('a space that opened', () async {
       await openingWith(
-        Success<Space, AppFailure>(opened),
+        Success<SpaceEntity, AppFailure>(opened),
       ).open('/code/app/docs');
 
-      expect(recents.remembered, <Space>[opened]);
+      expect(recents.remembered, <SpaceEntity>[opened]);
     });
 
     test('a folder outside a repository is not a place to return to', () async {
       await openingWith(
-        const Failure<Space, AppFailure>(GitNotARepository('/loose')),
+        const Failure<SpaceEntity, AppFailure>(GitNotARepository('/loose')),
       ).open('/loose');
 
       expect(recents.remembered, isEmpty);
@@ -107,7 +107,7 @@ void main() {
 
     test('nor is a folder that is gone', () async {
       await openingWith(
-        const Failure<Space, AppFailure>(SpaceFolderMissing('/gone')),
+        const Failure<SpaceEntity, AppFailure>(SpaceFolderMissing('/gone')),
       ).open('/gone');
 
       expect(recents.remembered, isEmpty);
@@ -120,11 +120,11 @@ void main() {
       // a session. Everything the recent list holds is a convenience.
       recents.breaks = true;
 
-      final Result<Space, AppFailure> result = await openingWith(
-        Success<Space, AppFailure>(opened),
+      final Result<SpaceEntity, AppFailure> result = await openingWith(
+        Success<SpaceEntity, AppFailure>(opened),
       ).open('/code/app/docs');
 
-      expect((result as Success<Space, AppFailure>).value, opened);
+      expect((result as Success<SpaceEntity, AppFailure>).value, opened);
     });
 
     test('and nothing is reported as unexpected', () async {
@@ -134,7 +134,7 @@ void main() {
       recents.breaks = true;
 
       await openingWith(
-        Success<Space, AppFailure>(opened),
+        Success<SpaceEntity, AppFailure>(opened),
       ).open('/code/app/docs');
 
       expect(observability.captured, isEmpty);
@@ -143,14 +143,14 @@ void main() {
 
   group('an exception becomes a failure', () {
     test('it never escapes the use case', () async {
-      final Result<Space, AppFailure> result = await OpenSpaceUseCase(
+      final Result<SpaceEntity, AppFailure> result = await OpenSpaceUseCase(
         spaces: _ThrowingSpaces(),
         recents: recents,
         observability: observability,
       ).open('/anywhere');
 
       expect(
-        (result as Failure<Space, AppFailure>).failure,
+        (result as Failure<SpaceEntity, AppFailure>).failure,
         isA<UnexpectedFailure>(),
       );
     });
@@ -171,14 +171,15 @@ void main() {
     });
 
     test('what it caught survives into the failure, as text', () async {
-      final Result<Space, AppFailure> result = await OpenSpaceUseCase(
+      final Result<SpaceEntity, AppFailure> result = await OpenSpaceUseCase(
         spaces: _ThrowingSpaces(),
         recents: recents,
         observability: observability,
       ).open('/anywhere');
 
       expect(
-        ((result as Failure<Space, AppFailure>).failure as UnexpectedFailure)
+        ((result as Failure<SpaceEntity, AppFailure>).failure
+                as UnexpectedFailure)
             .description,
         contains('the disk caught fire'),
       );
@@ -190,34 +191,36 @@ void main() {
 final class _Spaces implements SpaceRepository {
   _Spaces({required this.answer});
 
-  final Result<Space, AppFailure> answer;
+  final Result<SpaceEntity, AppFailure> answer;
   String? asked;
 
   @override
-  Future<Result<Space, AppFailure>> open(String folder) async {
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async {
     asked = folder;
     return answer;
   }
 
   @override
-  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async =>
-      throw UnimplementedError();
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async => throw UnimplementedError();
 }
 
 /// A repository that breaks its contract by throwing.
 final class _ThrowingSpaces implements SpaceRepository {
   @override
-  Future<Result<Space, AppFailure>> open(String folder) async =>
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
       throw StateError('the disk caught fire');
 
   @override
-  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async =>
-      throw UnimplementedError();
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async => throw UnimplementedError();
 }
 
 /// A recent list that records what it was asked, and can be made to fail.
 final class _Recents implements RecentSpacesRepository {
-  final List<Space> remembered = <Space>[];
+  final List<SpaceEntity> remembered = <SpaceEntity>[];
 
   /// Whether the store underneath is broken.
   ///
@@ -226,11 +229,11 @@ final class _Recents implements RecentSpacesRepository {
   bool breaks = false;
 
   @override
-  Future<Result<List<RecentSpace>, Never>> list() async =>
-      const Success<List<RecentSpace>, Never>(<RecentSpace>[]);
+  Future<Result<List<RecentSpaceEntity>, Never>> list() async =>
+      const Success<List<RecentSpaceEntity>, Never>(<RecentSpaceEntity>[]);
 
   @override
-  Future<Result<void, Never>> remember(Space space) async {
+  Future<Result<void, Never>> remember(SpaceEntity space) async {
     if (!breaks) {
       remembered.add(space);
     }

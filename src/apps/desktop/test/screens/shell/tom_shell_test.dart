@@ -62,7 +62,7 @@ void main() {
     List<TomModule> modules = const <TomModule>[CoreModule()],
     Size size = const Size(1280, 800),
     Brightness brightness = Brightness.light,
-    Space? space,
+    SpaceEntity? space,
   }) async {
     tester.view
       ..physicalSize = size
@@ -231,7 +231,7 @@ void main() {
       // is ambiguous: three checkouts all have a `docs/`.
       await pumpShell(
         tester,
-        space: Space(
+        space: SpaceEntity(
           root: '/code/app/docs',
           repositoryRoot: '/code/app',
           name: 'docs',
@@ -254,7 +254,7 @@ void main() {
       // one would make the bar mean two different things.
       await pumpShell(
         tester,
-        space: Space(
+        space: SpaceEntity(
           root: '/code/notes',
           repositoryRoot: '/code/notes',
           name: 'notes',
@@ -301,12 +301,15 @@ final class _NothingInIt implements SpaceRepository {
   const _NothingInIt();
 
   @override
-  Future<Result<Space, AppFailure>> open(String folder) async =>
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
       throw UnimplementedError();
 
   @override
-  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async =>
-      const Success<List<SpaceEntry>, SpaceFailure>(<SpaceEntry>[]);
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async => const Success<List<SpaceEntryValueObject>, SpaceFailure>(
+    <SpaceEntryValueObject>[],
+  );
 }
 
 /// The no-op observability, which is also the shipping default.

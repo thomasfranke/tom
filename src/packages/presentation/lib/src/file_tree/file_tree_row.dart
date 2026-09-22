@@ -8,15 +8,16 @@ part 'file_tree_row.freezed.dart';
 
 /// An entry the tree is showing, with what drawing it needs.
 ///
-/// View state, not domain: [SpaceEntry] says what the space holds, and this
-/// says where it lands on screen. Collapsing a folder changes every row
+/// View state, not domain: [SpaceEntryValueObject] says what the space
+/// holds, and this says where it lands on screen. Collapsing a folder
+/// changes every row
 /// below it and nothing about the space.
 @freezed
 abstract class FileTreeRow with _$FileTreeRow {
   /// Creates a row.
   const factory FileTreeRow({
     /// What the space holds here.
-    required SpaceEntry entry,
+    required SpaceEntryValueObject entry,
 
     /// How far in it is drawn — 0 at the top level.
     ///

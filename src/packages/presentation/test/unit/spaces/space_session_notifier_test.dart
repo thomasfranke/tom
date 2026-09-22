@@ -6,12 +6,12 @@ import 'package:tom_presentation/tom_presentation.dart';
 void main() {
   late ProviderContainer container;
 
-  final Space docs = Space(
+  final SpaceEntity docs = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
     name: 'docs',
   );
-  final Space notes = Space(
+  final SpaceEntity notes = SpaceEntity(
     root: '/code/notes',
     repositoryRoot: '/code/notes',
     name: 'notes',
@@ -48,13 +48,13 @@ void main() {
   test('showing a document keeps the space', () {
     session().open(docs);
 
-    session().show(SpaceRelativePath('guides/writing.md'));
+    session().show(SpaceRelativePathValueObject('guides/writing.md'));
 
     expect(
       container.read(spaceSessionProvider),
       SpaceSessionState(
         space: docs,
-        openDocument: SpaceRelativePath('guides/writing.md'),
+        openDocument: SpaceRelativePathValueObject('guides/writing.md'),
       ),
     );
   });
@@ -63,7 +63,7 @@ void main() {
     // A path is only meaningful inside the space it is relative to: carrying
     // it across would point the editor at a file the new space may not hold.
     session().open(docs);
-    session().show(SpaceRelativePath('index.md'));
+    session().show(SpaceRelativePathValueObject('index.md'));
 
     session().open(notes);
 
@@ -71,7 +71,7 @@ void main() {
   });
 
   test('showing a document with nothing open changes nothing', () {
-    session().show(SpaceRelativePath('index.md'));
+    session().show(SpaceRelativePathValueObject('index.md'));
 
     expect(container.read(spaceSessionProvider), isNull);
   });

@@ -18,16 +18,25 @@ void main() {
   test('the list comes back as the repository ordered it', () async {
     // The order is the repository's business — most recent first — and this
     // use case does not re-sort what it was handed.
-    recents.stored = <RecentSpace>[
-      RecentSpace(root: '/b', name: 'b', lastOpened: DateTime.utc(2026, 9, 2)),
-      RecentSpace(root: '/a', name: 'a', lastOpened: DateTime.utc(2026, 9)),
+    recents.stored = <RecentSpaceEntity>[
+      RecentSpaceEntity(
+        root: '/b',
+        name: 'b',
+        lastOpened: DateTime.utc(2026, 9, 2),
+      ),
+      RecentSpaceEntity(
+        root: '/a',
+        name: 'a',
+        lastOpened: DateTime.utc(2026, 9),
+      ),
     ];
 
-    final Result<List<RecentSpace>, AppFailure> result = await listing().list();
+    final Result<List<RecentSpaceEntity>, AppFailure> result = await listing()
+        .list();
 
     expect(
-      (result as Success<List<RecentSpace>, AppFailure>).value.map(
-        (RecentSpace recent) => recent.root,
+      (result as Success<List<RecentSpaceEntity>, AppFailure>).value.map(
+        (RecentSpaceEntity recent) => recent.root,
       ),
       <String>['/b', '/a'],
     );
@@ -35,7 +44,8 @@ void main() {
 
   test('an empty list is an ordinary answer', () async {
     expect(
-      (await listing().list() as Success<List<RecentSpace>, AppFailure>).value,
+      (await listing().list() as Success<List<RecentSpaceEntity>, AppFailure>)
+          .value,
       isEmpty,
     );
   });
@@ -44,31 +54,32 @@ void main() {
     // A row whose folder went away is still offered: the product's answer is
     // to let the user forget it, and checking would be a disk read per row
     // of a list nobody may click.
-    recents.stored = <RecentSpace>[
-      RecentSpace(
+    recents.stored = <RecentSpaceEntity>[
+      RecentSpaceEntity(
         root: '/gone',
         name: 'gone',
         lastOpened: DateTime.utc(2026, 9),
       ),
     ];
 
-    final Result<List<RecentSpace>, AppFailure> result = await listing().list();
+    final Result<List<RecentSpaceEntity>, AppFailure> result = await listing()
+        .list();
 
     expect(
-      (result as Success<List<RecentSpace>, AppFailure>).value,
+      (result as Success<List<RecentSpaceEntity>, AppFailure>).value,
       hasLength(1),
     );
   });
 
   test('an exception becomes a failure, and is reported', () async {
-    final Result<List<RecentSpace>, AppFailure> result =
+    final Result<List<RecentSpaceEntity>, AppFailure> result =
         await ListRecentSpacesUseCase(
           recents: _ThrowingRecents(),
           observability: observability,
         ).list();
 
     expect(
-      (result as Failure<List<RecentSpace>, AppFailure>).failure,
+      (result as Failure<List<RecentSpaceEntity>, AppFailure>).failure,
       isA<UnexpectedFailure>(),
     );
     expect(observability.captured, hasLength(1));
@@ -77,14 +88,14 @@ void main() {
 
 /// A recent list held in memory.
 final class _Recents implements RecentSpacesRepository {
-  List<RecentSpace> stored = <RecentSpace>[];
+  List<RecentSpaceEntity> stored = <RecentSpaceEntity>[];
 
   @override
-  Future<Result<List<RecentSpace>, Never>> list() async =>
-      Success<List<RecentSpace>, Never>(stored);
+  Future<Result<List<RecentSpaceEntity>, Never>> list() async =>
+      Success<List<RecentSpaceEntity>, Never>(stored);
 
   @override
-  Future<Result<void, Never>> remember(Space space) async =>
+  Future<Result<void, Never>> remember(SpaceEntity space) async =>
       const Success<void, Never>(null);
 
   @override
@@ -98,11 +109,11 @@ final class _Recents implements RecentSpacesRepository {
 /// the only way left to break it — and what the use case's guard is for.
 final class _ThrowingRecents implements RecentSpacesRepository {
   @override
-  Future<Result<List<RecentSpace>, Never>> list() async =>
+  Future<Result<List<RecentSpaceEntity>, Never>> list() async =>
       throw StateError('the preferences file is a directory');
 
   @override
-  Future<Result<void, Never>> remember(Space space) async =>
+  Future<Result<void, Never>> remember(SpaceEntity space) async =>
       const Success<void, Never>(null);
 
   @override

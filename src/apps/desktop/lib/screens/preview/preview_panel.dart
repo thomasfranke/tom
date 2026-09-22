@@ -75,9 +75,8 @@ class PreviewPanel extends ConsumerWidget {
             PreviewFailed(failure: final AppFailure failure) => _Note(
               _explain(failure),
             ),
-            PreviewReady(document: final ParsedDocument document) => _Document(
-              document: document,
-            ),
+            PreviewReady(document: final ParsedDocumentValueObject document) =>
+              _Document(document: document),
           },
         ),
       ],
@@ -149,12 +148,14 @@ class _Document extends StatelessWidget {
   const _Document({required this.document});
 
   /// What to render.
-  final ParsedDocument document;
+  final ParsedDocumentValueObject document;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<ParsedDocument>('document', document));
+    properties.add(
+      DiagnosticsProperty<ParsedDocumentValueObject>('document', document),
+    );
   }
 
   @override
@@ -195,23 +196,25 @@ class _BlockView extends ConsumerWidget {
   const _BlockView({required this.block, required this.document});
 
   /// The block to draw.
-  final Block block;
+  final BlockValueObject block;
 
   /// The document it belongs to, for the scope it needs to render alone.
-  final ParsedDocument document;
+  final ParsedDocumentValueObject document;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<Block>('block', block))
-      ..add(DiagnosticsProperty<ParsedDocument>('document', document));
+      ..add(DiagnosticsProperty<BlockValueObject>('block', block))
+      ..add(
+        DiagnosticsProperty<ParsedDocumentValueObject>('document', document),
+      );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
-    final Space? space = ref.watch(
+    final SpaceEntity? space = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => session?.space,
       ),
@@ -241,7 +244,7 @@ class _BlockView extends ConsumerWidget {
   ///
   /// Read off the block's own first line, because the highlighter is handed
   /// the code and not the fence.
-  static String _languageOf(Block block) {
+  static String _languageOf(BlockValueObject block) {
     if (block.kind != BlockKindEnum.code) {
       return '';
     }
@@ -256,13 +259,18 @@ class _BlockView extends ConsumerWidget {
   /// Local files only: a document's images live beside it in the repository,
   /// which is the whole point of keeping documentation in one. A remote
   /// image would be the network, and nothing in TOM reaches it yet.
-  static Widget _image(Uri uri, String? alt, Space? space, TomColors colors) {
+  static Widget _image(
+    Uri uri,
+    String? alt,
+    SpaceEntity? space,
+    TomColors colors,
+  ) {
     if (uri.hasScheme && !uri.isScheme('file')) {
       return _missing(alt ?? uri.toString(), colors);
     }
-    final SpaceRelativePath? path = space == null
+    final SpaceRelativePathValueObject? path = space == null
         ? null
-        : SpaceRelativePath.tryParse(Uri.decodeFull(uri.path));
+        : SpaceRelativePathValueObject.tryParse(Uri.decodeFull(uri.path));
     if (path == null || space == null) {
       return _missing(alt ?? uri.toString(), colors);
     }
@@ -289,7 +297,7 @@ class _BlockView extends ConsumerWidget {
   /// A relative link to a `.md` file is navigation the app already has, so
   /// it moves the session. **An external link does nothing yet**: opening a
   /// browser needs a plugin, and taking one is the maintainer's call.
-  static void _follow(String? href, Space? space, WidgetRef ref) {
+  static void _follow(String? href, SpaceEntity? space, WidgetRef ref) {
     if (href == null || space == null) {
       return;
     }
@@ -297,9 +305,8 @@ class _BlockView extends ConsumerWidget {
     if (uri == null || uri.hasScheme) {
       return;
     }
-    final SpaceRelativePath? path = SpaceRelativePath.tryParse(
-      Uri.decodeFull(uri.path),
-    );
+    final SpaceRelativePathValueObject? path =
+        SpaceRelativePathValueObject.tryParse(Uri.decodeFull(uri.path));
     if (path != null && path.isMarkdown) {
       ref.read(spaceSessionProvider.notifier).show(path);
     }

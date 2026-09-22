@@ -11,13 +11,13 @@ void main() {
   late _Recents recents;
   late ProviderContainer container;
 
-  final Space opened = Space(
+  final SpaceEntity opened = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
     name: 'docs',
   );
 
-  final RecentSpace remembered = RecentSpace(
+  final RecentSpaceEntity remembered = RecentSpaceEntity(
     root: '/code/app/docs',
     name: 'docs',
     lastOpened: DateTime.utc(2026, 9, 20),
@@ -84,9 +84,11 @@ void main() {
     });
 
     test('and settles on what was remembered', () async {
-      recents.stored = <RecentSpace>[remembered];
+      recents.stored = <RecentSpaceEntity>[remembered];
 
-      expect((await settled() as HomeReady).recents, <RecentSpace>[remembered]);
+      expect((await settled() as HomeReady).recents, <RecentSpaceEntity>[
+        remembered,
+      ]);
     });
 
     test('an empty list is a state, not an error', () async {
@@ -101,7 +103,7 @@ void main() {
       // window is built on, so it lives in one place (Decision 9). Home
       // stays on `loading` and goes away with it.
       await settled();
-      spaces.answer = Success<Space, AppFailure>(opened);
+      spaces.answer = Success<SpaceEntity, AppFailure>(opened);
 
       await notifier().open('/code/app/docs');
 
@@ -112,7 +114,7 @@ void main() {
     test('and no document is showing yet', () async {
       // The file tree is on screen and nothing has been clicked.
       await settled();
-      spaces.answer = Success<Space, AppFailure>(opened);
+      spaces.answer = Success<SpaceEntity, AppFailure>(opened);
 
       await notifier().open('/code/app/docs');
 
@@ -124,7 +126,7 @@ void main() {
       // explanation, and a string would have thrown away which failure it
       // was (docs/product/home/doc.md).
       await settled();
-      spaces.answer = const Failure<Space, AppFailure>(
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
         GitNotARepository('/loose'),
       );
 
@@ -137,9 +139,9 @@ void main() {
     test('and the recent list is still offered beside it', () async {
       // Whatever went wrong with one folder, the others are still there to
       // click.
-      recents.stored = <RecentSpace>[remembered];
+      recents.stored = <RecentSpaceEntity>[remembered];
       await settled();
-      spaces.answer = const Failure<Space, AppFailure>(
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
         GitNotARepository('/loose'),
       );
 
@@ -147,13 +149,13 @@ void main() {
 
       expect(
         (container.read(homeProvider) as HomeFailed).recents,
-        <RecentSpace>[remembered],
+        <RecentSpaceEntity>[remembered],
       );
     });
 
     test('a folder that is gone is a different failure', () async {
       await settled();
-      spaces.answer = const Failure<Space, AppFailure>(
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
         SpaceFolderMissing('/gone'),
       );
 
@@ -168,7 +170,7 @@ void main() {
 
   group('forgetting', () {
     test('the row goes, and what is left is shown', () async {
-      recents.stored = <RecentSpace>[remembered];
+      recents.stored = <RecentSpaceEntity>[remembered];
       await settled();
 
       await notifier().forget('/code/app/docs');
@@ -181,35 +183,37 @@ void main() {
 
 /// A space repository that answers what it was told to.
 final class _Spaces implements SpaceRepository {
-  Result<Space, AppFailure> answer = const Failure<Space, AppFailure>(
-    GitNotARepository('/unset'),
-  );
+  Result<SpaceEntity, AppFailure> answer =
+      const Failure<SpaceEntity, AppFailure>(GitNotARepository('/unset'));
 
   @override
-  Future<Result<Space, AppFailure>> open(String folder) async => answer;
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async => answer;
 
   @override
-  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async =>
-      throw UnimplementedError();
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async => throw UnimplementedError();
 }
 
 /// A recent list held in memory.
 final class _Recents implements RecentSpacesRepository {
-  List<RecentSpace> stored = <RecentSpace>[];
+  List<RecentSpaceEntity> stored = <RecentSpaceEntity>[];
   final List<String> forgotten = <String>[];
 
   @override
-  Future<Result<List<RecentSpace>, Never>> list() async =>
-      Success<List<RecentSpace>, Never>(stored);
+  Future<Result<List<RecentSpaceEntity>, Never>> list() async =>
+      Success<List<RecentSpaceEntity>, Never>(stored);
 
   @override
-  Future<Result<void, Never>> remember(Space space) async =>
+  Future<Result<void, Never>> remember(SpaceEntity space) async =>
       const Success<void, Never>(null);
 
   @override
   Future<Result<void, Never>> forget(String root) async {
     forgotten.add(root);
-    stored = stored.where((RecentSpace recent) => recent.root != root).toList();
+    stored = stored
+        .where((RecentSpaceEntity recent) => recent.root != root)
+        .toList();
     return const Success<void, Never>(null);
   }
 }

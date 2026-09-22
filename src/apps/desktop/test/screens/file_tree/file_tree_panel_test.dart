@@ -14,17 +14,20 @@ import 'package:tom_presentation/tom_presentation.dart';
 void main() {
   late _Spaces spaces;
 
-  final Space docs = Space(
+  final SpaceEntity docs = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
     name: 'docs',
   );
 
-  SpaceEntry entry(String path, SpaceEntryTypeEnum type) =>
-      SpaceEntry(path: SpaceRelativePath(path), type: type);
+  SpaceEntryValueObject entry(String path, SpaceEntryTypeEnum type) =>
+      SpaceEntryValueObject(
+        path: SpaceRelativePathValueObject(path),
+        type: type,
+      );
 
   /// A space with a folder, a document inside it, an image and a link.
-  final List<SpaceEntry> held = <SpaceEntry>[
+  final List<SpaceEntryValueObject> held = <SpaceEntryValueObject>[
     entry('guides', SpaceEntryTypeEnum.directory),
     entry('guides/writing.md', SpaceEntryTypeEnum.file),
     entry('logo.svg', SpaceEntryTypeEnum.file),
@@ -60,7 +63,7 @@ void main() {
   /// a row's text starts, and that is only checkable against a known origin.
   Future<void> pumpPanel(
     WidgetTester tester, {
-    Space? space,
+    SpaceEntity? space,
     Brightness brightness = Brightness.light,
   }) async {
     tester.view
@@ -123,7 +126,7 @@ void main() {
     ) async {
       // The tree shows what the folder holds, `.git/` aside — which the walk
       // never even descends into (docs/product/navigation/file-tree/doc.md).
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
 
       await pumpPanel(tester, space: docs);
 
@@ -137,7 +140,7 @@ void main() {
     testWidgets('a row is drawn one indent in for each level', (
       WidgetTester tester,
     ) async {
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
 
       await pumpPanel(tester, space: docs);
 
@@ -151,7 +154,7 @@ void main() {
     testWidgets('an open folder points down, a closed one points right', (
       WidgetTester tester,
     ) async {
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
 
       await pumpPanel(tester, space: docs);
       expect(find.text('▾'), findsOneWidget);
@@ -167,7 +170,7 @@ void main() {
     testWidgets('a folder opens again on a second click', (
       WidgetTester tester,
     ) async {
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       await pumpPanel(tester, space: docs);
 
       await tester.tap(find.text('guides'));
@@ -184,7 +187,7 @@ void main() {
       // The accent marks *the current thing* and the weight says it a second
       // time: colour is never the only signal
       // (docs/technical/design/visual-language.md).
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       await pumpPanel(tester, space: docs);
 
       await tester.tap(find.text('index.md'));
@@ -204,7 +207,7 @@ void main() {
       // Two signals, not one: it is quieter, and it has no hover or press of
       // its own — a row that answered a click with nothing would read as the
       // app being broken.
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       await pumpPanel(tester, space: docs);
       final TomColors colors = TomColors.of(
         tester.element(find.byType(FileTreePanel)),
@@ -232,7 +235,7 @@ void main() {
     ) async {
       // The listing never followed it, so nothing knows what is on the other
       // side — or whether there is one.
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       await pumpPanel(tester, space: docs);
       final TomColors colors = TomColors.of(
         tester.element(find.byType(FileTreePanel)),
@@ -253,8 +256,8 @@ void main() {
     testWidgets('an empty space says so, instead of looking broken', (
       WidgetTester tester,
     ) async {
-      spaces.answer = const Success<List<SpaceEntry>, SpaceFailure>(
-        <SpaceEntry>[],
+      spaces.answer = const Success<List<SpaceEntryValueObject>, SpaceFailure>(
+        <SpaceEntryValueObject>[],
       );
 
       await pumpPanel(tester, space: docs);
@@ -265,7 +268,7 @@ void main() {
     testWidgets('a folder that is gone is named as that, not as an error', (
       WidgetTester tester,
     ) async {
-      spaces.answer = const Failure<List<SpaceEntry>, SpaceFailure>(
+      spaces.answer = const Failure<List<SpaceEntryValueObject>, SpaceFailure>(
         SpaceFolderMissing('/code/app/docs'),
       );
 
@@ -277,7 +280,7 @@ void main() {
     testWidgets('a folder TOM may not read says which problem it is', (
       WidgetTester tester,
     ) async {
-      spaces.answer = const Failure<List<SpaceEntry>, SpaceFailure>(
+      spaces.answer = const Failure<List<SpaceEntryValueObject>, SpaceFailure>(
         SpaceAccessDenied('/code/app/docs'),
       );
 
@@ -312,7 +315,7 @@ void main() {
       // follow-up (docs/technical/design/visual-language.md). The row asks
       // for a role and never for a mode, which is what this checks: the same
       // widget, two themes, two colours.
-      spaces.answer = Success<List<SpaceEntry>, SpaceFailure>(held);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
 
       await pumpPanel(tester, space: docs);
       final Color light = styleOf(tester, 'guides').color!;
@@ -327,19 +330,22 @@ void main() {
 
 /// A space repository that answers what it was told to.
 final class _Spaces implements SpaceRepository {
-  Result<List<SpaceEntry>, SpaceFailure> answer =
-      const Success<List<SpaceEntry>, SpaceFailure>(<SpaceEntry>[]);
+  Result<List<SpaceEntryValueObject>, SpaceFailure> answer =
+      const Success<List<SpaceEntryValueObject>, SpaceFailure>(
+        <SpaceEntryValueObject>[],
+      );
 
   /// Whether it breaks its contract instead of answering.
   bool throws = false;
 
   @override
-  Future<Result<Space, AppFailure>> open(String folder) async =>
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
       throw UnimplementedError();
 
   @override
-  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async =>
-      throws ? throw StateError('the disk caught fire') : answer;
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async => throws ? throw StateError('the disk caught fire') : answer;
 }
 
 /// The no-op observability, which is also the shipping default.

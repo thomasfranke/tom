@@ -26,18 +26,23 @@ void main() {
       records.map((String r) => '$r$record').join('\n');
 
   test('reads the six fields into a commit', () {
-    final List<Commit> commits = parser.parse(log(<String>[commitRecord()]));
+    final List<CommitEntity> commits = parser.parse(
+      log(<String>[commitRecord()]),
+    );
 
-    final Commit commit = commits.single;
-    expect(commit.sha, CommitSha('a618609c8c58e65560ac3b7341607f93cb4e3019'));
+    final CommitEntity commit = commits.single;
+    expect(
+      commit.sha,
+      CommitShaValueObject('a618609c8c58e65560ac3b7341607f93cb4e3019'),
+    );
     expect(commit.sha.short, 'a618609');
     expect(
       commit.author,
-      const Author(name: 'Test', email: 'test@example.com'),
+      const AuthorValueObject(name: 'Test', email: 'test@example.com'),
     );
     expect(
       commit.date,
-      CommitDate(
+      CommitDateValueObject(
         utc: DateTime.utc(2026, 9, 20, 4, 44, 1),
         offset: const Duration(hours: -3),
       ),
@@ -48,7 +53,7 @@ void main() {
 
   group('the offset git recorded', () {
     /// The commit date of a single commit parsed from [date].
-    CommitDate? dateOf(String date) => parser
+    CommitDateValueObject? dateOf(String date) => parser
         .parse(log(<String>[commitRecord(date: date)]))
         .singleOrNull
         ?.date;
@@ -57,7 +62,7 @@ void main() {
       // `DateTime.parse` applies the offset and throws it away. That turns
       // the author's Saturday night into the reader's Sunday morning, which
       // is the wrong answer to "when was this written".
-      final CommitDate date = dateOf('2026-09-20T01:44:01-03:00')!;
+      final CommitDateValueObject date = dateOf('2026-09-20T01:44:01-03:00')!;
 
       expect(date.utc, DateTime.utc(2026, 9, 20, 4, 44, 1));
       expect(date.offset, const Duration(hours: -3));
@@ -66,7 +71,7 @@ void main() {
     });
 
     test('a positive offset is read as one', () {
-      final CommitDate date = dateOf('2026-09-20T10:30:00+05:45')!;
+      final CommitDateValueObject date = dateOf('2026-09-20T10:30:00+05:45')!;
 
       expect(date.utc, DateTime.utc(2026, 9, 20, 4, 45));
       expect(date.offset, const Duration(hours: 5, minutes: 45));
@@ -75,7 +80,7 @@ void main() {
     });
 
     test('Z is a real zero offset, not a missing one', () {
-      final CommitDate date = dateOf('2026-09-20T04:44:01Z')!;
+      final CommitDateValueObject date = dateOf('2026-09-20T04:44:01Z')!;
 
       expect(date.offset, Duration.zero);
       expect(date.authorLocal, date.utc);
@@ -83,8 +88,8 @@ void main() {
 
     test('the instant is what two commits compare by', () {
       // Same moment, two authors, two clocks.
-      final CommitDate rio = dateOf('2026-09-20T01:44:01-03:00')!;
-      final CommitDate berlin = dateOf('2026-09-20T06:44:01+02:00')!;
+      final CommitDateValueObject rio = dateOf('2026-09-20T01:44:01-03:00')!;
+      final CommitDateValueObject berlin = dateOf('2026-09-20T06:44:01+02:00')!;
 
       expect(rio.utc, berlin.utc);
       expect(rio, isNot(berlin));
@@ -97,7 +102,7 @@ void main() {
   });
 
   test('keeps the order git listed, which is most recent first', () {
-    final List<Commit> commits = parser.parse(
+    final List<CommitEntity> commits = parser.parse(
       log(<String>[
         commitRecord(subject: 'newest'),
         commitRecord(
@@ -107,11 +112,14 @@ void main() {
       ]),
     );
 
-    expect(commits.map((Commit c) => c.subject), <String>['newest', 'oldest']);
+    expect(commits.map((CommitEntity c) => c.subject), <String>[
+      'newest',
+      'oldest',
+    ]);
   });
 
   test('a body with its own newlines stays whole', () {
-    final List<Commit> commits = parser.parse(
+    final List<CommitEntity> commits = parser.parse(
       log(<String>[
         commitRecord(
           subject: 'Add B',
@@ -130,7 +138,7 @@ void main() {
     // The left of the body is content: in a markdown tool an indented code
     // block or a nested list is the first thing an author writes under a
     // subject, and trimming it changes what the commit said.
-    final List<Commit> commits = parser.parse(
+    final List<CommitEntity> commits = parser.parse(
       log(<String>[
         commitRecord(body: '    make coverage\n\nRuns the gate.\n'),
       ]),
@@ -141,7 +149,7 @@ void main() {
 
   test('a subject containing the field separator is not possible, but a '
       'subject with punctuation is', () {
-    final List<Commit> commits = parser.parse(
+    final List<CommitEntity> commits = parser.parse(
       log(<String>[
         commitRecord(subject: 'fix(git): stop | splitting -- here'),
       ]),
@@ -156,7 +164,7 @@ void main() {
     });
 
     test('a record with the wrong field count is skipped', () {
-      final List<Commit> commits = parser.parse(
+      final List<CommitEntity> commits = parser.parse(
         log(<String>['only${unit}three${unit}fields', commitRecord()]),
       );
 

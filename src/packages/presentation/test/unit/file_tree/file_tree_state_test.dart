@@ -4,18 +4,20 @@ import 'package:tom_presentation/tom_presentation.dart';
 
 void main() {
   /// A folder at [path].
-  SpaceEntry folder(String path) => SpaceEntry(
-    path: SpaceRelativePath(path),
+  SpaceEntryValueObject folder(String path) => SpaceEntryValueObject(
+    path: SpaceRelativePathValueObject(path),
     type: SpaceEntryTypeEnum.directory,
   );
 
   /// A file at [path].
-  SpaceEntry file(String path) =>
-      SpaceEntry(path: SpaceRelativePath(path), type: SpaceEntryTypeEnum.file);
+  SpaceEntryValueObject file(String path) => SpaceEntryValueObject(
+    path: SpaceRelativePathValueObject(path),
+    type: SpaceEntryTypeEnum.file,
+  );
 
   /// The space of the wireframe, in the order a walk reports it: a folder
   /// immediately followed by what is inside it.
-  final List<SpaceEntry> space = <SpaceEntry>[
+  final List<SpaceEntryValueObject> space = <SpaceEntryValueObject>[
     folder('guides'),
     file('guides/reviewing.md'),
     folder('guides/deep'),
@@ -27,8 +29,9 @@ void main() {
   List<FileTreeRow> rowsWith(Set<String> collapsed) =>
       (FileTreeState.ready(
                 entries: space,
-                collapsed: <SpaceRelativePath>{
-                  for (final String path in collapsed) SpaceRelativePath(path),
+                collapsed: <SpaceRelativePathValueObject>{
+                  for (final String path in collapsed)
+                    SpaceRelativePathValueObject(path),
                 },
               )
               as FileTreeReady)
@@ -105,13 +108,15 @@ void main() {
       // `guides-old` starts with `guides`, and is a different folder.
       final FileTreeReady state =
           FileTreeState.ready(
-                entries: <SpaceEntry>[
+                entries: <SpaceEntryValueObject>[
                   folder('guides'),
                   file('guides/reviewing.md'),
                   folder('guides-old'),
                   file('guides-old/kept.md'),
                 ],
-                collapsed: <SpaceRelativePath>{SpaceRelativePath('guides')},
+                collapsed: <SpaceRelativePathValueObject>{
+                  SpaceRelativePathValueObject('guides'),
+                },
               )
               as FileTreeReady;
 
@@ -127,8 +132,8 @@ void main() {
   test('an empty space has no rows and is not an error', () {
     const FileTreeReady state =
         FileTreeState.ready(
-              entries: <SpaceEntry>[],
-              collapsed: <SpaceRelativePath>{},
+              entries: <SpaceEntryValueObject>[],
+              collapsed: <SpaceRelativePathValueObject>{},
             )
             as FileTreeReady;
 

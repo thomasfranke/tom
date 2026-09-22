@@ -74,7 +74,7 @@ void main() {
     final String repoPath = initRepository('app');
     Directory('$repoPath/docs').createSync();
 
-    final Space space = valueOf(await spaces.open('$repoPath/docs'));
+    final SpaceEntity space = valueOf(await spaces.open('$repoPath/docs'));
     valueOf(await recents.remember(space));
 
     // The space knows both paths, which is what every later git call needs.
@@ -90,7 +90,7 @@ void main() {
         path: preferences,
       ),
     );
-    final List<RecentSpace> remembered = valueOf(await reopened.list());
+    final List<RecentSpaceEntity> remembered = valueOf(await reopened.list());
     expect(remembered.single.root, '$repoPath/docs');
     expect(remembered.single.name, 'docs');
   });
@@ -111,7 +111,10 @@ void main() {
     final String loose = '$base/loose';
     Directory(loose).createSync();
 
-    expect(spaces.open(loose), completion(isA<Failure<Space, AppFailure>>()));
+    expect(
+      spaces.open(loose),
+      completion(isA<Failure<SpaceEntity, AppFailure>>()),
+    );
     expect(File(preferences).existsSync(), isFalse);
   });
 

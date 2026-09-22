@@ -23,26 +23,27 @@ final class MarkdownBlockReader implements BlockReader {
   final MarkdownParser parser;
 
   @override
-  Future<Result<ParsedDocument, DocumentFailure>> read(Document document) =>
-      parser
-          .outline(document.content)
-          .map((MarkdownOutlineDto outline) => _documentOf(document, outline))
-          .mapFailure(
-            (MarkdownParserFailure failure) =>
-                _asDocumentFailure(failure, document.path),
-          );
+  Future<Result<ParsedDocumentValueObject, DocumentFailure>> read(
+    DocumentEntity document,
+  ) => parser
+      .outline(document.content)
+      .map((MarkdownOutlineDto outline) => _documentOf(document, outline))
+      .mapFailure(
+        (MarkdownParserFailure failure) =>
+            _asDocumentFailure(failure, document.path),
+      );
 
   /// [outline] read back against the lines it came from.
-  static ParsedDocument _documentOf(
-    Document document,
+  static ParsedDocumentValueObject _documentOf(
+    DocumentEntity document,
     MarkdownOutlineDto outline,
   ) {
     final List<String> lines = document.content.split('\n');
-    return ParsedDocument(
+    return ParsedDocumentValueObject(
       document: document,
-      blocks: List<Block>.unmodifiable(<Block>[
+      blocks: List<BlockValueObject>.unmodifiable(<BlockValueObject>[
         for (final MarkdownSpanDto span in outline.spans)
-          Block(
+          BlockValueObject(
             startLine: span.startLine,
             endLine: span.endLine,
             source: lines.sublist(span.startLine, span.endLine + 1).join('\n'),
@@ -77,7 +78,7 @@ final class MarkdownBlockReader implements BlockReader {
   /// on the fallback rather than being dressed up as a file problem.
   static DocumentFailure _asDocumentFailure(
     MarkdownParserFailure failure,
-    SpaceRelativePath path,
+    SpaceRelativePathValueObject path,
   ) => switch (failure) {
     MarkdownParserFailed() => DocumentOperationFailed(
       path.value,

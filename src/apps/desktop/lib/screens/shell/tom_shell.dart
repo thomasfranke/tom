@@ -167,7 +167,7 @@ class _TopBar extends ConsumerWidget {
               : Row(
                   children: <Widget>[
                     Text(
-                      Space.nameOfFolder(session.space.repositoryRoot),
+                      SpaceEntity.nameOfFolder(session.space.repositoryRoot),
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.4,

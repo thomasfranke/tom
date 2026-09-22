@@ -25,13 +25,13 @@ class SpaceSessionNotifier extends _$SpaceSessionNotifier {
   /// [SpaceSessionState.openDocument] names a file inside *a* space, and
   /// carrying it across would point the editor at a path the new space may
   /// not hold.
-  void open(Space space) => state = SpaceSessionState(space: space);
+  void open(SpaceEntity space) => state = SpaceSessionState(space: space);
 
   /// Shows [document] in the panels that read the session.
   ///
   /// Does nothing with no space open: a path is only meaningful inside the
   /// space it is relative to, and there is nothing to draw it in.
-  void show(SpaceRelativePath document) {
+  void show(SpaceRelativePathValueObject document) {
     if (state case final SpaceSessionState session) {
       state = session.copyWith(openDocument: document);
     }

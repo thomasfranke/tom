@@ -72,7 +72,7 @@ void main() {
       final String path = '$base/repo';
       initRepository(path);
 
-      final Space space = valueOf(await repository.open(path));
+      final SpaceEntity space = valueOf(await repository.open(path));
 
       expect(space.root, path);
       expect(space.repositoryRoot, path);
@@ -88,8 +88,8 @@ void main() {
   });
 
   group('opening a folder inside a repository', () {
-    // The normal case, and the reason `Space` carries two paths: most teams
-    // keep `docs/` inside the repository that holds the code.
+    // The normal case, and the reason `SpaceEntity` carries two paths: most
+    // teams keep `docs/` inside the repository that holds the code.
     late String repoPath;
 
     setUp(() {
@@ -99,7 +99,9 @@ void main() {
     });
 
     test('git is found above the folder that was opened', () async {
-      final Space space = valueOf(await repository.open('$repoPath/docs'));
+      final SpaceEntity space = valueOf(
+        await repository.open('$repoPath/docs'),
+      );
 
       expect(space.root, '$repoPath/docs');
       expect(space.repositoryRoot, repoPath);
@@ -108,7 +110,9 @@ void main() {
     });
 
     test('however deep the folder is', () async {
-      final Space space = valueOf(await repository.open('$repoPath/docs/adr'));
+      final SpaceEntity space = valueOf(
+        await repository.open('$repoPath/docs/adr'),
+      );
 
       expect(space.repositoryRoot, repoPath);
       expect(space.rootWithinRepository?.value, 'docs/adr');
@@ -117,11 +121,18 @@ void main() {
     test('and the paths convert both ways', () async {
       // What every later git call depends on: a path the file tree shows
       // and a path git accepts are the same file.
-      final Space space = valueOf(await repository.open('$repoPath/docs'));
-      final SpaceRelativePath guide = SpaceRelativePath('guide.md');
+      final SpaceEntity space = valueOf(
+        await repository.open('$repoPath/docs'),
+      );
+      final SpaceRelativePathValueObject guide = SpaceRelativePathValueObject(
+        'guide.md',
+      );
 
       expect(space.toRepoRelative(guide).value, 'docs/guide.md');
-      expect(space.toSpaceRelative(RepoRelativePath('docs/guide.md')), guide);
+      expect(
+        space.toSpaceRelative(RepoRelativePathValueObject('docs/guide.md')),
+        guide,
+      );
     });
   });
 
@@ -135,8 +146,8 @@ void main() {
       expect(
         repository.open(path),
         completion(
-          isA<Failure<Space, AppFailure>>().having(
-            (Failure<Space, AppFailure> result) => result.failure,
+          isA<Failure<SpaceEntity, AppFailure>>().having(
+            (Failure<SpaceEntity, AppFailure> result) => result.failure,
             'failure',
             isA<GitNotARepository>().having(
               (GitNotARepository failure) => failure.path,
@@ -173,12 +184,15 @@ void main() {
       initRepository(repoPath);
       File('$repoPath/guide.md').writeAsStringSync('# Guide\n');
 
-      final Space space = valueOf(await repository.open(repoPath));
-      final List<SpaceEntry> entries = valueOf(await repository.entries(space));
+      final SpaceEntity space = valueOf(await repository.open(repoPath));
+      final List<SpaceEntryValueObject> entries = valueOf(
+        await repository.entries(space),
+      );
 
-      expect(entries.map((SpaceEntry entry) => entry.path.value), <String>[
-        'guide.md',
-      ]);
+      expect(
+        entries.map((SpaceEntryValueObject entry) => entry.path.value),
+        <String>['guide.md'],
+      );
     });
   });
 }

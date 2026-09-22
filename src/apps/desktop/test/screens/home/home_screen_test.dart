@@ -14,7 +14,7 @@ void main() {
   late _Spaces spaces;
   late _Recents recents;
 
-  final RecentSpace remembered = RecentSpace(
+  final RecentSpaceEntity remembered = RecentSpaceEntity(
     root: '/code/app/docs',
     name: 'docs',
     lastOpened: DateTime.utc(2026, 9, 20),
@@ -114,7 +114,7 @@ void main() {
   });
 
   group('with spaces to go back to', () {
-    setUp(() => recents.stored = <RecentSpace>[remembered]);
+    setUp(() => recents.stored = <RecentSpaceEntity>[remembered]);
 
     testWidgets('each one is offered by name and by path', (
       WidgetTester tester,
@@ -127,8 +127,8 @@ void main() {
     });
 
     testWidgets('clicking one opens it', (WidgetTester tester) async {
-      spaces.answer = Success<Space, AppFailure>(
-        Space(
+      spaces.answer = Success<SpaceEntity, AppFailure>(
+        SpaceEntity(
           root: '/code/app/docs',
           repositoryRoot: '/code/app',
           name: 'docs',
@@ -162,7 +162,7 @@ void main() {
       // Driven through the notifier rather than the picker: a native file
       // dialog cannot be opened in a widget test, and what is being tested
       // is the screen, not the plugin.
-      spaces.answer = const Failure<Space, AppFailure>(
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
         GitNotARepository('/Users/me/notes'),
       );
       await pumpHome(tester);
@@ -188,7 +188,7 @@ void main() {
     testWidgets('a folder that is gone says something else', (
       WidgetTester tester,
     ) async {
-      spaces.answer = const Failure<Space, AppFailure>(
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
         SpaceFolderMissing('/gone'),
       );
       await pumpHome(tester);
@@ -210,8 +210,8 @@ void main() {
       // (`docs/product/home/mocks/not-a-repository.excalidraw`). It is a
       // state to move on from in one click, and a second list of choices
       // under the button would make the button look optional.
-      recents.stored = <RecentSpace>[remembered];
-      spaces.answer = const Failure<Space, AppFailure>(
+      recents.stored = <RecentSpaceEntity>[remembered];
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
         GitNotARepository('/loose'),
       );
       await pumpHome(tester);
@@ -230,39 +230,41 @@ void main() {
 
 /// A space repository that answers what it was told to.
 final class _Spaces implements SpaceRepository {
-  Result<Space, AppFailure> answer = const Failure<Space, AppFailure>(
-    GitNotARepository('/unset'),
-  );
+  Result<SpaceEntity, AppFailure> answer =
+      const Failure<SpaceEntity, AppFailure>(GitNotARepository('/unset'));
   String? asked;
 
   @override
-  Future<Result<Space, AppFailure>> open(String folder) async {
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async {
     asked = folder;
     return answer;
   }
 
   @override
-  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async =>
-      throw UnimplementedError();
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async => throw UnimplementedError();
 }
 
 /// A recent list held in memory.
 final class _Recents implements RecentSpacesRepository {
-  List<RecentSpace> stored = <RecentSpace>[];
+  List<RecentSpaceEntity> stored = <RecentSpaceEntity>[];
   final List<String> forgotten = <String>[];
 
   @override
-  Future<Result<List<RecentSpace>, Never>> list() async =>
-      Success<List<RecentSpace>, Never>(stored);
+  Future<Result<List<RecentSpaceEntity>, Never>> list() async =>
+      Success<List<RecentSpaceEntity>, Never>(stored);
 
   @override
-  Future<Result<void, Never>> remember(Space space) async =>
+  Future<Result<void, Never>> remember(SpaceEntity space) async =>
       const Success<void, Never>(null);
 
   @override
   Future<Result<void, Never>> forget(String root) async {
     forgotten.add(root);
-    stored = stored.where((RecentSpace recent) => recent.root != root).toList();
+    stored = stored
+        .where((RecentSpaceEntity recent) => recent.root != root)
+        .toList();
     return const Success<void, Never>(null);
   }
 }

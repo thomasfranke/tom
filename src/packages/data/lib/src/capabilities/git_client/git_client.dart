@@ -11,8 +11,9 @@ import 'package:tom_data/src/capabilities/git_client/git_client_failure.dart';
 /// One implementation today, `dart_io/`; a `libgit2/` sibling arrives when a
 /// platform has no binary to drive, and this contract does not change.
 ///
-/// **Text crosses this contract, never an entity.** `GitStatus`, `Commit` and
-/// `Branch` are domain types and the parsers that build them live in
+/// **Text crosses this contract, never an entity.**
+/// `GitStatusValueObject`, `CommitEntity` and `BranchEntity` are domain
+/// types and the parsers that build them live in
 /// `tom_data`: this package knows how to run git, not what git said. So every
 /// method below states the exact format it returns — flags, separators, field
 /// order — because a caller cannot parse what it was not promised, and a

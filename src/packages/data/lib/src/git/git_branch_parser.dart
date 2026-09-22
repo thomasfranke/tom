@@ -1,4 +1,4 @@
-/// Turning the branch format `GitClient` asks for into [Branch]es.
+/// Turning the branch format `GitClient` asks for into [BranchEntity]es.
 library;
 
 import 'package:tom_data/src/capabilities/git_client/git_client.dart';
@@ -23,25 +23,27 @@ final class GitBranchParser {
   static const String _head = '*';
 
   /// Reads [branches] into branches, in the order git listed them.
-  List<Branch> parse(String branches) => <Branch>[
+  List<BranchEntity> parse(String branches) => <BranchEntity>[
     for (final String record in branches.split(GitClient.recordSeparator))
-      if (_parseRecord(record) case final Branch branch) branch,
+      if (_parseRecord(record) case final BranchEntity branch) branch,
   ];
 
   /// One record: short name, `*` or a space, short upstream or empty.
-  Branch? _parseRecord(String record) {
+  BranchEntity? _parseRecord(String record) {
     final List<String> fields = record.trim().split(GitClient.unitSeparator);
     if (fields.length != _fieldCount) {
       return null;
     }
-    final BranchName? name = BranchName.tryParse(fields[0]);
+    final BranchNameValueObject? name = BranchNameValueObject.tryParse(
+      fields[0],
+    );
     if (name == null) {
       return null;
     }
-    return Branch(
+    return BranchEntity(
       name: name,
       isCurrent: fields[1] == _head,
-      upstream: BranchName.tryParse(fields[2]),
+      upstream: BranchNameValueObject.tryParse(fields[2]),
     );
   }
 }

@@ -38,7 +38,7 @@ void main() {
   group('what it asks git for', () {
     test('history sends the path as git spells it', () async {
       await repository.history(
-        path: RepoRelativePath('docs/guide.md'),
+        path: RepoRelativePathValueObject('docs/guide.md'),
         limit: 20,
       );
 
@@ -54,23 +54,27 @@ void main() {
     });
 
     test('staging unwraps every path', () async {
-      await repository.stage(<RepoRelativePath>[
-        RepoRelativePath('a.md'),
-        RepoRelativePath('docs/b.md'),
+      await repository.stage(<RepoRelativePathValueObject>[
+        RepoRelativePathValueObject('a.md'),
+        RepoRelativePathValueObject('docs/b.md'),
       ]);
 
       expect(client.staged, <String>['a.md', 'docs/b.md']);
     });
 
     test('unstaging unwraps every path', () async {
-      await repository.unstage(<RepoRelativePath>[RepoRelativePath('a.md')]);
+      await repository.unstage(<RepoRelativePathValueObject>[
+        RepoRelativePathValueObject('a.md'),
+      ]);
 
       expect(client.unstaged, <String>['a.md']);
     });
 
     test('a branch name crosses as its short form', () async {
-      await repository.createBranch(BranchName('feat/rendered-diff'));
-      await repository.switchBranch(BranchName('main'));
+      await repository.createBranch(
+        BranchNameValueObject('feat/rendered-diff'),
+      );
+      await repository.switchBranch(BranchNameValueObject('main'));
 
       expect(client.createdBranch, 'feat/rendered-diff');
       expect(client.switchedTo, 'main');
@@ -79,7 +83,7 @@ void main() {
     test('contentAt names a revision and a path', () async {
       await repository.contentAt(
         revision: 'HEAD~1',
-        path: RepoRelativePath('docs/guide.md'),
+        path: RepoRelativePathValueObject('docs/guide.md'),
       );
 
       expect(client.shownRevision, 'HEAD~1');
@@ -111,13 +115,16 @@ void main() {
           '1 .M N... 100644 100644 100644 aaa bbb docs/guide.md'
           '${GitClient.nulSeparator}';
 
-      final GitStatus status = valueOf(await repository.status());
+      final GitStatusValueObject status = valueOf(await repository.status());
 
-      expect(status.branch, BranchName('main'));
-      expect(status.upstream, BranchName('origin/main'));
+      expect(status.branch, BranchNameValueObject('main'));
+      expect(status.upstream, BranchNameValueObject('origin/main'));
       expect(status.ahead, 1);
       expect(status.behind, 2);
-      expect(status.entries.single.path, RepoRelativePath('docs/guide.md'));
+      expect(
+        status.entries.single.path,
+        RepoRelativePathValueObject('docs/guide.md'),
+      );
       expect(status.isDetached, isFalse);
     });
 
@@ -128,7 +135,7 @@ void main() {
           '2026-09-20T01:44:01-03:00${separator}docs: rewrite the intro'
           '${separator}Why: it was long.${GitClient.recordSeparator}';
 
-      final List<Commit> commits = valueOf(await repository.history());
+      final List<CommitEntity> commits = valueOf(await repository.history());
 
       expect(commits.single.subject, 'docs: rewrite the intro');
       expect(commits.single.author.name, 'Ada');
@@ -141,9 +148,9 @@ void main() {
           '${GitClient.recordSeparator}'
           'feat/diff$separator $separator${GitClient.recordSeparator}';
 
-      final List<Branch> branches = valueOf(await repository.branches());
+      final List<BranchEntity> branches = valueOf(await repository.branches());
 
-      expect(branches.map((Branch branch) => branch.name.value), <String>[
+      expect(branches.map((BranchEntity branch) => branch.name.value), <String>[
         'main',
         'feat/diff',
       ]);
@@ -160,7 +167,7 @@ void main() {
         valueOf(
           await repository.contentAt(
             revision: 'HEAD',
-            path: RepoRelativePath('a.md'),
+            path: RepoRelativePathValueObject('a.md'),
           ),
         ),
         '# Title\r\n\r\nBody\n\n',

@@ -12,9 +12,10 @@ import 'package:tom_domain/tom_domain.dart';
 /// [GitRepository] over the [GitClient] capability.
 ///
 /// The seam the layer graph exists for. `GitClient` knows how to run git and
-/// returns text and [GitClientFailure]; the domain knows [Commit],
-/// [GitStatus] and [GitFailure] and nothing about processes. This class is
-/// the only place the two meet: it hands the text to a parser and the
+/// returns text and [GitClientFailure]; the domain knows [CommitEntity],
+/// [GitStatusValueObject] and [GitFailure] and nothing about processes. This
+/// class is the only place the two meet: it hands the text to a parser and
+/// the
 /// failure to [_asGitFailure].
 ///
 /// Neither half can skip the other. `tom_infra` depends only on `tom_core`,
@@ -51,12 +52,12 @@ final class GitRepositoryImpl implements GitRepository {
   final GitBranchParser branchParser;
 
   @override
-  Future<Result<GitStatus, GitFailure>> status() =>
+  Future<Result<GitStatusValueObject, GitFailure>> status() =>
       client.status().map(statusParser.parse).mapFailure(_asGitFailure);
 
   @override
-  Future<Result<List<Commit>, GitFailure>> history({
-    RepoRelativePath? path,
+  Future<Result<List<CommitEntity>, GitFailure>> history({
+    RepoRelativePathValueObject? path,
     int? limit,
   }) => client
       .log(path: path?.value, limit: limit)
@@ -64,33 +65,35 @@ final class GitRepositoryImpl implements GitRepository {
       .mapFailure(_asGitFailure);
 
   @override
-  Future<Result<List<Branch>, GitFailure>> branches() =>
+  Future<Result<List<BranchEntity>, GitFailure>> branches() =>
       client.branches().map(branchParser.parse).mapFailure(_asGitFailure);
 
   @override
   Future<Result<String, GitFailure>> contentAt({
     required String revision,
-    required RepoRelativePath path,
+    required RepoRelativePathValueObject path,
   }) => client.show(revision, path.value).mapFailure(_asGitFailure);
 
   @override
-  Future<Result<void, GitFailure>> stage(List<RepoRelativePath> paths) =>
-      client.stage(_values(paths)).mapFailure(_asGitFailure);
+  Future<Result<void, GitFailure>> stage(
+    List<RepoRelativePathValueObject> paths,
+  ) => client.stage(_values(paths)).mapFailure(_asGitFailure);
 
   @override
-  Future<Result<void, GitFailure>> unstage(List<RepoRelativePath> paths) =>
-      client.unstage(_values(paths)).mapFailure(_asGitFailure);
+  Future<Result<void, GitFailure>> unstage(
+    List<RepoRelativePathValueObject> paths,
+  ) => client.unstage(_values(paths)).mapFailure(_asGitFailure);
 
   @override
   Future<Result<void, GitFailure>> commit(String message) =>
       client.commit(message).mapFailure(_asGitFailure);
 
   @override
-  Future<Result<void, GitFailure>> createBranch(BranchName name) =>
+  Future<Result<void, GitFailure>> createBranch(BranchNameValueObject name) =>
       client.createBranch(name.value).mapFailure(_asGitFailure);
 
   @override
-  Future<Result<void, GitFailure>> switchBranch(BranchName name) =>
+  Future<Result<void, GitFailure>> switchBranch(BranchNameValueObject name) =>
       client.switchBranch(name.value).mapFailure(_asGitFailure);
 
   @override
@@ -106,8 +109,8 @@ final class GitRepositoryImpl implements GitRepository {
       client.push().mapFailure(_asGitFailure);
 
   /// [paths] as the strings the capability takes.
-  static List<String> _values(List<RepoRelativePath> paths) =>
-      paths.map((RepoRelativePath path) => path.value).toList();
+  static List<String> _values(List<RepoRelativePathValueObject> paths) =>
+      paths.map((RepoRelativePathValueObject path) => path.value).toList();
 
   /// What infrastructure reported, in the product's vocabulary.
   ///

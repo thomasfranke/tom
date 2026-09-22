@@ -15,13 +15,13 @@ T _$identity<T>(T value) => value;
 mixin _$SpaceSessionState {
 
 /// The folder the user opened, and the repository that encloses it.
- Space get space;/// The document the editor and the preview are showing, or null when
+ SpaceEntity get space;/// The document the editor and the preview are showing, or null when
 /// none has been chosen.
 ///
 /// Null is the state a space opens in, not an error. It is a
-/// [SpaceRelativePath] because that is what the app navigates in — git's
-/// spelling is [Space.toRepoRelative]'s to produce, and nobody else's.
- SpaceRelativePath? get openDocument;
+/// [SpaceRelativePathValueObject] because that is what the app navigates in — git's
+/// spelling is [SpaceEntity.toRepoRelative]'s to produce, and nobody else's.
+ SpaceRelativePathValueObject? get openDocument;
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -52,11 +52,11 @@ abstract mixin class $SpaceSessionStateCopyWith<$Res>  {
   factory $SpaceSessionStateCopyWith(SpaceSessionState value, $Res Function(SpaceSessionState) _then) = _$SpaceSessionStateCopyWithImpl;
 @useResult
 $Res call({
- Space space, SpaceRelativePath? openDocument
+ SpaceEntity space, SpaceRelativePathValueObject? openDocument
 });
 
 
-$SpaceCopyWith<$Res> get space;
+$SpaceEntityCopyWith<$Res> get space;
 
 }
 /// @nodoc
@@ -72,17 +72,17 @@ class _$SpaceSessionStateCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') @override $Res call({Object? space = null,Object? openDocument = freezed,}) {
   return _then(_self.copyWith(
 space: null == space ? _self.space : space // ignore: cast_nullable_to_non_nullable
-as Space,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
-as SpaceRelativePath?,
+as SpaceEntity,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
+as SpaceRelativePathValueObject?,
   ));
 }
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SpaceCopyWith<$Res> get space {
+$SpaceEntityCopyWith<$Res> get space {
   
-  return $SpaceCopyWith<$Res>(_self.space, (value) {
+  return $SpaceEntityCopyWith<$Res>(_self.space, (value) {
     return _then(_self.copyWith(space: value));
   });
 }
@@ -167,7 +167,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Space space,  SpaceRelativePath? openDocument)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SpaceSessionState() when $default != null:
 return $default(_that.space,_that.openDocument);case _:
@@ -188,7 +188,7 @@ return $default(_that.space,_that.openDocument);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Space space,  SpaceRelativePath? openDocument)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument)  $default,) {final _that = this;
 switch (_that) {
 case _SpaceSessionState():
 return $default(_that.space,_that.openDocument);case _:
@@ -208,7 +208,7 @@ return $default(_that.space,_that.openDocument);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Space space,  SpaceRelativePath? openDocument)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument)?  $default,) {final _that = this;
 switch (_that) {
 case _SpaceSessionState() when $default != null:
 return $default(_that.space,_that.openDocument);case _:
@@ -227,14 +227,14 @@ class _SpaceSessionState implements SpaceSessionState {
   
 
 /// The folder the user opened, and the repository that encloses it.
-@override final  Space space;
+@override final  SpaceEntity space;
 /// The document the editor and the preview are showing, or null when
 /// none has been chosen.
 ///
 /// Null is the state a space opens in, not an error. It is a
-/// [SpaceRelativePath] because that is what the app navigates in — git's
-/// spelling is [Space.toRepoRelative]'s to produce, and nobody else's.
-@override final  SpaceRelativePath? openDocument;
+/// [SpaceRelativePathValueObject] because that is what the app navigates in — git's
+/// spelling is [SpaceEntity.toRepoRelative]'s to produce, and nobody else's.
+@override final  SpaceRelativePathValueObject? openDocument;
 
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
@@ -266,11 +266,11 @@ abstract mixin class _$SpaceSessionStateCopyWith<$Res> implements $SpaceSessionS
   factory _$SpaceSessionStateCopyWith(_SpaceSessionState value, $Res Function(_SpaceSessionState) _then) = __$SpaceSessionStateCopyWithImpl;
 @override @useResult
 $Res call({
- Space space, SpaceRelativePath? openDocument
+ SpaceEntity space, SpaceRelativePathValueObject? openDocument
 });
 
 
-@override $SpaceCopyWith<$Res> get space;
+@override $SpaceEntityCopyWith<$Res> get space;
 
 }
 /// @nodoc
@@ -286,8 +286,8 @@ class __$SpaceSessionStateCopyWithImpl<$Res>
 @override @pragma('vm:prefer-inline') $Res call({Object? space = null,Object? openDocument = freezed,}) {
   return _then(_SpaceSessionState(
 space: null == space ? _self.space : space // ignore: cast_nullable_to_non_nullable
-as Space,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
-as SpaceRelativePath?,
+as SpaceEntity,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
+as SpaceRelativePathValueObject?,
   ));
 }
 
@@ -295,9 +295,9 @@ as SpaceRelativePath?,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$SpaceCopyWith<$Res> get space {
+$SpaceEntityCopyWith<$Res> get space {
   
-  return $SpaceCopyWith<$Res>(_self.space, (value) {
+  return $SpaceEntityCopyWith<$Res>(_self.space, (value) {
     return _then(_self.copyWith(space: value));
   });
 }

@@ -20,7 +20,8 @@ sealed class PreviewState with _$PreviewState {
   const factory PreviewState.loading() = PreviewLoading;
 
   /// The document was read, and this is what it holds.
-  const factory PreviewState.ready(ParsedDocument document) = PreviewReady;
+  const factory PreviewState.ready(ParsedDocumentValueObject document) =
+      PreviewReady;
 
   /// The document could not be read or could not be parsed.
   const factory PreviewState.failed(AppFailure failure) = PreviewFailed;

@@ -16,10 +16,10 @@ void main() {
   late _Settings settings;
   late RecentSpacesRepositoryImpl repository;
 
-  Space spaceAt(String root, {String? name}) => Space(
+  SpaceEntity spaceAt(String root, {String? name}) => SpaceEntity(
     root: root,
     repositoryRoot: root,
-    name: name ?? Space.nameOfFolder(root),
+    name: name ?? SpaceEntity.nameOfFolder(root),
   );
 
   /// What [result] holds, or a failure of the test if it did not succeed.
@@ -32,7 +32,7 @@ void main() {
 
   Future<List<String>> roots() async => valueOf(
     await repository.list(),
-  ).map((RecentSpace recent) => recent.root).toList();
+  ).map((RecentSpaceEntity recent) => recent.root).toList();
 
   setUp(() {
     settings = _Settings();
@@ -56,7 +56,7 @@ void main() {
     test('a space appears in the list', () async {
       await repository.remember(spaceAt('/code/app'));
 
-      final List<RecentSpace> recents = valueOf(await repository.list());
+      final List<RecentSpaceEntity> recents = valueOf(await repository.list());
       expect(recents.single.root, '/code/app');
       expect(recents.single.name, 'app');
     });

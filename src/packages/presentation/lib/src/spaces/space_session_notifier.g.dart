@@ -63,7 +63,7 @@ final class SpaceSessionNotifierProvider
 }
 
 String _$spaceSessionNotifierHash() =>
-    r'97373e12c3e4169f9ab238a94b89e1dea89021f7';
+    r'0338c61e991f0bfff028adf4f622c358dd94a479';
 
 /// Holds the open space for as long as one is open, so that every panel
 /// reads the same answer ([Decision

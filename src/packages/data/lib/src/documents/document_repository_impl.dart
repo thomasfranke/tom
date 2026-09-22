@@ -10,8 +10,9 @@ import 'package:tom_domain/tom_domain.dart';
 ///
 /// Two translations, and nothing else. Paths: the capability works in
 /// absolute paths because it knows nothing about spaces, and the domain
-/// works in paths relative to the space root — [Space] is what converts, and
-/// holding one is what makes this repository belong to a space. Failures: a
+/// works in paths relative to the space root — [SpaceEntity] is what
+/// converts, and holding one is what makes this repository belong to a
+/// space. Failures: a
 /// [FilesystemFailure] is technical and names an absolute path, a
 /// [DocumentFailure] is the product's vocabulary and names the document the
 /// user asked for.
@@ -28,24 +29,26 @@ final class DocumentRepositoryImpl implements DocumentRepository {
   final Filesystem filesystem;
 
   /// The space every path on this repository is relative to.
-  final Space space;
+  final SpaceEntity space;
 
   @override
-  Future<Result<Document, DocumentFailure>> read(SpaceRelativePath path) =>
-      filesystem
-          .readFile(space.absolutePathOf(path))
-          .map((String text) => Document(path: path, content: text))
-          .mapFailure(
-            (FilesystemFailure failure) => _asDocumentFailure(failure, path),
-          );
-
-  @override
-  Future<Result<void, DocumentFailure>> write(Document document) => filesystem
-      .writeFile(space.absolutePathOf(document.path), document.content)
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
+  ) => filesystem
+      .readFile(space.absolutePathOf(path))
+      .map((String text) => DocumentEntity(path: path, content: text))
       .mapFailure(
-        (FilesystemFailure failure) =>
-            _asDocumentFailure(failure, document.path),
+        (FilesystemFailure failure) => _asDocumentFailure(failure, path),
       );
+
+  @override
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) =>
+      filesystem
+          .writeFile(space.absolutePathOf(document.path), document.content)
+          .mapFailure(
+            (FilesystemFailure failure) =>
+                _asDocumentFailure(failure, document.path),
+          );
 
   /// What the filesystem reported, about the document the caller asked for.
   ///
@@ -68,7 +71,7 @@ final class DocumentRepositoryImpl implements DocumentRepository {
   /// bug report without the product's vocabulary naming any of them.
   static DocumentFailure _asDocumentFailure(
     FilesystemFailure failure,
-    SpaceRelativePath asked,
+    SpaceRelativePathValueObject asked,
   ) => switch (failure) {
     FilesystemEntryNotFound() => DocumentNotFound(asked.value, cause: failure),
     FilesystemAccessDenied() => DocumentPermissionDenied(

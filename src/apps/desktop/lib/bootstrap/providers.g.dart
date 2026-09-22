@@ -394,7 +394,7 @@ final class DocumentRepositoryForProvider
 }
 
 String _$documentRepositoryForHash() =>
-    r'069535e8faa8f8efddba2e7a8f657fd313c4998d';
+    r'dae4e9c5c37f0e0994733d233e82a1b2d23f403e';
 
 /// What splits a document into blocks.
 

@@ -31,9 +31,9 @@ final class ReadDocumentUseCase with UseCase {
   final Observability observability;
 
   /// The document at [path] inside [space], parsed.
-  Future<Result<ParsedDocument, AppFailure>> read(
-    Space space,
-    SpaceRelativePath path,
+  Future<Result<ParsedDocumentValueObject, AppFailure>> read(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
   ) => guard(
     // Read then split, and both fail in the document's vocabulary, so the
     // two steps chain rather than being switched over.

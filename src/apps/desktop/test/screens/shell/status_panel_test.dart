@@ -12,7 +12,7 @@ void main() {
   /// Mounts the panel with [space] open, showing [document].
   Future<void> pumpStatus(
     WidgetTester tester, {
-    Space? space,
+    SpaceEntity? space,
     String? document,
   }) async {
     tester.view
@@ -26,7 +26,7 @@ void main() {
       if (document != null) {
         container
             .read(spaceSessionProvider.notifier)
-            .show(SpaceRelativePath(document));
+            .show(SpaceRelativePathValueObject(document));
       }
     }
     await tester.pumpWidget(
@@ -56,7 +56,7 @@ void main() {
   ) async {
     await pumpStatus(
       tester,
-      space: Space(
+      space: SpaceEntity(
         root: '/code/app/docs',
         repositoryRoot: '/code/app',
         name: 'docs',
@@ -78,7 +78,7 @@ void main() {
         '';
     await pumpStatus(
       tester,
-      space: Space(
+      space: SpaceEntity(
         root: '$home/dev/tom/docs',
         repositoryRoot: '$home/dev/tom',
         name: 'docs',
@@ -94,7 +94,7 @@ void main() {
   testWidgets('no document is named until one is open', (
     WidgetTester tester,
   ) async {
-    final Space docs = Space(
+    final SpaceEntity docs = SpaceEntity(
       root: '/code/app/docs',
       repositoryRoot: '/code/app',
       name: 'docs',

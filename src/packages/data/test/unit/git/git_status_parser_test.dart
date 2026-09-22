@@ -18,25 +18,25 @@ void main() {
       records.map((String r) => '$r${String.fromCharCode(0)}').join();
 
   /// The entry for [name], or a failed expectation naming what was there.
-  StatusEntry entryFor(GitStatus status, String name) =>
+  StatusEntryValueObject entryFor(GitStatusValueObject status, String name) =>
       status.entries.firstWhere(
-        (StatusEntry entry) => entry.path.name == name,
+        (StatusEntryValueObject entry) => entry.path.name == name,
         orElse: () => fail(
           'no entry for $name in '
-          '${status.entries.map((StatusEntry e) => e.path.value)}',
+          '${status.entries.map((StatusEntryValueObject e) => e.path.value)}',
         ),
       );
 
   group('headers', () {
     test('reads the branch', () {
-      final GitStatus status = parser.parse(
+      final GitStatusValueObject status = parser.parse(
         porcelain(<String>[
           '# branch.oid 0cc54f652f648ff6d6b9f2516b3b4bc7005a5455',
           '# branch.head main',
         ]),
       );
 
-      expect(status.branch, BranchName('main'));
+      expect(status.branch, BranchNameValueObject('main'));
       expect(status.isDetached, isFalse);
       expect(status.isClean, isTrue);
     });
@@ -45,7 +45,7 @@ void main() {
       // Both answers used to be `branch == null`. Reading the unparseable
       // one as detachment would warn about a detached HEAD on a repository
       // sitting on a perfectly ordinary branch.
-      final GitStatus status = parser.parse(
+      final GitStatusValueObject status = parser.parse(
         porcelain(<String>['# branch.head feat/weird~name']),
       );
 
@@ -58,7 +58,7 @@ void main() {
     });
 
     test('a detached HEAD has no branch', () {
-      final GitStatus status = parser.parse(
+      final GitStatusValueObject status = parser.parse(
         porcelain(<String>[
           '# branch.oid 0cc54f652f648ff6d6b9f2516b3b4bc7005a5455',
           '# branch.head (detached)',
@@ -70,7 +70,7 @@ void main() {
     });
 
     test('reads the upstream and how far it has drifted', () {
-      final GitStatus status = parser.parse(
+      final GitStatusValueObject status = parser.parse(
         porcelain(<String>[
           '# branch.head main',
           '# branch.upstream origin/main',
@@ -78,13 +78,13 @@ void main() {
         ]),
       );
 
-      expect(status.upstream, BranchName('origin/main'));
+      expect(status.upstream, BranchNameValueObject('origin/main'));
       expect(status.ahead, 2);
       expect(status.behind, 3);
     });
 
     test('no upstream means no drift, not unknown drift', () {
-      final GitStatus status = parser.parse(
+      final GitStatusValueObject status = parser.parse(
         porcelain(<String>['# branch.head main']),
       );
 
@@ -96,7 +96,7 @@ void main() {
 
   group('entries', () {
     /// Every shape one working tree produced at once.
-    final GitStatus status = parser.parse(
+    final GitStatusValueObject status = parser.parse(
       porcelain(<String>[
         '# branch.oid 0cc54f652f648ff6d6b9f2516b3b4bc7005a5455',
         '# branch.head main',
@@ -127,17 +127,20 @@ void main() {
     });
 
     test('finds every path, and no extra one', () {
-      expect(status.entries.map((StatusEntry e) => e.path.value), <String>[
-        'a.md',
-        'b.md',
-        'new-name.md',
-        'release notes.md',
-        'untracked.md',
-      ]);
+      expect(
+        status.entries.map((StatusEntryValueObject e) => e.path.value),
+        <String>[
+          'a.md',
+          'b.md',
+          'new-name.md',
+          'release notes.md',
+          'untracked.md',
+        ],
+      );
     });
 
     test('a staged file edited again is staged, and shows the staged side', () {
-      final StatusEntry entry = entryFor(status, 'a.md');
+      final StatusEntryValueObject entry = entryFor(status, 'a.md');
 
       expect(entry.state, FileStateEnum.modified);
       expect(entry.isStaged, isTrue);
@@ -148,16 +151,18 @@ void main() {
     });
 
     test('a rename keeps where the file came from', () {
-      final StatusEntry entry = entryFor(status, 'new-name.md');
+      final StatusEntryValueObject entry = entryFor(status, 'new-name.md');
 
       expect(entry.state, FileStateEnum.renamed);
       expect(entry.isStaged, isTrue);
-      expect(entry.previousPath, RepoRelativePath('old-name.md'));
+      expect(entry.previousPath, RepoRelativePathValueObject('old-name.md'));
     });
 
     test('the path after a rename is not read as its own entry', () {
       expect(
-        status.entries.where((StatusEntry e) => e.path.value == 'old-name.md'),
+        status.entries.where(
+          (StatusEntryValueObject e) => e.path.value == 'old-name.md',
+        ),
         isEmpty,
       );
     });
@@ -166,7 +171,7 @@ void main() {
       // Git spends a `2` record on a copy as well as a rename, and the
       // domain has no `copied`. `previousPath` means "the file came from
       // here", which for a copy is false: the source is still on disk.
-      final GitStatus copied = parser.parse(
+      final GitStatusValueObject copied = parser.parse(
         porcelain(<String>[
           '# branch.head main',
           '2 C. N... 100644 100644 100644 '
@@ -176,13 +181,13 @@ void main() {
         ]),
       );
 
-      final StatusEntry entry = entryFor(copied, 'copy.md');
+      final StatusEntryValueObject entry = entryFor(copied, 'copy.md');
       expect(entry.state, FileStateEnum.added);
       expect(entry.previousPath, isNull);
     });
 
     test('the source of a copy is not read as its own entry either', () {
-      final GitStatus copied = parser.parse(
+      final GitStatusValueObject copied = parser.parse(
         porcelain(<String>[
           '# branch.head main',
           '2 C. N... 100644 100644 100644 '
@@ -192,13 +197,14 @@ void main() {
         ]),
       );
 
-      expect(copied.entries.map((StatusEntry e) => e.path.value), <String>[
-        'copy.md',
-      ]);
+      expect(
+        copied.entries.map((StatusEntryValueObject e) => e.path.value),
+        <String>['copy.md'],
+      );
     });
 
     test('a deletion in the working tree', () {
-      final StatusEntry entry = entryFor(status, 'release notes.md');
+      final StatusEntryValueObject entry = entryFor(status, 'release notes.md');
 
       expect(entry.state, FileStateEnum.deleted);
       expect(entry.isStaged, isFalse);
@@ -212,14 +218,14 @@ void main() {
     });
 
     test('an untracked file is never staged', () {
-      final StatusEntry entry = entryFor(status, 'untracked.md');
+      final StatusEntryValueObject entry = entryFor(status, 'untracked.md');
 
       expect(entry.state, FileStateEnum.untracked);
       expect(entry.isStaged, isFalse);
     });
 
     test('a conflicted path from a real stopped merge', () {
-      final GitStatus merging = parser.parse(
+      final GitStatusValueObject merging = parser.parse(
         porcelain(<String>[
           '# branch.head other',
           'u UU N... 100644 100644 100644 100644 '
@@ -230,7 +236,7 @@ void main() {
       );
 
       expect(merging.entries.single.state, FileStateEnum.conflicted);
-      expect(merging.entries.single.path, RepoRelativePath('a.md'));
+      expect(merging.entries.single.path, RepoRelativePathValueObject('a.md'));
       // Not staged: a conflict is something to resolve, not something a
       // commit would record as it stands.
       expect(merging.entries.single.isStaged, isFalse);
@@ -239,7 +245,7 @@ void main() {
 
   group('hasStagedChanges', () {
     test('false when nothing is in the index', () {
-      final GitStatus status = parser.parse(
+      final GitStatusValueObject status = parser.parse(
         porcelain(<String>['# branch.head main', '? untracked.md']),
       );
 
@@ -247,7 +253,7 @@ void main() {
     });
 
     test('true once something is', () {
-      final GitStatus status = parser.parse(
+      final GitStatusValueObject status = parser.parse(
         porcelain(<String>[
           '# branch.head main',
           '1 A. N... 000000 100644 100644 '
@@ -267,7 +273,7 @@ void main() {
     });
 
     test('a truncated record is skipped, not thrown over', () {
-      final GitStatus status = parser.parse(
+      final GitStatusValueObject status = parser.parse(
         porcelain(<String>[
           '# branch.head main',
           '1 MM N... 100644',
@@ -276,19 +282,19 @@ void main() {
       );
 
       // The point of a total parser: one unreadable line costs that line.
-      expect(status.entries.single.path, RepoRelativePath('ok.md'));
+      expect(status.entries.single.path, RepoRelativePathValueObject('ok.md'));
     });
 
     test('an unknown record type is ignored', () {
-      final GitStatus status = parser.parse(
+      final GitStatusValueObject status = parser.parse(
         porcelain(<String>['# branch.head main', '9 something new', '? ok.md']),
       );
 
-      expect(status.entries.single.path, RepoRelativePath('ok.md'));
+      expect(status.entries.single.path, RepoRelativePathValueObject('ok.md'));
     });
 
     test('an ignored file is not an entry', () {
-      final GitStatus status = parser.parse(
+      final GitStatusValueObject status = parser.parse(
         porcelain(<String>['# branch.head main', '! build/output.md']),
       );
 
@@ -296,7 +302,7 @@ void main() {
     });
 
     test('a malformed ahead/behind leaves the counts at zero', () {
-      final GitStatus status = parser.parse(
+      final GitStatusValueObject status = parser.parse(
         porcelain(<String>['# branch.head main', '# branch.ab nonsense']),
       );
 

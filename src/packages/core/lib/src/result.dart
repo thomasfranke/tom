@@ -19,8 +19,9 @@ import 'package:tom_core/src/app_failure.dart';
 /// the failure typed only as [AppFailure], every translation needed a
 /// catch-all branch it documented as unreachable.
 ///
-/// [F] is covariant, so widening is free — a `Result<Space, SpaceFailure>` is
-/// already a `Result<Space, AppFailure>`. Narrowing is what costs a
+/// [F] is covariant, so widening is free — a
+/// `Result<SpaceEntity, SpaceFailure>` is already a
+/// `Result<SpaceEntity, AppFailure>`. Narrowing is what costs a
 /// translation, and that is the point: it only happens where a layer boundary
 /// is crossed.
 sealed class Result<T, F extends AppFailure> {
