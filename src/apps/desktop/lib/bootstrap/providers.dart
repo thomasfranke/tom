@@ -56,6 +56,23 @@ SpaceRepository spaceRepository(Ref ref) => SpaceRepositoryImpl(
 RecentSpacesRepository recentSpacesRepository(Ref ref) =>
     RecentSpacesRepositoryImpl(settings: ref.watch(settingsProvider));
 
+/// How to reach the documents of a space.
+///
+/// A repository is per space — every path on it is relative to that space's
+/// root — and the space is picked at runtime, so what is app-wide is the way
+/// to build one.
+@Riverpod(keepAlive: true)
+DocumentRepositoryFor documentRepositoryFor(Ref ref) {
+  final Filesystem filesystem = ref.watch(filesystemProvider);
+  return (Space space) =>
+      DocumentRepositoryImpl(filesystem: filesystem, space: space);
+}
+
+/// What splits a document into blocks.
+@Riverpod(keepAlive: true)
+BlockReader blockReader(Ref ref) =>
+    const MarkdownBlockReader(parser: MarkdownPackageParser());
+
 /// The overrides that turn the contracts above into the app's own wiring.
 ///
 /// `tom_presentation` declares the use cases it needs and nothing else: it
@@ -85,6 +102,13 @@ List<Override> appOverrides = <Override>[
   listSpaceEntriesProvider.overrideWith(
     (Ref ref) => ListSpaceEntries(
       spaces: ref.watch(spaceRepositoryProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  readDocumentProvider.overrideWith(
+    (Ref ref) => ReadDocument(
+      documentsFor: ref.watch(documentRepositoryForProvider),
+      blocks: ref.watch(blockReaderProvider),
       observability: ref.watch(observabilityProvider),
     ),
   ),

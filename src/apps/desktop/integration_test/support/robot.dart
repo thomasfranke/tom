@@ -217,6 +217,16 @@ final class TomRobot {
     );
   }
 
+  /// Asserts the preview is showing a document that says [text].
+  ///
+  /// Rich text, because the preview renders markdown rather than writing it
+  /// out: `find.text` would match nothing at all here.
+  Future<void> seesInThePreview(String text) async {
+    final Finder shown = find.textContaining(text, findRichText: true);
+    await _waitUntil(() => _showing(shown));
+    expect(shown, findsWidgets, reason: 'the preview is not showing "$text"');
+  }
+
   /// Asserts the status bar names [path] as the document that is open.
   Future<void> seesTheOpenDocument(String path) async {
     await _waitUntil(() => _showing(find.text(path)));

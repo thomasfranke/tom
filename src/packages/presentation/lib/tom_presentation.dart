@@ -12,5 +12,8 @@ export 'src/file_tree/file_tree_state.dart';
 export 'src/home/home_notifier.dart';
 export 'src/home/home_providers.dart';
 export 'src/home/home_state.dart';
+export 'src/preview/preview_notifier.dart';
+export 'src/preview/preview_providers.dart';
+export 'src/preview/preview_state.dart';
 export 'src/spaces/space_session.dart';
 export 'src/spaces/space_session_notifier.dart';

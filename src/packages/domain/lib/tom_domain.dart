@@ -5,9 +5,14 @@
 /// is the whole public surface.
 library;
 
+export 'src/documents/block.dart';
+export 'src/documents/block_kind.dart';
+export 'src/documents/block_reader.dart';
 export 'src/documents/document.dart';
 export 'src/documents/document_failure.dart';
 export 'src/documents/document_repository.dart';
+export 'src/documents/document_repository_for.dart';
+export 'src/documents/parsed_document.dart';
 export 'src/git/author.dart';
 export 'src/git/branch.dart';
 export 'src/git/branch_name.dart';

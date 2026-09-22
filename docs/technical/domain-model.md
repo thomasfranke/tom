@@ -27,6 +27,14 @@ A single `.md` file inside a space. **The file on disk is the truth** — the en
 | `path` | path | Relative to the space root; the identity of the document |
 | `content` | string | The raw markdown source |
 
+### `ParsedDocument`
+
+A document once it has been split: the `Document` it came from, its `Block`s in order, and `linkDefinitions` — every link reference definition as its own lines.
+
+The definitions are the price of rendering a block on its own. They are declared at document scope, so a block holding `[text][ref]` and nothing else would draw the brackets; appending them to the block's source resolves it. Footnotes do not survive the same way, which is M2's problem and stated in [Decision 19](decisions/019-blocks-come-from-the-markdown-package.md).
+
+They travel here and not on `Block` for two reasons: the table above is the block's whole shape, and a copy on every block is the same string as many times as the document has blocks.
+
 ### `SpaceRelativePath` · `RepoRelativePath`
 
 The two halves of the split above, as types. `SpaceRelativePath` is what the file tree, the editor, the watcher and the search index speak; `RepoRelativePath` is what git reports and accepts. Both refuse `..`, an empty segment, a backslash and a drive letter — one rule, in one place — so that joining either onto its root cannot leave it.

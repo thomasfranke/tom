@@ -75,6 +75,11 @@ void main() {
 
         await robot.seesTheOpenDocument('guides/writing.md');
       }),
+      Step('and the preview renders what is in it', (TomRobot robot) async {
+        // The whole graph, end to end: a click reaches the disk, the text
+        // is parsed into blocks and the blocks are drawn.
+        await robot.seesInThePreview('Writing');
+      }),
       Step('and nothing is broken', (TomRobot robot) async {
         robot.seesNothingBroken();
       }),

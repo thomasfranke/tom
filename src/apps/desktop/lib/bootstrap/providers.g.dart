@@ -330,3 +330,114 @@ final class RecentSpacesRepositoryProvider
 
 String _$recentSpacesRepositoryHash() =>
     r'5455b229f81cffe1c7a5b446c0765016f2d315b8';
+
+/// How to reach the documents of a space.
+///
+/// A repository is per space — every path on it is relative to that space's
+/// root — and the space is picked at runtime, so what is app-wide is the way
+/// to build one.
+
+@ProviderFor(documentRepositoryFor)
+final documentRepositoryForProvider = DocumentRepositoryForProvider._();
+
+/// How to reach the documents of a space.
+///
+/// A repository is per space — every path on it is relative to that space's
+/// root — and the space is picked at runtime, so what is app-wide is the way
+/// to build one.
+
+final class DocumentRepositoryForProvider
+    extends
+        $FunctionalProvider<
+          DocumentRepositoryFor,
+          DocumentRepositoryFor,
+          DocumentRepositoryFor
+        >
+    with $Provider<DocumentRepositoryFor> {
+  /// How to reach the documents of a space.
+  ///
+  /// A repository is per space — every path on it is relative to that space's
+  /// root — and the space is picked at runtime, so what is app-wide is the way
+  /// to build one.
+  DocumentRepositoryForProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'documentRepositoryForProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$documentRepositoryForHash();
+
+  @$internal
+  @override
+  $ProviderElement<DocumentRepositoryFor> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DocumentRepositoryFor create(Ref ref) {
+    return documentRepositoryFor(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DocumentRepositoryFor value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DocumentRepositoryFor>(value),
+    );
+  }
+}
+
+String _$documentRepositoryForHash() =>
+    r'069535e8faa8f8efddba2e7a8f657fd313c4998d';
+
+/// What splits a document into blocks.
+
+@ProviderFor(blockReader)
+final blockReaderProvider = BlockReaderProvider._();
+
+/// What splits a document into blocks.
+
+final class BlockReaderProvider
+    extends $FunctionalProvider<BlockReader, BlockReader, BlockReader>
+    with $Provider<BlockReader> {
+  /// What splits a document into blocks.
+  BlockReaderProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'blockReaderProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$blockReaderHash();
+
+  @$internal
+  @override
+  $ProviderElement<BlockReader> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  BlockReader create(Ref ref) {
+    return blockReader(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(BlockReader value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<BlockReader>(value),
+    );
+  }
+}
+
+String _$blockReaderHash() => r'5ac3b474afb0811b712b918bcde79e213d3a0c26';

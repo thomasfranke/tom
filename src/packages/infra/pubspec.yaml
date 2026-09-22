@@ -11,6 +11,12 @@ resolution: workspace
 
 dependencies:
   freezed_annotation: ^3.1.0
+
+  # The block parser, and the verdict of Spike B (Decision 19). It lives
+  # here because a capability owns its package: no `markdown` type crosses
+  # the contract, so nothing above this ever sees one.
+  markdown: ^7.3.0
+
   meta: ^1.16.0
   tom_core:
     path: ../core

@@ -9,44 +9,29 @@ part of 'file_tree_notifier.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Drives the explorer: list the space, open and close its folders, and say
-/// which document the window should show.
+/// which document the window should show. **No business logic** — it calls a
+/// use case and turns [Result] into state.
 ///
-/// **No business logic.** It calls a use case and turns [Result] into state;
-/// what a space holds and what counts as a document were decided before the
-/// result arrived.
-///
-/// Which folders are closed lives here because no other panel has an opinion
-/// about it. Which *document* is open is the opposite — the editor, the
-/// preview and the status bar all read it — so that goes to the session and
-/// no copy is kept here.
+/// Which folders are closed lives here because no other panel cares. Which
+/// *document* is open is the opposite, so it goes to the session.
 
 @ProviderFor(FileTree)
 final fileTreeProvider = FileTreeProvider._();
 
 /// Drives the explorer: list the space, open and close its folders, and say
-/// which document the window should show.
+/// which document the window should show. **No business logic** — it calls a
+/// use case and turns [Result] into state.
 ///
-/// **No business logic.** It calls a use case and turns [Result] into state;
-/// what a space holds and what counts as a document were decided before the
-/// result arrived.
-///
-/// Which folders are closed lives here because no other panel has an opinion
-/// about it. Which *document* is open is the opposite — the editor, the
-/// preview and the status bar all read it — so that goes to the session and
-/// no copy is kept here.
+/// Which folders are closed lives here because no other panel cares. Which
+/// *document* is open is the opposite, so it goes to the session.
 final class FileTreeProvider
     extends $NotifierProvider<FileTree, FileTreeState> {
   /// Drives the explorer: list the space, open and close its folders, and say
-  /// which document the window should show.
+  /// which document the window should show. **No business logic** — it calls a
+  /// use case and turns [Result] into state.
   ///
-  /// **No business logic.** It calls a use case and turns [Result] into state;
-  /// what a space holds and what counts as a document were decided before the
-  /// result arrived.
-  ///
-  /// Which folders are closed lives here because no other panel has an opinion
-  /// about it. Which *document* is open is the opposite — the editor, the
-  /// preview and the status bar all read it — so that goes to the session and
-  /// no copy is kept here.
+  /// Which folders are closed lives here because no other panel cares. Which
+  /// *document* is open is the opposite, so it goes to the session.
   FileTreeProvider._()
     : super(
         from: null,
@@ -77,16 +62,11 @@ final class FileTreeProvider
 String _$fileTreeHash() => r'44129361a5882b5ed578ed423c127346543ef3cb';
 
 /// Drives the explorer: list the space, open and close its folders, and say
-/// which document the window should show.
+/// which document the window should show. **No business logic** — it calls a
+/// use case and turns [Result] into state.
 ///
-/// **No business logic.** It calls a use case and turns [Result] into state;
-/// what a space holds and what counts as a document were decided before the
-/// result arrived.
-///
-/// Which folders are closed lives here because no other panel has an opinion
-/// about it. Which *document* is open is the opposite — the editor, the
-/// preview and the status bar all read it — so that goes to the session and
-/// no copy is kept here.
+/// Which folders are closed lives here because no other panel cares. Which
+/// *document* is open is the opposite, so it goes to the session.
 
 abstract class _$FileTree extends $Notifier<FileTreeState> {
   FileTreeState build();

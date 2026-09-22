@@ -4,6 +4,7 @@
 /// file is the whole public surface.
 library;
 
+export 'src/documents/read_document.dart';
 export 'src/spaces/list_space_entries.dart';
 export 'src/spaces/open_space.dart';
 export 'src/spaces/recent_spaces.dart';

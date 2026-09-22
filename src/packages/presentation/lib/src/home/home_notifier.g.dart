@@ -10,36 +10,24 @@ part of 'home_notifier.dart';
 // ignore_for_file: type=lint, type=warning
 /// Drives the first screen: open a folder, go back to one, forget one.
 ///
-/// **No business logic here.** It calls a use case and turns [Result] into
-/// state, and that is the whole job — what a folder is, what gets remembered
-/// and what a failure means all happened before the result arrived.
-///
-/// Pure Dart, like everything in this package: it is tested by `dart test`
-/// with no Flutter binding, and the same notifier drives a phone when one
-/// arrives.
+/// **No business logic here** — it calls a use case and turns [Result] into
+/// state. Pure Dart like the rest of this package, so `dart test` runs it
+/// with no Flutter binding and a phone could drive the same notifier.
 
 @ProviderFor(Home)
 final homeProvider = HomeProvider._();
 
 /// Drives the first screen: open a folder, go back to one, forget one.
 ///
-/// **No business logic here.** It calls a use case and turns [Result] into
-/// state, and that is the whole job — what a folder is, what gets remembered
-/// and what a failure means all happened before the result arrived.
-///
-/// Pure Dart, like everything in this package: it is tested by `dart test`
-/// with no Flutter binding, and the same notifier drives a phone when one
-/// arrives.
+/// **No business logic here** — it calls a use case and turns [Result] into
+/// state. Pure Dart like the rest of this package, so `dart test` runs it
+/// with no Flutter binding and a phone could drive the same notifier.
 final class HomeProvider extends $NotifierProvider<Home, HomeState> {
   /// Drives the first screen: open a folder, go back to one, forget one.
   ///
-  /// **No business logic here.** It calls a use case and turns [Result] into
-  /// state, and that is the whole job — what a folder is, what gets remembered
-  /// and what a failure means all happened before the result arrived.
-  ///
-  /// Pure Dart, like everything in this package: it is tested by `dart test`
-  /// with no Flutter binding, and the same notifier drives a phone when one
-  /// arrives.
+  /// **No business logic here** — it calls a use case and turns [Result] into
+  /// state. Pure Dart like the rest of this package, so `dart test` runs it
+  /// with no Flutter binding and a phone could drive the same notifier.
   HomeProvider._()
     : super(
         from: null,
@@ -71,13 +59,9 @@ String _$homeHash() => r'3e86728d44007c587ee9fa4d668e87d02b6fe04f';
 
 /// Drives the first screen: open a folder, go back to one, forget one.
 ///
-/// **No business logic here.** It calls a use case and turns [Result] into
-/// state, and that is the whole job — what a folder is, what gets remembered
-/// and what a failure means all happened before the result arrived.
-///
-/// Pure Dart, like everything in this package: it is tested by `dart test`
-/// with no Flutter binding, and the same notifier drives a phone when one
-/// arrives.
+/// **No business logic here** — it calls a use case and turns [Result] into
+/// state. Pure Dart like the rest of this package, so `dart test` runs it
+/// with no Flutter binding and a phone could drive the same notifier.
 
 abstract class _$Home extends $Notifier<HomeState> {
   HomeState build();

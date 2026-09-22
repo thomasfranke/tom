@@ -8,6 +8,7 @@ import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/panel_placement.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
+import 'package:tom_desktop/screens/preview/preview_panel.dart';
 import 'package:tom_desktop/screens/shell/status_panel.dart';
 import 'package:tom_desktop/theme/tom_colors.dart';
 import 'package:tom_desktop/theme/tom_metrics.dart';
@@ -54,10 +55,7 @@ class CoreModule implements TomModule {
       title: 'Preview',
       placement: PanelPlacement.document,
       order: 1,
-      builder: (BuildContext context) => const _Placeholder(
-        label: 'PREVIEW',
-        detail: 'Blocks from the markdown package — M0 (Decision 19)',
-      ),
+      builder: (BuildContext context) => const PreviewPanel(),
     ),
     PanelDescriptor(
       id: 'tom.status',

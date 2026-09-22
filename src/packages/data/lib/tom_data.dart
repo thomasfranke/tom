@@ -6,6 +6,7 @@
 library;
 
 export 'src/documents/document_repository_impl.dart';
+export 'src/documents/markdown_block_reader.dart';
 export 'src/git/git_branch_parser.dart';
 export 'src/git/git_log_parser.dart';
 export 'src/git/git_repository_impl.dart';

@@ -27,11 +27,21 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Renders the inline content *inside* a block. Block-level layout and the
+  # container around each block are ours, which is what the rendered diff
+  # needs (flows.md#the-preview-is-assembled-block-by-block).
+  flutter_markdown_plus: ^1.0.12
+
   # State, and one of only two packages above the pure Dart layers.
   # Riverpod lives in presentation and here, never below (Decision 7).
   # Pinned exactly because `riverpod_annotation` pins the runtime it
   # generates against: the pair moves together or not at all.
   flutter_riverpod: 3.2.1
+
+  # Syntax highlighting for the code blocks in the preview — the same
+  # package `re_editor` brings for source mode (Decision 18).
+  re_highlight: ^0.0.3
+
   riverpod_annotation: 4.0.2
 
   # The whole graph, because this is the composition root: the one place
