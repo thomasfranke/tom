@@ -10,9 +10,9 @@ import 'package:tom_desktop/theme/tom_colors.dart';
 /// The design hangs one beside every control that is drawn before it works —
 /// *Clone from URL* on Home, the search field in the explorer — because a
 /// control that appears later moves everything under it.
-class MilestoneChip extends StatelessWidget {
+class MilestoneChipWidget extends StatelessWidget {
   /// Creates a chip reading [label].
-  const MilestoneChip({required this.label, super.key});
+  const MilestoneChipWidget({required this.label, super.key});
 
   /// The milestone: `M1`, `M2`, `M3`.
   final String label;

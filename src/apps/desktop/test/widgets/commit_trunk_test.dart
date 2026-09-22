@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_desktop/theme/tom_theme.dart';
-import 'package:tom_desktop/widgets/commit_trunk.dart';
-import 'package:tom_desktop/widgets/tom_wordmark.dart';
+import 'package:tom_desktop/widgets/commit_trunk_widget.dart';
+import 'package:tom_desktop/widgets/tom_wordmark_widget.dart';
 
 void main() {
   /// Mounts [child] under a trunk, optionally with animations switched off
@@ -11,7 +11,7 @@ void main() {
     theme: tomTheme(Brightness.dark),
     home: MediaQuery(
       data: MediaQueryData(disableAnimations: still),
-      child: Scaffold(body: CommitTrunk(child: child)),
+      child: Scaffold(body: CommitTrunkWidget(child: child)),
     ),
   );
 
@@ -24,8 +24,8 @@ void main() {
       app(
         Builder(
           builder: (BuildContext context) {
-            under = CommitTrunk.anchorOf(context);
-            return TomWordmark(
+            under = CommitTrunkWidget.anchorOf(context);
+            return TomWordmarkWidget(
               key: under,
               letters: const Color(0xFFECEAE4),
               commit: const Color(0xFF84B5A5),
@@ -42,7 +42,7 @@ void main() {
       MaterialApp(
         home: Builder(
           builder: (BuildContext context) {
-            outside = CommitTrunk.anchorOf(context);
+            outside = CommitTrunkWidget.anchorOf(context);
             return const SizedBox.shrink();
           },
         ),
@@ -67,8 +67,8 @@ void main() {
     await tester.pumpWidget(
       app(
         Builder(
-          builder: (BuildContext context) => TomWordmark(
-            key: CommitTrunk.anchorOf(context),
+          builder: (BuildContext context) => TomWordmarkWidget(
+            key: CommitTrunkWidget.anchorOf(context),
             letters: const Color(0xFFECEAE4),
             commit: const Color(0xFF84B5A5),
           ),
@@ -91,8 +91,8 @@ void main() {
       app(
         still: true,
         Builder(
-          builder: (BuildContext context) => TomWordmark(
-            key: CommitTrunk.anchorOf(context),
+          builder: (BuildContext context) => TomWordmarkWidget(
+            key: CommitTrunkWidget.anchorOf(context),
             letters: const Color(0xFFECEAE4),
             commit: const Color(0xFF84B5A5),
           ),
@@ -104,6 +104,6 @@ void main() {
     // Still is a design, not a fallback: the line and the commits are there,
     // and nothing is scheduled to move them.
     expect(tester.binding.hasScheduledFrame, isFalse);
-    expect(find.byType(TomWordmark), findsOneWidget);
+    expect(find.byType(TomWordmarkWidget), findsOneWidget);
   });
 }

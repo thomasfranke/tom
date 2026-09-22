@@ -8,7 +8,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/widgets/tom_wordmark.dart';
+import 'package:tom_desktop/widgets/tom_wordmark_widget.dart';
 
 /// Home's ground: the commit line the wordmark's O sits on.
 ///
@@ -22,10 +22,11 @@ import 'package:tom_desktop/widgets/tom_wordmark.dart';
 /// trunk carries [anchorOf]'s key, and the geometry is measured off what was
 /// actually laid out — so a different cap height, or a window that moves the
 /// block, moves the ground with it. Without that key it paints nothing,
-/// which is how a screen keeps using [TomWordmark] with no trunk above it.
-class CommitTrunk extends StatefulWidget {
+/// which is how a screen keeps using [TomWordmarkWidget] with no trunk above
+/// it.
+class CommitTrunkWidget extends StatefulWidget {
   /// Puts the trunk behind [child], carrying [commits] down the line.
-  const CommitTrunk({
+  const CommitTrunkWidget({
     required this.child,
     this.commits = const <TrunkCommit>[],
     super.key,
@@ -42,9 +43,10 @@ class CommitTrunk extends StatefulWidget {
   /// a first run has no history, and the line is then just a line.
   final List<TrunkCommit> commits;
 
-  /// The key the wordmark under a [CommitTrunk] must carry.
+  /// The key the wordmark under a [CommitTrunkWidget] must carry.
   ///
-  /// Null when there is no trunk above it — `TomWordmark(key: anchorOf(...))`
+  /// Null when there is no trunk above it — `TomWordmarkWidget(key:
+  /// anchorOf(...))`
   /// is then an ordinary wordmark with no key, and nothing else changes.
   static GlobalKey? anchorOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_TrunkScope>()?.anchor;
@@ -56,10 +58,10 @@ class CommitTrunk extends StatefulWidget {
   }
 
   @override
-  State<CommitTrunk> createState() => _CommitTrunkState();
+  State<CommitTrunkWidget> createState() => _CommitTrunkWidgetState();
 }
 
-class _CommitTrunkState extends State<CommitTrunk>
+class _CommitTrunkWidgetState extends State<CommitTrunkWidget>
     with SingleTickerProviderStateMixin {
   /// One cycle: rise, land, answer, carry on.
   ///

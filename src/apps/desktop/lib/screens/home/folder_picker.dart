@@ -2,7 +2,9 @@
 library;
 
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show WidgetRef;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:tom_presentation/tom_presentation.dart';
 
 part 'folder_picker.g.dart';
 
@@ -24,3 +26,18 @@ typedef FolderPicker = Future<String?> Function();
 /// 12](../../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
 @riverpod
 FolderPicker folderPicker(Ref ref) => getDirectoryPath;
+
+/// Asks the user for a folder and opens it.
+///
+/// Beside the seam rather than inside a widget, because two of Home's
+/// widgets offer it — the empty state and the refusal — and neither should
+/// own the other's copy.
+///
+/// A cancelled picker is not a failure and not a state: the user changed
+/// their mind, and the screen does not move.
+Future<void> chooseFolder(WidgetRef ref) async {
+  final String? folder = await ref.read(folderPickerProvider)();
+  if (folder != null) {
+    await ref.read(homeProvider.notifier).open(folder);
+  }
+}

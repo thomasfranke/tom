@@ -18,9 +18,9 @@ import 'package:flutter/widgets.dart';
 /// ([rule 1](../../../../../AGENTS.md)) earning its keep on four shapes. The
 /// letters are Sora Bold outlines, extracted once into the master — which is
 /// also why no font has to be installed for the wordmark to be right.
-class TomWordmark extends StatelessWidget {
+class TomWordmarkWidget extends StatelessWidget {
   /// Creates the wordmark [capHeight] tall in its capitals.
-  const TomWordmark({
+  const TomWordmarkWidget({
     required this.letters,
     required this.commit,
     this.capHeight = 60,

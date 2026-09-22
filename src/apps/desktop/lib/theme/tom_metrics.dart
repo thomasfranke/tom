@@ -32,6 +32,14 @@ abstract final class TomMetrics {
   /// Panel edge to a control that spans the panel.
   static const double padTight = 16;
 
+  /// How much further in than the panels the chrome's own text sits.
+  ///
+  /// Both bars of the shell carry it, and so does Home's status line: the
+  /// space name and the status read as one column down the left edge. It
+  /// lives here rather than beside one of them because three widgets in
+  /// three files would otherwise hold three copies of the same 4.
+  static const double chromeInset = 4;
+
   /// The smallest window the layout still holds together in.
   ///
   /// Explorer plus git panel plus a document area wide enough to read a

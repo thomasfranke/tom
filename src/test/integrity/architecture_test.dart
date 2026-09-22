@@ -324,6 +324,54 @@ void main() {
     });
   });
 
+  test("a screen's own widgets stay its own", () {
+    // A screen's sub-widgets used to be private classes in one file, which
+    // is what said "these are Home's, not yours". Splitting them into files
+    // made them public — privacy in Dart is per file — so the statement
+    // moved here. `screens/<a>/widgets/` is readable from `screens/<a>/`
+    // and nowhere else; anything shared between two screens belongs in the
+    // app's own `widgets/`, which is what that folder is for.
+    final RegExp owned = RegExp(
+      r'package:tom_desktop/screens/([a-z_]+)/widgets/',
+    );
+    final List<String> offences = <String>[];
+
+    for (final String package in compositionRoots) {
+      final Directory? directory = directories[package];
+      if (directory == null) {
+        continue;
+      }
+      for (final File file in <File>[
+        ...dartFilesIn(directory),
+        ...dartFilesUnder(Directory('${directory.path}/test')),
+      ]) {
+        final String path = file.path.replaceFirst('${workspace.path}/', '');
+        for (final RegExpMatch match in directive.allMatches(
+          file.readAsStringSync(),
+        )) {
+          final RegExpMatch? owner = owned.firstMatch(match.group(1)!);
+          if (owner == null) {
+            continue;
+          }
+          // The screen the widget belongs to, and the one importing it.
+          final String belongsTo = owner.group(1)!;
+          if (!file.path.contains('/screens/$belongsTo/')) {
+            offences.add('$path imports ${match.group(1)}');
+          }
+        }
+      }
+    }
+
+    expect(
+      offences,
+      isEmpty,
+      reason:
+          "A screen reached into another screen's widgets. A widget two "
+          'screens both draw is not either one\'s — move it to '
+          'apps/desktop/lib/widgets/ and let both import it from there.',
+    );
+  });
+
   test('nothing overrides a dependency', () {
     final List<String> overriding = <String>[
       for (final MapEntry<String, YamlMap> entry in pubspecs.entries)
@@ -353,16 +401,16 @@ void main() {
 /// Generated code is scanned on purpose: an annotation that generates a
 /// `package:flutter` import in a pure package is exactly the kind of leak that
 /// arrives without anyone writing the import.
-Iterable<File> dartFilesIn(Directory package) {
-  final Directory lib = Directory('${package.path}/lib');
-  if (!lib.existsSync()) {
-    return const <File>[];
-  }
-  return lib
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((File file) => file.path.endsWith('.dart'));
-}
+Iterable<File> dartFilesIn(Directory package) =>
+    dartFilesUnder(Directory('${package.path}/lib'));
+
+/// Every `.dart` file under [directory], or nothing when it is not there.
+Iterable<File> dartFilesUnder(Directory directory) => directory.existsSync()
+    ? directory
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((File file) => file.path.endsWith('.dart'))
+    : const <File>[];
 
 /// The `src/` directory, found from wherever the test was started.
 ///

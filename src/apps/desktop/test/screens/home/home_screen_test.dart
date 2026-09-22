@@ -6,7 +6,7 @@ import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/home/home_screen.dart';
 import 'package:tom_desktop/theme/tom_theme.dart';
-import 'package:tom_desktop/widgets/tom_wordmark.dart';
+import 'package:tom_desktop/widgets/tom_wordmark_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 
@@ -79,7 +79,7 @@ void main() {
       // The wordmark, not the name set in type: the O is the commit on the
       // trunk, and a `Text('TOM')` here would pass while the screen showed
       // the wrong mark (`docs/technical/design/brand.md`, rule 1).
-      expect(find.byType(TomWordmark), findsOneWidget);
+      expect(find.byType(TomWordmarkWidget), findsOneWidget);
       expect(
         find.text('A Git client built for documentation, not code.'),
         findsOneWidget,

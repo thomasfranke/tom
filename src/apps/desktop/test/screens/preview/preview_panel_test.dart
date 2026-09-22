@@ -156,7 +156,7 @@ final class _Documents implements DocumentRepository {
 
 /// The real reader, over the real parser — the panel is what is under test,
 /// and a fake outline here would test the fake.
-final class _Blocks implements BlockReader {
+final class _Blocks implements BlockReaderPort {
   const _Blocks();
 
   @override
