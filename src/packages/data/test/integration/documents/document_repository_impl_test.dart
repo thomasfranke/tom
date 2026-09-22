@@ -24,17 +24,17 @@ void main() {
   late Space space;
 
   /// What [result] holds, or a failure of the test if it did not succeed.
-  T valueOf<T>(Result<T> result) => switch (result) {
-    Success<T>(value: final T value) => value,
-    Failure<T>(failure: final AppFailure failure) => throw StateError(
+  T valueOf<T, F extends AppFailure>(Result<T, F> result) => switch (result) {
+    Success<T, F>(value: final T value) => value,
+    Failure<T, F>(failure: final F failure) => throw StateError(
       'expected a success, got $failure',
     ),
   };
 
   /// What [result] failed with, or a failure of the test if it succeeded.
-  AppFailure failureOf<T>(Result<T> result) => switch (result) {
-    Success<T>() => throw StateError('expected a failure, got a success'),
-    Failure<T>(failure: final AppFailure failure) => failure,
+  F failureOf<T, F extends AppFailure>(Result<T, F> result) => switch (result) {
+    Success<T, F>() => throw StateError('expected a failure, got a success'),
+    Failure<T, F>(failure: final F failure) => failure,
   };
 
   void write(String relativePath, String content) {
@@ -78,8 +78,25 @@ void main() {
     test('a file that is not there names the document', () async {
       expect(
         failureOf(await documents.read(SpaceRelativePath('missing.md'))),
-        const DocumentNotFound('missing.md'),
+        isA<DocumentNotFound>().having(
+          (DocumentNotFound failure) => failure.path,
+          'path',
+          'missing.md',
+        ),
       );
+    });
+
+    test('and the whole chain reaches the diagnostics', () async {
+      // Three links, one per boundary crossed: what the product says, what
+      // the capability said, and what the operating system said. The path the
+      // user sees is space-relative; the absolute one is further down.
+      final AppFailure failure = failureOf(
+        await documents.read(SpaceRelativePath('missing.md')),
+      );
+
+      expect(failure.chain, hasLength(3));
+      expect(failure.diagnostics, contains('No such file'));
+      expect(failure.diagnostics, contains(space.root));
     });
 
     test('a file that is not text is refused rather than decoded', () async {
@@ -89,7 +106,11 @@ void main() {
 
       expect(
         failureOf(await documents.read(SpaceRelativePath('binary.md'))),
-        const DocumentNotUtf8('binary.md'),
+        isA<DocumentNotUtf8>().having(
+          (DocumentNotUtf8 failure) => failure.path,
+          'path',
+          'binary.md',
+        ),
       );
     });
 
@@ -191,7 +212,7 @@ void main() {
         await spaces.entries(space),
       ).firstWhere((SpaceEntry entry) => entry.name == 'alias.md');
 
-      expect(entry.type, SpaceEntryType.link);
+      expect(entry.type, SpaceEntryTypeEnum.link);
       expect(entry.isDocument, isFalse);
     });
 

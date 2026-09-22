@@ -3,12 +3,8 @@ library;
 
 import 'package:markdown/markdown.dart' as md;
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_infra/src/markdown_parser/markdown_outline.dart';
+import 'package:tom_data/tom_data.dart';
 import 'package:tom_infra/src/markdown_parser/markdown_package/positioned_syntaxes.dart';
-import 'package:tom_infra/src/markdown_parser/markdown_parser.dart';
-import 'package:tom_infra/src/markdown_parser/markdown_parser_failure.dart';
-import 'package:tom_infra/src/markdown_parser/markdown_span.dart';
-import 'package:tom_infra/src/markdown_parser/markdown_span_kind.dart';
 
 /// [MarkdownParser] over the official Dart parser ([Decision
 /// 19](../../../../../../../docs/technical/decisions/019-blocks-come-from-the-markdown-package.md)).
@@ -21,7 +17,9 @@ final class MarkdownPackageParser implements MarkdownParser {
   const MarkdownPackageParser();
 
   @override
-  Future<Result<MarkdownOutline>> outline(String markdown) async {
+  Future<Result<MarkdownOutlineDto, MarkdownParserFailure>> outline(
+    String markdown,
+  ) async {
     try {
       final List<String> lines = markdown.split('\n');
       final ({
@@ -30,16 +28,16 @@ final class MarkdownPackageParser implements MarkdownParser {
         Map<String, md.LinkReference> linkReferences,
       })
       parsed = parseWithPositions(markdown);
-      return Success<MarkdownOutline>(
-        MarkdownOutline(
-          spans: List<MarkdownSpan>.unmodifiable(<MarkdownSpan>[
+      return Success<MarkdownOutlineDto, MarkdownParserFailure>(
+        MarkdownOutlineDto(
+          spans: List<MarkdownSpanDto>.unmodifiable(<MarkdownSpanDto>[
             for (final md.Node node in parsed.nodes)
               // A node the parse could not place — the synthesised footnotes
               // section is the known one — is left out rather than guessed
               // at, which is what the contract promises.
               if (parsed.spans[node] case final (int, int) span)
-                if (_kindOf(node) case final MarkdownSpanKind kind)
-                  MarkdownSpan(
+                if (_kindOf(node) case final MarkdownSpanKindEnum kind)
+                  MarkdownSpanDto(
                     startLine: span.$1,
                     endLine: _lastLineOf(span, lines),
                     kind: kind,
@@ -49,7 +47,9 @@ final class MarkdownPackageParser implements MarkdownParser {
         ),
       );
     } on Object catch (error) {
-      return Failure<MarkdownOutline>(MarkdownParserFailed(error.toString()));
+      return Failure<MarkdownOutlineDto, MarkdownParserFailure>(
+        MarkdownParserFailed(error.toString()),
+      );
     }
   }
 
@@ -71,21 +71,26 @@ final class MarkdownPackageParser implements MarkdownParser {
   /// those through as text rather than as an element, and everything else
   /// that would be text — a blank run, a link definition — produces no node
   /// at all.
-  static MarkdownSpanKind? _kindOf(md.Node node) {
+  static MarkdownSpanKindEnum? _kindOf(md.Node node) {
     if (node is! md.Element) {
       return node is md.Text && node.text.trim().isNotEmpty
-          ? MarkdownSpanKind.html
+          ? MarkdownSpanKindEnum.html
           : null;
     }
     return switch (node.tag) {
-      'p' => MarkdownSpanKind.paragraph,
-      'h1' || 'h2' || 'h3' || 'h4' || 'h5' || 'h6' => MarkdownSpanKind.heading,
-      'ul' || 'ol' => MarkdownSpanKind.list,
-      'table' => MarkdownSpanKind.table,
-      'pre' || 'code' => MarkdownSpanKind.code,
-      'blockquote' => MarkdownSpanKind.quote,
-      'hr' => MarkdownSpanKind.rule,
-      _ => MarkdownSpanKind.html,
+      'p' => MarkdownSpanKindEnum.paragraph,
+      'h1' ||
+      'h2' ||
+      'h3' ||
+      'h4' ||
+      'h5' ||
+      'h6' => MarkdownSpanKindEnum.heading,
+      'ul' || 'ol' => MarkdownSpanKindEnum.list,
+      'table' => MarkdownSpanKindEnum.table,
+      'pre' || 'code' => MarkdownSpanKindEnum.code,
+      'blockquote' => MarkdownSpanKindEnum.quote,
+      'hr' => MarkdownSpanKindEnum.rule,
+      _ => MarkdownSpanKindEnum.html,
     };
   }
 

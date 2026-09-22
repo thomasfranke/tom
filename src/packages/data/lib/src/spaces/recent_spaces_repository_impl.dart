@@ -4,8 +4,9 @@ library;
 import 'dart:convert';
 
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_data/src/capabilities/settings/settings.dart';
+import 'package:tom_data/src/capabilities/settings/settings_failure.dart';
 import 'package:tom_domain/tom_domain.dart';
-import 'package:tom_infra/tom_infra.dart';
 
 /// [RecentSpacesRepository] over the [Settings] capability.
 ///
@@ -41,20 +42,15 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
   static const int _limit = 10;
 
   @override
-  Future<Result<List<RecentSpace>>> list() async {
-    final Result<String?> stored = await settings.read(_key);
-    return switch (stored) {
-      Success<String?>(value: final String? text) => Success<List<RecentSpace>>(
-        _decode(text),
-      ),
-      // Deliberately not a failure: a list nobody can read is an empty list,
-      // and Home still offers to open a folder.
-      Failure<String?>() => const Success<List<RecentSpace>>(<RecentSpace>[]),
-    };
+  Future<Result<List<RecentSpace>, Never>> list() async {
+    // `valueOrNull` is the contract in one word: a store nobody can read is
+    // an empty list, and Home still offers to open a folder.
+    final Result<String?, SettingsFailure> stored = await settings.read(_key);
+    return Success<List<RecentSpace>, Never>(_decode(stored.valueOrNull));
   }
 
   @override
-  Future<Result<void>> remember(Space space) async {
+  Future<Result<void, Never>> remember(Space space) async {
     final List<RecentSpace> kept = await _current();
     final List<RecentSpace> updated = <RecentSpace>[
       RecentSpace(
@@ -70,7 +66,7 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
   }
 
   @override
-  Future<Result<void>> forget(String root) async {
+  Future<Result<void, Never>> forget(String root) async {
     final List<RecentSpace> kept = await _current();
     return _store(
       kept.where((RecentSpace recent) => recent.root != root).toList(),
@@ -78,17 +74,11 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
   }
 
   /// What is stored now, or nothing if it cannot be read.
-  Future<List<RecentSpace>> _current() async {
-    final Result<List<RecentSpace>> listed = await list();
-    return switch (listed) {
-      Success<List<RecentSpace>>(value: final List<RecentSpace> recents) =>
-        recents,
-      Failure<List<RecentSpace>>() => <RecentSpace>[],
-    };
-  }
+  Future<List<RecentSpace>> _current() async =>
+      (await list()).valueOrNull ?? <RecentSpace>[];
 
   /// Writes [recents], reporting success whatever the store did.
-  Future<Result<void>> _store(List<RecentSpace> recents) async {
+  Future<Result<void, Never>> _store(List<RecentSpace> recents) async {
     await settings.write(
       _key,
       jsonEncode(<Map<String, Object?>>[
@@ -100,7 +90,7 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
           },
       ]),
     );
-    return const Success<void>(null);
+    return const Success<void, Never>(null);
   }
 
   /// [text] as entries, newest first, skipping anything unreadable.

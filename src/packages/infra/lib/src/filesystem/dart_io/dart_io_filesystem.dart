@@ -6,10 +6,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_infra/src/filesystem/filesystem.dart';
-import 'package:tom_infra/src/filesystem/filesystem_entry.dart';
-import 'package:tom_infra/src/filesystem/filesystem_entry_type.dart';
-import 'package:tom_infra/src/filesystem/filesystem_failure.dart';
+import 'package:tom_data/tom_data.dart';
+import 'package:tom_infra/src/dart_io_failure.dart';
 
 /// Reads and writes files through `dart:io`'s [File].
 ///
@@ -24,27 +22,30 @@ final class DartIoFilesystem implements Filesystem {
   static int _sequence = 0;
 
   @override
-  Future<Result<String>> readFile(String path) async {
+  Future<Result<String, FilesystemFailure>> readFile(String path) async {
     final Uint8List bytes;
     try {
       bytes = await File(path).readAsBytes();
     } on FileSystemException catch (exception) {
-      return Failure<String>(_translate(path, exception));
+      return Failure<String, FilesystemFailure>(_translate(path, exception));
     }
     try {
-      return Success<String>(utf8.decode(bytes));
+      return Success<String, FilesystemFailure>(utf8.decode(bytes));
     } on FormatException {
       // Named rather than decoded leniently, which is the opposite of what
       // the git client does with the same hazard — and for the same reason.
       // Nothing TOM shows is written back to git; a document is. A
       // replacement character saved over a latin-1 file destroys the bytes
       // that could not be read, so refusing is the only lossless answer.
-      return Failure<String>(FilesystemNotUtf8(path));
+      return Failure<String, FilesystemFailure>(FilesystemNotUtf8(path));
     }
   }
 
   @override
-  Future<Result<void>> writeFile(String path, String content) async {
+  Future<Result<void, FilesystemFailure>> writeFile(
+    String path,
+    String content,
+  ) async {
     final File temporary = File(_temporaryPathFor(path));
     try {
       await File(path).parent.create(recursive: true);
@@ -55,21 +56,21 @@ final class DartIoFilesystem implements Filesystem {
       // temporary directory — a rename is atomic within one filesystem only.
       await temporary.writeAsString(content, flush: true);
       await temporary.rename(path);
-      return const Success<void>(null);
+      return const Success<void, FilesystemFailure>(null);
     } on FileSystemException catch (exception) {
       await _discard(temporary);
-      return Failure<void>(_translate(path, exception));
+      return Failure<void, FilesystemFailure>(_translate(path, exception));
     }
   }
 
   @override
-  Future<Result<List<FilesystemEntry>>> listDirectory(
+  Future<Result<List<FilesystemEntryDto>, FilesystemFailure>> listDirectory(
     String path, {
     bool recursive = false,
   }) async {
     try {
-      final List<FilesystemEntry> entries =
-          <FilesystemEntry>[
+      final List<FilesystemEntryDto> entries =
+          <FilesystemEntryDto>[
             // The async stream rather than `listSync`: a space's documentation
             // folder can hold thousands of entries, and the walk must not block
             // the isolate the app draws from.
@@ -88,26 +89,30 @@ final class DartIoFilesystem implements Filesystem {
                           error is FileSystemException &&
                           !_isAbout(path, error),
                     ))
-              FilesystemEntry(path: entity.path, type: _typeOf(entity)),
+              FilesystemEntryDto(path: entity.path, type: _typeOf(entity)),
           ]..sort(
-            (FilesystemEntry a, FilesystemEntry b) => a.path.compareTo(b.path),
+            (FilesystemEntryDto a, FilesystemEntryDto b) =>
+                a.path.compareTo(b.path),
           );
-      return Success<List<FilesystemEntry>>(entries);
+      return Success<List<FilesystemEntryDto>, FilesystemFailure>(entries);
     } on FileSystemException catch (exception) {
-      return Failure<List<FilesystemEntry>>(_translate(path, exception));
+      return Failure<List<FilesystemEntryDto>, FilesystemFailure>(
+        _translate(path, exception),
+      );
     }
   }
 
   @override
-  Future<Result<bool>> directoryExists(String path) async {
+  Future<Result<bool, FilesystemFailure>> directoryExists(String path) async {
     try {
       // A space's folder can sit on a network mount, and the synchronous
       // probe blocks for as long as a stale one takes to give up — which Home
       // would spend frozen while it checks the spaces it offers to reopen.
       // ignore: avoid_slow_async_io
-      return Success<bool>(await Directory(path).exists());
+      final bool exists = await Directory(path).exists();
+      return Success<bool, FilesystemFailure>(exists);
     } on FileSystemException catch (exception) {
-      return Failure<bool>(_translate(path, exception));
+      return Failure<bool, FilesystemFailure>(_translate(path, exception));
     }
   }
 
@@ -153,10 +158,10 @@ final class DartIoFilesystem implements Filesystem {
   ///
   /// [FileSystemEntity] has exactly these three subclasses, and a listing that
   /// does not follow links never reports a link as the thing it points at.
-  FilesystemEntryType _typeOf(FileSystemEntity entity) => switch (entity) {
-    Directory() => FilesystemEntryType.directory,
-    Link() => FilesystemEntryType.link,
-    _ => FilesystemEntryType.file,
+  FilesystemEntryTypeEnum _typeOf(FileSystemEntity entity) => switch (entity) {
+    Directory() => FilesystemEntryTypeEnum.directory,
+    Link() => FilesystemEntryTypeEnum.link,
+    _ => FilesystemEntryTypeEnum.file,
   };
 
   /// Maps what the OS reported to a [FilesystemFailure].
@@ -174,6 +179,11 @@ final class DartIoFilesystem implements Filesystem {
   /// about something else: a recursive walk fails on an entry deep inside the
   /// folder that was asked for, and telling the user the folder they opened
   /// is unreadable when it is not would be a lie.
+  ///
+  /// Everything the exception carried and the contract has no word for — the
+  /// `errno`, the OS message — goes on as the cause. The variant is what a
+  /// second implementation of this contract would have to produce too; the
+  /// cause is this one's alone.
   FilesystemFailure _translate(
     String requested,
     FileSystemException exception,
@@ -181,10 +191,16 @@ final class DartIoFilesystem implements Filesystem {
     final String path = _isAbout(requested, exception)
         ? requested
         : exception.path!;
+    final DartIoFailure cause = DartIoFailure(
+      message: exception.message,
+      path: exception.path,
+      osErrorCode: exception.osError?.errorCode,
+      osErrorMessage: exception.osError?.message,
+    );
     return switch (exception) {
-      PathNotFoundException() => FilesystemEntryNotFound(path),
-      PathAccessException() => FilesystemAccessDenied(path),
-      _ => FilesystemOperationFailed(path, exception.message),
+      PathNotFoundException() => FilesystemEntryNotFound(path, cause: cause),
+      PathAccessException() => FilesystemAccessDenied(path, cause: cause),
+      _ => FilesystemOperationFailed(path, exception.message, cause: cause),
     };
   }
 }

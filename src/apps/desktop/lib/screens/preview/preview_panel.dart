@@ -242,7 +242,7 @@ class _BlockView extends ConsumerWidget {
   /// Read off the block's own first line, because the highlighter is handed
   /// the code and not the fence.
   static String _languageOf(Block block) {
-    if (block.kind != BlockKind.code) {
+    if (block.kind != BlockKindEnum.code) {
       return '';
     }
     final String first = block.source.split('\n').first.trim();

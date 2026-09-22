@@ -24,9 +24,10 @@ part 'file_tree_notifier.g.dart';
 /// Which folders are closed lives here because no other panel cares. Which
 /// *document* is open is the opposite, so it goes to the session.
 @riverpod
-class FileTree extends _$FileTree {
+class FileTreeNotifier extends _$FileTreeNotifier {
   /// Reads what the space holds, from the scope the composition root filled.
-  ListSpaceEntries get listSpaceEntries => ref.read(listSpaceEntriesProvider);
+  ListSpaceEntriesUseCase get listSpaceEntries =>
+      ref.read(listSpaceEntriesProvider);
 
   @override
   FileTreeState build() {
@@ -54,7 +55,7 @@ class FileTree extends _$FileTree {
   /// opens only what it can read
   /// (`docs/product/navigation/file-tree/doc.md`).
   void activate(SpaceEntry entry) {
-    if (entry.type == SpaceEntryType.directory) {
+    if (entry.type == SpaceEntryTypeEnum.directory) {
       _toggle(entry.path);
       return;
     }
@@ -65,14 +66,19 @@ class FileTree extends _$FileTree {
 
   /// Reads [space] and shows what it holds.
   Future<void> _load(Space space) async {
-    final Result<List<SpaceEntry>> listed = await listSpaceEntries(space);
+    final Result<List<SpaceEntry>, AppFailure> listed = await listSpaceEntries
+        .list(space);
     state = switch (listed) {
-      Success<List<SpaceEntry>>(value: final List<SpaceEntry> entries) =>
+      Success<List<SpaceEntry>, AppFailure>(
+        value: final List<SpaceEntry> entries,
+      ) =>
         FileTreeState.ready(
           entries: List<SpaceEntry>.unmodifiable(entries),
           collapsed: const <SpaceRelativePath>{},
         ),
-      Failure<List<SpaceEntry>>(failure: final AppFailure failure) =>
+      Failure<List<SpaceEntry>, AppFailure>(
+        failure: final AppFailure failure,
+      ) =>
         FileTreeState.failed(failure),
     };
   }

@@ -34,5 +34,5 @@ abstract class FileTreeRow with _$FileTreeRow {
   const FileTreeRow._();
 
   /// Whether this row can be opened and closed.
-  bool get isFolder => entry.type == SpaceEntryType.directory;
+  bool get isFolder => entry.type == SpaceEntryTypeEnum.directory;
 }

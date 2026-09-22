@@ -3,7 +3,7 @@ library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:tom_domain/src/paths/space_relative_path.dart';
-import 'package:tom_domain/src/spaces/space_entry_type.dart';
+import 'package:tom_domain/src/spaces/space_entry_type_enum.dart';
 
 part 'space_entry.freezed.dart';
 
@@ -21,7 +21,7 @@ abstract class SpaceEntry with _$SpaceEntry {
     required SpaceRelativePath path,
 
     /// What it is.
-    required SpaceEntryType type,
+    required SpaceEntryTypeEnum type,
   }) = _SpaceEntry;
 
   const SpaceEntry._();
@@ -34,5 +34,5 @@ abstract class SpaceEntry with _$SpaceEntry {
   /// A link is never one, however it is named: it may point outside the
   /// space, or at nothing at all, and the listing did not follow it to find
   /// out.
-  bool get isDocument => type == SpaceEntryType.file && path.isMarkdown;
+  bool get isDocument => type == SpaceEntryTypeEnum.file && path.isMarkdown;
 }

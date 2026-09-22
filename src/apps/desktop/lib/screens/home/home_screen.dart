@@ -8,6 +8,7 @@ import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/home/folder_picker.dart';
 import 'package:tom_desktop/theme/tom_colors.dart';
 import 'package:tom_desktop/theme/tom_metrics.dart';
+import 'package:tom_desktop/widgets/commit_trunk.dart';
 import 'package:tom_desktop/widgets/milestone_chip.dart';
 import 'package:tom_desktop/widgets/tom_wordmark.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -95,15 +96,24 @@ class HomeScreen extends ConsumerWidget {
                 below: 1,
                 child: _Working(),
               ),
-              HomeReady(recents: final List<RecentSpace> recents) => _Canvas(
-                // 98 above and 166 below, on the 900-tall window the design
-                // was drawn for. Kept as a ratio rather than as a top
-                // padding so a taller window does not leave the block
-                // hugging the chrome.
-                above: 98,
-                below: 166,
-                child: _Welcome(recents: recents),
-              ),
+              // The ground is only under the empty state: it is drawn off the
+              // wordmark, and the refusal does not show one.
+              HomeReady(recents: final List<RecentSpace> recents) =>
+                CommitTrunk(
+                  // The line's own history is the only history this screen
+                  // has: the spaces that were opened, newest first. Invented
+                  // hashes belong to the website, not to someone's app.
+                  commits: _commits(recents),
+                  child: _Canvas(
+                    // 98 above and 166 below, on the 900-tall window the
+                    // design was drawn for. Kept as a ratio rather than as a
+                    // top padding so a taller window does not leave the block
+                    // hugging the chrome.
+                    above: 98,
+                    below: 166,
+                    child: _Welcome(recents: recents),
+                  ),
+                ),
               HomeFailed(failure: final AppFailure failure) => _Canvas(
                 above: 248,
                 below: 288.5,
@@ -116,6 +126,31 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// The remembered spaces as entries on the trunk behind them.
+///
+/// Three at most: the line has room for three before it reaches the status
+/// bar, and a fourth would be a list rather than a ground.
+List<TrunkCommit> _commits(List<RecentSpace> recents) => <TrunkCommit>[
+  for (final RecentSpace recent in recents.take(3))
+    TrunkCommit(subject: recent.name, meta: _ago(recent.lastOpened)),
+];
+
+/// When something happened, in the words a log uses.
+///
+/// Rounded down on purpose: the point is *how long ago*, and a space opened
+/// 30 hours ago reads better as yesterday than as a number of hours.
+String _ago(DateTime moment) {
+  final Duration since = DateTime.now().toUtc().difference(moment);
+  return switch (since.inDays) {
+    0 => 'today',
+    1 => 'yesterday',
+    < 7 => '${since.inDays} days ago',
+    < 14 => 'last week',
+    < 60 => '${since.inDays ~/ 7} weeks ago',
+    _ => '${since.inDays ~/ 30} months ago',
+  };
 }
 
 /// Asks the user for a folder and opens it.
@@ -199,7 +234,13 @@ class _Welcome extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        TomWordmark(letters: colors.textPrimary, commit: colors.accent),
+        // The key is what the trunk behind this measures itself against; it
+        // is null on any screen without one, and the mark does not care.
+        TomWordmark(
+          key: CommitTrunk.anchorOf(context),
+          letters: colors.textPrimary,
+          commit: colors.accent,
+        ),
         const SizedBox(height: _Mock.wordmarkToExpansion),
         Text(
           'Team-Oriented Markdown',
@@ -586,7 +627,7 @@ class _TopStrip extends StatelessWidget {
     return _Bar(
       colors: colors,
       height: TomMetrics.topBar,
-      rule: _Edge.bottom,
+      rule: _EdgeEnum.bottom,
       child: const SizedBox.shrink(),
     );
   }
@@ -605,7 +646,7 @@ class _StatusStrip extends StatelessWidget {
     return _Bar(
       colors: colors,
       height: TomMetrics.statusBar,
-      rule: _Edge.top,
+      rule: _EdgeEnum.top,
       child: Align(
         alignment: Alignment.centerLeft,
         child: Padding(
@@ -621,7 +662,7 @@ class _StatusStrip extends StatelessWidget {
 }
 
 /// Which edge a bar's rule sits on.
-enum _Edge { top, bottom }
+enum _EdgeEnum { top, bottom }
 
 /// One of the two bars: a fixed height, a raised fill, and one hairline.
 ///
@@ -643,7 +684,7 @@ class _Bar extends StatelessWidget {
   final double height;
 
   /// Where the hairline goes.
-  final _Edge rule;
+  final _EdgeEnum rule;
 
   /// What the bar holds.
   final Widget child;
@@ -654,7 +695,7 @@ class _Bar extends StatelessWidget {
     properties
       ..add(DiagnosticsProperty<TomColors>('colors', colors))
       ..add(DoubleProperty('height', height))
-      ..add(EnumProperty<_Edge>('rule', rule));
+      ..add(EnumProperty<_EdgeEnum>('rule', rule));
   }
 
   @override
@@ -669,8 +710,8 @@ class _Bar extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surfaceRaised,
         border: Border(
-          top: rule == _Edge.top ? side : BorderSide.none,
-          bottom: rule == _Edge.bottom ? side : BorderSide.none,
+          top: rule == _EdgeEnum.top ? side : BorderSide.none,
+          bottom: rule == _EdgeEnum.bottom ? side : BorderSide.none,
         ),
       ),
       child: child,

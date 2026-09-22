@@ -6,8 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_infra/src/git_client/git_client.dart';
-import 'package:tom_infra/src/git_client/git_client_failure.dart';
+import 'package:tom_data/tom_data.dart';
 
 /// Drives the system's `git` binary through [Process].
 ///
@@ -88,19 +87,20 @@ final class DartIoGitClient implements GitClient {
       GitClient.recordSeparator;
 
   @override
-  Future<Result<String>> repositoryRoot() async {
-    final Result<String> root = await _git(<String>[
+  Future<Result<String, GitClientFailure>> repositoryRoot() async {
+    final Result<String, GitClientFailure> root = await _git(<String>[
       'rev-parse',
       '--show-toplevel',
     ]);
     return switch (root) {
-      Success<String>(:final String value) => Success<String>(value.trim()),
-      Failure<String>() => root,
+      Success<String, GitClientFailure>(:final String value) =>
+        Success<String, GitClientFailure>(value.trim()),
+      Failure<String, GitClientFailure>() => root,
     };
   }
 
   @override
-  Future<Result<String>> status() => _git(<String>[
+  Future<Result<String, GitClientFailure>> status() => _git(<String>[
     'status',
     '--porcelain=v2',
     '--branch',
@@ -109,8 +109,11 @@ final class DartIoGitClient implements GitClient {
   ]);
 
   @override
-  Future<Result<String>> log({String? path, int? limit}) async {
-    final Result<String> result = await _git(<String>[
+  Future<Result<String, GitClientFailure>> log({
+    String? path,
+    int? limit,
+  }) async {
+    final Result<String, GitClientFailure> result = await _git(<String>[
       'log',
       '--format=$_logFormat',
       if (limit != null) '--max-count=$limit',
@@ -121,28 +124,30 @@ final class DartIoGitClient implements GitClient {
     // initialised repository should show. Calling it fatal is git's
     // convention, not the product's.
     return switch (result) {
-      Failure<String>(failure: GitClientCommandFailed(:final String stderr))
+      Failure<String, GitClientFailure>(
+        failure: GitClientCommandFailed(:final String stderr),
+      )
           when _unbornHead.hasMatch(stderr) =>
-        const Success<String>(''),
+        const Success<String, GitClientFailure>(''),
       _ => result,
     };
   }
 
   @override
-  Future<Result<String>> branches() =>
+  Future<Result<String, GitClientFailure>> branches() =>
       _git(<String>['branch', '--format=$_branchFormat']);
 
   @override
-  Future<Result<String>> show(String revision, String path) =>
+  Future<Result<String, GitClientFailure>> show(String revision, String path) =>
       _git(<String>['show', '$revision:$path']);
 
   @override
-  Future<Result<void>> stage(List<String> paths) =>
+  Future<Result<void, GitClientFailure>> stage(List<String> paths) =>
       _gitVoid(<String>['add', '--', ...paths.map(_pathspec)]);
 
   @override
-  Future<Result<void>> unstage(List<String> paths) async {
-    final Result<void> result = await _gitVoid(<String>[
+  Future<Result<void, GitClientFailure>> unstage(List<String> paths) async {
+    final Result<void, GitClientFailure> result = await _gitVoid(<String>[
       'restore',
       '--staged',
       '--',
@@ -156,7 +161,9 @@ final class DartIoGitClient implements GitClient {
     // `--ignore-unmatch` keeps the two branches behaving alike: `restore`
     // succeeds on a path that was not staged, and so must this.
     return switch (result) {
-      Failure<void>(failure: GitClientCommandFailed(:final String stderr))
+      Failure<void, GitClientFailure>(
+        failure: GitClientCommandFailed(:final String stderr),
+      )
           when _unbornHead.hasMatch(stderr) =>
         _gitVoid(<String>[
           'rm',
@@ -172,27 +179,27 @@ final class DartIoGitClient implements GitClient {
   }
 
   @override
-  Future<Result<void>> commit(String message) =>
+  Future<Result<void, GitClientFailure>> commit(String message) =>
       _gitVoid(<String>['commit', '--message', message]);
 
   @override
-  Future<Result<void>> createBranch(String name) =>
+  Future<Result<void, GitClientFailure>> createBranch(String name) =>
       _gitVoid(<String>['switch', '--create', name]);
 
   @override
-  Future<Result<void>> switchBranch(String name) =>
+  Future<Result<void, GitClientFailure>> switchBranch(String name) =>
       _gitVoid(<String>['switch', name]);
 
   @override
-  Future<Result<void>> fetch() =>
+  Future<Result<void, GitClientFailure>> fetch() =>
       _gitVoid(<String>['fetch'], limit: networkTimeout);
 
   @override
-  Future<Result<void>> pull() =>
+  Future<Result<void, GitClientFailure>> pull() =>
       _gitVoid(<String>['pull'], limit: networkTimeout);
 
   @override
-  Future<Result<void>> push() =>
+  Future<Result<void, GitClientFailure>> push() =>
       _gitVoid(<String>['push'], limit: networkTimeout);
 
   /// [path], as a pathspec git resolves from the repository root.
@@ -209,20 +216,22 @@ final class DartIoGitClient implements GitClient {
   static String _pathspec(String path) => ':(top,literal)$path';
 
   /// Runs a command whose output the caller does not need.
-  Future<Result<void>> _gitVoid(
+  Future<Result<void, GitClientFailure>> _gitVoid(
     List<String> arguments, {
     Duration? limit,
   }) async {
-    final Result<String> result = await _git(arguments, limit: limit);
-    return switch (result) {
-      Success<String>() => const Success<void>(null),
-      Failure<String>(:final AppFailure failure) => Failure<void>(failure),
-    };
+    final Result<String, GitClientFailure> result = await _git(
+      arguments,
+      limit: limit,
+    );
+    return result.map((_) {});
   }
 
   /// Queues [arguments] and hands back stdout, or a typed failure.
-  Future<Result<String>> _git(List<String> arguments, {Duration? limit}) =>
-      _enqueue(() => _run(arguments, limit ?? timeout));
+  Future<Result<String, GitClientFailure>> _git(
+    List<String> arguments, {
+    Duration? limit,
+  }) => _enqueue(() => _run(arguments, limit ?? timeout));
 
   /// Chains [operation] onto the queue.
   ///
@@ -235,7 +244,10 @@ final class DartIoGitClient implements GitClient {
   }
 
   /// Starts git, collects both streams, and kills it if it outlives [limit].
-  Future<Result<String>> _run(List<String> arguments, Duration limit) async {
+  Future<Result<String, GitClientFailure>> _run(
+    List<String> arguments,
+    Duration limit,
+  ) async {
     final String command = 'git ${arguments.join(' ')}';
     final Process process;
     try {
@@ -246,7 +258,7 @@ final class DartIoGitClient implements GitClient {
         environment: _environment,
       );
     } on ProcessException {
-      return Failure<String>(await _startFailure());
+      return Failure<String, GitClientFailure>(await _startFailure());
     }
 
     final Future<String> out = process.stdout.transform(_decoder).join();
@@ -258,13 +270,15 @@ final class DartIoGitClient implements GitClient {
     } on TimeoutException {
       process.kill(ProcessSignal.sigkill);
       await _drain(out, err);
-      return Failure<String>(GitClientTimedOut(command, limit));
+      return Failure<String, GitClientFailure>(
+        GitClientTimedOut(command, limit),
+      );
     }
 
     final String stdout = await out;
     final String stderr = await err;
     if (exitCode == 0) {
-      return Success<String>(stdout);
+      return Success<String, GitClientFailure>(stdout);
     }
     final GitClientFailure failure = _translate(
       command,
@@ -272,7 +286,7 @@ final class DartIoGitClient implements GitClient {
       stdout,
       stderr,
     );
-    return Failure<String>(
+    return Failure<String, GitClientFailure>(
       failure is GitClientMergeConflict ? await _named(failure) : failure,
     );
   }
@@ -338,7 +352,7 @@ final class DartIoGitClient implements GitClient {
   /// it would otherwise get paths relative to [workingDirectory], which the
   /// contract does not allow.
   Future<List<String>> _unmergedPaths() async {
-    final Result<String> unmerged = await _run(<String>[
+    final Result<String, GitClientFailure> unmerged = await _run(<String>[
       '-c',
       'diff.relative=false',
       'diff',
@@ -347,12 +361,12 @@ final class DartIoGitClient implements GitClient {
       '-z',
     ], timeout);
     return switch (unmerged) {
-      Success<String>(:final String value) =>
+      Success<String, GitClientFailure>(:final String value) =>
         value
             .split(GitClient.nulSeparator)
             .where((String path) => path.isNotEmpty)
             .toList(growable: false),
-      Failure<String>() => const <String>[],
+      Failure<String, GitClientFailure>() => const <String>[],
     };
   }
 

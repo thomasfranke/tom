@@ -18,6 +18,10 @@ import 'package:tom_domain/src/spaces/space.dart';
 /// anyway. Nothing the user can lose here is anything they cannot get back
 /// by picking the folder again — which is why no caller is expected to treat
 /// a failure from it as a reason to stop.
+///
+/// **[Never] is the failure type, and it is the contract.** Not prose that an
+/// implementation may forget: a `Failure<T, Never>` cannot be constructed,
+/// because no value of type [Never] exists. The promise above is checked.
 abstract interface class RecentSpacesRepository {
   /// The remembered spaces, most recently opened first.
   ///
@@ -25,18 +29,18 @@ abstract interface class RecentSpacesRepository {
   /// because Home's answer to that is to offer to forget it rather than to
   /// hide it (`docs/product/home/doc.md`). Checking would also mean touching
   /// the disk once per row of a list the user may not click.
-  Future<Result<List<RecentSpace>>> list();
+  Future<Result<List<RecentSpace>, Never>> list();
 
   /// Records that [space] was just opened, moving it to the front.
   ///
   /// Opening a space that is already remembered updates it rather than
   /// adding a second row: a space is identified by its folder.
-  Future<Result<void>> remember(Space space);
+  Future<Result<void, Never>> remember(Space space);
 
   /// Drops the entry for [root], if there is one.
   ///
   /// What Home offers for a space whose folder went away. Forgetting one
   /// that was never remembered succeeds — the caller wanted it gone, and it
   /// is.
-  Future<Result<void>> forget(String root);
+  Future<Result<void, Never>> forget(String root);
 }

@@ -10,6 +10,7 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_data/tom_data.dart';
 import 'package:tom_infra/tom_infra.dart';
 
 void main() {
@@ -60,15 +61,19 @@ void main() {
   }
 
   /// The value of a successful result, failing the test when it is not one.
-  String valueOf(Result<String> result) {
-    expect(result, isA<Success<String>>(), reason: '$result');
-    return (result as Success<String>).value;
+  String valueOf(Result<String, GitClientFailure> result) {
+    expect(result, isA<Success<String, GitClientFailure>>(), reason: '$result');
+    return (result as Success<String, GitClientFailure>).value;
   }
 
   /// The failure of a failed result, failing the test when it is not one.
-  AppFailure failureOf(Result<Object?> result) {
-    expect(result, isA<Failure<Object?>>(), reason: '$result');
-    return (result as Failure<Object?>).failure;
+  AppFailure failureOf(Result<Object?, GitClientFailure> result) {
+    expect(
+      result,
+      isA<Failure<Object?, GitClientFailure>>(),
+      reason: '$result',
+    );
+    return (result as Failure<Object?, GitClientFailure>).failure;
   }
 
   setUp(() {
@@ -141,7 +146,7 @@ void main() {
         Directory('$locked/space').createSync(recursive: true);
         Process.runSync('chmod', <String>['000', locked]);
 
-        final Result<String> root = await DartIoGitClient(
+        final Result<String, GitClientFailure> root = await DartIoGitClient(
           workingDirectory: '$locked/space',
         ).repositoryRoot();
 
@@ -174,7 +179,10 @@ void main() {
       // inside a code repository is the normal case, and a path that only
       // works from one of the two is a path neither side can use.
       expect(path, 'docs/b.md');
-      expect(await below.stage(<String>[path]), isA<Success<void>>());
+      expect(
+        await below.stage(<String>[path]),
+        isA<Success<void, GitClientFailure>>(),
+      );
       expect(valueOf(await below.status()), contains('1 A. '));
     });
 
@@ -182,7 +190,10 @@ void main() {
       write('docs/b.md', '# B\n');
       await below.stage(<String>['docs/b.md']);
 
-      expect(await below.unstage(<String>['docs/b.md']), isA<Success<void>>());
+      expect(
+        await below.unstage(<String>['docs/b.md']),
+        isA<Success<void, GitClientFailure>>(),
+      );
 
       expect(valueOf(await below.status()), contains('? docs/b.md'));
     });
@@ -206,7 +217,7 @@ void main() {
 
       expect(
         await below.stage(<String>['docs/notes[draft].md']),
-        isA<Success<void>>(),
+        isA<Success<void, GitClientFailure>>(),
       );
 
       expect(valueOf(await below.status()), contains('docs/notes[draft].md'));
@@ -267,8 +278,14 @@ void main() {
     test('staging then committing leaves the tree clean', () async {
       write('b.md', '# B\n');
 
-      expect(await client.stage(<String>['b.md']), isA<Success<void>>());
-      expect(await client.commit('Add B'), isA<Success<void>>());
+      expect(
+        await client.stage(<String>['b.md']),
+        isA<Success<void, GitClientFailure>>(),
+      );
+      expect(
+        await client.commit('Add B'),
+        isA<Success<void, GitClientFailure>>(),
+      );
 
       final String status = valueOf(await client.status());
       expect(
@@ -291,7 +308,10 @@ void main() {
       write('b.md', '# B\n');
       await client.stage(<String>['b.md']);
 
-      expect(await client.unstage(<String>['b.md']), isA<Success<void>>());
+      expect(
+        await client.unstage(<String>['b.md']),
+        isA<Success<void, GitClientFailure>>(),
+      );
 
       expect(valueOf(await client.status()), contains('? b.md'));
       expect(File('$repoPath/b.md').existsSync(), isTrue);
@@ -307,7 +327,10 @@ void main() {
       final DartIoGitClient client = DartIoGitClient(workingDirectory: fresh);
       await client.stage(<String>['b.md']);
 
-      expect(await client.unstage(<String>['b.md']), isA<Success<void>>());
+      expect(
+        await client.unstage(<String>['b.md']),
+        isA<Success<void, GitClientFailure>>(),
+      );
 
       expect(valueOf(await client.status()), contains('? b.md'));
       expect(File('$fresh/b.md').existsSync(), isTrue);
@@ -322,7 +345,10 @@ void main() {
       File('$fresh/b.md').writeAsStringSync('# B\n');
       final DartIoGitClient client = DartIoGitClient(workingDirectory: fresh);
 
-      expect(await client.unstage(<String>['b.md']), isA<Success<void>>());
+      expect(
+        await client.unstage(<String>['b.md']),
+        isA<Success<void, GitClientFailure>>(),
+      );
     });
 
     test('committing nothing fails with GitClientCommandFailed', () async {
@@ -386,7 +412,7 @@ void main() {
         final String fresh = '$base/fresh';
         initRepository(fresh);
 
-        final Result<String> log = await DartIoGitClient(
+        final Result<String, GitClientFailure> log = await DartIoGitClient(
           workingDirectory: fresh,
         ).log();
 
@@ -430,7 +456,10 @@ void main() {
 
   group('createBranch and switchBranch', () {
     test('creating a branch switches to it', () async {
-      expect(await client.createBranch('draft'), isA<Success<void>>());
+      expect(
+        await client.createBranch('draft'),
+        isA<Success<void, GitClientFailure>>(),
+      );
 
       expect(valueOf(await client.status()), contains('# branch.head draft'));
     });
@@ -438,7 +467,10 @@ void main() {
     test('switching moves back', () async {
       await client.createBranch('draft');
 
-      expect(await client.switchBranch('main'), isA<Success<void>>());
+      expect(
+        await client.switchBranch('main'),
+        isA<Success<void, GitClientFailure>>(),
+      );
 
       expect(valueOf(await client.status()), contains('# branch.head main'));
     });
@@ -520,7 +552,7 @@ void main() {
       await client.stage(<String>['b.md']);
       await client.commit('Add B');
 
-      expect(await client.push(), isA<Success<void>>());
+      expect(await client.push(), isA<Success<void, GitClientFailure>>());
 
       final ProcessResult log = git(<String>[
         'log',
@@ -532,7 +564,7 @@ void main() {
     test('fetch reports ahead and behind without touching the tree', () async {
       pushFromElsewhere('# A from elsewhere\n', 'A elsewhere');
 
-      expect(await client.fetch(), isA<Success<void>>());
+      expect(await client.fetch(), isA<Success<void, GitClientFailure>>());
 
       expect(valueOf(await client.status()), contains('# branch.ab +0 -1'));
       expect(File('$repoPath/a.md').readAsStringSync(), '# A\n');
@@ -541,7 +573,7 @@ void main() {
     test('pull fast-forwards the working tree', () async {
       pushFromElsewhere('# A from elsewhere\n', 'A elsewhere');
 
-      expect(await client.pull(), isA<Success<void>>());
+      expect(await client.pull(), isA<Success<void, GitClientFailure>>());
 
       expect(File('$repoPath/a.md').readAsStringSync(), '# A from elsewhere\n');
     });
@@ -598,19 +630,26 @@ void main() {
     test(
       'serializes commands that would otherwise race the index lock',
       () async {
-        final List<Future<Result<void>>> operations = <Future<Result<void>>>[
-          for (int i = 0; i < 8; i++) ...<Future<Result<void>>>[
-            () {
-              write('file_$i.md', '# $i\n');
-              return client.stage(<String>['file_$i.md']);
-            }(),
-            client.commit('Add $i'),
-          ],
-        ];
+        final List<Future<Result<void, GitClientFailure>>> operations =
+            <Future<Result<void, GitClientFailure>>>[
+              for (
+                int i = 0;
+                i < 8;
+                i++
+              ) ...<Future<Result<void, GitClientFailure>>>[
+                () {
+                  write('file_$i.md', '# $i\n');
+                  return client.stage(<String>['file_$i.md']);
+                }(),
+                client.commit('Add $i'),
+              ],
+            ];
 
-        final List<Result<void>> results = await Future.wait(operations);
+        final List<Result<void, GitClientFailure>> results = await Future.wait(
+          operations,
+        );
 
-        expect(results.whereType<Failure<void>>(), isEmpty);
+        expect(results.whereType<Failure<void, GitClientFailure>>(), isEmpty);
         final int records = valueOf(await client.log())
             .split(GitClient.recordSeparator)
             .where((String r) => r.trim().isNotEmpty)
@@ -673,7 +712,7 @@ void main() {
 
       await impatient.status();
 
-      expect(await client.status(), isA<Success<String>>());
+      expect(await client.status(), isA<Success<String, GitClientFailure>>());
     });
   });
 }

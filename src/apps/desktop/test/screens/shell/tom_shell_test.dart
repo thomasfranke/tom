@@ -6,7 +6,7 @@ import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/bootstrap/core_module.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
-import 'package:tom_desktop/bootstrap/panel_placement.dart';
+import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_desktop/screens/shell/tom_shell.dart';
@@ -36,7 +36,7 @@ void main() {
           (Ref ref) => PanelRegistry(registered),
         ),
         listSpaceEntriesProvider.overrideWithValue(
-          const ListSpaceEntries(
+          const ListSpaceEntriesUseCase(
             spaces: _NothingInIt(),
             observability: _Silent(),
           ),
@@ -86,7 +86,7 @@ void main() {
 
   PanelDescriptor panelSaying(
     String text, {
-    required PanelPlacement placement,
+    required PanelPlacementEnum placement,
     int order = 0,
   }) => PanelDescriptor(
     id: 'test.$text',
@@ -134,7 +134,7 @@ void main() {
         modules: <TomModule>[
           const CoreModule(),
           _Module(<PanelDescriptor>[
-            panelSaying('TASKS', placement: PanelPlacement.aside),
+            panelSaying('TASKS', placement: PanelPlacementEnum.aside),
           ]),
         ],
       );
@@ -152,8 +152,12 @@ void main() {
         tester,
         modules: <TomModule>[
           _Module(<PanelDescriptor>[
-            panelSaying('LEFT', placement: PanelPlacement.document),
-            panelSaying('RIGHT', placement: PanelPlacement.document, order: 1),
+            panelSaying('LEFT', placement: PanelPlacementEnum.document),
+            panelSaying(
+              'RIGHT',
+              placement: PanelPlacementEnum.document,
+              order: 1,
+            ),
           ]),
         ],
       );
@@ -297,11 +301,12 @@ final class _NothingInIt implements SpaceRepository {
   const _NothingInIt();
 
   @override
-  Future<Result<Space>> open(String folder) async => throw UnimplementedError();
+  Future<Result<Space, AppFailure>> open(String folder) async =>
+      throw UnimplementedError();
 
   @override
-  Future<Result<List<SpaceEntry>>> entries(Space space) async =>
-      const Success<List<SpaceEntry>>(<SpaceEntry>[]);
+  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async =>
+      const Success<List<SpaceEntry>, SpaceFailure>(<SpaceEntry>[]);
 }
 
 /// The no-op observability, which is also the shipping default.

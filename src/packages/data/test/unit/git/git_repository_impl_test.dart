@@ -11,7 +11,6 @@ import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
 import 'package:tom_domain/tom_domain.dart';
-import 'package:tom_infra/tom_infra.dart';
 
 void main() {
   late _RecordingGitClient client;
@@ -23,17 +22,17 @@ void main() {
   });
 
   /// What [result] holds, or a failure of the test if it did not succeed.
-  T valueOf<T>(Result<T> result) => switch (result) {
-    Success<T>(value: final T value) => value,
-    Failure<T>(failure: final AppFailure failure) => throw StateError(
+  T valueOf<T, F extends AppFailure>(Result<T, F> result) => switch (result) {
+    Success<T, F>(value: final T value) => value,
+    Failure<T, F>(failure: final F failure) => throw StateError(
       'expected a success, got $failure',
     ),
   };
 
   /// What [result] failed with, or a failure of the test if it succeeded.
-  AppFailure failureOf<T>(Result<T> result) => switch (result) {
-    Success<T>() => throw StateError('expected a failure, got a success'),
-    Failure<T>(failure: final AppFailure failure) => failure,
+  F failureOf<T, F extends AppFailure>(Result<T, F> result) => switch (result) {
+    Success<T, F>() => throw StateError('expected a failure, got a success'),
+    Failure<T, F>(failure: final F failure) => failure,
   };
 
   group('what it asks git for', () {
@@ -185,14 +184,18 @@ void main() {
     test('no git on the machine', () async {
       expect(
         await translationOf(const GitClientExecutableNotFound()),
-        const GitNotInstalled(),
+        isA<GitNotInstalled>(),
       );
     });
 
     test('a folder outside any repository keeps the path', () async {
       expect(
         await translationOf(const GitClientNotARepository('/tmp/notes')),
-        const GitNotARepository('/tmp/notes'),
+        isA<GitNotARepository>().having(
+          (GitNotARepository f) => f.path,
+          'path',
+          '/tmp/notes',
+        ),
       );
     });
 
@@ -201,16 +204,20 @@ void main() {
         await translationOf(
           const GitClientMergeConflict(<String>['docs/a.md', 'docs/b.md']),
         ),
-        const GitMergeConflict(<String>['docs/a.md', 'docs/b.md']),
+        isA<GitMergeConflict>().having(
+          (GitMergeConflict f) => f.conflictedFiles,
+          'conflictedFiles',
+          <String>['docs/a.md', 'docs/b.md'],
+        ),
       );
     });
 
-    test('authentication drops a stderr no user can act on', () async {
+    test('authentication is a named outcome', () async {
       expect(
         await translationOf(
           const GitClientAuthenticationFailed('fatal: Authentication failed'),
         ),
-        const GitAuthenticationFailed(),
+        isA<GitAuthenticationFailed>(),
       );
     });
 
@@ -219,32 +226,53 @@ void main() {
         await translationOf(
           const GitClientPushRejected('! [rejected] main -> main'),
         ),
-        const GitPushRejected(),
+        isA<GitPushRejected>(),
       );
     });
 
-    test('a timeout keeps the command and drops the budget', () async {
+    test('a timeout is named and carries no command line', () async {
       expect(
         await translationOf(
           const GitClientTimedOut('git pull', Duration(minutes: 2)),
         ),
-        const GitTimedOut('git pull'),
+        isA<GitTimedOut>(),
       );
     });
 
-    test('anything else keeps the command and the stderr', () async {
+    test('anything else lands on the fallback', () async {
       expect(
         await translationOf(
           const GitClientCommandFailed('git commit', 1, 'nothing to commit'),
         ),
-        const GitCommandFailed('git commit', 'nothing to commit'),
+        isA<GitOperationFailed>(),
       );
+    });
+
+    test('the machine\'s words travel as the cause, never in the '
+        'variant', () async {
+      // The whole shape of the rule: a domain failure is what the product
+      // says, and the command line, the exit code and the stderr stay in the
+      // capability's failure underneath it.
+      const GitClientCommandFailed reported = GitClientCommandFailed(
+        'git commit',
+        1,
+        'nothing to commit',
+      );
+
+      final AppFailure failure = await translationOf(reported);
+
+      expect(failure.cause, same(reported));
+      expect(failure.chain, hasLength(2));
+      expect(failure.diagnostics, contains('nothing to commit'));
+      // And the variant holds nothing *but* the cause: equality against one
+      // built from the cause alone fails the moment a field is added back.
+      expect(failure, const GitOperationFailed(cause: reported));
     });
 
     test('a failure travels out of a command that returns nothing', () async {
       client.failure = const GitClientPushRejected('! [rejected]');
 
-      expect(failureOf(await repository.push()), const GitPushRejected());
+      expect(failureOf(await repository.push()), isA<GitPushRejected>());
     });
 
     test('a failure from infrastructure never reaches the caller', () async {
@@ -279,72 +307,85 @@ final class _RecordingGitClient implements GitClient {
   String? shownRevision;
   String? shownPath;
 
-  Result<T> _answer<T>(String call, T value) {
+  Result<T, GitClientFailure> _answer<T>(String call, T value) {
     calls.add(call);
     final GitClientFailure? pending = failure;
-    return pending == null ? Success<T>(value) : Failure<T>(pending);
+    return pending == null
+        ? Success<T, GitClientFailure>(value)
+        : Failure<T, GitClientFailure>(pending);
   }
 
   @override
-  Future<Result<String>> repositoryRoot() async =>
+  Future<Result<String, GitClientFailure>> repositoryRoot() async =>
       _answer<String>('repositoryRoot', text);
 
   @override
-  Future<Result<String>> status() async => _answer<String>('status', text);
+  Future<Result<String, GitClientFailure>> status() async =>
+      _answer<String>('status', text);
 
   @override
-  Future<Result<String>> log({String? path, int? limit}) async {
+  Future<Result<String, GitClientFailure>> log({
+    String? path,
+    int? limit,
+  }) async {
     logPath = path;
     logLimit = limit;
     return _answer<String>('log', text);
   }
 
   @override
-  Future<Result<String>> branches() async => _answer<String>('branches', text);
+  Future<Result<String, GitClientFailure>> branches() async =>
+      _answer<String>('branches', text);
 
   @override
-  Future<Result<String>> show(String revision, String path) async {
+  Future<Result<String, GitClientFailure>> show(
+    String revision,
+    String path,
+  ) async {
     shownRevision = revision;
     shownPath = path;
     return _answer<String>('show', text);
   }
 
   @override
-  Future<Result<void>> stage(List<String> paths) async {
+  Future<Result<void, GitClientFailure>> stage(List<String> paths) async {
     staged = paths;
     return _answer<void>('stage', null);
   }
 
   @override
-  Future<Result<void>> unstage(List<String> paths) async {
+  Future<Result<void, GitClientFailure>> unstage(List<String> paths) async {
     unstaged = paths;
     return _answer<void>('unstage', null);
   }
 
   @override
-  Future<Result<void>> commit(String message) async {
+  Future<Result<void, GitClientFailure>> commit(String message) async {
     this.message = message;
     return _answer<void>('commit', null);
   }
 
   @override
-  Future<Result<void>> createBranch(String name) async {
+  Future<Result<void, GitClientFailure>> createBranch(String name) async {
     createdBranch = name;
     return _answer<void>('createBranch', null);
   }
 
   @override
-  Future<Result<void>> switchBranch(String name) async {
+  Future<Result<void, GitClientFailure>> switchBranch(String name) async {
     switchedTo = name;
     return _answer<void>('switchBranch', null);
   }
 
   @override
-  Future<Result<void>> fetch() async => _answer<void>('fetch', null);
+  Future<Result<void, GitClientFailure>> fetch() async =>
+      _answer<void>('fetch', null);
 
   @override
-  Future<Result<void>> pull() async => _answer<void>('pull', null);
+  Future<Result<void, GitClientFailure>> pull() async =>
+      _answer<void>('pull', null);
 
   @override
-  Future<Result<void>> push() async => _answer<void>('push', null);
+  Future<Result<void, GitClientFailure>> push() async =>
+      _answer<void>('push', null);
 }

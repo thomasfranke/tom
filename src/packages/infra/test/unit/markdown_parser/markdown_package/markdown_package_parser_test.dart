@@ -1,19 +1,21 @@
 import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_data/tom_data.dart';
 import 'package:tom_infra/tom_infra.dart';
 
 void main() {
   const MarkdownPackageParser parser = MarkdownPackageParser();
 
   /// The outline of [markdown], or a failed test.
-  Future<MarkdownOutline> outlineOf(String markdown) async {
-    final Result<MarkdownOutline> result = await parser.outline(markdown);
-    return (result as Success<MarkdownOutline>).value;
+  Future<MarkdownOutlineDto> outlineOf(String markdown) async {
+    final Result<MarkdownOutlineDto, MarkdownParserFailure> result =
+        await parser.outline(markdown);
+    return (result as Success<MarkdownOutlineDto, MarkdownParserFailure>).value;
   }
 
   /// Every span of [markdown] as `kind start..end`.
   Future<List<String>> spansOf(String markdown) async => <String>[
-    for (final MarkdownSpan span in (await outlineOf(markdown)).spans)
+    for (final MarkdownSpanDto span in (await outlineOf(markdown)).spans)
       '${span.kind.name} ${span.startLine}..${span.endLine}',
   ];
 
@@ -110,7 +112,7 @@ void main() {
     });
 
     test('spans are in order and never overlap', () async {
-      final List<MarkdownSpan> spans = (await outlineOf(
+      final List<MarkdownSpanDto> spans = (await outlineOf(
         '# A\n\nOne.\n\n## B\n\nTwo.\n',
       )).spans;
 
@@ -120,9 +122,9 @@ void main() {
     });
 
     test('a blank line belongs to no span', () async {
-      final List<MarkdownSpan> spans = (await outlineOf('A.\n\nB.\n')).spans;
+      final List<MarkdownSpanDto> spans = (await outlineOf('A.\n\nB.\n')).spans;
 
-      expect(spans.map((MarkdownSpan s) => s.startLine), <int>[0, 2]);
+      expect(spans.map((MarkdownSpanDto s) => s.startLine), <int>[0, 2]);
     });
   });
 
@@ -130,15 +132,15 @@ void main() {
     test('travel as their own lines, so a fragment can carry them', () async {
       const String markdown = 'See [the docs][d].\n\n[d]: https://tom.dev\n';
 
-      final MarkdownOutline outline = await outlineOf(markdown);
+      final MarkdownOutlineDto outline = await outlineOf(markdown);
 
       expect(outline.linkDefinitions, '[d]: https://tom.dev');
       // And the definition is not a span: nothing draws it.
-      expect(outline.spans, <MarkdownSpan>[
-        const MarkdownSpan(
+      expect(outline.spans, <MarkdownSpanDto>[
+        const MarkdownSpanDto(
           startLine: 0,
           endLine: 0,
-          kind: MarkdownSpanKind.paragraph,
+          kind: MarkdownSpanKindEnum.paragraph,
         ),
       ]);
     });

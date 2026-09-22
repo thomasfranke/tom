@@ -2,14 +2,14 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
-import 'package:tom_desktop/bootstrap/panel_placement.dart';
+import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
 
 void main() {
   PanelDescriptor panel(
     String id, {
-    PanelPlacement placement = PanelPlacement.document,
+    PanelPlacementEnum placement = PanelPlacementEnum.document,
     int order = 0,
   }) => PanelDescriptor(
     id: id,
@@ -19,7 +19,7 @@ void main() {
     builder: (BuildContext context) => const SizedBox.shrink(),
   );
 
-  List<String> idsAt(PanelRegistry registry, PanelPlacement placement) =>
+  List<String> idsAt(PanelRegistry registry, PanelPlacementEnum placement) =>
       registry
           .at(placement)
           .map((PanelDescriptor descriptor) => descriptor.id)
@@ -43,17 +43,17 @@ void main() {
     test('panels land in the region they named', () {
       final PanelRegistry registry = PanelRegistry(<TomModule>[
         _Module('a', <PanelDescriptor>[
-          panel('tree', placement: PanelPlacement.explorer),
+          panel('tree', placement: PanelPlacementEnum.explorer),
           panel('editor'),
-          panel('git', placement: PanelPlacement.aside),
-          panel('branch', placement: PanelPlacement.statusBar),
+          panel('git', placement: PanelPlacementEnum.aside),
+          panel('branch', placement: PanelPlacementEnum.statusBar),
         ]),
       ]);
 
-      expect(idsAt(registry, PanelPlacement.explorer), <String>['tree']);
-      expect(idsAt(registry, PanelPlacement.document), <String>['editor']);
-      expect(idsAt(registry, PanelPlacement.aside), <String>['git']);
-      expect(idsAt(registry, PanelPlacement.statusBar), <String>['branch']);
+      expect(idsAt(registry, PanelPlacementEnum.explorer), <String>['tree']);
+      expect(idsAt(registry, PanelPlacementEnum.document), <String>['editor']);
+      expect(idsAt(registry, PanelPlacementEnum.aside), <String>['git']);
+      expect(idsAt(registry, PanelPlacementEnum.statusBar), <String>['branch']);
     });
 
     test('an empty region answers with an empty list, not null', () {
@@ -61,7 +61,7 @@ void main() {
         _Module('a', <PanelDescriptor>[panel('editor')]),
       ]);
 
-      expect(registry.at(PanelPlacement.aside), isEmpty);
+      expect(registry.at(PanelPlacementEnum.aside), isEmpty);
     });
 
     test('what comes back cannot be changed under the registry', () {
@@ -70,7 +70,7 @@ void main() {
       ]);
 
       expect(
-        () => registry.at(PanelPlacement.document).add(panel('sneaked')),
+        () => registry.at(PanelPlacementEnum.document).add(panel('sneaked')),
         throwsUnsupportedError,
       );
     });
@@ -85,7 +85,7 @@ void main() {
         ]),
       ]);
 
-      expect(idsAt(registry, PanelPlacement.document), <String>[
+      expect(idsAt(registry, PanelPlacementEnum.document), <String>[
         'source',
         'preview',
       ]);
@@ -99,7 +99,7 @@ void main() {
         _Module('b', <PanelDescriptor>[panel('third')]),
       ]);
 
-      expect(idsAt(registry, PanelPlacement.document), <String>[
+      expect(idsAt(registry, PanelPlacementEnum.document), <String>[
         'first',
         'second',
         'third',
@@ -112,7 +112,7 @@ void main() {
         _Module('b', <PanelDescriptor>[panel('early')]),
       ]);
 
-      expect(idsAt(registry, PanelPlacement.document), <String>[
+      expect(idsAt(registry, PanelPlacementEnum.document), <String>[
         'early',
         'late',
       ]);

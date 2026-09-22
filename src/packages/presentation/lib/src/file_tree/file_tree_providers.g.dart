@@ -32,11 +32,11 @@ final listSpaceEntriesProvider = ListSpaceEntriesProvider._();
 final class ListSpaceEntriesProvider
     extends
         $FunctionalProvider<
-          ListSpaceEntries,
-          ListSpaceEntries,
-          ListSpaceEntries
+          ListSpaceEntriesUseCase,
+          ListSpaceEntriesUseCase,
+          ListSpaceEntriesUseCase
         >
-    with $Provider<ListSpaceEntries> {
+    with $Provider<ListSpaceEntriesUseCase> {
   /// Reads everything a space holds.
   ///
   /// Declared here and **overridden by the composition root**: this package
@@ -61,21 +61,22 @@ final class ListSpaceEntriesProvider
 
   @$internal
   @override
-  $ProviderElement<ListSpaceEntries> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<ListSpaceEntriesUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  ListSpaceEntries create(Ref ref) {
+  ListSpaceEntriesUseCase create(Ref ref) {
     return listSpaceEntries(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ListSpaceEntries value) {
+  Override overrideWithValue(ListSpaceEntriesUseCase value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ListSpaceEntries>(value),
+      providerOverride: $SyncValueProvider<ListSpaceEntriesUseCase>(value),
     );
   }
 }
 
-String _$listSpaceEntriesHash() => r'c0ee06056d2dc4e3a2228fbdb07bffd71ae4e240';
+String _$listSpaceEntriesHash() => r'c840d7fbbfe56b482df4fe01a254a1629950b649';

@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 mixin _$DocumentFailure {
 
 /// The path, relative to the space root.
- String get path;
+ String get path; AppFailure? get cause;
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -26,16 +26,16 @@ $DocumentFailureCopyWith<DocumentFailure> get copyWith => _$DocumentFailureCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentFailure&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentFailure&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,path);
+int get hashCode => Object.hash(runtimeType,path,cause);
 
 @override
 String toString() {
-  return 'DocumentFailure(path: $path)';
+  return 'DocumentFailure(path: $path, cause: $cause)';
 }
 
 
@@ -46,7 +46,7 @@ abstract mixin class $DocumentFailureCopyWith<$Res>  {
   factory $DocumentFailureCopyWith(DocumentFailure value, $Res Function(DocumentFailure) _then) = _$DocumentFailureCopyWithImpl;
 @useResult
 $Res call({
- String path
+ String path, AppFailure? cause
 });
 
 
@@ -63,10 +63,11 @@ class _$DocumentFailureCopyWithImpl<$Res>
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? path = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? path = null,Object? cause = freezed,}) {
   return _then(_self.copyWith(
 path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 
@@ -160,14 +161,14 @@ return externalChangeConflict(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path)?  notFound,TResult Function( String path)?  permissionDenied,TResult Function( String path)?  notUtf8,TResult Function( String path,  String description)?  operationFailed,TResult Function( String path)?  externalChangeConflict,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  AppFailure? cause)?  notFound,TResult Function( String path,  AppFailure? cause)?  permissionDenied,TResult Function( String path,  AppFailure? cause)?  notUtf8,TResult Function( String path,  AppFailure? cause)?  operationFailed,TResult Function( String path,  AppFailure? cause)?  externalChangeConflict,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case DocumentNotFound() when notFound != null:
-return notFound(_that.path);case DocumentPermissionDenied() when permissionDenied != null:
-return permissionDenied(_that.path);case DocumentNotUtf8() when notUtf8 != null:
-return notUtf8(_that.path);case DocumentOperationFailed() when operationFailed != null:
-return operationFailed(_that.path,_that.description);case DocumentExternalChangeConflict() when externalChangeConflict != null:
-return externalChangeConflict(_that.path);case _:
+return notFound(_that.path,_that.cause);case DocumentPermissionDenied() when permissionDenied != null:
+return permissionDenied(_that.path,_that.cause);case DocumentNotUtf8() when notUtf8 != null:
+return notUtf8(_that.path,_that.cause);case DocumentOperationFailed() when operationFailed != null:
+return operationFailed(_that.path,_that.cause);case DocumentExternalChangeConflict() when externalChangeConflict != null:
+return externalChangeConflict(_that.path,_that.cause);case _:
   return orElse();
 
 }
@@ -185,14 +186,14 @@ return externalChangeConflict(_that.path);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path)  notFound,required TResult Function( String path)  permissionDenied,required TResult Function( String path)  notUtf8,required TResult Function( String path,  String description)  operationFailed,required TResult Function( String path)  externalChangeConflict,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  AppFailure? cause)  notFound,required TResult Function( String path,  AppFailure? cause)  permissionDenied,required TResult Function( String path,  AppFailure? cause)  notUtf8,required TResult Function( String path,  AppFailure? cause)  operationFailed,required TResult Function( String path,  AppFailure? cause)  externalChangeConflict,}) {final _that = this;
 switch (_that) {
 case DocumentNotFound():
-return notFound(_that.path);case DocumentPermissionDenied():
-return permissionDenied(_that.path);case DocumentNotUtf8():
-return notUtf8(_that.path);case DocumentOperationFailed():
-return operationFailed(_that.path,_that.description);case DocumentExternalChangeConflict():
-return externalChangeConflict(_that.path);}
+return notFound(_that.path,_that.cause);case DocumentPermissionDenied():
+return permissionDenied(_that.path,_that.cause);case DocumentNotUtf8():
+return notUtf8(_that.path,_that.cause);case DocumentOperationFailed():
+return operationFailed(_that.path,_that.cause);case DocumentExternalChangeConflict():
+return externalChangeConflict(_that.path,_that.cause);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -206,14 +207,14 @@ return externalChangeConflict(_that.path);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path)?  notFound,TResult? Function( String path)?  permissionDenied,TResult? Function( String path)?  notUtf8,TResult? Function( String path,  String description)?  operationFailed,TResult? Function( String path)?  externalChangeConflict,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  AppFailure? cause)?  notFound,TResult? Function( String path,  AppFailure? cause)?  permissionDenied,TResult? Function( String path,  AppFailure? cause)?  notUtf8,TResult? Function( String path,  AppFailure? cause)?  operationFailed,TResult? Function( String path,  AppFailure? cause)?  externalChangeConflict,}) {final _that = this;
 switch (_that) {
 case DocumentNotFound() when notFound != null:
-return notFound(_that.path);case DocumentPermissionDenied() when permissionDenied != null:
-return permissionDenied(_that.path);case DocumentNotUtf8() when notUtf8 != null:
-return notUtf8(_that.path);case DocumentOperationFailed() when operationFailed != null:
-return operationFailed(_that.path,_that.description);case DocumentExternalChangeConflict() when externalChangeConflict != null:
-return externalChangeConflict(_that.path);case _:
+return notFound(_that.path,_that.cause);case DocumentPermissionDenied() when permissionDenied != null:
+return permissionDenied(_that.path,_that.cause);case DocumentNotUtf8() when notUtf8 != null:
+return notUtf8(_that.path,_that.cause);case DocumentOperationFailed() when operationFailed != null:
+return operationFailed(_that.path,_that.cause);case DocumentExternalChangeConflict() when externalChangeConflict != null:
+return externalChangeConflict(_that.path,_that.cause);case _:
   return null;
 
 }
@@ -225,11 +226,12 @@ return externalChangeConflict(_that.path);case _:
 
 
 class DocumentNotFound implements DocumentFailure {
-  const DocumentNotFound(this.path);
+  const DocumentNotFound(this.path, {this.cause});
   
 
 /// The path, relative to the space root.
 @override final  String path;
+@override final  AppFailure? cause;
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -241,16 +243,16 @@ $DocumentNotFoundCopyWith<DocumentNotFound> get copyWith => _$DocumentNotFoundCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentNotFound&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentNotFound&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,path);
+int get hashCode => Object.hash(runtimeType,path,cause);
 
 @override
 String toString() {
-  return 'DocumentFailure.notFound(path: $path)';
+  return 'DocumentFailure.notFound(path: $path, cause: $cause)';
 }
 
 
@@ -261,7 +263,7 @@ abstract mixin class $DocumentNotFoundCopyWith<$Res> implements $DocumentFailure
   factory $DocumentNotFoundCopyWith(DocumentNotFound value, $Res Function(DocumentNotFound) _then) = _$DocumentNotFoundCopyWithImpl;
 @override @useResult
 $Res call({
- String path
+ String path, AppFailure? cause
 });
 
 
@@ -278,10 +280,11 @@ class _$DocumentNotFoundCopyWithImpl<$Res>
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
   return _then(DocumentNotFound(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 
@@ -292,11 +295,12 @@ as String,
 
 
 class DocumentPermissionDenied implements DocumentFailure {
-  const DocumentPermissionDenied(this.path);
+  const DocumentPermissionDenied(this.path, {this.cause});
   
 
 /// The path, relative to the space root.
 @override final  String path;
+@override final  AppFailure? cause;
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -308,16 +312,16 @@ $DocumentPermissionDeniedCopyWith<DocumentPermissionDenied> get copyWith => _$Do
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentPermissionDenied&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentPermissionDenied&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,path);
+int get hashCode => Object.hash(runtimeType,path,cause);
 
 @override
 String toString() {
-  return 'DocumentFailure.permissionDenied(path: $path)';
+  return 'DocumentFailure.permissionDenied(path: $path, cause: $cause)';
 }
 
 
@@ -328,7 +332,7 @@ abstract mixin class $DocumentPermissionDeniedCopyWith<$Res> implements $Documen
   factory $DocumentPermissionDeniedCopyWith(DocumentPermissionDenied value, $Res Function(DocumentPermissionDenied) _then) = _$DocumentPermissionDeniedCopyWithImpl;
 @override @useResult
 $Res call({
- String path
+ String path, AppFailure? cause
 });
 
 
@@ -345,10 +349,11 @@ class _$DocumentPermissionDeniedCopyWithImpl<$Res>
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
   return _then(DocumentPermissionDenied(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 
@@ -359,11 +364,12 @@ as String,
 
 
 class DocumentNotUtf8 implements DocumentFailure {
-  const DocumentNotUtf8(this.path);
+  const DocumentNotUtf8(this.path, {this.cause});
   
 
 /// The path, relative to the space root.
 @override final  String path;
+@override final  AppFailure? cause;
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -375,16 +381,16 @@ $DocumentNotUtf8CopyWith<DocumentNotUtf8> get copyWith => _$DocumentNotUtf8CopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentNotUtf8&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentNotUtf8&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,path);
+int get hashCode => Object.hash(runtimeType,path,cause);
 
 @override
 String toString() {
-  return 'DocumentFailure.notUtf8(path: $path)';
+  return 'DocumentFailure.notUtf8(path: $path, cause: $cause)';
 }
 
 
@@ -395,7 +401,7 @@ abstract mixin class $DocumentNotUtf8CopyWith<$Res> implements $DocumentFailureC
   factory $DocumentNotUtf8CopyWith(DocumentNotUtf8 value, $Res Function(DocumentNotUtf8) _then) = _$DocumentNotUtf8CopyWithImpl;
 @override @useResult
 $Res call({
- String path
+ String path, AppFailure? cause
 });
 
 
@@ -412,10 +418,11 @@ class _$DocumentNotUtf8CopyWithImpl<$Res>
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
   return _then(DocumentNotUtf8(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 
@@ -426,13 +433,12 @@ as String,
 
 
 class DocumentOperationFailed implements DocumentFailure {
-  const DocumentOperationFailed(this.path, this.description);
+  const DocumentOperationFailed(this.path, {this.cause});
   
 
 /// The path, relative to the space root.
 @override final  String path;
-/// What the machine reported, verbatim. For diagnostics — never parsed.
- final  String description;
+@override final  AppFailure? cause;
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -444,16 +450,16 @@ $DocumentOperationFailedCopyWith<DocumentOperationFailed> get copyWith => _$Docu
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentOperationFailed&&(identical(other.path, path) || other.path == path)&&(identical(other.description, description) || other.description == description));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentOperationFailed&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,path,description);
+int get hashCode => Object.hash(runtimeType,path,cause);
 
 @override
 String toString() {
-  return 'DocumentFailure.operationFailed(path: $path, description: $description)';
+  return 'DocumentFailure.operationFailed(path: $path, cause: $cause)';
 }
 
 
@@ -464,7 +470,7 @@ abstract mixin class $DocumentOperationFailedCopyWith<$Res> implements $Document
   factory $DocumentOperationFailedCopyWith(DocumentOperationFailed value, $Res Function(DocumentOperationFailed) _then) = _$DocumentOperationFailedCopyWithImpl;
 @override @useResult
 $Res call({
- String path, String description
+ String path, AppFailure? cause
 });
 
 
@@ -481,11 +487,11 @@ class _$DocumentOperationFailedCopyWithImpl<$Res>
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? description = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
   return _then(DocumentOperationFailed(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
-as String,null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 
@@ -496,11 +502,12 @@ as String,
 
 
 class DocumentExternalChangeConflict implements DocumentFailure {
-  const DocumentExternalChangeConflict(this.path);
+  const DocumentExternalChangeConflict(this.path, {this.cause});
   
 
 /// The path, relative to the space root.
 @override final  String path;
+@override final  AppFailure? cause;
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -512,16 +519,16 @@ $DocumentExternalChangeConflictCopyWith<DocumentExternalChangeConflict> get copy
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentExternalChangeConflict&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DocumentExternalChangeConflict&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,path);
+int get hashCode => Object.hash(runtimeType,path,cause);
 
 @override
 String toString() {
-  return 'DocumentFailure.externalChangeConflict(path: $path)';
+  return 'DocumentFailure.externalChangeConflict(path: $path, cause: $cause)';
 }
 
 
@@ -532,7 +539,7 @@ abstract mixin class $DocumentExternalChangeConflictCopyWith<$Res> implements $D
   factory $DocumentExternalChangeConflictCopyWith(DocumentExternalChangeConflict value, $Res Function(DocumentExternalChangeConflict) _then) = _$DocumentExternalChangeConflictCopyWithImpl;
 @override @useResult
 $Res call({
- String path
+ String path, AppFailure? cause
 });
 
 
@@ -549,10 +556,11 @@ class _$DocumentExternalChangeConflictCopyWithImpl<$Res>
 
 /// Create a copy of DocumentFailure
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
   return _then(DocumentExternalChangeConflict(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 

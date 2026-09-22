@@ -52,10 +52,10 @@ class TomWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double scale = capHeight / _capHeight;
+    final double scale = capHeight / TomMark.capHeight;
     return SizedBox(
-      width: _boxWidth * scale,
-      height: _boxHeight * scale,
+      width: TomMark.boxWidth * scale,
+      height: TomMark.boxHeight * scale,
       child: CustomPaint(
         painter: _WordmarkPainter(
           letters: letters,
@@ -65,15 +65,50 @@ class TomWordmark extends StatelessWidget {
       ),
     );
   }
+}
 
+/// The master's own numbers, in the master's own units.
+///
+/// Public because the mark is not only drawn: anything that continues it —
+/// the commit line behind Home, say — has to start where the letterform
+/// stops, and a second transcription of these numbers is a second thing to
+/// get wrong when `tools/brand.py` changes.
+abstract final class TomMark {
   /// The letters run from y 0 to y 146 in the master.
-  static const double _capHeight = 146;
+  static const double capHeight = 146;
 
-  /// The master's viewBox: `4.4 -35.04 477.8 216.08`.
-  static const double _boxWidth = 477.8;
-  static const double _boxHeight = 216.08;
-  static const double _left = 4.4;
-  static const double _top = -35.04;
+  /// The master's viewBox is `4.4 -35.04 477.8 216.08`: its width,
+  static const double boxWidth = 477.8;
+
+  /// its height — taller than the letters, because the trunk pokes out,
+  static const double boxHeight = 216.08;
+
+  /// and the corner it starts at.
+  static const double left = 4.4;
+
+  /// The top of the box, which is where the trunk's upper tip reaches.
+  static const double top = -35.04;
+
+  /// The commit: the O's centre in the master's units,
+  static const Offset commitCentre = Offset(212.1, 72.7);
+
+  /// the radius of the ring drawn through that centre,
+  static const double commitRadius = 60.7;
+
+  /// and the weight of that ring.
+  static const double commitStroke = 32.8;
+
+  /// The weight of the trunk the commit sits on.
+  static const double trunkStroke = 19.68;
+
+  /// Where the letterform stops drawing the trunk above the commit,
+  static const double trunkAbove = 12;
+
+  /// and where it picks it up again below.
+  static const double trunkBelow = 133.4;
+
+  /// How far the commit reaches from its centre — the break the trunk keeps.
+  static const double commitReach = commitRadius + commitStroke / 2;
 }
 
 /// Paints the master at [scale].
@@ -93,7 +128,7 @@ class _WordmarkPainter extends CustomPainter {
     canvas
       ..save()
       ..scale(scale)
-      ..translate(-TomWordmark._left, -TomWordmark._top);
+      ..translate(-TomMark.left, -TomMark.top);
 
     final Paint ink = Paint()..color = letters;
     canvas

@@ -2,7 +2,6 @@ import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
 import 'package:tom_domain/tom_domain.dart';
-import 'package:tom_infra/tom_infra.dart';
 
 void main() {
   /// The document `content` is, at a fixed path.
@@ -10,25 +9,26 @@ void main() {
       Document(path: SpaceRelativePath('guides/writing.md'), content: content);
 
   /// The reader over a parser answering [answer].
-  MarkdownBlockReader readerOf(Result<MarkdownOutline> answer) =>
-      MarkdownBlockReader(parser: _Parser(answer: answer));
+  MarkdownBlockReader readerOf(
+    Result<MarkdownOutlineDto, MarkdownParserFailure> answer,
+  ) => MarkdownBlockReader(parser: _Parser(answer: answer));
 
   group('spans become blocks', () {
     test('each block carries the document lines its span names', () async {
       const String content = '# Title\n\nSome prose.\n';
       final MarkdownBlockReader reader = readerOf(
-        const Success<MarkdownOutline>(
-          MarkdownOutline(
-            spans: <MarkdownSpan>[
-              MarkdownSpan(
+        const Success<MarkdownOutlineDto, MarkdownParserFailure>(
+          MarkdownOutlineDto(
+            spans: <MarkdownSpanDto>[
+              MarkdownSpanDto(
                 startLine: 0,
                 endLine: 0,
-                kind: MarkdownSpanKind.heading,
+                kind: MarkdownSpanKindEnum.heading,
               ),
-              MarkdownSpan(
+              MarkdownSpanDto(
                 startLine: 2,
                 endLine: 2,
-                kind: MarkdownSpanKind.paragraph,
+                kind: MarkdownSpanKindEnum.paragraph,
               ),
             ],
             linkDefinitions: '',
@@ -36,35 +36,38 @@ void main() {
         ),
       );
 
-      final Result<ParsedDocument> result = await reader.read(
+      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
         documentOf(content),
       );
 
-      expect((result as Success<ParsedDocument>).value.blocks, <Block>[
-        const Block(
-          startLine: 0,
-          endLine: 0,
-          source: '# Title',
-          kind: BlockKind.heading,
-        ),
-        const Block(
-          startLine: 2,
-          endLine: 2,
-          source: 'Some prose.',
-          kind: BlockKind.paragraph,
-        ),
-      ]);
+      expect(
+        (result as Success<ParsedDocument, DocumentFailure>).value.blocks,
+        <Block>[
+          const Block(
+            startLine: 0,
+            endLine: 0,
+            source: '# Title',
+            kind: BlockKindEnum.heading,
+          ),
+          const Block(
+            startLine: 2,
+            endLine: 2,
+            source: 'Some prose.',
+            kind: BlockKindEnum.paragraph,
+          ),
+        ],
+      );
     });
 
     test('a long span keeps its lines joined, newlines and all', () async {
       final MarkdownBlockReader reader = readerOf(
-        const Success<MarkdownOutline>(
-          MarkdownOutline(
-            spans: <MarkdownSpan>[
-              MarkdownSpan(
+        const Success<MarkdownOutlineDto, MarkdownParserFailure>(
+          MarkdownOutlineDto(
+            spans: <MarkdownSpanDto>[
+              MarkdownSpanDto(
                 startLine: 0,
                 endLine: 2,
-                kind: MarkdownSpanKind.code,
+                kind: MarkdownSpanKindEnum.code,
               ),
             ],
             linkDefinitions: '',
@@ -72,12 +75,16 @@ void main() {
         ),
       );
 
-      final Result<ParsedDocument> result = await reader.read(
+      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
         documentOf('```\ncode();\n```\n'),
       );
 
       expect(
-        (result as Success<ParsedDocument>).value.blocks.single.source,
+        (result as Success<ParsedDocument, DocumentFailure>)
+            .value
+            .blocks
+            .single
+            .source,
         '```\ncode();\n```',
       );
     });
@@ -86,18 +93,22 @@ void main() {
       // A block rendered alone needs them; putting a copy on every block
       // would be the same string as many times as there are blocks.
       final MarkdownBlockReader reader = readerOf(
-        const Success<MarkdownOutline>(
-          MarkdownOutline(
-            spans: <MarkdownSpan>[],
+        const Success<MarkdownOutlineDto, MarkdownParserFailure>(
+          MarkdownOutlineDto(
+            spans: <MarkdownSpanDto>[],
             linkDefinitions: '[d]: https://tom.dev',
           ),
         ),
       );
 
-      final Result<ParsedDocument> result = await reader.read(documentOf(''));
+      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
+        documentOf(''),
+      );
 
       expect(
-        (result as Success<ParsedDocument>).value.linkDefinitions,
+        (result as Success<ParsedDocument, DocumentFailure>)
+            .value
+            .linkDefinitions,
         '[d]: https://tom.dev',
       );
     });
@@ -105,43 +116,53 @@ void main() {
     test('the document comes back with its blocks', () async {
       final Document document = documentOf('Prose.\n');
       final MarkdownBlockReader reader = readerOf(
-        const Success<MarkdownOutline>(
-          MarkdownOutline(spans: <MarkdownSpan>[], linkDefinitions: ''),
+        const Success<MarkdownOutlineDto, MarkdownParserFailure>(
+          MarkdownOutlineDto(spans: <MarkdownSpanDto>[], linkDefinitions: ''),
         ),
       );
 
-      final Result<ParsedDocument> result = await reader.read(document);
+      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
+        document,
+      );
 
-      expect((result as Success<ParsedDocument>).value.document, document);
+      expect(
+        (result as Success<ParsedDocument, DocumentFailure>).value.document,
+        document,
+      );
     });
   });
 
   group('every kind has a word in the domain', () {
     test('and the translation is one to one', () async {
       final MarkdownBlockReader reader = readerOf(
-        Success<MarkdownOutline>(
-          MarkdownOutline(
-            spans: <MarkdownSpan>[
-              for (final (int i, MarkdownSpanKind kind)
-                  in MarkdownSpanKind.values.indexed)
-                MarkdownSpan(startLine: i, endLine: i, kind: kind),
+        Success<MarkdownOutlineDto, MarkdownParserFailure>(
+          MarkdownOutlineDto(
+            spans: <MarkdownSpanDto>[
+              for (final (int i, MarkdownSpanKindEnum kind)
+                  in MarkdownSpanKindEnum.values.indexed)
+                MarkdownSpanDto(startLine: i, endLine: i, kind: kind),
             ],
             linkDefinitions: '',
           ),
         ),
       );
 
-      final Result<ParsedDocument> result = await reader.read(
+      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
         documentOf(
-          List<String>.filled(MarkdownSpanKind.values.length, 'x').join('\n'),
+          List<String>.filled(
+            MarkdownSpanKindEnum.values.length,
+            'x',
+          ).join('\n'),
         ),
       );
 
       expect(
-        (result as Success<ParsedDocument>).value.blocks.map(
+        (result as Success<ParsedDocument, DocumentFailure>).value.blocks.map(
           (Block block) => block.kind.name,
         ),
-        MarkdownSpanKind.values.map((MarkdownSpanKind kind) => kind.name),
+        MarkdownSpanKindEnum.values.map(
+          (MarkdownSpanKindEnum kind) => kind.name,
+        ),
       );
     });
   });
@@ -150,18 +171,26 @@ void main() {
     test('a parser that broke names the document, not the text', () async {
       // The capability says "the parser threw"; what the user has is a
       // document that would not open.
+      const MarkdownParserFailed reported = MarkdownParserFailed(
+        'stack overflow',
+      );
       final MarkdownBlockReader reader = readerOf(
-        const Failure<MarkdownOutline>(MarkdownParserFailed('stack overflow')),
+        const Failure<MarkdownOutlineDto, MarkdownParserFailure>(reported),
       );
 
-      final Result<ParsedDocument> result = await reader.read(
+      final Result<ParsedDocument, DocumentFailure> result = await reader.read(
         documentOf('anything'),
       );
 
+      // The variant names the document and nothing else; "stack overflow" is
+      // the parser's word and stays in the cause.
+      final DocumentFailure failure =
+          (result as Failure<ParsedDocument, DocumentFailure>).failure;
       expect(
-        (result as Failure<ParsedDocument>).failure,
-        const DocumentOperationFailed('guides/writing.md', 'stack overflow'),
+        failure,
+        const DocumentOperationFailed('guides/writing.md', cause: reported),
       );
+      expect(failure.diagnostics, contains('stack overflow'));
     });
   });
 }
@@ -170,8 +199,10 @@ void main() {
 final class _Parser implements MarkdownParser {
   const _Parser({required this.answer});
 
-  final Result<MarkdownOutline> answer;
+  final Result<MarkdownOutlineDto, MarkdownParserFailure> answer;
 
   @override
-  Future<Result<MarkdownOutline>> outline(String markdown) async => answer;
+  Future<Result<MarkdownOutlineDto, MarkdownParserFailure>> outline(
+    String markdown,
+  ) async => answer;
 }

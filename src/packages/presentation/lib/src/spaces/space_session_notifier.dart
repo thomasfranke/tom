@@ -15,7 +15,7 @@ part 'space_session_notifier.g.dart';
 /// Kept alive deliberately: Riverpod disposes a provider as soon as nothing
 /// listens, and this one is written by Home — the screen on its way out.
 @Riverpod(keepAlive: true)
-class SpaceSession extends _$SpaceSession {
+class SpaceSessionNotifier extends _$SpaceSessionNotifier {
   @override
   SpaceSessionState? build() => null;
 

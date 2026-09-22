@@ -16,17 +16,17 @@ part 'home_providers.g.dart';
 /// Throwing rather than defaulting is deliberate: a default would be a
 /// second place where the app decides what satisfies a contract.
 @riverpod
-OpenSpace openSpace(Ref ref) =>
+OpenSpaceUseCase openSpace(Ref ref) =>
     throw StateError(_notWired('openSpaceProvider'));
 
 /// Reads the spaces to offer going back to.
 @riverpod
-ListRecentSpaces listRecentSpaces(Ref ref) =>
+ListRecentSpacesUseCase listRecentSpaces(Ref ref) =>
     throw StateError(_notWired('listRecentSpacesProvider'));
 
 /// Drops one space from that list.
 @riverpod
-ForgetRecentSpace forgetRecentSpace(Ref ref) =>
+ForgetRecentSpaceUseCase forgetRecentSpace(Ref ref) =>
     throw StateError(_notWired('forgetRecentSpaceProvider'));
 
 String _notWired(String name) =>

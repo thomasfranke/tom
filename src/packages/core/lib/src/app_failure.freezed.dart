@@ -14,8 +14,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UnexpectedFailure {
 
-/// What was caught, as text. For diagnostics — never parsed, never matched.
- String get description;
+/// What was caught, as text. For diagnostics — never parsed, never
+/// matched.
+ String get description;/// Nothing, in practice: what threw was not a failure to begin with.
+ AppFailure? get cause;
 /// Create a copy of UnexpectedFailure
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -26,16 +28,16 @@ $UnexpectedFailureCopyWith<UnexpectedFailure> get copyWith => _$UnexpectedFailur
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UnexpectedFailure&&(identical(other.description, description) || other.description == description));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UnexpectedFailure&&(identical(other.description, description) || other.description == description)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,description);
+int get hashCode => Object.hash(runtimeType,description,cause);
 
 @override
 String toString() {
-  return 'UnexpectedFailure(description: $description)';
+  return 'UnexpectedFailure(description: $description, cause: $cause)';
 }
 
 
@@ -46,7 +48,7 @@ abstract mixin class $UnexpectedFailureCopyWith<$Res>  {
   factory $UnexpectedFailureCopyWith(UnexpectedFailure value, $Res Function(UnexpectedFailure) _then) = _$UnexpectedFailureCopyWithImpl;
 @useResult
 $Res call({
- String description
+ String description, AppFailure? cause
 });
 
 
@@ -63,10 +65,11 @@ class _$UnexpectedFailureCopyWithImpl<$Res>
 
 /// Create a copy of UnexpectedFailure
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? description = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? description = null,Object? cause = freezed,}) {
   return _then(_self.copyWith(
 description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 
@@ -151,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String description)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String description,  AppFailure? cause)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UnexpectedFailure() when $default != null:
-return $default(_that.description);case _:
+return $default(_that.description,_that.cause);case _:
   return orElse();
 
 }
@@ -172,10 +175,10 @@ return $default(_that.description);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String description)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String description,  AppFailure? cause)  $default,) {final _that = this;
 switch (_that) {
 case _UnexpectedFailure():
-return $default(_that.description);case _:
+return $default(_that.description,_that.cause);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -192,10 +195,10 @@ return $default(_that.description);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String description)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String description,  AppFailure? cause)?  $default,) {final _that = this;
 switch (_that) {
 case _UnexpectedFailure() when $default != null:
-return $default(_that.description);case _:
+return $default(_that.description,_that.cause);case _:
   return null;
 
 }
@@ -207,11 +210,14 @@ return $default(_that.description);case _:
 
 
 class _UnexpectedFailure implements UnexpectedFailure {
-  const _UnexpectedFailure(this.description);
+  const _UnexpectedFailure(this.description, {this.cause});
   
 
-/// What was caught, as text. For diagnostics — never parsed, never matched.
+/// What was caught, as text. For diagnostics — never parsed, never
+/// matched.
 @override final  String description;
+/// Nothing, in practice: what threw was not a failure to begin with.
+@override final  AppFailure? cause;
 
 /// Create a copy of UnexpectedFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -223,16 +229,16 @@ _$UnexpectedFailureCopyWith<_UnexpectedFailure> get copyWith => __$UnexpectedFai
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UnexpectedFailure&&(identical(other.description, description) || other.description == description));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UnexpectedFailure&&(identical(other.description, description) || other.description == description)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,description);
+int get hashCode => Object.hash(runtimeType,description,cause);
 
 @override
 String toString() {
-  return 'UnexpectedFailure(description: $description)';
+  return 'UnexpectedFailure(description: $description, cause: $cause)';
 }
 
 
@@ -243,7 +249,7 @@ abstract mixin class _$UnexpectedFailureCopyWith<$Res> implements $UnexpectedFai
   factory _$UnexpectedFailureCopyWith(_UnexpectedFailure value, $Res Function(_UnexpectedFailure) _then) = __$UnexpectedFailureCopyWithImpl;
 @override @useResult
 $Res call({
- String description
+ String description, AppFailure? cause
 });
 
 
@@ -260,10 +266,11 @@ class __$UnexpectedFailureCopyWithImpl<$Res>
 
 /// Create a copy of UnexpectedFailure
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? description = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? description = null,Object? cause = freezed,}) {
   return _then(_UnexpectedFailure(
 null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 

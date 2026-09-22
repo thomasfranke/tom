@@ -62,7 +62,7 @@ extension FileTreeRows on FileTreeReady {
         continue;
       }
       closed = null;
-      final bool isFolder = entry.type == SpaceEntryType.directory;
+      final bool isFolder = entry.type == SpaceEntryTypeEnum.directory;
       final bool isExpanded = isFolder && !collapsed.contains(entry.path);
       if (isFolder && !isExpanded) {
         closed = '$path/';

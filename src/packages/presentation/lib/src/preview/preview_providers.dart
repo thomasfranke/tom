@@ -12,7 +12,7 @@ part 'preview_providers.g.dart';
 /// names the use case it needs and cannot see which parser or which disk
 /// ends up behind it.
 @riverpod
-ReadDocument readDocument(Ref ref) => throw StateError(
+ReadDocumentUseCase readDocument(Ref ref) => throw StateError(
   'readDocumentProvider has no default. The composition root overrides it '
   '— see runTom() in tom_desktop.',
 );

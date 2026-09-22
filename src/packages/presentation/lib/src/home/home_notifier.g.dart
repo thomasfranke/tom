@@ -14,21 +14,22 @@ part of 'home_notifier.dart';
 /// state. Pure Dart like the rest of this package, so `dart test` runs it
 /// with no Flutter binding and a phone could drive the same notifier.
 
-@ProviderFor(Home)
-final homeProvider = HomeProvider._();
+@ProviderFor(HomeNotifier)
+final homeProvider = HomeNotifierProvider._();
 
 /// Drives the first screen: open a folder, go back to one, forget one.
 ///
 /// **No business logic here** — it calls a use case and turns [Result] into
 /// state. Pure Dart like the rest of this package, so `dart test` runs it
 /// with no Flutter binding and a phone could drive the same notifier.
-final class HomeProvider extends $NotifierProvider<Home, HomeState> {
+final class HomeNotifierProvider
+    extends $NotifierProvider<HomeNotifier, HomeState> {
   /// Drives the first screen: open a folder, go back to one, forget one.
   ///
   /// **No business logic here** — it calls a use case and turns [Result] into
   /// state. Pure Dart like the rest of this package, so `dart test` runs it
   /// with no Flutter binding and a phone could drive the same notifier.
-  HomeProvider._()
+  HomeNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -40,11 +41,11 @@ final class HomeProvider extends $NotifierProvider<Home, HomeState> {
       );
 
   @override
-  String debugGetCreateSourceHash() => _$homeHash();
+  String debugGetCreateSourceHash() => _$homeNotifierHash();
 
   @$internal
   @override
-  Home create() => Home();
+  HomeNotifier create() => HomeNotifier();
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(HomeState value) {
@@ -55,7 +56,7 @@ final class HomeProvider extends $NotifierProvider<Home, HomeState> {
   }
 }
 
-String _$homeHash() => r'3e86728d44007c587ee9fa4d668e87d02b6fe04f';
+String _$homeNotifierHash() => r'63ef5740baceee5adbefd477b6ecbaf4529fd1be';
 
 /// Drives the first screen: open a folder, go back to one, forget one.
 ///
@@ -63,7 +64,7 @@ String _$homeHash() => r'3e86728d44007c587ee9fa4d668e87d02b6fe04f';
 /// state. Pure Dart like the rest of this package, so `dart test` runs it
 /// with no Flutter binding and a phone could drive the same notifier.
 
-abstract class _$Home extends $Notifier<HomeState> {
+abstract class _$HomeNotifier extends $Notifier<HomeState> {
   HomeState build();
   @$mustCallSuper
   @override

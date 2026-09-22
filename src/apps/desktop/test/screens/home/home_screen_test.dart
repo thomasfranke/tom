@@ -36,22 +36,34 @@ void main() {
       ProviderScope(
         overrides: <Override>[
           openSpaceProvider.overrideWithValue(
-            OpenSpace(
+            OpenSpaceUseCase(
               spaces: spaces,
               recents: recents,
               observability: observability,
             ),
           ),
           listRecentSpacesProvider.overrideWithValue(
-            ListRecentSpaces(recents: recents, observability: observability),
+            ListRecentSpacesUseCase(
+              recents: recents,
+              observability: observability,
+            ),
           ),
           forgetRecentSpaceProvider.overrideWithValue(
-            ForgetRecentSpace(recents: recents, observability: observability),
+            ForgetRecentSpaceUseCase(
+              recents: recents,
+              observability: observability,
+            ),
           ),
         ],
         child: MaterialApp(
           theme: tomTheme(Brightness.light),
-          home: const HomeScreen(),
+          // The trunk behind the empty state never stops moving, and a frame
+          // is never the last one while it does — so these tests ask for the
+          // still screen. What the motion does is `commit_trunk_test.dart`.
+          home: const MediaQuery(
+            data: MediaQueryData(disableAnimations: true),
+            child: HomeScreen(),
+          ),
         ),
       ),
     );
@@ -115,7 +127,7 @@ void main() {
     });
 
     testWidgets('clicking one opens it', (WidgetTester tester) async {
-      spaces.answer = Success<Space>(
+      spaces.answer = Success<Space, AppFailure>(
         Space(
           root: '/code/app/docs',
           repositoryRoot: '/code/app',
@@ -150,7 +162,7 @@ void main() {
       // Driven through the notifier rather than the picker: a native file
       // dialog cannot be opened in a widget test, and what is being tested
       // is the screen, not the plugin.
-      spaces.answer = const Failure<Space>(
+      spaces.answer = const Failure<Space, AppFailure>(
         GitNotARepository('/Users/me/notes'),
       );
       await pumpHome(tester);
@@ -176,7 +188,9 @@ void main() {
     testWidgets('a folder that is gone says something else', (
       WidgetTester tester,
     ) async {
-      spaces.answer = const Failure<Space>(SpaceFolderMissing('/gone'));
+      spaces.answer = const Failure<Space, AppFailure>(
+        SpaceFolderMissing('/gone'),
+      );
       await pumpHome(tester);
 
       final ProviderContainer container = ProviderScope.containerOf(
@@ -197,7 +211,9 @@ void main() {
       // state to move on from in one click, and a second list of choices
       // under the button would make the button look optional.
       recents.stored = <RecentSpace>[remembered];
-      spaces.answer = const Failure<Space>(GitNotARepository('/loose'));
+      spaces.answer = const Failure<Space, AppFailure>(
+        GitNotARepository('/loose'),
+      );
       await pumpHome(tester);
 
       final ProviderContainer container = ProviderScope.containerOf(
@@ -214,17 +230,19 @@ void main() {
 
 /// A space repository that answers what it was told to.
 final class _Spaces implements SpaceRepository {
-  Result<Space> answer = const Failure<Space>(GitNotARepository('/unset'));
+  Result<Space, AppFailure> answer = const Failure<Space, AppFailure>(
+    GitNotARepository('/unset'),
+  );
   String? asked;
 
   @override
-  Future<Result<Space>> open(String folder) async {
+  Future<Result<Space, AppFailure>> open(String folder) async {
     asked = folder;
     return answer;
   }
 
   @override
-  Future<Result<List<SpaceEntry>>> entries(Space space) async =>
+  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async =>
       throw UnimplementedError();
 }
 
@@ -234,17 +252,18 @@ final class _Recents implements RecentSpacesRepository {
   final List<String> forgotten = <String>[];
 
   @override
-  Future<Result<List<RecentSpace>>> list() async =>
-      Success<List<RecentSpace>>(stored);
+  Future<Result<List<RecentSpace>, Never>> list() async =>
+      Success<List<RecentSpace>, Never>(stored);
 
   @override
-  Future<Result<void>> remember(Space space) async => const Success<void>(null);
+  Future<Result<void, Never>> remember(Space space) async =>
+      const Success<void, Never>(null);
 
   @override
-  Future<Result<void>> forget(String root) async {
+  Future<Result<void, Never>> forget(String root) async {
     forgotten.add(root);
     stored = stored.where((RecentSpace recent) => recent.root != root).toList();
-    return const Success<void>(null);
+    return const Success<void, Never>(null);
   }
 }
 

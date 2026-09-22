@@ -5,6 +5,7 @@ import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/src/git/branch.dart';
 import 'package:tom_domain/src/git/branch_name.dart';
 import 'package:tom_domain/src/git/commit.dart';
+import 'package:tom_domain/src/git/git_failure.dart';
 import 'package:tom_domain/src/git/git_status.dart';
 import 'package:tom_domain/src/paths/repo_relative_path.dart';
 
@@ -34,7 +35,7 @@ abstract interface class GitRepository {
   ///
   /// A reading, not a subscription — it is stale as soon as anything writes
   /// to disk, and keeping it current is the watcher's job.
-  Future<Result<GitStatus>> status();
+  Future<Result<GitStatus, GitFailure>> status();
 
   /// The commits reachable from `HEAD`, newest first.
   ///
@@ -46,17 +47,20 @@ abstract interface class GitRepository {
   ///
   /// A repository with no commits yet answers with an empty list: a fresh
   /// `git init` is a normal state for a space, not a failure to report.
-  Future<Result<List<Commit>>> history({RepoRelativePath? path, int? limit});
+  Future<Result<List<Commit>, GitFailure>> history({
+    RepoRelativePath? path,
+    int? limit,
+  });
 
   /// Every local branch, with which one is current and what each tracks.
-  Future<Result<List<Branch>>> branches();
+  Future<Result<List<Branch>, GitFailure>> branches();
 
   /// The content of [path] as of [revision].
   ///
   /// What the rendered diff reads to build its "before" side. [revision] is
   /// anything git resolves — a sha, a branch name, `HEAD` — because that is
   /// what the diff screens offer to compare against.
-  Future<Result<String>> contentAt({
+  Future<Result<String, GitFailure>> contentAt({
     required String revision,
     required RepoRelativePath path,
   });
@@ -67,15 +71,15 @@ abstract interface class GitRepository {
   /// (`docs/product/git-workflow/commit/doc.md`). An empty list stages
   /// nothing and succeeds — "stage the selection" with nothing selected is
   /// not an error.
-  Future<Result<void>> stage(List<RepoRelativePath> paths);
+  Future<Result<void, GitFailure>> stage(List<RepoRelativePath> paths);
 
   /// Removes [paths] from the index, leaving the working tree alone.
-  Future<Result<void>> unstage(List<RepoRelativePath> paths);
+  Future<Result<void, GitFailure>> unstage(List<RepoRelativePath> paths);
 
   /// Records what is staged, with [message].
   ///
   /// Committing nothing is refused by git and by the UI before it gets here.
-  Future<Result<void>> commit(String message);
+  Future<Result<void, GitFailure>> commit(String message);
 
   /// Starts [name] at the current `HEAD` and switches to it.
   ///
@@ -83,30 +87,30 @@ abstract interface class GitRepository {
   /// ("the app switches to it immediately",
   /// `docs/product/git-workflow/branch-switch/doc.md`), so a caller never
   /// has to remember to follow this with [switchBranch].
-  Future<Result<void>> createBranch(BranchName name);
+  Future<Result<void, GitFailure>> createBranch(BranchName name);
 
   /// Moves `HEAD` to [name].
   ///
   /// Refused by git when uncommitted changes would be overwritten; the
   /// product offers the choice before asking
   /// (`docs/product/git-workflow/branch-switch/doc.md`).
-  Future<Result<void>> switchBranch(BranchName name);
+  Future<Result<void, GitFailure>> switchBranch(BranchName name);
 
   /// Updates the remote-tracking branches without touching the working tree.
   ///
   /// What makes ahead/behind in [status] mean anything.
-  Future<Result<void>> fetch();
+  Future<Result<void, GitFailure>> fetch();
 
   /// Brings the tracked remote's commits into the current branch.
   ///
   /// Stops with `GitMergeConflict` when the two sides changed the same
   /// lines, which is a state to resolve rather than an error to report.
-  Future<Result<void>> pull();
+  Future<Result<void, GitFailure>> pull();
 
   /// Publishes the current branch to its remote.
   ///
   /// Answers `GitPushRejected` when the remote moved first — the one outcome
   /// the product shows as its own
   /// (`docs/product/git-workflow/push-pull/doc.md`).
-  Future<Result<void>> push();
+  Future<Result<void, GitFailure>> push();
 }

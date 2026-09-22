@@ -2,8 +2,9 @@
 library;
 
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_data/src/capabilities/filesystem/filesystem.dart';
+import 'package:tom_data/src/capabilities/filesystem/filesystem_failure.dart';
 import 'package:tom_domain/tom_domain.dart';
-import 'package:tom_infra/tom_infra.dart';
 
 /// [DocumentRepository] over the [Filesystem] capability.
 ///
@@ -30,33 +31,21 @@ final class DocumentRepositoryImpl implements DocumentRepository {
   final Space space;
 
   @override
-  Future<Result<Document>> read(SpaceRelativePath path) async {
-    final Result<String> content = await filesystem.readFile(
-      space.absolutePathOf(path),
-    );
-    return switch (content) {
-      Success<String>(value: final String text) => Success<Document>(
-        Document(path: path, content: text),
-      ),
-      Failure<String>(failure: final AppFailure failure) => Failure<Document>(
-        _asDocumentFailure(failure, path),
-      ),
-    };
-  }
+  Future<Result<Document, DocumentFailure>> read(SpaceRelativePath path) =>
+      filesystem
+          .readFile(space.absolutePathOf(path))
+          .map((String text) => Document(path: path, content: text))
+          .mapFailure(
+            (FilesystemFailure failure) => _asDocumentFailure(failure, path),
+          );
 
   @override
-  Future<Result<void>> write(Document document) async {
-    final Result<void> written = await filesystem.writeFile(
-      space.absolutePathOf(document.path),
-      document.content,
-    );
-    return switch (written) {
-      Success<void>() => const Success<void>(null),
-      Failure<void>(failure: final AppFailure failure) => Failure<void>(
-        _asDocumentFailure(failure, document.path),
-      ),
-    };
-  }
+  Future<Result<void, DocumentFailure>> write(Document document) => filesystem
+      .writeFile(space.absolutePathOf(document.path), document.content)
+      .mapFailure(
+        (FilesystemFailure failure) =>
+            _asDocumentFailure(failure, document.path),
+      );
 
   /// What the filesystem reported, about the document the caller asked for.
   ///
@@ -74,20 +63,22 @@ final class DocumentRepositoryImpl implements DocumentRepository {
   /// answer, after comparing what it read with what it is about to replace
   /// ([Decision
   /// 10](../../../../../../docs/technical/decisions/010-watcher-and-git-cooperate-by-protocol.md)).
-  static AppFailure _asDocumentFailure(
-    AppFailure failure,
+  /// Every variant carries the technical failure as its cause, so the
+  /// absolute path, the `errno` and whatever the adapter knew survive into a
+  /// bug report without the product's vocabulary naming any of them.
+  static DocumentFailure _asDocumentFailure(
+    FilesystemFailure failure,
     SpaceRelativePath asked,
   ) => switch (failure) {
-    final FilesystemFailure filesystemFailure => switch (filesystemFailure) {
-      FilesystemEntryNotFound() => DocumentNotFound(asked.value),
-      FilesystemAccessDenied() => DocumentPermissionDenied(asked.value),
-      FilesystemNotUtf8() => DocumentNotUtf8(asked.value),
-      FilesystemOperationFailed(description: final String description) =>
-        DocumentOperationFailed(asked.value, description),
-    },
-    // Unreachable by the capability's contract: `Filesystem` returns nothing
-    // else. Passed through rather than relabelled as a document failure it
-    // is not.
-    _ => failure,
+    FilesystemEntryNotFound() => DocumentNotFound(asked.value, cause: failure),
+    FilesystemAccessDenied() => DocumentPermissionDenied(
+      asked.value,
+      cause: failure,
+    ),
+    FilesystemNotUtf8() => DocumentNotUtf8(asked.value, cause: failure),
+    FilesystemOperationFailed() => DocumentOperationFailed(
+      asked.value,
+      cause: failure,
+    ),
   };
 }

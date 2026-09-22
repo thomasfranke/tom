@@ -9,7 +9,6 @@ import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
 import 'package:tom_domain/tom_domain.dart';
-import 'package:tom_infra/tom_infra.dart';
 
 void main() {
   late _ScriptedFilesystem filesystem;
@@ -29,18 +28,26 @@ void main() {
   });
 
   /// What [result] holds, or a failure of the test if it did not succeed.
-  T valueOf<T>(Result<T> result) => switch (result) {
-    Success<T>(value: final T value) => value,
-    Failure<T>(failure: final AppFailure failure) => throw StateError(
+  T valueOf<T, F extends AppFailure>(Result<T, F> result) => switch (result) {
+    Success<T, F>(value: final T value) => value,
+    Failure<T, F>(failure: final F failure) => throw StateError(
       'expected a success, got $failure',
     ),
   };
 
   /// What [result] failed with, or a failure of the test if it succeeded.
-  AppFailure failureOf<T>(Result<T> result) => switch (result) {
-    Success<T>() => throw StateError('expected a failure, got a success'),
-    Failure<T>(failure: final AppFailure failure) => failure,
+  F failureOf<T, F extends AppFailure>(Result<T, F> result) => switch (result) {
+    Success<T, F>() => throw StateError('expected a failure, got a success'),
+    Failure<T, F>(failure: final F failure) => failure,
   };
+
+  /// A failure of variant [T] naming [path].
+  ///
+  /// By variant and path rather than by equality: every translation also
+  /// attaches the capability's failure as its cause, and the tests below are
+  /// about which word the product uses, not about what is underneath it.
+  Matcher named<T extends DocumentFailure>(String path) =>
+      isA<T>().having((T failure) => (failure as dynamic).path, 'path', path);
 
   group('reading', () {
     test('resolves the path against the space, not the repository', () async {
@@ -94,7 +101,7 @@ void main() {
             Document(path: SpaceRelativePath('adr/001.md'), content: '# One\n'),
           ),
         ),
-        const DocumentPermissionDenied('adr/001.md'),
+        named<DocumentPermissionDenied>('adr/001.md'),
       );
     });
   });
@@ -113,7 +120,7 @@ void main() {
         await translationOf(
           const FilesystemEntryNotFound('/code/app/docs/adr/001.md'),
         ),
-        const DocumentNotFound('adr/001.md'),
+        named<DocumentNotFound>('adr/001.md'),
       );
     });
 
@@ -122,7 +129,7 @@ void main() {
         await translationOf(
           const FilesystemAccessDenied('/code/app/docs/adr/001.md'),
         ),
-        const DocumentPermissionDenied('adr/001.md'),
+        named<DocumentPermissionDenied>('adr/001.md'),
       );
     });
 
@@ -131,17 +138,25 @@ void main() {
         await translationOf(
           const FilesystemNotUtf8('/code/app/docs/adr/001.md'),
         ),
-        const DocumentNotUtf8('adr/001.md'),
+        named<DocumentNotUtf8>('adr/001.md'),
       );
     });
 
-    test('anything else keeps what the machine said', () async {
-      expect(
-        await translationOf(
-          const FilesystemOperationFailed('/code/app/docs/adr/001.md', 'EIO'),
-        ),
-        const DocumentOperationFailed('adr/001.md', 'EIO'),
+    test('anything else lands on the fallback, naming the document', () async {
+      const FilesystemOperationFailed reported = FilesystemOperationFailed(
+        '/code/app/docs/adr/001.md',
+        'EIO',
       );
+
+      final AppFailure failure = await translationOf(reported);
+
+      // The variant names the path the user opened and nothing else: what the
+      // machine said, and the absolute path it said it about, are the cause.
+      expect(
+        failure,
+        const DocumentOperationFailed('adr/001.md', cause: reported),
+      );
+      expect(failure.diagnostics, contains('EIO'));
     });
 
     test('no infrastructure failure reaches the caller', () async {
@@ -168,29 +183,34 @@ final class _ScriptedFilesystem implements Filesystem {
   String? writtenContent;
 
   @override
-  Future<Result<String>> readFile(String path) async {
+  Future<Result<String, FilesystemFailure>> readFile(String path) async {
     readPath = path;
     final FilesystemFailure? pending = failure;
     return pending == null
-        ? Success<String>(content)
-        : Failure<String>(pending);
+        ? Success<String, FilesystemFailure>(content)
+        : Failure<String, FilesystemFailure>(pending);
   }
 
   @override
-  Future<Result<void>> writeFile(String path, String content) async {
+  Future<Result<void, FilesystemFailure>> writeFile(
+    String path,
+    String content,
+  ) async {
     writtenPath = path;
     writtenContent = content;
     final FilesystemFailure? pending = failure;
-    return pending == null ? const Success<void>(null) : Failure<void>(pending);
+    return pending == null
+        ? const Success<void, FilesystemFailure>(null)
+        : Failure<void, FilesystemFailure>(pending);
   }
 
   @override
-  Future<Result<List<FilesystemEntry>>> listDirectory(
+  Future<Result<List<FilesystemEntryDto>, FilesystemFailure>> listDirectory(
     String path, {
     bool recursive = false,
   }) async => throw UnimplementedError();
 
   @override
-  Future<Result<bool>> directoryExists(String path) async =>
+  Future<Result<bool, FilesystemFailure>> directoryExists(String path) async =>
       throw UnimplementedError();
 }

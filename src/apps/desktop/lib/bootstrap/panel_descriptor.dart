@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/widgets.dart';
-import 'package:tom_desktop/bootstrap/panel_placement.dart';
+import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 
 /// One panel, described rather than built.
 ///
@@ -37,7 +37,7 @@ class PanelDescriptor {
   final String title;
 
   /// Which region of the shell it belongs to.
-  final PanelPlacement placement;
+  final PanelPlacementEnum placement;
 
   /// Builds the panel's content.
   ///

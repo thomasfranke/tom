@@ -15,7 +15,7 @@ part 'file_tree_providers.g.dart';
 /// Throwing rather than defaulting is deliberate — a default here would be a
 /// second place where the app decides what fulfils a contract.
 @riverpod
-ListSpaceEntries listSpaceEntries(Ref ref) => throw StateError(
+ListSpaceEntriesUseCase listSpaceEntries(Ref ref) => throw StateError(
   'listSpaceEntriesProvider has no default. The composition root overrides '
   'it — see runTom() in tom_desktop.',
 );

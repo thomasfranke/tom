@@ -1,5 +1,8 @@
 name: tom_infra
-description: "Technical capabilities behind contracts — git, filesystem, markdown, search. Implementations never leave this package."
+description: >-
+  The data layer's outer half: the adapters. One implementation per capability
+  contract, each owning the package that does the work — and no contract of
+  its own.
 version: 0.1.0
 publish_to: none
 repository: https://github.com/thomasfranke/tom
@@ -10,16 +13,25 @@ environment:
 resolution: workspace
 
 dependencies:
+  # Generated equality for the failures this package owns — the ones that
+  # carry what a third-party dependency reported and travel as a cause
+  # (Decision 16).
   freezed_annotation: ^3.1.0
 
-  # The block parser, and the verdict of Spike B (Decision 19). It lives
-  # here because a capability owns its package: no `markdown` type crosses
-  # the contract, so nothing above this ever sees one.
+  # The block parser, and the verdict of Spike B (Decision 19). It stays with
+  # the adapter that uses it: no `markdown` type crosses the contract, so
+  # nothing else in the workspace ever sees one.
   markdown: ^7.3.0
 
   meta: ^1.16.0
   tom_core:
     path: ../core
+
+  # The contracts these adapters implement, and the DTOs they answer with.
+  # The arrow points inwards: a port belongs to the layer that declares what
+  # it needs, and the adapter is what depends on it (Decision 22).
+  tom_data:
+    path: ../data
 
 dev_dependencies:
   build_runner: ^2.15.1

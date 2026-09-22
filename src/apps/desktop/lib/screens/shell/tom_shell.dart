@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
-import 'package:tom_desktop/bootstrap/panel_placement.dart';
+import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/theme/tom_colors.dart';
 import 'package:tom_desktop/theme/tom_metrics.dart';
@@ -41,18 +41,18 @@ class TomShell extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 _Region(
-                  placement: PanelPlacement.explorer,
+                  placement: PanelPlacementEnum.explorer,
                   registry: registry,
                   width: TomMetrics.explorer,
                 ),
                 Expanded(
                   child: _Region(
-                    placement: PanelPlacement.document,
+                    placement: PanelPlacementEnum.document,
                     registry: registry,
                   ),
                 ),
                 _Region(
-                  placement: PanelPlacement.aside,
+                  placement: PanelPlacementEnum.aside,
                   registry: registry,
                   width: TomMetrics.git,
                 ),
@@ -75,7 +75,7 @@ class _Region extends StatelessWidget {
   const _Region({required this.placement, required this.registry, this.width});
 
   /// Which region this is.
-  final PanelPlacement placement;
+  final PanelPlacementEnum placement;
 
   /// Where to ask what belongs in it.
   final PanelRegistry registry;
@@ -87,7 +87,7 @@ class _Region extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(EnumProperty<PanelPlacement>('placement', placement))
+      ..add(EnumProperty<PanelPlacementEnum>('placement', placement))
       ..add(DiagnosticsProperty<PanelRegistry>('registry', registry))
       ..add(DoubleProperty('width', width));
   }
@@ -115,19 +115,19 @@ class _Region extends StatelessWidget {
     // document area — so the explorer's own width stays exactly what the
     // wireframe says and the rule sits beside it.
     final Widget bordered = switch (placement) {
-      PanelPlacement.explorer => Row(
+      PanelPlacementEnum.explorer => Row(
         children: <Widget>[
           Expanded(child: content),
           VerticalDivider(width: 1, color: colors.border),
         ],
       ),
-      PanelPlacement.aside => Row(
+      PanelPlacementEnum.aside => Row(
         children: <Widget>[
           VerticalDivider(width: 1, color: colors.border),
           Expanded(child: content),
         ],
       ),
-      PanelPlacement.document || PanelPlacement.statusBar => content,
+      PanelPlacementEnum.document || PanelPlacementEnum.statusBar => content,
     };
     final double? total = width;
     return total == null
@@ -236,7 +236,7 @@ class _StatusBar extends StatelessWidget {
           child: Row(
             children: <Widget>[
               for (final PanelDescriptor panel in registry.at(
-                PanelPlacement.statusBar,
+                PanelPlacementEnum.statusBar,
               ))
                 Builder(builder: panel.builder),
             ],

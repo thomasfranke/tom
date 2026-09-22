@@ -32,17 +32,23 @@ void main() {
       // test of the notifier rather than of the wiring.
       overrides: <Override>[
         openSpaceProvider.overrideWithValue(
-          OpenSpace(
+          OpenSpaceUseCase(
             spaces: spaces,
             recents: recents,
             observability: observability,
           ),
         ),
         listRecentSpacesProvider.overrideWithValue(
-          ListRecentSpaces(recents: recents, observability: observability),
+          ListRecentSpacesUseCase(
+            recents: recents,
+            observability: observability,
+          ),
         ),
         forgetRecentSpaceProvider.overrideWithValue(
-          ForgetRecentSpace(recents: recents, observability: observability),
+          ForgetRecentSpaceUseCase(
+            recents: recents,
+            observability: observability,
+          ),
         ),
       ],
     );
@@ -67,7 +73,7 @@ void main() {
     return container.read(homeProvider);
   }
 
-  Home notifier() => container.read(homeProvider.notifier);
+  HomeNotifier notifier() => container.read(homeProvider.notifier);
 
   group('arriving', () {
     test('it starts by reading the list, not by waiting to be asked', () {
@@ -95,7 +101,7 @@ void main() {
       // window is built on, so it lives in one place (Decision 9). Home
       // stays on `loading` and goes away with it.
       await settled();
-      spaces.answer = Success<Space>(opened);
+      spaces.answer = Success<Space, AppFailure>(opened);
 
       await notifier().open('/code/app/docs');
 
@@ -106,7 +112,7 @@ void main() {
     test('and no document is showing yet', () async {
       // The file tree is on screen and nothing has been clicked.
       await settled();
-      spaces.answer = Success<Space>(opened);
+      spaces.answer = Success<Space, AppFailure>(opened);
 
       await notifier().open('/code/app/docs');
 
@@ -118,7 +124,9 @@ void main() {
       // explanation, and a string would have thrown away which failure it
       // was (docs/product/home/doc.md).
       await settled();
-      spaces.answer = const Failure<Space>(GitNotARepository('/loose'));
+      spaces.answer = const Failure<Space, AppFailure>(
+        GitNotARepository('/loose'),
+      );
 
       await notifier().open('/loose');
 
@@ -131,7 +139,9 @@ void main() {
       // click.
       recents.stored = <RecentSpace>[remembered];
       await settled();
-      spaces.answer = const Failure<Space>(GitNotARepository('/loose'));
+      spaces.answer = const Failure<Space, AppFailure>(
+        GitNotARepository('/loose'),
+      );
 
       await notifier().open('/loose');
 
@@ -143,7 +153,9 @@ void main() {
 
     test('a folder that is gone is a different failure', () async {
       await settled();
-      spaces.answer = const Failure<Space>(SpaceFolderMissing('/gone'));
+      spaces.answer = const Failure<Space, AppFailure>(
+        SpaceFolderMissing('/gone'),
+      );
 
       await notifier().open('/gone');
 
@@ -169,13 +181,15 @@ void main() {
 
 /// A space repository that answers what it was told to.
 final class _Spaces implements SpaceRepository {
-  Result<Space> answer = const Failure<Space>(GitNotARepository('/unset'));
+  Result<Space, AppFailure> answer = const Failure<Space, AppFailure>(
+    GitNotARepository('/unset'),
+  );
 
   @override
-  Future<Result<Space>> open(String folder) async => answer;
+  Future<Result<Space, AppFailure>> open(String folder) async => answer;
 
   @override
-  Future<Result<List<SpaceEntry>>> entries(Space space) async =>
+  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async =>
       throw UnimplementedError();
 }
 
@@ -185,17 +199,18 @@ final class _Recents implements RecentSpacesRepository {
   final List<String> forgotten = <String>[];
 
   @override
-  Future<Result<List<RecentSpace>>> list() async =>
-      Success<List<RecentSpace>>(stored);
+  Future<Result<List<RecentSpace>, Never>> list() async =>
+      Success<List<RecentSpace>, Never>(stored);
 
   @override
-  Future<Result<void>> remember(Space space) async => const Success<void>(null);
+  Future<Result<void, Never>> remember(Space space) async =>
+      const Success<void, Never>(null);
 
   @override
-  Future<Result<void>> forget(String root) async {
+  Future<Result<void, Never>> forget(String root) async {
     forgotten.add(root);
     stored = stored.where((RecentSpace recent) => recent.root != root).toList();
-    return const Success<void>(null);
+    return const Success<void, Never>(null);
   }
 }
 

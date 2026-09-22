@@ -45,9 +45,9 @@ void main() {
     return path;
   }
 
-  T valueOf<T>(Result<T> result) => switch (result) {
-    Success<T>(value: final T value) => value,
-    Failure<T>(failure: final AppFailure failure) => throw StateError(
+  T valueOf<T, F extends AppFailure>(Result<T, F> result) => switch (result) {
+    Success<T, F>(value: final T value) => value,
+    Failure<T, F>(failure: final F failure) => throw StateError(
       'expected a success, got $failure',
     ),
   };
@@ -111,7 +111,7 @@ void main() {
     final String loose = '$base/loose';
     Directory(loose).createSync();
 
-    expect(spaces.open(loose), completion(isA<Failure<Space>>()));
+    expect(spaces.open(loose), completion(isA<Failure<Space, AppFailure>>()));
     expect(File(preferences).existsSync(), isFalse);
   });
 

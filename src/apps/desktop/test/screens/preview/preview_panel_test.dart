@@ -28,7 +28,7 @@ void main() {
     container = ProviderContainer(
       overrides: <Override>[
         readDocumentProvider.overrideWithValue(
-          ReadDocument(
+          ReadDocumentUseCase(
             documentsFor: (Space space) => documents,
             blocks: const _Blocks(),
             observability: const _Silent(),
@@ -108,7 +108,9 @@ void main() {
   testWidgets('a document that is gone is named as that', (
     WidgetTester tester,
   ) async {
-    documents.answer = Failure<Document>(DocumentNotFound(writing.value));
+    documents.answer = Failure<Document, DocumentFailure>(
+      DocumentNotFound(writing.value),
+    );
 
     await pumpPreview(tester, document: writing);
 
@@ -118,7 +120,9 @@ void main() {
   testWidgets('a file TOM cannot read says which problem it is', (
     WidgetTester tester,
   ) async {
-    documents.answer = Failure<Document>(DocumentNotUtf8(writing.value));
+    documents.answer = Failure<Document, DocumentFailure>(
+      DocumentNotUtf8(writing.value),
+    );
 
     await pumpPreview(tester, document: writing);
 
@@ -132,14 +136,19 @@ void main() {
 /// A repository answering with whatever content the test set.
 final class _Documents implements DocumentRepository {
   String content = '';
-  Result<Document>? answer;
+  Result<Document, DocumentFailure>? answer;
 
   @override
-  Future<Result<Document>> read(SpaceRelativePath path) async =>
-      answer ?? Success<Document>(Document(path: path, content: content));
+  Future<Result<Document, DocumentFailure>> read(
+    SpaceRelativePath path,
+  ) async =>
+      answer ??
+      Success<Document, DocumentFailure>(
+        Document(path: path, content: content),
+      );
 
   @override
-  Future<Result<void>> write(Document document) async =>
+  Future<Result<void, DocumentFailure>> write(Document document) async =>
       throw UnimplementedError();
 }
 
@@ -149,7 +158,7 @@ final class _Blocks implements BlockReader {
   const _Blocks();
 
   @override
-  Future<Result<ParsedDocument>> read(Document document) =>
+  Future<Result<ParsedDocument, DocumentFailure>> read(Document document) =>
       _reader.read(document);
 
   static const MarkdownBlockReader _reader = MarkdownBlockReader(

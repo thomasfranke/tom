@@ -24,8 +24,13 @@ final readDocumentProvider = ReadDocumentProvider._();
 /// ends up behind it.
 
 final class ReadDocumentProvider
-    extends $FunctionalProvider<ReadDocument, ReadDocument, ReadDocument>
-    with $Provider<ReadDocument> {
+    extends
+        $FunctionalProvider<
+          ReadDocumentUseCase,
+          ReadDocumentUseCase,
+          ReadDocumentUseCase
+        >
+    with $Provider<ReadDocumentUseCase> {
   /// Reads a document and splits it into blocks.
   ///
   /// Declared here and **overridden by the composition root**: this package
@@ -47,21 +52,22 @@ final class ReadDocumentProvider
 
   @$internal
   @override
-  $ProviderElement<ReadDocument> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<ReadDocumentUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  ReadDocument create(Ref ref) {
+  ReadDocumentUseCase create(Ref ref) {
     return readDocument(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ReadDocument value) {
+  Override overrideWithValue(ReadDocumentUseCase value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ReadDocument>(value),
+      providerOverride: $SyncValueProvider<ReadDocumentUseCase>(value),
     );
   }
 }
 
-String _$readDocumentHash() => r'c3b2d343bf8aeec089a214d8a06aaba212f923f9';
+String _$readDocumentHash() => r'67451dad96922ca9d240e8d62aaabf2032500249';

@@ -15,8 +15,8 @@ part of 'file_tree_notifier.dart';
 /// Which folders are closed lives here because no other panel cares. Which
 /// *document* is open is the opposite, so it goes to the session.
 
-@ProviderFor(FileTree)
-final fileTreeProvider = FileTreeProvider._();
+@ProviderFor(FileTreeNotifier)
+final fileTreeProvider = FileTreeNotifierProvider._();
 
 /// Drives the explorer: list the space, open and close its folders, and say
 /// which document the window should show. **No business logic** — it calls a
@@ -24,15 +24,15 @@ final fileTreeProvider = FileTreeProvider._();
 ///
 /// Which folders are closed lives here because no other panel cares. Which
 /// *document* is open is the opposite, so it goes to the session.
-final class FileTreeProvider
-    extends $NotifierProvider<FileTree, FileTreeState> {
+final class FileTreeNotifierProvider
+    extends $NotifierProvider<FileTreeNotifier, FileTreeState> {
   /// Drives the explorer: list the space, open and close its folders, and say
   /// which document the window should show. **No business logic** — it calls a
   /// use case and turns [Result] into state.
   ///
   /// Which folders are closed lives here because no other panel cares. Which
   /// *document* is open is the opposite, so it goes to the session.
-  FileTreeProvider._()
+  FileTreeNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -44,11 +44,11 @@ final class FileTreeProvider
       );
 
   @override
-  String debugGetCreateSourceHash() => _$fileTreeHash();
+  String debugGetCreateSourceHash() => _$fileTreeNotifierHash();
 
   @$internal
   @override
-  FileTree create() => FileTree();
+  FileTreeNotifier create() => FileTreeNotifier();
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(FileTreeState value) {
@@ -59,7 +59,7 @@ final class FileTreeProvider
   }
 }
 
-String _$fileTreeHash() => r'44129361a5882b5ed578ed423c127346543ef3cb';
+String _$fileTreeNotifierHash() => r'4ff8b0b05c5d4b504bcbbddaa116f87b647cfdd0';
 
 /// Drives the explorer: list the space, open and close its folders, and say
 /// which document the window should show. **No business logic** — it calls a
@@ -68,7 +68,7 @@ String _$fileTreeHash() => r'44129361a5882b5ed578ed423c127346543ef3cb';
 /// Which folders are closed lives here because no other panel cares. Which
 /// *document* is open is the opposite, so it goes to the session.
 
-abstract class _$FileTree extends $Notifier<FileTreeState> {
+abstract class _$FileTreeNotifier extends $Notifier<FileTreeState> {
   FileTreeState build();
   @$mustCallSuper
   @override

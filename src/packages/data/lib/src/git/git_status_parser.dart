@@ -1,8 +1,8 @@
 /// Turning `status --porcelain=v2 -z` into a [GitStatus].
 library;
 
+import 'package:tom_data/src/capabilities/git_client/git_client.dart';
 import 'package:tom_domain/tom_domain.dart';
-import 'package:tom_infra/tom_infra.dart';
 
 /// Reads what `GitClient.status` returned.
 ///
@@ -143,20 +143,20 @@ final class GitStatusParser {
     // the product shows, and `isStaged` carries the rest of the answer.
     final String staged = xy[0];
     final String unstaged = xy[1];
-    final FileState? state = _stateOf(staged == '.' ? unstaged : staged);
+    final FileStateEnum? state = _stateOf(staged == '.' ? unstaged : staged);
     if (state == null) {
       return null;
     }
 
     // A `2` record is a rename *or* a copy, and the domain has no `copied`:
-    // a `C` lands on [FileState.added], which is the truth the product can
+    // a `C` lands on [FileStateEnum.added], which is the truth the product can
     // show. So the origin is attached only to a rename — `previousPath` says
     // "the file came from here", and for a copy the file is still there.
     return StatusEntry(
       path: path,
       state: state,
       isStaged: staged != '.',
-      previousPath: state == FileState.renamed && previousPath != null
+      previousPath: state == FileStateEnum.renamed && previousPath != null
           ? RepoRelativePath.tryParse(previousPath)
           : null,
     );
@@ -177,7 +177,11 @@ final class GitStatusParser {
     );
     return path == null
         ? null
-        : StatusEntry(path: path, state: FileState.conflicted, isStaged: false);
+        : StatusEntry(
+            path: path,
+            state: FileStateEnum.conflicted,
+            isStaged: false,
+          );
   }
 
   /// A `? ` record: a file git was never told about.
@@ -187,7 +191,11 @@ final class GitStatusParser {
     );
     return path == null
         ? null
-        : StatusEntry(path: path, state: FileState.untracked, isStaged: false);
+        : StatusEntry(
+            path: path,
+            state: FileStateEnum.untracked,
+            isStaged: false,
+          );
   }
 
   /// One half of git's XY on a tracked record, in the product's words.
@@ -197,14 +205,14 @@ final class GitStatusParser {
   /// (`docs/technical/domain-model.md`), so they land on the closest one the
   /// product can show.
   ///
-  /// [FileState.conflicted] is absent on purpose: git reports an unmerged
+  /// [FileStateEnum.conflicted] is absent on purpose: git reports an unmerged
   /// path as its own `u` record, never as a `U` here, so a branch for it
   /// would be one no input can reach.
-  FileState? _stateOf(String code) => switch (code) {
-    'M' || 'T' => FileState.modified,
-    'A' || 'C' => FileState.added,
-    'D' => FileState.deleted,
-    'R' => FileState.renamed,
+  FileStateEnum? _stateOf(String code) => switch (code) {
+    'M' || 'T' => FileStateEnum.modified,
+    'A' || 'C' => FileStateEnum.added,
+    'D' => FileStateEnum.deleted,
+    'R' => FileStateEnum.renamed,
     _ => null,
   };
 }

@@ -4,6 +4,7 @@ library;
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/src/spaces/space.dart';
 import 'package:tom_domain/src/spaces/space_entry.dart';
+import 'package:tom_domain/src/spaces/space_failure.dart';
 
 /// The folders spaces are made of, as the product talks about them.
 ///
@@ -35,7 +36,13 @@ abstract interface class SpaceRepository {
   ///   A named failure with an explanation, never a crash and never a
   ///   quieter mode: **TOM does not create a repository on the user's
   ///   behalf.**
-  Future<Result<Space>> open(String folder);
+  ///
+  /// [AppFailure] rather than one hierarchy, and deliberately: opening asks
+  /// the disk *and* git, so the two outcomes above come from two vocabularies
+  /// and Home switches over both. Narrowing this would mean copying git's
+  /// variants into [SpaceFailure], which is the duplication two vocabularies
+  /// exist to avoid.
+  Future<Result<Space, AppFailure>> open(String folder);
 
   /// Everything [space] holds, in the order a tree shows it.
   ///
@@ -57,5 +64,5 @@ abstract interface class SpaceRepository {
   /// Files of every kind are reported, not only `.md` — what the tree draws
   /// and what the editor will open are two different questions, and
   /// `SpaceEntry.isDocument` answers the second.
-  Future<Result<List<SpaceEntry>>> entries(Space space);
+  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space);
 }

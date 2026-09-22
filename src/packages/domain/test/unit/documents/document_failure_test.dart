@@ -1,4 +1,5 @@
 import 'package:test/test.dart';
+import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
 void main() {
@@ -32,7 +33,7 @@ void main() {
         'Conflict: notes/a.md',
       );
       expect(
-        headline(const DocumentOperationFailed('notes/a.md', 'EIO')),
+        headline(const DocumentOperationFailed('notes/a.md')),
         'Failed: notes/a.md',
       );
     });
@@ -47,8 +48,10 @@ void main() {
     DocumentExternalChangeConflict conflictAt(String path) =>
         DocumentExternalChangeConflict(path);
     DocumentNotUtf8 notUtf8At(String path) => DocumentNotUtf8(path);
-    DocumentOperationFailed failedAt(String path, String description) =>
-        DocumentOperationFailed(path, description);
+    // The technical detail it used to carry is a cause now, and the cause is
+    // part of the value.
+    DocumentOperationFailed failedAt(String path, String because) =>
+        DocumentOperationFailed(path, cause: UnexpectedFailure(because));
 
     test('same variant, same path', () {
       expect(notFoundAt('notes/a.md'), notFoundAt('notes/a.md'));

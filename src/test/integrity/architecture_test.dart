@@ -29,8 +29,10 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
   'tom_core': <String>{},
   'tom_domain': <String>{'tom_core'},
   'tom_application': <String>{'tom_core', 'tom_domain'},
-  'tom_infra': <String>{'tom_core'},
-  'tom_data': <String>{'tom_core', 'tom_domain', 'tom_infra'},
+  // The ports are `tom_data`'s and the adapters are `tom_infra`'s, so the
+  // arrow between them points inwards (Decision 22).
+  'tom_data': <String>{'tom_core', 'tom_domain'},
+  'tom_infra': <String>{'tom_core', 'tom_data'},
   'tom_presentation': <String>{'tom_core', 'tom_domain', 'tom_application'},
   'tom_desktop': <String>{
     'tom_core',
@@ -49,6 +51,20 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
     'tom_application',
     'tom_presentation',
   },
+};
+
+/// What each package may depend on **to test only**, on top of [graph].
+///
+/// One entry, and it is the price of Decision 22: the ports live in
+/// `tom_data`, so `tom_data`'s integration tests — the ones that prove a
+/// repository works against a real disk and a real `git init` — need the
+/// adapters that fulfil them, which are `tom_infra`'s.
+///
+/// The arrow comes back here and nowhere else. `lib/` importing one of these
+/// is caught by the test below, so what this allows is a test run, never a
+/// build.
+const Map<String, Set<String>> testOnlyGraph = <String, Set<String>>{
+  'tom_data': <String>{'tom_infra'},
 };
 
 /// Libraries each package may not import, whatever its pubspec says.
@@ -162,23 +178,70 @@ void main() {
     );
   });
 
+  /// The `tom_` packages [package] names in [section].
+  Set<String> siblingsIn(String package, String section) => declared(
+    package,
+    section,
+  ).where((String d) => d.startsWith('tom_')).toSet();
+
   group('dependency direction', () {
     graph.forEach((String package, Set<String> allowed) {
       final String expectation = allowed.isEmpty
           ? 'nothing'
           : allowed.join(', ');
       test('$package depends on $expectation', () {
-        final Set<String> siblings = allDependenciesOf(
-          package,
-        ).where((String d) => d.startsWith('tom_')).toSet();
-
         expect(
-          siblings.difference(allowed),
+          siblingsIn(package, 'dependencies').difference(allowed),
           isEmpty,
           reason:
               '$package declares a dependency it is not allowed to have. If '
               'the layering genuinely changed, change it here first and say '
               'why in docs/technical/layers.md.',
+        );
+      });
+
+      final Set<String> forTests = <String>{
+        ...allowed,
+        ...?testOnlyGraph[package],
+      };
+      test('$package tests against ${forTests.join(', ')}', () {
+        expect(
+          siblingsIn(package, 'dev_dependencies').difference(forTests),
+          isEmpty,
+          reason:
+              "$package's tests reach a package the layer graph does not "
+              'allow. A dev dependency is a smaller admission than a real '
+              'one, but it is still one: add it to testOnlyGraph with the '
+              'reason, or stop using it.',
+        );
+      });
+    });
+  });
+
+  group('a test-only dependency stays out of the build', () {
+    testOnlyGraph.forEach((String package, Set<String> testOnly) {
+      test('$package does not import ${testOnly.join(', ')} from lib/', () {
+        final List<String> offences = <String>[
+          for (final File file in dartFilesIn(directories[package]!))
+            for (final RegExpMatch match in directive.allMatches(
+              file.readAsStringSync(),
+            ))
+              if (testOnly.any(
+                (String banned) =>
+                    match.group(1)!.startsWith('package:$banned/'),
+              ))
+                '${file.path.replaceFirst('${workspace.path}/', '')} imports '
+                    '${match.group(1)}',
+        ];
+
+        expect(
+          offences,
+          isEmpty,
+          reason:
+              'A package $package is only allowed to *test* against reached '
+              'its lib/. That is the layer graph inverted, and the pubspec '
+              'cannot catch it — the dependency is declared, just for the '
+              'other half of the package.',
         );
       });
     });

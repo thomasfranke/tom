@@ -139,7 +139,7 @@ void main() {
     test('a staged file edited again is staged, and shows the staged side', () {
       final StatusEntry entry = entryFor(status, 'a.md');
 
-      expect(entry.state, FileState.modified);
+      expect(entry.state, FileStateEnum.modified);
       expect(entry.isStaged, isTrue);
     });
 
@@ -150,7 +150,7 @@ void main() {
     test('a rename keeps where the file came from', () {
       final StatusEntry entry = entryFor(status, 'new-name.md');
 
-      expect(entry.state, FileState.renamed);
+      expect(entry.state, FileStateEnum.renamed);
       expect(entry.isStaged, isTrue);
       expect(entry.previousPath, RepoRelativePath('old-name.md'));
     });
@@ -177,7 +177,7 @@ void main() {
       );
 
       final StatusEntry entry = entryFor(copied, 'copy.md');
-      expect(entry.state, FileState.added);
+      expect(entry.state, FileStateEnum.added);
       expect(entry.previousPath, isNull);
     });
 
@@ -200,7 +200,7 @@ void main() {
     test('a deletion in the working tree', () {
       final StatusEntry entry = entryFor(status, 'release notes.md');
 
-      expect(entry.state, FileState.deleted);
+      expect(entry.state, FileStateEnum.deleted);
       expect(entry.isStaged, isFalse);
     });
 
@@ -214,7 +214,7 @@ void main() {
     test('an untracked file is never staged', () {
       final StatusEntry entry = entryFor(status, 'untracked.md');
 
-      expect(entry.state, FileState.untracked);
+      expect(entry.state, FileStateEnum.untracked);
       expect(entry.isStaged, isFalse);
     });
 
@@ -229,7 +229,7 @@ void main() {
         ]),
       );
 
-      expect(merging.entries.single.state, FileState.conflicted);
+      expect(merging.entries.single.state, FileStateEnum.conflicted);
       expect(merging.entries.single.path, RepoRelativePath('a.md'));
       // Not staged: a conflict is something to resolve, not something a
       // commit would record as it stands.
@@ -257,7 +257,7 @@ void main() {
       );
 
       expect(status.hasStagedChanges, isTrue);
-      expect(status.entries.single.state, FileState.added);
+      expect(status.entries.single.state, FileStateEnum.added);
     });
   });
 

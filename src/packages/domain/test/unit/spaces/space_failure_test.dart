@@ -1,4 +1,5 @@
 import 'package:test/test.dart';
+import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
 void main() {
@@ -21,7 +22,7 @@ void main() {
         'Denied: /code/docs/private',
       );
       expect(
-        headline(const SpaceOperationFailed('/code/docs', 'EIO')),
+        headline(const SpaceOperationFailed('/code/docs')),
         'Failed: /code/docs',
       );
     });
@@ -31,8 +32,10 @@ void main() {
     // Built at runtime rather than const: const instances are canonicalised,
     // which would make these pass even with no `==` at all.
     SpaceFolderMissing missingAt(String root) => SpaceFolderMissing(root);
-    SpaceOperationFailed failedAt(String path, String description) =>
-        SpaceOperationFailed(path, description);
+    // The technical detail it used to carry is a cause now, and the cause is
+    // part of the value.
+    SpaceOperationFailed failedAt(String path, String because) =>
+        SpaceOperationFailed(path, cause: UnexpectedFailure(because));
 
     test('same variant, same data', () {
       expect(missingAt('/code/docs'), missingAt('/code/docs'));

@@ -15,8 +15,8 @@ part of 'preview_notifier.dart';
 /// halves matter — another space and another document are both a different
 /// file to read.
 
-@ProviderFor(Preview)
-final previewProvider = PreviewProvider._();
+@ProviderFor(PreviewNotifier)
+final previewProvider = PreviewNotifierProvider._();
 
 /// Reads whatever document the session says is open.
 ///
@@ -24,14 +24,15 @@ final previewProvider = PreviewProvider._();
 /// It watches the whole session rather than a part of it, because both
 /// halves matter — another space and another document are both a different
 /// file to read.
-final class PreviewProvider extends $NotifierProvider<Preview, PreviewState> {
+final class PreviewNotifierProvider
+    extends $NotifierProvider<PreviewNotifier, PreviewState> {
   /// Reads whatever document the session says is open.
   ///
   /// **No business logic**: it calls a use case and turns [Result] into state.
   /// It watches the whole session rather than a part of it, because both
   /// halves matter — another space and another document are both a different
   /// file to read.
-  PreviewProvider._()
+  PreviewNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -43,11 +44,11 @@ final class PreviewProvider extends $NotifierProvider<Preview, PreviewState> {
       );
 
   @override
-  String debugGetCreateSourceHash() => _$previewHash();
+  String debugGetCreateSourceHash() => _$previewNotifierHash();
 
   @$internal
   @override
-  Preview create() => Preview();
+  PreviewNotifier create() => PreviewNotifier();
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(PreviewState value) {
@@ -58,7 +59,7 @@ final class PreviewProvider extends $NotifierProvider<Preview, PreviewState> {
   }
 }
 
-String _$previewHash() => r'6f1695030889dc02fe5057fb220eac3cecdab2ef';
+String _$previewNotifierHash() => r'275419f1c674a5a51dc713dae35a03692f5a0a90';
 
 /// Reads whatever document the session says is open.
 ///
@@ -67,7 +68,7 @@ String _$previewHash() => r'6f1695030889dc02fe5057fb220eac3cecdab2ef';
 /// halves matter — another space and another document are both a different
 /// file to read.
 
-abstract class _$Preview extends $Notifier<PreviewState> {
+abstract class _$PreviewNotifier extends $Notifier<PreviewState> {
   PreviewState build();
   @$mustCallSuper
   @override

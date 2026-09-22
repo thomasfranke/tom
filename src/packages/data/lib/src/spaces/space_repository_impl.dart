@@ -2,10 +2,15 @@
 library;
 
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_data/src/capabilities/filesystem/filesystem.dart';
+import 'package:tom_data/src/capabilities/filesystem/filesystem_entry_dto.dart';
+import 'package:tom_data/src/capabilities/filesystem/filesystem_entry_type_enum.dart';
+import 'package:tom_data/src/capabilities/filesystem/filesystem_failure.dart';
+import 'package:tom_data/src/capabilities/git_client/git_client_failure.dart';
+import 'package:tom_data/src/capabilities/git_client/git_client_for.dart';
 import 'package:tom_domain/tom_domain.dart';
-import 'package:tom_infra/tom_infra.dart';
 
-/// [SpaceRepository] over the [Filesystem] and [GitClient] capabilities.
+/// [SpaceRepository] over the [Filesystem] and `GitClient` capabilities.
 ///
 /// Two jobs that look unrelated and are not. Opening a folder asks git where
 /// the repository is; listing one asks the disk what is inside. Both are
@@ -39,52 +44,47 @@ final class SpaceRepositoryImpl implements SpaceRepository {
   static const String _gitDirectory = '.git';
 
   @override
-  Future<Result<Space>> open(String folder) async {
+  Future<Result<Space, AppFailure>> open(String folder) async {
     // The disk is asked first, and the order is the whole point: a folder
     // that is not there and a folder that holds no repository send the user
     // somewhere different — forget this space, against open another one —
     // and git reports both as "not a repository".
-    final Result<bool> exists = await filesystem.directoryExists(folder);
+    final Result<bool, SpaceFailure> exists = await filesystem
+        .directoryExists(folder)
+        .mapFailure(_asSpaceFailure);
     switch (exists) {
-      case Failure<bool>(failure: final AppFailure failure):
-        return Failure<Space>(_asSpaceFailure(failure));
-      case Success<bool>(value: false):
-        return Failure<Space>(SpaceFolderMissing(folder));
-      case Success<bool>():
+      case Failure<bool, SpaceFailure>(failure: final SpaceFailure failure):
+        return Failure<Space, AppFailure>(failure);
+      case Success<bool, SpaceFailure>(value: false):
+        return Failure<Space, AppFailure>(SpaceFolderMissing(folder));
+      case Success<bool, SpaceFailure>():
         break;
     }
 
-    final Result<String> root = await gitClientFor(folder).repositoryRoot();
-    return switch (root) {
-      Success<String>(value: final String repositoryRoot) => Success<Space>(
-        Space(
-          root: folder,
-          repositoryRoot: repositoryRoot,
-          name: Space.nameOfFolder(folder),
-        ),
-      ),
-      Failure<String>(failure: final AppFailure failure) => Failure<Space>(
-        _asGitFailure(failure, folder),
-      ),
-    };
+    return gitClientFor(folder)
+        .repositoryRoot()
+        .map(
+          (String repositoryRoot) => Space(
+            root: folder,
+            repositoryRoot: repositoryRoot,
+            name: Space.nameOfFolder(folder),
+          ),
+        )
+        .mapFailure(
+          (GitClientFailure failure) => _asGitFailure(failure, folder),
+        );
   }
 
   @override
-  Future<Result<List<SpaceEntry>>> entries(Space space) async {
+  Future<Result<List<SpaceEntry>, SpaceFailure>> entries(Space space) async {
     final List<SpaceEntry> collected = <SpaceEntry>[];
-    final Result<void> walked = await _walk(
+    final Result<void, SpaceFailure> walked = await _walk(
       space,
       space.root,
       collected,
       isRoot: true,
     );
-    return switch (walked) {
-      Success<void>() => Success<List<SpaceEntry>>(
-        List<SpaceEntry>.unmodifiable(collected),
-      ),
-      Failure<void>(failure: final AppFailure failure) =>
-        Failure<List<SpaceEntry>>(failure),
-    };
+    return walked.map((_) => List<SpaceEntry>.unmodifiable(collected));
   }
 
   /// Lists [directory], appending what it holds to [into], deepest last.
@@ -103,28 +103,30 @@ final class SpaceRepositoryImpl implements SpaceRepository {
   /// the rest is still returned: one unreadable folder costs that folder,
   /// not the file tree. [isRoot] is what makes the space's own folder the
   /// exception — a space whose root cannot be read has nothing to show.
-  Future<Result<void>> _walk(
+  Future<Result<void, SpaceFailure>> _walk(
     Space space,
     String directory,
     List<SpaceEntry> into, {
     required bool isRoot,
   }) async {
-    final Result<List<FilesystemEntry>> listed = await filesystem.listDirectory(
-      directory,
-    );
-    if (listed case Failure<List<FilesystemEntry>>(
-      failure: final AppFailure failure,
+    final Result<List<FilesystemEntryDto>, FilesystemFailure> listed =
+        await filesystem.listDirectory(directory);
+    if (listed case Failure<List<FilesystemEntryDto>, FilesystemFailure>(
+      failure: final FilesystemFailure failure,
     )) {
-      return isRoot ? Failure<void>(_asSpaceFailure(failure)) : _walked;
+      return isRoot
+          ? Failure<void, SpaceFailure>(_asSpaceFailure(failure))
+          : _walked;
     }
-    for (final FilesystemEntry entry
-        in (listed as Success<List<FilesystemEntry>>).value) {
+    for (final FilesystemEntryDto entry
+        in (listed as Success<List<FilesystemEntryDto>, FilesystemFailure>)
+            .value) {
       final SpaceRelativePath? path = space.relativize(entry.path);
       if (path == null || path.name == _gitDirectory) {
         continue;
       }
-      into.add(SpaceEntry(path: path, type: _asSpaceEntryType(entry.type)));
-      if (entry.type == FilesystemEntryType.directory) {
+      into.add(SpaceEntry(path: path, type: _asSpaceEntryTypeEnum(entry.type)));
+      if (entry.type == FilesystemEntryTypeEnum.directory) {
         await _walk(space, entry.path, into, isRoot: false);
       }
     }
@@ -132,19 +134,22 @@ final class SpaceRepositoryImpl implements SpaceRepository {
   }
 
   /// A walk that produced whatever it could — the only success this has.
-  static const Result<void> _walked = Success<void>(null);
+  static const Result<void, SpaceFailure> _walked = Success<void, SpaceFailure>(
+    null,
+  );
 
   /// The same kind, in the product's vocabulary.
   ///
   /// A one-to-one map today, and still written out: the two enums answer to
   /// different owners, and the day the capability learns to report something
   /// the tree has no place for, this is where the compiler will say so.
-  static SpaceEntryType _asSpaceEntryType(FilesystemEntryType type) =>
-      switch (type) {
-        FilesystemEntryType.file => SpaceEntryType.file,
-        FilesystemEntryType.directory => SpaceEntryType.directory,
-        FilesystemEntryType.link => SpaceEntryType.link,
-      };
+  static SpaceEntryTypeEnum _asSpaceEntryTypeEnum(
+    FilesystemEntryTypeEnum type,
+  ) => switch (type) {
+    FilesystemEntryTypeEnum.file => SpaceEntryTypeEnum.file,
+    FilesystemEntryTypeEnum.directory => SpaceEntryTypeEnum.directory,
+    FilesystemEntryTypeEnum.link => SpaceEntryTypeEnum.link,
+  };
 
   /// What the filesystem reported, about the space's folder.
   ///
@@ -157,28 +162,23 @@ final class SpaceRepositoryImpl implements SpaceRepository {
   /// file's bytes answers. It is mapped rather than ignored because leaving
   /// it out would mean a default branch, and a default branch is what stops
   /// the next variant from breaking this.
-  static AppFailure _asSpaceFailure(AppFailure failure) => switch (failure) {
-    final FilesystemFailure filesystemFailure => switch (filesystemFailure) {
-      FilesystemEntryNotFound(path: final String path) => SpaceFolderMissing(
-        path,
-      ),
-      FilesystemAccessDenied(path: final String path) => SpaceAccessDenied(
-        path,
-      ),
-      FilesystemNotUtf8(path: final String path) => SpaceOperationFailed(
-        path,
-        'not UTF-8',
-      ),
-      FilesystemOperationFailed(
-        path: final String path,
-        description: final String description,
-      ) =>
-        SpaceOperationFailed(path, description),
-    },
-    // Unreachable by the capability's contract: `Filesystem` returns nothing
-    // else.
-    _ => failure,
-  };
+  static SpaceFailure _asSpaceFailure(FilesystemFailure failure) =>
+      switch (failure) {
+        FilesystemEntryNotFound(path: final String path) => SpaceFolderMissing(
+          path,
+          cause: failure,
+        ),
+        FilesystemAccessDenied(path: final String path) => SpaceAccessDenied(
+          path,
+          cause: failure,
+        ),
+        FilesystemNotUtf8(path: final String path) => SpaceOperationFailed(
+          path,
+          cause: failure,
+        ),
+        FilesystemOperationFailed(path: final String path) =>
+          SpaceOperationFailed(path, cause: failure),
+      };
 
   /// What git reported about [folder], in the product's vocabulary.
   ///
@@ -189,20 +189,18 @@ final class SpaceRepositoryImpl implements SpaceRepository {
   /// [GitClientNotARepository] carries the path git was asked about, and
   /// that is the one this hands on — it is the folder the user picked, and
   /// naming anything else would point them at a place they did not choose.
-  static AppFailure _asGitFailure(AppFailure failure, String folder) =>
+  static GitFailure _asGitFailure(GitClientFailure failure, String folder) =>
       switch (failure) {
-        GitClientNotARepository() => GitNotARepository(folder),
-        GitClientExecutableNotFound() => const GitNotInstalled(),
-        GitClientTimedOut(command: final String command) => GitTimedOut(
-          command,
-        ),
-        GitClientCommandFailed(
-          command: final String command,
-          stderr: final String stderr,
-        ) =>
-          GitCommandFailed(command, stderr),
+        GitClientNotARepository() => GitNotARepository(folder, cause: failure),
+        GitClientExecutableNotFound() => GitNotInstalled(cause: failure),
+        GitClientTimedOut() => GitTimedOut(cause: failure),
         // The rest cannot come from asking where the repository is: there is
-        // nothing to merge, nothing to push and no remote involved.
-        _ => failure,
+        // nothing to merge, nothing to push and no remote involved. They are
+        // still named rather than defaulted, so a capability that learns a
+        // new failure mode breaks this switch.
+        GitClientCommandFailed() ||
+        GitClientMergeConflict() ||
+        GitClientAuthenticationFailed() ||
+        GitClientPushRejected() => GitOperationFailed(cause: failure),
       };
 }

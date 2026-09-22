@@ -16,5 +16,6 @@ sealed class SearchFailure with _$SearchFailure implements AppFailure {
   ///
   /// Not data loss: nothing lives in the index that is not already in the
   /// files.
-  const factory SearchFailure.indexCorrupted() = SearchIndexCorrupted;
+  const factory SearchFailure.indexCorrupted({AppFailure? cause}) =
+      SearchIndexCorrupted;
 }

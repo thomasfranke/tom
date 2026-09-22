@@ -16,8 +16,8 @@ part of 'space_session_notifier.dart';
 /// Kept alive deliberately: Riverpod disposes a provider as soon as nothing
 /// listens, and this one is written by Home — the screen on its way out.
 
-@ProviderFor(SpaceSession)
-final spaceSessionProvider = SpaceSessionProvider._();
+@ProviderFor(SpaceSessionNotifier)
+final spaceSessionProvider = SpaceSessionNotifierProvider._();
 
 /// Holds the open space for as long as one is open, so that every panel
 /// reads the same answer ([Decision
@@ -26,8 +26,8 @@ final spaceSessionProvider = SpaceSessionProvider._();
 ///
 /// Kept alive deliberately: Riverpod disposes a provider as soon as nothing
 /// listens, and this one is written by Home — the screen on its way out.
-final class SpaceSessionProvider
-    extends $NotifierProvider<SpaceSession, SpaceSessionState?> {
+final class SpaceSessionNotifierProvider
+    extends $NotifierProvider<SpaceSessionNotifier, SpaceSessionState?> {
   /// Holds the open space for as long as one is open, so that every panel
   /// reads the same answer ([Decision
   /// 9](../../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).
@@ -35,7 +35,7 @@ final class SpaceSessionProvider
   ///
   /// Kept alive deliberately: Riverpod disposes a provider as soon as nothing
   /// listens, and this one is written by Home — the screen on its way out.
-  SpaceSessionProvider._()
+  SpaceSessionNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -47,11 +47,11 @@ final class SpaceSessionProvider
       );
 
   @override
-  String debugGetCreateSourceHash() => _$spaceSessionHash();
+  String debugGetCreateSourceHash() => _$spaceSessionNotifierHash();
 
   @$internal
   @override
-  SpaceSession create() => SpaceSession();
+  SpaceSessionNotifier create() => SpaceSessionNotifier();
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(SpaceSessionState? value) {
@@ -62,7 +62,8 @@ final class SpaceSessionProvider
   }
 }
 
-String _$spaceSessionHash() => r'670cae04556cdcace414d3816c9ec90514e0c31b';
+String _$spaceSessionNotifierHash() =>
+    r'97373e12c3e4169f9ab238a94b89e1dea89021f7';
 
 /// Holds the open space for as long as one is open, so that every panel
 /// reads the same answer ([Decision
@@ -72,7 +73,7 @@ String _$spaceSessionHash() => r'670cae04556cdcace414d3816c9ec90514e0c31b';
 /// Kept alive deliberately: Riverpod disposes a provider as soon as nothing
 /// listens, and this one is written by Home — the screen on its way out.
 
-abstract class _$SpaceSession extends $Notifier<SpaceSessionState?> {
+abstract class _$SpaceSessionNotifier extends $Notifier<SpaceSessionState?> {
   SpaceSessionState? build();
   @$mustCallSuper
   @override

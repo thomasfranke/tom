@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
-import 'package:tom_desktop/bootstrap/panel_placement.dart';
+import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
@@ -38,13 +38,13 @@ class CoreModule implements TomModule {
     PanelDescriptor(
       id: 'tom.explorer',
       title: 'Explorer',
-      placement: PanelPlacement.explorer,
+      placement: PanelPlacementEnum.explorer,
       builder: (BuildContext context) => const FileTreePanel(),
     ),
     PanelDescriptor(
       id: 'tom.editor',
       title: 'Source',
-      placement: PanelPlacement.document,
+      placement: PanelPlacementEnum.document,
       builder: (BuildContext context) => const _Placeholder(
         label: 'SOURCE',
         detail: 're_editor — M0 (Decision 18)',
@@ -53,14 +53,14 @@ class CoreModule implements TomModule {
     PanelDescriptor(
       id: 'tom.preview',
       title: 'Preview',
-      placement: PanelPlacement.document,
+      placement: PanelPlacementEnum.document,
       order: 1,
       builder: (BuildContext context) => const PreviewPanel(),
     ),
     PanelDescriptor(
       id: 'tom.status',
       title: 'Status',
-      placement: PanelPlacement.statusBar,
+      placement: PanelPlacementEnum.statusBar,
       builder: (BuildContext context) => const StatusPanel(),
     ),
   ];

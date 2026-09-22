@@ -17,7 +17,7 @@ void main() {
 
   StatusEntry entry({bool isStaged = false}) => StatusEntry(
     path: RepoRelativePath('a.md'),
-    state: FileState.modified,
+    state: FileStateEnum.modified,
     isStaged: isStaged,
   );
 

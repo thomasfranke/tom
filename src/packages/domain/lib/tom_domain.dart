@@ -6,7 +6,7 @@
 library;
 
 export 'src/documents/block.dart';
-export 'src/documents/block_kind.dart';
+export 'src/documents/block_kind_enum.dart';
 export 'src/documents/block_reader.dart';
 export 'src/documents/document.dart';
 export 'src/documents/document_failure.dart';
@@ -19,7 +19,7 @@ export 'src/git/branch_name.dart';
 export 'src/git/commit.dart';
 export 'src/git/commit_date.dart';
 export 'src/git/commit_sha.dart';
-export 'src/git/file_state.dart';
+export 'src/git/file_state_enum.dart';
 export 'src/git/git_failure.dart';
 export 'src/git/git_repository.dart';
 export 'src/git/git_status.dart';
@@ -31,6 +31,6 @@ export 'src/spaces/recent_space.dart';
 export 'src/spaces/recent_spaces_repository.dart';
 export 'src/spaces/space.dart';
 export 'src/spaces/space_entry.dart';
-export 'src/spaces/space_entry_type.dart';
+export 'src/spaces/space_entry_type_enum.dart';
 export 'src/spaces/space_failure.dart';
 export 'src/spaces/space_repository.dart';

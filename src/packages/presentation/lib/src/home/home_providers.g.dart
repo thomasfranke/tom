@@ -32,8 +32,13 @@ final openSpaceProvider = OpenSpaceProvider._();
 /// second place where the app decides what satisfies a contract.
 
 final class OpenSpaceProvider
-    extends $FunctionalProvider<OpenSpace, OpenSpace, OpenSpace>
-    with $Provider<OpenSpace> {
+    extends
+        $FunctionalProvider<
+          OpenSpaceUseCase,
+          OpenSpaceUseCase,
+          OpenSpaceUseCase
+        >
+    with $Provider<OpenSpaceUseCase> {
   /// Turns a folder into a space, and remembers it.
   ///
   /// Declared here and **overridden by the composition root**: this package
@@ -59,24 +64,24 @@ final class OpenSpaceProvider
 
   @$internal
   @override
-  $ProviderElement<OpenSpace> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<OpenSpaceUseCase> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  OpenSpace create(Ref ref) {
+  OpenSpaceUseCase create(Ref ref) {
     return openSpace(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(OpenSpace value) {
+  Override overrideWithValue(OpenSpaceUseCase value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<OpenSpace>(value),
+      providerOverride: $SyncValueProvider<OpenSpaceUseCase>(value),
     );
   }
 }
 
-String _$openSpaceHash() => r'0d651c147c5e8e361d69f8c333b489a1b922fc5a';
+String _$openSpaceHash() => r'a59fe5c2185d61b4b540a0274f3788517e156b2f';
 
 /// Reads the spaces to offer going back to.
 
@@ -88,11 +93,11 @@ final listRecentSpacesProvider = ListRecentSpacesProvider._();
 final class ListRecentSpacesProvider
     extends
         $FunctionalProvider<
-          ListRecentSpaces,
-          ListRecentSpaces,
-          ListRecentSpaces
+          ListRecentSpacesUseCase,
+          ListRecentSpacesUseCase,
+          ListRecentSpacesUseCase
         >
-    with $Provider<ListRecentSpaces> {
+    with $Provider<ListRecentSpacesUseCase> {
   /// Reads the spaces to offer going back to.
   ListRecentSpacesProvider._()
     : super(
@@ -110,24 +115,25 @@ final class ListRecentSpacesProvider
 
   @$internal
   @override
-  $ProviderElement<ListRecentSpaces> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<ListRecentSpacesUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  ListRecentSpaces create(Ref ref) {
+  ListRecentSpacesUseCase create(Ref ref) {
     return listRecentSpaces(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ListRecentSpaces value) {
+  Override overrideWithValue(ListRecentSpacesUseCase value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ListRecentSpaces>(value),
+      providerOverride: $SyncValueProvider<ListRecentSpacesUseCase>(value),
     );
   }
 }
 
-String _$listRecentSpacesHash() => r'02c557e6d5ce7174afc5880fe809b4c9b476497b';
+String _$listRecentSpacesHash() => r'7e94028f07980cf24cc1c40e2c0d96210d52a14b';
 
 /// Drops one space from that list.
 
@@ -139,11 +145,11 @@ final forgetRecentSpaceProvider = ForgetRecentSpaceProvider._();
 final class ForgetRecentSpaceProvider
     extends
         $FunctionalProvider<
-          ForgetRecentSpace,
-          ForgetRecentSpace,
-          ForgetRecentSpace
+          ForgetRecentSpaceUseCase,
+          ForgetRecentSpaceUseCase,
+          ForgetRecentSpaceUseCase
         >
-    with $Provider<ForgetRecentSpace> {
+    with $Provider<ForgetRecentSpaceUseCase> {
   /// Drops one space from that list.
   ForgetRecentSpaceProvider._()
     : super(
@@ -161,22 +167,22 @@ final class ForgetRecentSpaceProvider
 
   @$internal
   @override
-  $ProviderElement<ForgetRecentSpace> $createElement(
+  $ProviderElement<ForgetRecentSpaceUseCase> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  ForgetRecentSpace create(Ref ref) {
+  ForgetRecentSpaceUseCase create(Ref ref) {
     return forgetRecentSpace(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ForgetRecentSpace value) {
+  Override overrideWithValue(ForgetRecentSpaceUseCase value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ForgetRecentSpace>(value),
+      providerOverride: $SyncValueProvider<ForgetRecentSpaceUseCase>(value),
     );
   }
 }
 
-String _$forgetRecentSpaceHash() => r'a1bb58517e365e32ef53846ed20f65537f768b2a';
+String _$forgetRecentSpaceHash() => r'92e6c7b36c74d49694d20c261af821a93187f181';

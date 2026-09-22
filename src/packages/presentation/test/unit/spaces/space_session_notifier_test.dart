@@ -22,7 +22,8 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  SpaceSession session() => container.read(spaceSessionProvider.notifier);
+  SpaceSessionNotifier session() =>
+      container.read(spaceSessionProvider.notifier);
 
   test('nothing is open until something opens it', () {
     expect(container.read(spaceSessionProvider), isNull);

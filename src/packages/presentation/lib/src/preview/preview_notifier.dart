@@ -21,9 +21,9 @@ part 'preview_notifier.g.dart';
 /// halves matter — another space and another document are both a different
 /// file to read.
 @riverpod
-class Preview extends _$Preview {
+class PreviewNotifier extends _$PreviewNotifier {
   /// Reads a document and splits it into blocks.
-  ReadDocument get readDocument => ref.read(readDocumentProvider);
+  ReadDocumentUseCase get readDocument => ref.read(readDocumentProvider);
 
   @override
   PreviewState build() {
@@ -41,11 +41,16 @@ class Preview extends _$Preview {
 
   /// Reads [path] inside [space] and shows what it holds.
   Future<void> _load(Space space, SpaceRelativePath path) async {
-    final Result<ParsedDocument> read = await readDocument(space, path);
+    final Result<ParsedDocument, AppFailure> read = await readDocument.read(
+      space,
+      path,
+    );
     state = switch (read) {
-      Success<ParsedDocument>(value: final ParsedDocument document) =>
+      Success<ParsedDocument, AppFailure>(
+        value: final ParsedDocument document,
+      ) =>
         PreviewState.ready(document),
-      Failure<ParsedDocument>(failure: final AppFailure failure) =>
+      Failure<ParsedDocument, AppFailure>(failure: final AppFailure failure) =>
         PreviewState.failed(failure),
     };
   }

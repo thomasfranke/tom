@@ -4,7 +4,6 @@ library;
 import 'package:test/test.dart';
 import 'package:tom_data/tom_data.dart';
 import 'package:tom_domain/tom_domain.dart';
-import 'package:tom_infra/tom_infra.dart';
 
 void main() {
   const GitLogParser parser = GitLogParser();

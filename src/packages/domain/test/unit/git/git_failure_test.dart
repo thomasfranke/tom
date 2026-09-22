@@ -1,10 +1,15 @@
 import 'package:test/test.dart';
+import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
 void main() {
   group('GitFailure', () {
     // The reason the hierarchy is sealed: this compiles with no default
     // branch, so a new variant breaks every switch that has to handle it.
+    //
+    // Every headline is a sentence a user reads. Nothing here reaches for a
+    // command line or a stderr, because no variant has one — that is the
+    // rule, and this switch is where breaking it would show.
     String headline(GitFailure failure) => switch (failure) {
       GitNotInstalled() => 'Git is not installed',
       GitNotARepository(path: final String path) => 'Not a repository: $path',
@@ -13,8 +18,8 @@ void main() {
       GitAuthenticationFailed() => 'Authentication failed',
       GitDetachedHead() => 'Detached HEAD',
       GitPushRejected() => 'The remote moved first',
-      GitTimedOut(command: final String command) => 'Timed out: $command',
-      GitCommandFailed(command: final String command) => 'Failed: $command',
+      GitTimedOut() => 'That took too long',
+      GitOperationFailed() => 'Git could not do that',
     };
 
     test('every variant has a headline, with no default branch', () {
@@ -30,11 +35,39 @@ void main() {
       );
       expect(headline(const GitDetachedHead()), 'Detached HEAD');
       expect(headline(const GitPushRejected()), 'The remote moved first');
-      expect(headline(const GitTimedOut('git push')), 'Timed out: git push');
-      expect(
-        headline(const GitCommandFailed('git push', 'rejected')),
-        'Failed: git push',
+      expect(headline(const GitTimedOut()), 'That took too long');
+      expect(headline(const GitOperationFailed()), 'Git could not do that');
+    });
+  });
+
+  group('the cause', () {
+    test('is where the technical detail lives', () {
+      // The rule as a test: a variant carries what the product says, the
+      // cause carries what the machine said.
+      const UnexpectedFailure reported = UnexpectedFailure(
+        'git push: ! [rejected]',
       );
+
+      const GitFailure failure = GitOperationFailed(cause: reported);
+
+      expect(failure.cause, reported);
+      expect(failure.chain, <AppFailure>[failure, reported]);
+      expect(failure.diagnostics, contains('! [rejected]'));
+    });
+
+    test('is absent when nothing was translated', () {
+      expect(const GitDetachedHead().cause, isNull);
+    });
+
+    test('is part of the value', () {
+      // Two failures of the same kind from different causes are different
+      // failures — which is what keeps a state comparison honest. Built
+      // through a function so nothing is canonicalised into passing.
+      GitOperationFailed failedBecause(String what) =>
+          GitOperationFailed(cause: UnexpectedFailure(what));
+
+      expect(failedBecause('a'), failedBecause('a'));
+      expect(failedBecause('a'), isNot(failedBecause('b')));
     });
   });
 
@@ -87,39 +120,28 @@ void main() {
     });
   });
 
-  group('GitTimedOut compares by value', () {
-    GitTimedOut timedOutOn(String command) => GitTimedOut(command);
+  group('the variants that carry nothing but a cause', () {
+    // They still compare by value, which is what a view state relies on.
+    GitTimedOut timedOutFrom(String what) =>
+        GitTimedOut(cause: UnexpectedFailure(what));
 
-    test('same command', () {
-      expect(timedOutOn('git push'), timedOutOn('git push'));
-      expect(timedOutOn('git push').hashCode, timedOutOn('git push').hashCode);
-    });
-
-    test('different command', () {
-      expect(timedOutOn('git push'), isNot(timedOutOn('git pull')));
-    });
-  });
-
-  group('GitCommandFailed compares by value', () {
-    GitCommandFailed commandOver(String command, String stderr) =>
-        GitCommandFailed(command, stderr);
-
-    test('same command, same stderr', () {
+    test('same cause', () {
+      expect(timedOutFrom('git push'), timedOutFrom('git push'));
       expect(
-        commandOver('git push', 'rejected'),
-        commandOver('git push', 'rejected'),
-      );
-      expect(
-        commandOver('git push', 'rejected').hashCode,
-        commandOver('git push', 'rejected').hashCode,
+        timedOutFrom('git push').hashCode,
+        timedOutFrom('git push').hashCode,
       );
     });
 
-    test('same command, different stderr', () {
-      expect(
-        commandOver('git push', 'rejected'),
-        isNot(commandOver('git push', 'timed out')),
-      );
+    test('different cause', () {
+      expect(timedOutFrom('git push'), isNot(timedOutFrom('git pull')));
+    });
+
+    test('no cause at all is still equal to itself', () {
+      GitTimedOut bare(AppFailure? cause) => GitTimedOut(cause: cause);
+
+      expect(bare(null), bare(null));
+      expect(bare(null).hashCode, bare(null).hashCode);
     });
   });
 }

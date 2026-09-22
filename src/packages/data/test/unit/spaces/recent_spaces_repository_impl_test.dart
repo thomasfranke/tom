@@ -11,7 +11,6 @@ import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
 import 'package:tom_domain/tom_domain.dart';
-import 'package:tom_infra/tom_infra.dart';
 
 void main() {
   late _Settings settings;
@@ -24,9 +23,9 @@ void main() {
   );
 
   /// What [result] holds, or a failure of the test if it did not succeed.
-  T valueOf<T>(Result<T> result) => switch (result) {
-    Success<T>(value: final T value) => value,
-    Failure<T>(failure: final AppFailure failure) => throw StateError(
+  T valueOf<T, F extends AppFailure>(Result<T, F> result) => switch (result) {
+    Success<T, F>(value: final T value) => value,
+    Failure<T, F>(failure: final F failure) => throw StateError(
       'expected a success, got $failure',
     ),
   };
@@ -46,7 +45,10 @@ void main() {
     });
 
     test('forgetting something never remembered succeeds', () async {
-      expect(await repository.forget('/nowhere'), isA<Success<void>>());
+      expect(
+        await repository.forget('/nowhere'),
+        isA<Success<void, SettingsFailure>>(),
+      );
     });
   });
 
@@ -173,12 +175,15 @@ void main() {
     test('remembering reports success anyway', () async {
       expect(
         await repository.remember(spaceAt('/code/app')),
-        isA<Success<void>>(),
+        isA<Success<void, SettingsFailure>>(),
       );
     });
 
     test('forgetting reports success anyway', () async {
-      expect(await repository.forget('/code/app'), isA<Success<void>>());
+      expect(
+        await repository.forget('/code/app'),
+        isA<Success<void, SettingsFailure>>(),
+      );
     });
   });
 }
@@ -189,25 +194,29 @@ final class _Settings implements Settings {
   bool broken = false;
 
   @override
-  Future<Result<String?>> read(String key) async => broken
-      ? const Failure<String?>(SettingsUnavailable('broken'))
-      : Success<String?>(values[key]);
+  Future<Result<String?, SettingsFailure>> read(String key) async => broken
+      ? const Failure<String?, SettingsFailure>(SettingsUnavailable('broken'))
+      : Success<String?, SettingsFailure>(values[key]);
 
   @override
-  Future<Result<void>> write(String key, String value) async {
+  Future<Result<void, SettingsFailure>> write(String key, String value) async {
     if (broken) {
-      return const Failure<void>(SettingsUnavailable('broken'));
+      return const Failure<void, SettingsFailure>(
+        SettingsUnavailable('broken'),
+      );
     }
     values[key] = value;
-    return const Success<void>(null);
+    return const Success<void, SettingsFailure>(null);
   }
 
   @override
-  Future<Result<void>> remove(String key) async {
+  Future<Result<void, SettingsFailure>> remove(String key) async {
     if (broken) {
-      return const Failure<void>(SettingsUnavailable('broken'));
+      return const Failure<void, SettingsFailure>(
+        SettingsUnavailable('broken'),
+      );
     }
     values.remove(key);
-    return const Success<void>(null);
+    return const Success<void, SettingsFailure>(null);
   }
 }

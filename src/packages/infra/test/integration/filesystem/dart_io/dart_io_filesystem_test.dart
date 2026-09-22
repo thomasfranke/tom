@@ -9,6 +9,11 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_data/tom_data.dart';
+// Not the barrel: `DartIoFailure` is deliberately not exported, because a
+// failure only this adapter knows is one nothing outside it may name. The
+// package's own test is the exception.
+import 'package:tom_infra/src/dart_io_failure.dart';
 import 'package:tom_infra/tom_infra.dart';
 
 void main() {
@@ -32,15 +37,29 @@ void main() {
   /// readable without pretending the difference is not there.
   String slashed(String path) => path.replaceAll(r'\', '/');
 
+  /// A failure of variant [T] naming [path].
+  ///
+  /// Asserted by variant and path rather than by equality, because every
+  /// failure this adapter produces also carries a `DartIoFailure` cause whose
+  /// message and `errno` are the operating system's words — pinning those
+  /// would make the test an assertion about macOS.
+  Matcher named<T extends FilesystemFailure>(String path) =>
+      isA<T>().having((T failure) => (failure as dynamic).path, 'path', path);
+
   test('writeFile then readFile round-trips the content', () async {
     final String path = '${tempDir.path}/note.md';
 
-    final Result<void> written = await filesystem.writeFile(path, '# Hello');
-    expect(written, isA<Success<void>>());
+    final Result<void, FilesystemFailure> written = await filesystem.writeFile(
+      path,
+      '# Hello',
+    );
+    expect(written, isA<Success<void, FilesystemFailure>>());
 
-    final Result<String> read = await filesystem.readFile(path);
-    expect(read, isA<Success<String>>());
-    expect((read as Success<String>).value, '# Hello');
+    final Result<String, FilesystemFailure> read = await filesystem.readFile(
+      path,
+    );
+    expect(read, isA<Success<String, FilesystemFailure>>());
+    expect((read as Success<String, FilesystemFailure>).value, '# Hello');
   });
 
   test('writeFile overwrites an existing file', () async {
@@ -49,31 +68,61 @@ void main() {
     await filesystem.writeFile(path, 'first');
     await filesystem.writeFile(path, 'second');
 
-    final Result<String> read = await filesystem.readFile(path);
-    expect((read as Success<String>).value, 'second');
+    final Result<String, FilesystemFailure> read = await filesystem.readFile(
+      path,
+    );
+    expect((read as Success<String, FilesystemFailure>).value, 'second');
   });
 
   test(
     'readFile fails with FilesystemEntryNotFound for a missing file',
     () async {
-      final Result<String> read = await filesystem.readFile(
+      final Result<String, FilesystemFailure> read = await filesystem.readFile(
         '${tempDir.path}/missing.md',
       );
 
-      expect(read, isA<Failure<String>>());
+      expect(read, isA<Failure<String, FilesystemFailure>>());
       expect(
-        (read as Failure<String>).failure,
-        FilesystemEntryNotFound('${tempDir.path}/missing.md'),
+        (read as Failure<String, FilesystemFailure>).failure,
+        named<FilesystemEntryNotFound>('${tempDir.path}/missing.md'),
       );
+    },
+  );
+
+  test(
+    'a failure carries what the operating system said as its cause',
+    () async {
+      // The contract's vocabulary is the same on every platform and says only
+      // "not found". The `errno` behind it is this adapter's alone, and it
+      // survives here so a bug report has it — nothing switches on it.
+      final Result<String, FilesystemFailure> read = await filesystem.readFile(
+        '${tempDir.path}/missing.md',
+      );
+      final AppFailure failure =
+          (read as Failure<String, FilesystemFailure>).failure;
+
+      expect(failure.chain, hasLength(2));
+      expect(
+        failure.cause,
+        isA<DartIoFailure>().having(
+          (DartIoFailure e) => e.osErrorCode,
+          'osErrorCode',
+          isNotNull,
+        ),
+      );
+      expect(failure.diagnostics, contains('DartIoFailure'));
     },
   );
 
   test('writeFile creates the directories the path needs', () async {
     final String path = '${tempDir.path}/notes/2026/q1.md';
 
-    final Result<void> written = await filesystem.writeFile(path, '# Q1');
+    final Result<void, FilesystemFailure> written = await filesystem.writeFile(
+      path,
+      '# Q1',
+    );
 
-    expect(written, isA<Success<void>>());
+    expect(written, isA<Success<void, FilesystemFailure>>());
     expect(File(path).readAsStringSync(), '# Q1');
   });
 
@@ -96,9 +145,12 @@ void main() {
     final String path = '${tempDir.path}/folder';
     Directory(path).createSync();
 
-    final Result<void> written = await filesystem.writeFile(path, 'content');
+    final Result<void, FilesystemFailure> written = await filesystem.writeFile(
+      path,
+      'content',
+    );
 
-    expect(written, isA<Failure<void>>());
+    expect(written, isA<Failure<void, FilesystemFailure>>());
     expect(Directory(path).existsSync(), isTrue);
     expect(
       tempDir.listSync().map(
@@ -115,21 +167,28 @@ void main() {
       final String path = '${tempDir.path}/latin.md';
       File(path).writeAsBytesSync(<int>[0xE9, 0x63, 0x68, 0x6F]);
 
-      final Result<String> read = await filesystem.readFile(path);
+      final Result<String, FilesystemFailure> read = await filesystem.readFile(
+        path,
+      );
 
-      expect(read, isA<Failure<String>>());
-      expect((read as Failure<String>).failure, FilesystemNotUtf8(path));
+      expect(read, isA<Failure<String, FilesystemFailure>>());
+      expect(
+        (read as Failure<String, FilesystemFailure>).failure,
+        named<FilesystemNotUtf8>(path),
+      );
     },
   );
 
   test(
     'readFile fails with FilesystemOperationFailed for a directory',
     () async {
-      final Result<String> read = await filesystem.readFile(tempDir.path);
+      final Result<String, FilesystemFailure> read = await filesystem.readFile(
+        tempDir.path,
+      );
 
-      expect(read, isA<Failure<String>>());
+      expect(read, isA<Failure<String, FilesystemFailure>>());
       expect(
-        (read as Failure<String>).failure,
+        (read as Failure<String, FilesystemFailure>).failure,
         isA<FilesystemOperationFailed>(),
       );
     },
@@ -142,11 +201,16 @@ void main() {
       File(path).writeAsStringSync('secret');
       Process.runSync('chmod', <String>['000', path]);
 
-      final Result<String> read = await filesystem.readFile(path);
+      final Result<String, FilesystemFailure> read = await filesystem.readFile(
+        path,
+      );
 
       Process.runSync('chmod', <String>['644', path]);
-      expect(read, isA<Failure<String>>());
-      expect((read as Failure<String>).failure, FilesystemAccessDenied(path));
+      expect(read, isA<Failure<String, FilesystemFailure>>());
+      expect(
+        (read as Failure<String, FilesystemFailure>).failure,
+        named<FilesystemAccessDenied>(path),
+      );
     },
     skip: Platform.isWindows
         ? 'chmod does not model POSIX permissions on Windows'
@@ -171,41 +235,46 @@ void main() {
     });
 
     test('lists one level, sorted, without descending', () async {
-      final Result<List<FilesystemEntry>> listed = await filesystem
-          .listDirectory(tempDir.path);
+      final Result<List<FilesystemEntryDto>, FilesystemFailure> listed =
+          await filesystem.listDirectory(tempDir.path);
 
-      expect(listed, isA<Success<List<FilesystemEntry>>>());
-      final List<String> names = (listed as Success<List<FilesystemEntry>>)
-          .value
-          .map((FilesystemEntry e) => slashed(e.path).split('/').last)
-          .toList();
+      expect(
+        listed,
+        isA<Success<List<FilesystemEntryDto>, FilesystemFailure>>(),
+      );
+      final List<String> names =
+          (listed as Success<List<FilesystemEntryDto>, FilesystemFailure>).value
+              .map((FilesystemEntryDto e) => slashed(e.path).split('/').last)
+              .toList();
       expect(names, <String>['.ai', '.git', 'docs', 'readme.md']);
     });
 
     test('reports what each entry is', () async {
-      final List<FilesystemEntry> entries =
+      final List<FilesystemEntryDto> entries =
           (await filesystem.listDirectory(tempDir.path)
-                  as Success<List<FilesystemEntry>>)
+                  as Success<List<FilesystemEntryDto>, FilesystemFailure>)
               .value;
 
       expect(
         entries
-            .firstWhere((FilesystemEntry e) => e.path.endsWith('readme.md'))
+            .firstWhere((FilesystemEntryDto e) => e.path.endsWith('readme.md'))
             .type,
-        FilesystemEntryType.file,
+        FilesystemEntryTypeEnum.file,
       );
       expect(
-        entries.firstWhere((FilesystemEntry e) => e.path.endsWith('docs')).type,
-        FilesystemEntryType.directory,
+        entries
+            .firstWhere((FilesystemEntryDto e) => e.path.endsWith('docs'))
+            .type,
+        FilesystemEntryTypeEnum.directory,
       );
     });
 
     test('recursive reaches every dotfolder, filtering nothing', () async {
       final List<String> paths =
           (await filesystem.listDirectory(tempDir.path, recursive: true)
-                  as Success<List<FilesystemEntry>>)
+                  as Success<List<FilesystemEntryDto>, FilesystemFailure>)
               .value
-              .map((FilesystemEntry e) => slashed(e.path))
+              .map((FilesystemEntryDto e) => slashed(e.path))
               .toList();
 
       // `.git/` is hidden by the tree, not by the capability — the caller's
@@ -221,23 +290,23 @@ void main() {
       () async {
         Link('${tempDir.path}/loop').createSync(tempDir.path);
 
-        final List<FilesystemEntry> entries =
+        final List<FilesystemEntryDto> entries =
             (await filesystem.listDirectory(tempDir.path, recursive: true)
-                    as Success<List<FilesystemEntry>>)
+                    as Success<List<FilesystemEntryDto>, FilesystemFailure>)
                 .value;
 
         // Following it would walk its own parent forever.
         expect(
           entries
               .firstWhere(
-                (FilesystemEntry e) => slashed(e.path).endsWith('/loop'),
+                (FilesystemEntryDto e) => slashed(e.path).endsWith('/loop'),
               )
               .type,
-          FilesystemEntryType.link,
+          FilesystemEntryTypeEnum.link,
         );
         expect(
           entries.where(
-            (FilesystemEntry e) => slashed(e.path).contains('/loop/'),
+            (FilesystemEntryDto e) => slashed(e.path).contains('/loop/'),
           ),
           isEmpty,
         );
@@ -250,13 +319,17 @@ void main() {
     test(
       'fails with FilesystemEntryNotFound for a missing directory',
       () async {
-        final Result<List<FilesystemEntry>> listed = await filesystem
-            .listDirectory('${tempDir.path}/nowhere');
+        final Result<List<FilesystemEntryDto>, FilesystemFailure> listed =
+            await filesystem.listDirectory('${tempDir.path}/nowhere');
 
-        expect(listed, isA<Failure<List<FilesystemEntry>>>());
         expect(
-          (listed as Failure<List<FilesystemEntry>>).failure,
-          FilesystemEntryNotFound('${tempDir.path}/nowhere'),
+          listed,
+          isA<Failure<List<FilesystemEntryDto>, FilesystemFailure>>(),
+        );
+        expect(
+          (listed as Failure<List<FilesystemEntryDto>, FilesystemFailure>)
+              .failure,
+          named<FilesystemEntryNotFound>('${tempDir.path}/nowhere'),
         );
       },
     );
@@ -268,15 +341,19 @@ void main() {
         Directory('$locked/inside').createSync(recursive: true);
         Process.runSync('chmod', <String>['000', locked]);
 
-        final Result<List<FilesystemEntry>> listed = await filesystem
-            .listDirectory(tempDir.path, recursive: true);
+        final Result<List<FilesystemEntryDto>, FilesystemFailure> listed =
+            await filesystem.listDirectory(tempDir.path, recursive: true);
 
         Process.runSync('chmod', <String>['755', locked]);
-        expect(listed, isA<Success<List<FilesystemEntry>>>());
-        final List<String> paths = (listed as Success<List<FilesystemEntry>>)
-            .value
-            .map((FilesystemEntry e) => slashed(e.path))
-            .toList();
+        expect(
+          listed,
+          isA<Success<List<FilesystemEntryDto>, FilesystemFailure>>(),
+        );
+        final List<String> paths =
+            (listed as Success<List<FilesystemEntryDto>, FilesystemFailure>)
+                .value
+                .map((FilesystemEntryDto e) => slashed(e.path))
+                .toList();
         // Everything readable is still there, and the folder itself is
         // reported — it exists, it just would not open.
         expect(paths, contains('${slashed(tempDir.path)}/docs/deep/nested.md'));
@@ -296,14 +373,18 @@ void main() {
         Directory(locked).createSync();
         Process.runSync('chmod', <String>['000', locked]);
 
-        final Result<List<FilesystemEntry>> listed = await filesystem
-            .listDirectory(locked);
+        final Result<List<FilesystemEntryDto>, FilesystemFailure> listed =
+            await filesystem.listDirectory(locked);
 
         Process.runSync('chmod', <String>['755', locked]);
-        expect(listed, isA<Failure<List<FilesystemEntry>>>());
         expect(
-          (listed as Failure<List<FilesystemEntry>>).failure,
-          FilesystemAccessDenied(locked),
+          listed,
+          isA<Failure<List<FilesystemEntryDto>, FilesystemFailure>>(),
+        );
+        expect(
+          (listed as Failure<List<FilesystemEntryDto>, FilesystemFailure>)
+              .failure,
+          named<FilesystemAccessDenied>(locked),
         );
       },
       skip: Platform.isWindows
@@ -312,28 +393,29 @@ void main() {
     );
 
     test('fails when the path is a file rather than a directory', () async {
-      final Result<List<FilesystemEntry>> listed = await filesystem
-          .listDirectory('${tempDir.path}/readme.md');
+      final Result<List<FilesystemEntryDto>, FilesystemFailure> listed =
+          await filesystem.listDirectory('${tempDir.path}/readme.md');
 
-      expect(listed, isA<Failure<List<FilesystemEntry>>>());
+      expect(
+        listed,
+        isA<Failure<List<FilesystemEntryDto>, FilesystemFailure>>(),
+      );
     });
   });
 
   group('directoryExists', () {
     test('true for a directory', () async {
-      final Result<bool> exists = await filesystem.directoryExists(
-        tempDir.path,
-      );
+      final Result<bool, FilesystemFailure> exists = await filesystem
+          .directoryExists(tempDir.path);
 
-      expect((exists as Success<bool>).value, isTrue);
+      expect((exists as Success<bool, FilesystemFailure>).value, isTrue);
     });
 
     test('false for a path with nothing at it', () async {
-      final Result<bool> exists = await filesystem.directoryExists(
-        '${tempDir.path}/gone',
-      );
+      final Result<bool, FilesystemFailure> exists = await filesystem
+          .directoryExists('${tempDir.path}/gone');
 
-      expect((exists as Success<bool>).value, isFalse);
+      expect((exists as Success<bool, FilesystemFailure>).value, isFalse);
     });
 
     test(
@@ -346,15 +428,14 @@ void main() {
         Directory('$parent/space').createSync(recursive: true);
         Process.runSync('chmod', <String>['000', parent]);
 
-        final Result<bool> exists = await filesystem.directoryExists(
-          '$parent/space',
-        );
+        final Result<bool, FilesystemFailure> exists = await filesystem
+            .directoryExists('$parent/space');
 
         Process.runSync('chmod', <String>['755', parent]);
-        expect(exists, isA<Failure<bool>>());
+        expect(exists, isA<Failure<bool, FilesystemFailure>>());
         expect(
-          (exists as Failure<bool>).failure,
-          FilesystemAccessDenied('$parent/space'),
+          (exists as Failure<bool, FilesystemFailure>).failure,
+          named<FilesystemAccessDenied>('$parent/space'),
         );
       },
       skip: Platform.isWindows
@@ -366,9 +447,10 @@ void main() {
       final String path = '${tempDir.path}/note.md';
       File(path).writeAsStringSync('# Note');
 
-      final Result<bool> exists = await filesystem.directoryExists(path);
+      final Result<bool, FilesystemFailure> exists = await filesystem
+          .directoryExists(path);
 
-      expect((exists as Success<bool>).value, isFalse);
+      expect((exists as Success<bool, FilesystemFailure>).value, isFalse);
     });
   });
 }

@@ -2,7 +2,7 @@
 library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:tom_domain/src/documents/block_kind.dart';
+import 'package:tom_domain/src/documents/block_kind_enum.dart';
 
 part 'block.freezed.dart';
 
@@ -32,7 +32,7 @@ abstract class Block with _$Block {
     required String source,
 
     /// What kind of block it is.
-    required BlockKind kind,
+    required BlockKindEnum kind,
   }) = _Block;
 
   const Block._();

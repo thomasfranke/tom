@@ -4,12 +4,14 @@ import 'package:tom_presentation/tom_presentation.dart';
 
 void main() {
   /// A folder at [path].
-  SpaceEntry folder(String path) =>
-      SpaceEntry(path: SpaceRelativePath(path), type: SpaceEntryType.directory);
+  SpaceEntry folder(String path) => SpaceEntry(
+    path: SpaceRelativePath(path),
+    type: SpaceEntryTypeEnum.directory,
+  );
 
   /// A file at [path].
   SpaceEntry file(String path) =>
-      SpaceEntry(path: SpaceRelativePath(path), type: SpaceEntryType.file);
+      SpaceEntry(path: SpaceRelativePath(path), type: SpaceEntryTypeEnum.file);
 
   /// The space of the wireframe, in the order a walk reports it: a folder
   /// immediately followed by what is inside it.

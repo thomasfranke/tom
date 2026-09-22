@@ -2,7 +2,7 @@
 library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:tom_domain/src/git/file_state.dart';
+import 'package:tom_domain/src/git/file_state_enum.dart';
 import 'package:tom_domain/src/paths/repo_relative_path.dart';
 
 part 'status_entry.freezed.dart';
@@ -24,12 +24,12 @@ abstract class StatusEntry with _$StatusEntry {
     required RepoRelativePath path,
 
     /// What happened to it.
-    required FileState state,
+    required FileStateEnum state,
 
     /// Whether the change is in the index, ready to be committed.
     required bool isStaged,
 
-    /// Where the file came from, when [state] is [FileState.renamed].
+    /// Where the file came from, when [state] is [FileStateEnum.renamed].
     RepoRelativePath? previousPath,
   }) = _StatusEntry;
 }

@@ -34,12 +34,20 @@ mixin UseCase {
   /// The layer is `'application'` because that is where the catch is, not
   /// where the throw was: a stack trace says the second, and conflating them
   /// would make every report look like a use-case bug.
-  Future<Result<T>> guard<T>(Future<Result<T>> Function() body) async {
+  ///
+  /// **It widens, and that is the honest signature.** [body] answers with one
+  /// vocabulary; this can also produce [UnexpectedFailure], which belongs to
+  /// none. So what a use case returns is `Result<T, AppFailure>` — a screen
+  /// switching over it handles the failures it knows and ends in a general
+  /// case, which is what the UI already does.
+  Future<Result<T, AppFailure>> guard<T, F extends AppFailure>(
+    Future<Result<T, F>> Function() body,
+  ) async {
     try {
-      return await body();
+      return (await body()).mapFailure<AppFailure>((F failure) => failure);
     } on Object catch (error, stackTrace) {
       await observability.capture(error, stackTrace, layer: 'application');
-      return Failure<T>(UnexpectedFailure(error.toString()));
+      return Failure<T, AppFailure>(UnexpectedFailure(error.toString()));
     }
   }
 }

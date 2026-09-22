@@ -19,19 +19,20 @@ part 'home_notifier.g.dart';
 /// state. Pure Dart like the rest of this package, so `dart test` runs it
 /// with no Flutter binding and a phone could drive the same notifier.
 @riverpod
-class Home extends _$Home {
+class HomeNotifier extends _$HomeNotifier {
   /// Turns a folder into a space, and remembers it.
   ///
   /// Read from the scope rather than taken in a constructor, because
   /// Riverpod builds a notifier with no arguments; what is *in* the scope is
   /// the composition root's decision.
-  OpenSpace get openSpace => ref.read(openSpaceProvider);
+  OpenSpaceUseCase get openSpace => ref.read(openSpaceProvider);
 
   /// Reads the list of spaces to offer going back to.
-  ListRecentSpaces get listRecentSpaces => ref.read(listRecentSpacesProvider);
+  ListRecentSpacesUseCase get listRecentSpaces =>
+      ref.read(listRecentSpacesProvider);
 
   /// Drops one space from that list.
-  ForgetRecentSpace get forgetRecentSpace =>
+  ForgetRecentSpaceUseCase get forgetRecentSpace =>
       ref.read(forgetRecentSpaceProvider);
 
   @override
@@ -45,7 +46,8 @@ class Home extends _$Home {
 
   /// Reads the recent list.
   Future<void> load() async {
-    final Result<List<RecentSpace>> listed = await listRecentSpaces();
+    final Result<List<RecentSpace>, AppFailure> listed = await listRecentSpaces
+        .list();
     state = HomeState.ready(_recentsOf(listed));
   }
 
@@ -60,8 +62,8 @@ class Home extends _$Home {
   /// folder, the others are still there to click.
   Future<void> open(String folder) async {
     state = const HomeState.loading();
-    final Result<Space> opened = await openSpace(folder);
-    if (opened case Success<Space>(value: final Space space)) {
+    final Result<Space, AppFailure> opened = await openSpace.open(folder);
+    if (opened case Success<Space, AppFailure>(value: final Space space)) {
       // Home stays on `loading`, the honest state for a screen being
       // replaced: re-reading the recent list here would write to a notifier
       // the window has already disposed.
@@ -71,14 +73,14 @@ class Home extends _$Home {
     // The list is re-read rather than remembered: opening may have changed
     // it, and the screen the user lands on should show what is there.
     state = HomeState.failed(
-      failure: (opened as Failure<Space>).failure,
-      recents: _recentsOf(await listRecentSpaces()),
+      failure: (opened as Failure<Space, AppFailure>).failure,
+      recents: _recentsOf(await listRecentSpaces.list()),
     );
   }
 
   /// Drops [root] from the recent list, and shows what is left.
   Future<void> forget(String root) async {
-    await forgetRecentSpace(root);
+    await forgetRecentSpace.forget(root);
     await load();
   }
 
@@ -87,10 +89,7 @@ class Home extends _$Home {
   /// A list that cannot be read is an empty list and never an error screen:
   /// Home's job with no recents is to offer the folder picker, which it does
   /// anyway.
-  static List<RecentSpace> _recentsOf(Result<List<RecentSpace>> listed) =>
-      switch (listed) {
-        Success<List<RecentSpace>>(value: final List<RecentSpace> recents) =>
-          recents,
-        Failure<List<RecentSpace>>() => const <RecentSpace>[],
-      };
+  static List<RecentSpace> _recentsOf(
+    Result<List<RecentSpace>, AppFailure> listed,
+  ) => listed.valueOrNull ?? const <RecentSpace>[];
 }

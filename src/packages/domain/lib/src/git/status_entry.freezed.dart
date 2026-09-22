@@ -16,8 +16,8 @@ mixin _$StatusEntry {
 
 /// Where the file is, relative to the repository root.
  RepoRelativePath get path;/// What happened to it.
- FileState get state;/// Whether the change is in the index, ready to be committed.
- bool get isStaged;/// Where the file came from, when [state] is [FileState.renamed].
+ FileStateEnum get state;/// Whether the change is in the index, ready to be committed.
+ bool get isStaged;/// Where the file came from, when [state] is [FileStateEnum.renamed].
  RepoRelativePath? get previousPath;
 /// Create a copy of StatusEntry
 /// with the given fields replaced by the non-null parameter values.
@@ -49,7 +49,7 @@ abstract mixin class $StatusEntryCopyWith<$Res>  {
   factory $StatusEntryCopyWith(StatusEntry value, $Res Function(StatusEntry) _then) = _$StatusEntryCopyWithImpl;
 @useResult
 $Res call({
- RepoRelativePath path, FileState state, bool isStaged, RepoRelativePath? previousPath
+ RepoRelativePath path, FileStateEnum state, bool isStaged, RepoRelativePath? previousPath
 });
 
 
@@ -70,7 +70,7 @@ class _$StatusEntryCopyWithImpl<$Res>
   return _then(_self.copyWith(
 path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as RepoRelativePath,state: null == state ? _self.state : state // ignore: cast_nullable_to_non_nullable
-as FileState,isStaged: null == isStaged ? _self.isStaged : isStaged // ignore: cast_nullable_to_non_nullable
+as FileStateEnum,isStaged: null == isStaged ? _self.isStaged : isStaged // ignore: cast_nullable_to_non_nullable
 as bool,previousPath: freezed == previousPath ? _self.previousPath : previousPath // ignore: cast_nullable_to_non_nullable
 as RepoRelativePath?,
   ));
@@ -157,7 +157,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RepoRelativePath path,  FileState state,  bool isStaged,  RepoRelativePath? previousPath)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RepoRelativePath path,  FileStateEnum state,  bool isStaged,  RepoRelativePath? previousPath)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _StatusEntry() when $default != null:
 return $default(_that.path,_that.state,_that.isStaged,_that.previousPath);case _:
@@ -178,7 +178,7 @@ return $default(_that.path,_that.state,_that.isStaged,_that.previousPath);case _
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RepoRelativePath path,  FileState state,  bool isStaged,  RepoRelativePath? previousPath)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RepoRelativePath path,  FileStateEnum state,  bool isStaged,  RepoRelativePath? previousPath)  $default,) {final _that = this;
 switch (_that) {
 case _StatusEntry():
 return $default(_that.path,_that.state,_that.isStaged,_that.previousPath);case _:
@@ -198,7 +198,7 @@ return $default(_that.path,_that.state,_that.isStaged,_that.previousPath);case _
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RepoRelativePath path,  FileState state,  bool isStaged,  RepoRelativePath? previousPath)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RepoRelativePath path,  FileStateEnum state,  bool isStaged,  RepoRelativePath? previousPath)?  $default,) {final _that = this;
 switch (_that) {
 case _StatusEntry() when $default != null:
 return $default(_that.path,_that.state,_that.isStaged,_that.previousPath);case _:
@@ -219,10 +219,10 @@ class _StatusEntry implements StatusEntry {
 /// Where the file is, relative to the repository root.
 @override final  RepoRelativePath path;
 /// What happened to it.
-@override final  FileState state;
+@override final  FileStateEnum state;
 /// Whether the change is in the index, ready to be committed.
 @override final  bool isStaged;
-/// Where the file came from, when [state] is [FileState.renamed].
+/// Where the file came from, when [state] is [FileStateEnum.renamed].
 @override final  RepoRelativePath? previousPath;
 
 /// Create a copy of StatusEntry
@@ -255,7 +255,7 @@ abstract mixin class _$StatusEntryCopyWith<$Res> implements $StatusEntryCopyWith
   factory _$StatusEntryCopyWith(_StatusEntry value, $Res Function(_StatusEntry) _then) = __$StatusEntryCopyWithImpl;
 @override @useResult
 $Res call({
- RepoRelativePath path, FileState state, bool isStaged, RepoRelativePath? previousPath
+ RepoRelativePath path, FileStateEnum state, bool isStaged, RepoRelativePath? previousPath
 });
 
 
@@ -276,7 +276,7 @@ class __$StatusEntryCopyWithImpl<$Res>
   return _then(_StatusEntry(
 path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as RepoRelativePath,state: null == state ? _self.state : state // ignore: cast_nullable_to_non_nullable
-as FileState,isStaged: null == isStaged ? _self.isStaged : isStaged // ignore: cast_nullable_to_non_nullable
+as FileStateEnum,isStaged: null == isStaged ? _self.isStaged : isStaged // ignore: cast_nullable_to_non_nullable
 as bool,previousPath: freezed == previousPath ? _self.previousPath : previousPath // ignore: cast_nullable_to_non_nullable
 as RepoRelativePath?,
   ));

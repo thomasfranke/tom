@@ -21,7 +21,7 @@ mixin _$Block {
 /// A slice of the document rather than a second copy of it: raw text and
 /// structure without duplicated state.
  String get source;/// What kind of block it is.
- BlockKind get kind;
+ BlockKindEnum get kind;
 /// Create a copy of Block
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -52,7 +52,7 @@ abstract mixin class $BlockCopyWith<$Res>  {
   factory $BlockCopyWith(Block value, $Res Function(Block) _then) = _$BlockCopyWithImpl;
 @useResult
 $Res call({
- int startLine, int endLine, String source, BlockKind kind
+ int startLine, int endLine, String source, BlockKindEnum kind
 });
 
 
@@ -75,7 +75,7 @@ startLine: null == startLine ? _self.startLine : startLine // ignore: cast_nulla
 as int,endLine: null == endLine ? _self.endLine : endLine // ignore: cast_nullable_to_non_nullable
 as int,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as String,kind: null == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
-as BlockKind,
+as BlockKindEnum,
   ));
 }
 
@@ -160,7 +160,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int startLine,  int endLine,  String source,  BlockKind kind)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int startLine,  int endLine,  String source,  BlockKindEnum kind)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Block() when $default != null:
 return $default(_that.startLine,_that.endLine,_that.source,_that.kind);case _:
@@ -181,7 +181,7 @@ return $default(_that.startLine,_that.endLine,_that.source,_that.kind);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int startLine,  int endLine,  String source,  BlockKind kind)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int startLine,  int endLine,  String source,  BlockKindEnum kind)  $default,) {final _that = this;
 switch (_that) {
 case _Block():
 return $default(_that.startLine,_that.endLine,_that.source,_that.kind);case _:
@@ -201,7 +201,7 @@ return $default(_that.startLine,_that.endLine,_that.source,_that.kind);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int startLine,  int endLine,  String source,  BlockKind kind)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int startLine,  int endLine,  String source,  BlockKindEnum kind)?  $default,) {final _that = this;
 switch (_that) {
 case _Block() when $default != null:
 return $default(_that.startLine,_that.endLine,_that.source,_that.kind);case _:
@@ -229,7 +229,7 @@ class _Block extends Block {
 /// structure without duplicated state.
 @override final  String source;
 /// What kind of block it is.
-@override final  BlockKind kind;
+@override final  BlockKindEnum kind;
 
 /// Create a copy of Block
 /// with the given fields replaced by the non-null parameter values.
@@ -261,7 +261,7 @@ abstract mixin class _$BlockCopyWith<$Res> implements $BlockCopyWith<$Res> {
   factory _$BlockCopyWith(_Block value, $Res Function(_Block) _then) = __$BlockCopyWithImpl;
 @override @useResult
 $Res call({
- int startLine, int endLine, String source, BlockKind kind
+ int startLine, int endLine, String source, BlockKindEnum kind
 });
 
 
@@ -284,7 +284,7 @@ startLine: null == startLine ? _self.startLine : startLine // ignore: cast_nulla
 as int,endLine: null == endLine ? _self.endLine : endLine // ignore: cast_nullable_to_non_nullable
 as int,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as String,kind: null == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
-as BlockKind,
+as BlockKindEnum,
   ));
 }
 

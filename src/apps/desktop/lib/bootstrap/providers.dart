@@ -81,32 +81,32 @@ BlockReader blockReader(Ref ref) =>
 /// the one place that does.**
 List<Override> appOverrides = <Override>[
   openSpaceProvider.overrideWith(
-    (Ref ref) => OpenSpace(
+    (Ref ref) => OpenSpaceUseCase(
       spaces: ref.watch(spaceRepositoryProvider),
       recents: ref.watch(recentSpacesRepositoryProvider),
       observability: ref.watch(observabilityProvider),
     ),
   ),
   listRecentSpacesProvider.overrideWith(
-    (Ref ref) => ListRecentSpaces(
+    (Ref ref) => ListRecentSpacesUseCase(
       recents: ref.watch(recentSpacesRepositoryProvider),
       observability: ref.watch(observabilityProvider),
     ),
   ),
   forgetRecentSpaceProvider.overrideWith(
-    (Ref ref) => ForgetRecentSpace(
+    (Ref ref) => ForgetRecentSpaceUseCase(
       recents: ref.watch(recentSpacesRepositoryProvider),
       observability: ref.watch(observabilityProvider),
     ),
   ),
   listSpaceEntriesProvider.overrideWith(
-    (Ref ref) => ListSpaceEntries(
+    (Ref ref) => ListSpaceEntriesUseCase(
       spaces: ref.watch(spaceRepositoryProvider),
       observability: ref.watch(observabilityProvider),
     ),
   ),
   readDocumentProvider.overrideWith(
-    (Ref ref) => ReadDocument(
+    (Ref ref) => ReadDocumentUseCase(
       documentsFor: ref.watch(documentRepositoryForProvider),
       blocks: ref.watch(blockReaderProvider),
       observability: ref.watch(observabilityProvider),

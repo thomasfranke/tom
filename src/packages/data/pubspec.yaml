@@ -1,5 +1,8 @@
 name: tom_data
-description: "Fulfils the domain's repository contracts by orchestrating infrastructure, and parses its output."
+description: >-
+  The data layer's inner half: the capability contracts and their DTOs, the
+  repository implementations that fulfil the domain's contracts over them, and
+  the parsers in between.
 version: 0.1.0
 publish_to: none
 repository: https://github.com/thomasfranke/tom
@@ -10,13 +13,21 @@ environment:
 resolution: workspace
 
 dependencies:
+  freezed_annotation: ^3.1.0
   tom_core:
     path: ../core
   tom_domain:
     path: ../domain
-  tom_infra:
-    path: ../infra
 
 dev_dependencies:
+  build_runner: ^2.15.1
+  freezed: 3.2.5
   lints: ^6.0.0
   test: ^1.25.6
+
+  # Test-only, and deliberately the one place the arrow comes back: the
+  # integration tests drive the real adapters against a real disk and a real
+  # `git init`, which is the project's confidence differentiator. Nothing in
+  # `lib/` may import it — that is what keeps it a dev dependency.
+  tom_infra:
+    path: ../infra

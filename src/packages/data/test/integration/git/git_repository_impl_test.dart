@@ -41,9 +41,9 @@ void main() {
   }
 
   /// What [result] holds, or a failure of the test if it did not succeed.
-  T valueOf<T>(Result<T> result) => switch (result) {
-    Success<T>(value: final T value) => value,
-    Failure<T>(failure: final AppFailure failure) => throw StateError(
+  T valueOf<T, F extends AppFailure>(Result<T, F> result) => switch (result) {
+    Success<T, F>(value: final T value) => value,
+    Failure<T, F>(failure: final F failure) => throw StateError(
       'expected a success, got $failure',
     ),
   };
@@ -94,7 +94,7 @@ void main() {
 
       expect(status.isClean, isFalse);
       expect(status.entries.single.path, RepoRelativePath('guide.md'));
-      expect(status.entries.single.state, FileState.untracked);
+      expect(status.entries.single.state, FileStateEnum.untracked);
       expect(status.entries.single.isStaged, isFalse);
       expect(status.hasStagedChanges, isFalse);
     });
@@ -107,7 +107,7 @@ void main() {
       );
 
       final GitStatus status = valueOf(await repository.status());
-      expect(status.entries.single.state, FileState.added);
+      expect(status.entries.single.state, FileStateEnum.added);
       expect(status.entries.single.isStaged, isTrue);
       expect(status.hasStagedChanges, isTrue);
     });
@@ -126,7 +126,7 @@ void main() {
 
       expect(
         valueOf(await repository.status()).entries.single.state,
-        FileState.untracked,
+        FileStateEnum.untracked,
       );
     });
   });
@@ -264,10 +264,13 @@ void main() {
 
   group('failures come back in the product vocabulary', () {
     /// What [result] failed with, or a failure of the test if it succeeded.
-    AppFailure failureOf<T>(Result<T> result) => switch (result) {
-      Success<T>() => throw StateError('expected a failure, got a success'),
-      Failure<T>(failure: final AppFailure failure) => failure,
-    };
+    F failureOf<T, F extends AppFailure>(Result<T, F> result) =>
+        switch (result) {
+          Success<T, F>() => throw StateError(
+            'expected a failure, got a success',
+          ),
+          Failure<T, F>(failure: final F failure) => failure,
+        };
 
     test('committing nothing fails, without leaking infrastructure', () async {
       final AppFailure failure = failureOf(await repository.commit('nothing'));
@@ -298,7 +301,7 @@ void main() {
       () async {
         // The distinction matters: "the remote moved first" sends the user to
         // pull, and there is no remote to pull from here.
-        expect(failureOf(await repository.push()), isA<GitCommandFailed>());
+        expect(failureOf(await repository.push()), isA<GitOperationFailed>());
       },
     );
   });

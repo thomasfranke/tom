@@ -4,10 +4,7 @@ library;
 import 'dart:convert';
 
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_infra/src/filesystem/filesystem.dart';
-import 'package:tom_infra/src/filesystem/filesystem_failure.dart';
-import 'package:tom_infra/src/settings/settings.dart';
-import 'package:tom_infra/src/settings/settings_failure.dart';
+import 'package:tom_data/tom_data.dart';
 
 /// Preferences kept as a JSON object in a single file.
 ///
@@ -44,47 +41,33 @@ final class JsonFileSettings implements Settings {
   final String path;
 
   @override
-  Future<Result<String?>> read(String key) async {
-    final Result<Map<String, Object?>> stored = await _load();
-    return switch (stored) {
-      Success<Map<String, Object?>>(value: final Map<String, Object?> all) =>
-        Success<String?>(all[key] as String?),
-      Failure<Map<String, Object?>>(failure: final AppFailure failure) =>
-        Failure<String?>(failure),
-    };
-  }
+  Future<Result<String?, SettingsFailure>> read(String key) async =>
+      (await _load()).map((Map<String, Object?> all) => all[key] as String?);
 
   @override
-  Future<Result<void>> write(String key, String value) =>
+  Future<Result<void, SettingsFailure>> write(String key, String value) =>
       _mutate((Map<String, Object?> all) => all[key] = value);
 
   @override
-  Future<Result<void>> remove(String key) =>
+  Future<Result<void, SettingsFailure>> remove(String key) =>
       _mutate((Map<String, Object?> all) => all.remove(key));
 
   /// Applies [change] to the stored object and writes it back.
-  Future<Result<void>> _mutate(
+  Future<Result<void, SettingsFailure>> _mutate(
     void Function(Map<String, Object?>) change,
   ) async {
-    final Result<Map<String, Object?>> stored = await _load();
-    if (stored case Failure<Map<String, Object?>>(
-      failure: final AppFailure failure,
+    final Result<Map<String, Object?>, SettingsFailure> stored = await _load();
+    if (stored case Failure<Map<String, Object?>, SettingsFailure>(
+      failure: final SettingsFailure failure,
     )) {
-      return Failure<void>(failure);
+      return Failure<void, SettingsFailure>(failure);
     }
     final Map<String, Object?> all =
-        (stored as Success<Map<String, Object?>>).value;
+        (stored as Success<Map<String, Object?>, SettingsFailure>).value;
     change(all);
-    final Result<void> written = await filesystem.writeFile(
-      path,
-      const JsonEncoder.withIndent('  ').convert(all),
-    );
-    return switch (written) {
-      Success<void>() => const Success<void>(null),
-      Failure<void>(failure: final AppFailure failure) => Failure<void>(
-        _asSettingsFailure(failure),
-      ),
-    };
+    return filesystem
+        .writeFile(path, const JsonEncoder.withIndent('  ').convert(all))
+        .mapFailure(_asSettingsFailure);
   }
 
   /// The stored object, or an empty one.
@@ -93,21 +76,31 @@ final class JsonFileSettings implements Settings {
   /// that is there and is not a JSON object is treated the same way: the
   /// alternative is refusing to start over a preferences file someone
   /// hand-edited, and nothing in it is worth that.
-  Future<Result<Map<String, Object?>>> _load() async {
-    final Result<String> text = await filesystem.readFile(path);
+  Future<Result<Map<String, Object?>, SettingsFailure>> _load() async {
+    final Result<String, FilesystemFailure> text = await filesystem.readFile(
+      path,
+    );
     switch (text) {
-      case Failure<String>(failure: FilesystemEntryNotFound()):
+      case Failure<String, FilesystemFailure>(
+        failure: FilesystemEntryNotFound(),
+      ):
         // Deliberately not const: a const map is unmodifiable, and what
         // comes back from here is about to be written into. The analyzer
         // asks for const and is wrong — this is the first-run path, so the
         // failure would only ever appear on a machine with no preferences
         // file, which is every machine exactly once.
         // ignore: prefer_const_constructors
-        return Success<Map<String, Object?>>(<String, Object?>{});
-      case Failure<String>(failure: final AppFailure failure):
-        return Failure<Map<String, Object?>>(_asSettingsFailure(failure));
-      case Success<String>(value: final String content):
-        return Success<Map<String, Object?>>(_decode(content));
+        return Success<Map<String, Object?>, SettingsFailure>(
+          <String, Object?>{},
+        );
+      case Failure<String, FilesystemFailure>(
+        failure: final FilesystemFailure failure,
+      ):
+        return Failure<Map<String, Object?>, SettingsFailure>(
+          _asSettingsFailure(failure),
+        );
+      case Success<String, FilesystemFailure>(value: final String content):
+        return Success<Map<String, Object?>, SettingsFailure>(_decode(content));
     }
   }
 
@@ -126,10 +119,21 @@ final class JsonFileSettings implements Settings {
   /// What the disk reported, as this capability's own failure.
   ///
   /// Flattened to one variant on purpose: the caller's answer to any of them
-  /// is the same, and [SettingsFailure] says why it has only one.
-  static AppFailure _asSettingsFailure(AppFailure failure) =>
-      failure is FilesystemFailure
-      ? SettingsUnavailable(failure.toString())
-      // Unreachable by the capability's contract.
-      : failure;
+  /// is the same, and [SettingsFailure] says why it has only one. Exhaustive
+  /// rather than an `is` test — one capability fulfilled over another is
+  /// still a boundary between two vocabularies, and it gets the same switch
+  /// every other boundary gets.
+  ///
+  /// The filesystem's failure travels as the cause, so flattening loses the
+  /// distinction and not the diagnosis.
+  static SettingsFailure _asSettingsFailure(FilesystemFailure failure) =>
+      switch (failure) {
+        FilesystemEntryNotFound() ||
+        FilesystemAccessDenied() ||
+        FilesystemNotUtf8() ||
+        FilesystemOperationFailed() => SettingsUnavailable(
+          failure.toString(),
+          cause: failure,
+        ),
+      };
 }

@@ -16,7 +16,7 @@ mixin _$SpaceEntry {
 
 /// Where it is, relative to the space root.
  SpaceRelativePath get path;/// What it is.
- SpaceEntryType get type;
+ SpaceEntryTypeEnum get type;
 /// Create a copy of SpaceEntry
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -47,7 +47,7 @@ abstract mixin class $SpaceEntryCopyWith<$Res>  {
   factory $SpaceEntryCopyWith(SpaceEntry value, $Res Function(SpaceEntry) _then) = _$SpaceEntryCopyWithImpl;
 @useResult
 $Res call({
- SpaceRelativePath path, SpaceEntryType type
+ SpaceRelativePath path, SpaceEntryTypeEnum type
 });
 
 
@@ -68,7 +68,7 @@ class _$SpaceEntryCopyWithImpl<$Res>
   return _then(_self.copyWith(
 path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as SpaceRelativePath,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as SpaceEntryType,
+as SpaceEntryTypeEnum,
   ));
 }
 
@@ -153,7 +153,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SpaceRelativePath path,  SpaceEntryType type)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SpaceRelativePath path,  SpaceEntryTypeEnum type)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SpaceEntry() when $default != null:
 return $default(_that.path,_that.type);case _:
@@ -174,7 +174,7 @@ return $default(_that.path,_that.type);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SpaceRelativePath path,  SpaceEntryType type)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SpaceRelativePath path,  SpaceEntryTypeEnum type)  $default,) {final _that = this;
 switch (_that) {
 case _SpaceEntry():
 return $default(_that.path,_that.type);case _:
@@ -194,7 +194,7 @@ return $default(_that.path,_that.type);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SpaceRelativePath path,  SpaceEntryType type)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SpaceRelativePath path,  SpaceEntryTypeEnum type)?  $default,) {final _that = this;
 switch (_that) {
 case _SpaceEntry() when $default != null:
 return $default(_that.path,_that.type);case _:
@@ -215,7 +215,7 @@ class _SpaceEntry extends SpaceEntry {
 /// Where it is, relative to the space root.
 @override final  SpaceRelativePath path;
 /// What it is.
-@override final  SpaceEntryType type;
+@override final  SpaceEntryTypeEnum type;
 
 /// Create a copy of SpaceEntry
 /// with the given fields replaced by the non-null parameter values.
@@ -247,7 +247,7 @@ abstract mixin class _$SpaceEntryCopyWith<$Res> implements $SpaceEntryCopyWith<$
   factory _$SpaceEntryCopyWith(_SpaceEntry value, $Res Function(_SpaceEntry) _then) = __$SpaceEntryCopyWithImpl;
 @override @useResult
 $Res call({
- SpaceRelativePath path, SpaceEntryType type
+ SpaceRelativePath path, SpaceEntryTypeEnum type
 });
 
 
@@ -268,7 +268,7 @@ class __$SpaceEntryCopyWithImpl<$Res>
   return _then(_SpaceEntry(
 path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as SpaceRelativePath,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as SpaceEntryType,
+as SpaceEntryTypeEnum,
   ));
 }
 

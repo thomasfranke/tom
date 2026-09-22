@@ -25,7 +25,7 @@ void main() {
         startLine: 0,
         endLine: 0,
         source: '# ${path.name}',
-        kind: BlockKind.heading,
+        kind: BlockKindEnum.heading,
       ),
     ],
     linkDefinitions: '',
@@ -36,7 +36,7 @@ void main() {
     container = ProviderContainer(
       overrides: <Override>[
         readDocumentProvider.overrideWithValue(
-          ReadDocument(
+          ReadDocumentUseCase(
             documentsFor: (Space space) => documents,
             blocks: const _Blocks(),
             observability: const _Silent(),
@@ -113,7 +113,9 @@ void main() {
   test('a document that is gone is a failure, not an empty page', () async {
     // An empty page would say the document holds nothing, which is a
     // different claim from "it is not there".
-    documents.answer = Failure<Document>(DocumentNotFound(writing.value));
+    documents.answer = Failure<Document, DocumentFailure>(
+      DocumentNotFound(writing.value),
+    );
     start();
     show(docs, writing);
     await settle();
@@ -128,20 +130,22 @@ void main() {
 /// A repository that answers what it was told to, and remembers what it was
 /// asked for.
 final class _Documents implements DocumentRepository {
-  Result<Document>? answer;
+  Result<Document, DocumentFailure>? answer;
 
   /// What this was asked to read, in order.
   final List<SpaceRelativePath> asked = <SpaceRelativePath>[];
 
   @override
-  Future<Result<Document>> read(SpaceRelativePath path) async {
+  Future<Result<Document, DocumentFailure>> read(SpaceRelativePath path) async {
     asked.add(path);
     return answer ??
-        Success<Document>(Document(path: path, content: '# ${path.name}\n'));
+        Success<Document, DocumentFailure>(
+          Document(path: path, content: '# ${path.name}\n'),
+        );
   }
 
   @override
-  Future<Result<void>> write(Document document) async =>
+  Future<Result<void, DocumentFailure>> write(Document document) async =>
       throw UnimplementedError();
 }
 
@@ -150,21 +154,22 @@ final class _Blocks implements BlockReader {
   const _Blocks();
 
   @override
-  Future<Result<ParsedDocument>> read(Document document) async =>
-      Success<ParsedDocument>(
-        ParsedDocument(
-          document: document,
-          blocks: <Block>[
-            Block(
-              startLine: 0,
-              endLine: 0,
-              source: '# ${document.path.name}',
-              kind: BlockKind.heading,
-            ),
-          ],
-          linkDefinitions: '',
+  Future<Result<ParsedDocument, DocumentFailure>> read(
+    Document document,
+  ) async => Success<ParsedDocument, DocumentFailure>(
+    ParsedDocument(
+      document: document,
+      blocks: <Block>[
+        Block(
+          startLine: 0,
+          endLine: 0,
+          source: '# ${document.path.name}',
+          kind: BlockKindEnum.heading,
         ),
-      );
+      ],
+      linkDefinitions: '',
+    ),
+  );
 }
 
 /// The no-op observability, which is also the shipping default.

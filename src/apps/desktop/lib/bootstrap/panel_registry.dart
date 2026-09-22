@@ -4,7 +4,7 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
-import 'package:tom_desktop/bootstrap/panel_placement.dart';
+import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
 
 part 'panel_registry.g.dart';
@@ -20,9 +20,9 @@ part 'panel_registry.g.dart';
 class PanelRegistry {
   /// Collects the panels of [modules], in the order they were given.
   factory PanelRegistry(List<TomModule> modules) {
-    final Map<PanelPlacement, List<PanelDescriptor>> byPlacement =
-        <PanelPlacement, List<PanelDescriptor>>{
-          for (final PanelPlacement placement in PanelPlacement.values)
+    final Map<PanelPlacementEnum, List<PanelDescriptor>> byPlacement =
+        <PanelPlacementEnum, List<PanelDescriptor>>{
+          for (final PanelPlacementEnum placement in PanelPlacementEnum.values)
             placement: <PanelDescriptor>[],
         };
     final Set<String> seen = <String>{};
@@ -47,14 +47,14 @@ class PanelRegistry {
 
   const PanelRegistry._(this._byPlacement);
 
-  final Map<PanelPlacement, List<PanelDescriptor>> _byPlacement;
+  final Map<PanelPlacementEnum, List<PanelDescriptor>> _byPlacement;
 
   /// What belongs in [placement], lowest order first.
   ///
   /// An empty list is an ordinary answer: a region with nothing registered
   /// in it draws nothing, which is how a build with a panel's feature flag
   /// off looks from here.
-  List<PanelDescriptor> at(PanelPlacement placement) =>
+  List<PanelDescriptor> at(PanelPlacementEnum placement) =>
       List<PanelDescriptor>.unmodifiable(_byPlacement[placement]!);
 
   /// Whether anything at all is registered.
