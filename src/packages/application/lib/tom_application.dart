@@ -8,9 +8,9 @@
 /// file is the whole public surface.
 library;
 
-export 'src/documents/read_document_usecase.dart';
-export 'src/spaces/forget_recent_space_usecase.dart';
-export 'src/spaces/list_recent_spaces_usecase.dart';
-export 'src/spaces/list_space_entries_usecase.dart';
-export 'src/spaces/open_space_usecase.dart';
+export 'src/documents/read_document_use_case.dart';
+export 'src/spaces/forget_recent_space_use_case.dart';
+export 'src/spaces/list_recent_spaces_use_case.dart';
+export 'src/spaces/list_space_entries_use_case.dart';
+export 'src/spaces/open_space_use_case.dart';
 export 'src/use_case.dart';
