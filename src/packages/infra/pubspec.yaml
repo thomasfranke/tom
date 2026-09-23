@@ -1,8 +1,8 @@
 name: tom_infra
 description: >-
-  The data layer's outer half: the adapters. One implementation per capability
-  contract, each owning the package that does the work — and no contract of
-  its own.
+  The data layer's outer half: one folder per capability, holding its
+  contract, its failures, the DTOs that cross it — and one subfolder per
+  implementation, named after the package that does the work.
 version: 0.1.0
 publish_to: none
 repository: https://github.com/thomasfranke/tom
@@ -13,9 +13,8 @@ environment:
 resolution: workspace
 
 dependencies:
-  # Generated equality for the failures this package owns — the ones that
-  # carry what a third-party dependency reported and travel as a cause
-  # (Decision 16).
+  # Generated equality for the failures this package owns, which is all of
+  # the technical ones (Decision 16).
   freezed_annotation: ^3.1.0
 
   # The block parser, and the verdict of Spike B (Decision 19). It stays with
@@ -24,12 +23,17 @@ dependencies:
   markdown: ^7.3.0
 
   meta: ^1.16.0
+
+  # `tom_core` and nothing else, which is the guarantee (Decision 24): this
+  # package cannot name a domain type, because it cannot see the package
+  # that holds them.
   tom_core:
     path: ../core
 
-  # The contracts these adapters implement, and the DTOs they answer with.
-  # The arrow points inwards: a port belongs to the layer that declares what
-  # it needs, and the adapter is what depends on it (Decision 22).
+  # The DTOs the contracts answer with, which are declared in the data layer
+  # (Decision 21). The two packages depend on each other: `tom_data` needs
+  # the contracts, this needs the shapes that cross them — pub resolves it,
+  # and the layer they belong to is one layer anyway (Decision 24).
   tom_data:
     path: ../data
 

@@ -39,7 +39,7 @@ Choosing Dart does not forfeit the Rust ecosystem. A crate compiles to a native 
 
 It was the **third** option for Spike B, behind the `markdown` package alone and our own block parser with inline delegated to it. The spike took the first ([Decision 19](019-blocks-come-from-the-markdown-package.md)), so this stays hypothetical. The price would have been real: a Rust toolchain in CI for every target, cross-compilation, and the loss of `dart test` as a self-contained proof that the core is framework-independent. It is named here so that it is not discovered *after* a hand-written parser has already been paid for.
 
-FFI is on this project's path regardless — `libgit2` is the scheduled implementation of `GitClientInterface` for mobile ([Decision 2](002-git-via-system-binary.md)).
+FFI is on this project's path regardless — `libgit2` is the scheduled implementation of `GitClient` for mobile ([Decision 2](002-git-via-system-binary.md)).
 
 ## Revisit when
 

@@ -29,8 +29,10 @@ Internal format (known in the community as an *ADR — Architecture Decision Rec
 | [019](019-blocks-come-from-the-markdown-package.md) | Blocks come from the `markdown` package, positions included (Spike B) |
 | [020](020-the-macos-app-is-not-sandboxed.md) | The macOS app is not sandboxed, which rules out the Mac App Store |
 | [021](021-dtos-and-daos-when-they-are-real.md) | DTOs and DAOs are named as such, when they are real |
-| [022](022-capability-contracts-live-in-the-data-layer.md) | A capability contract, its DTOs and its failures live in `tom_data`; `tom_infra` holds adapters |
+| [022](022-capability-contracts-live-in-the-data-layer.md) | ~~A capability contract, its DTOs and its failures live in `tom_data`~~ — superseded by 24 |
 | [023](023-domain-types-say-entity-or-value-object.md) | A domain type says whether it is an entity or a value object |
+| [024](024-a-capability-is-a-folder.md) | A capability is a folder in `tom_infra`: contract, failures, one subfolder per implementation |
+| [025](025-a-repository-reads-through-a-data-source.md) | A repository obtains nothing itself — a data source does, and the repository orchestrates and translates |
 
 ---
 

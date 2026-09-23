@@ -3,7 +3,7 @@
 **Status:** accepted
 
 ## Decision
-Phase 1 drives the system's `git` binary (`Process.run`), behind the `GitClientInterface` contract.
+Phase 1 drives the system's `git` binary (`Process.run`), behind the `GitClient` contract, implemented by `DartIoGitClientImpl`.
 
 ## Rationale
 MVP speed; behavior identical to the user's own git (credentials, SSH and config come for free); libgit2 via FFI is an optimization, not a requirement.
@@ -13,6 +13,6 @@ MVP speed; behavior identical to the user's own git (credentials, SSH and config
 - The contract allows swapping the implementation without touching `application/`.
 
 ## Revisit when
-Performance on large repos, or distribution to a non-developer audience, requires embedding the library (`Libgit2GitClient` via FFI).
+Performance on large repos, or distribution to a non-developer audience, requires embedding the library (`Libgit2GitClientImpl` via FFI).
 
-The mobile platforms raise the same trigger, and no longer hypothetically: iOS and Android are a committed post-1.0 direction ([roadmap](../../roadmap.md#phases)), and neither offers a `git` binary or a free filesystem. `Libgit2GitClient` is therefore a *scheduled* implementation of `GitClientInterface`, not a speculative one — which is the whole reason the contract exists.
+The mobile platforms raise the same trigger, and no longer hypothetically: iOS and Android are a committed post-1.0 direction ([roadmap](../../roadmap.md#phases)), and neither offers a `git` binary or a free filesystem. `Libgit2GitClientImpl` is therefore a *scheduled* implementation of `GitClient`, not a speculative one — which is the whole reason the contract exists.

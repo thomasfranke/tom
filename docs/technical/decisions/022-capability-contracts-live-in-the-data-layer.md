@@ -1,6 +1,13 @@
 # Decision 22 — Capability contracts live in the data layer
 
-**Status:** accepted
+**Status:** superseded by [Decision 24](024-a-capability-is-a-folder.md)
+
+> The contracts went back to `tom_infra`, beside the adapters, and only the
+> DTOs stayed in `tom_data`. What decided it was the weak spot this document
+> names itself, under *Consequences*: with the ports in `tom_data`, the
+> guarantee that infrastructure cannot name a domain type stopped being a
+> property of the package graph. Decision 24 buys it back with a pubspec
+> line. `DartIoFailure`, described below, no longer exists.
 
 ## Context
 

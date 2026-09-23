@@ -11,7 +11,7 @@ Separately, an application that hardcodes its own panels has no way to accept an
 ## Decision
 
 1. **A public extension contract, from M0.** The app exposes `TomModule` (panels, provider overrides, commands) and a `runTom(modules: [...])` entrypoint. Panels are registered through descriptors, never hardcoded in the shell.
-2. **The built-in panels go through the same mechanism.** Explorer, editor, diff and git are registered by an internal `CoreModule`, not by the shell. One path for everything, so the mechanism cannot rot from disuse — it is exercised on every run of the app.
+2. **The built-in panels go through the same mechanism.** Explorer, editor, diff and git are registered by an internal `CoreModuleImpl`, not by the shell. One path for everything, so the mechanism cannot rot from disuse — it is exercised on every run of the app.
 3. **One direction.** A module depends on the app and the core; the app never imports a module. `main.dart` calls `runTom(modules: [])`: clone it, build it, it works.
 4. **The mechanism ships in M0 even with nothing to load.** `runTom` plus descriptors from the very first shell.
 

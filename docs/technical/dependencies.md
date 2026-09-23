@@ -47,7 +47,7 @@ Filter for every dependency: a **permissive license (MIT/BSD/Apache)** — the p
 | `file_selector` | BSD-3 | Native "open folder" dialog — **in use**, `^1.1.0`. A plugin, so it lives only in `tom_desktop`; nothing below takes a folder from anywhere but its own arguments |
 | `url_launcher` | BSD-3 | Open external links from the preview in the browser |
 | ~~`shared_preferences`~~ | — | **Not taken.** It is a Flutter plugin, and settings belong to `tom_infra`, which is pure Dart so that six of the seven packages run under `dart test` ([Decision 14](decisions/014-each-layer-is-its-own-package.md)). Taking it would push the capability up into `tom_desktop` to store a list of folder paths |
-| *(no package)* | — | App settings are one JSON file in the platform's application-support folder — this table's own second option. `JsonFileSettings` writes it through the `Filesystem` capability, which already lands a file atomically; the folder comes from the platform's conventions rather than from `path_provider`, another Flutter plugin |
+| *(no package)* | — | App settings are one JSON file in the folder this platform keeps app data in — this table's own second option. `JsonFileSettingsImpl` writes it through the `Filesystem` capability, which already lands a file atomically; the folder comes from the platform's conventions rather than from `path_provider`, another Flutter plugin |
 
 ## Deliberately excluded
 

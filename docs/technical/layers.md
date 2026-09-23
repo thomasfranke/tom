@@ -13,8 +13,8 @@ core ← domain ← application ← presentation
 | `tom_core` | `Result`, `AppFailure`, ports every layer needs (`Observability`) | nothing | no |
 | `tom_domain` | entities, value objects, failures, repository contracts, `BlockDiffer` | `tom_core` | no |
 | `tom_application` | use cases | `tom_core`, `tom_domain` | no |
-| `tom_infra` | capability contracts **and** their implementations — git, filesystem, settings, markdown, search | `tom_core` | no |
-| `tom_data` | parsers, repository implementations | `tom_core`, `tom_domain`, `tom_infra` | no |
+| `tom_infra` | capability contracts **and** their implementations — git, filesystem, settings, platform paths, markdown, search | `tom_core` | no |
+| `tom_data` | DTOs, data sources, parsers, repository implementations | `tom_core`, `tom_domain`, `tom_infra` | no |
 | `tom_presentation` | space session, notifiers, view state | `tom_core`, `tom_domain`, `tom_application` | no |
 | `tom_desktop` | composition root, widgets | all of the above | **yes** |
 
@@ -38,25 +38,30 @@ The test carries three checks the mechanisms above cannot make:
 ## Inside a package
 
 - **One barrel**, `lib/tom_<name>.dart`; everything else under `lib/src/`, which no other package may import. What the barrel exports *is* the public API.
-- **A name carries its role, in the class and in the file.** A use case is named for the operation with the role last and is invoked through a named method: `OpenSpaceUseCase` in `open_space_usecase.dart`, called as `open(…)` rather than `call`. That is the shape the Flutter team's own architecture sample uses — `BookingCreateUseCase.createFrom(…)` in [compass_app](https://github.com/flutter/samples/tree/main/compass_app/app/lib/domain/use_cases).
+- **A name carries its role, in the class and in the file.** A use case is named for the operation with the role last and is invoked through a named method: `OpenSpaceUseCase` in `open_space_use_case.dart`, called as `open(…)` rather than `call`. The file name mirrors the identifier's own word boundaries, which is also why a data source is `space_data_source.dart`. That is the shape the Flutter team's own architecture sample uses — `BookingCreateUseCase.createFrom(…)` in [compass_app](https://github.com/flutter/samples/tree/main/compass_app/app/lib/domain/use_cases).
 
   The same goes for every role the reader needs in order to use the thing: `SpaceRepository`, `HomeState`, `FileTreePanel`, `GitFailure`, `MarkdownParser`, `FileTreeNotifier`, `BlockKindEnum`, and — when a store forces a shape that is not a domain type — `Dto` and `Dao` ([Decision 21](decisions/021-dtos-and-daos-when-they-are-real.md)).
 
   **A domain type says which of the two kinds it is**, because they are not the same thing and the difference decides how the code may treat them. An **entity** has an identity that outlives its values — a `SpaceEntity` is the folder it was opened at, whatever it is renamed to; a `DocumentEntity` is its path, whatever it holds. A **value object** is wholly what it carries, so two of them with the same contents are not equal but *the same*: `SpaceEntryValueObject`, `BranchNameValueObject`, `GitStatusValueObject`. Entities today: `SpaceEntity`, `DocumentEntity`, `CommitEntity`, `BranchEntity`, `RecentSpaceEntity`. Everything else in `tom_domain` that is not a failure, a contract or an enum is a value object.
 
-  One word still stays out. `Impl` names no *how*: an implementation is named after what makes it different (`dart_io/`, `markdown_package/`, `MarkdownBlockReader`), which is what tells two of them apart when the second arrives.
-- `tom_infra` organises by **capability, not by technology**: `src/git_client/` holds the contract, its failures, and one subfolder per implementation (`process/`, later `libgit2/`). A second implementation is a sibling folder, and the composition root is the only file that changes.
-- **No type from a dependency crosses a contract.** A `ProcessException` dies inside `process/` and leaves as a `GitClientFailure`. If it escaped, the caller would be handling exceptions from a library it is not supposed to know about, and the folder would be decoration.
+  **An implementation ends in `Impl`, and says what makes it different before that**: `DartIoFilesystemImpl`, `MarkdownPackageParserImpl`, `GitRepositoryImpl`. The two halves answer different questions and the name owes both — `DartIo` says *which* implementation, so a second one is a sibling rather than a rename; `Impl` says it fulfils a contract declared somewhere else, which is the thing a reader cannot see from the position of the file. A bare `FilesystemImpl` is the name that does not survive the second.
+
+  The suffix is for a **seam** — a contract that exists so it can be fulfilled differently: a capability, a port, a repository, a `TomModule`, a highlighter a package asks for. A failure hierarchy implements `AppFailure` and is none of those: that is a marker classifying data, and `GitFailure` stays `GitFailure`.
+- `tom_infra` organises by **capability, not by technology**: `src/git_client/` holds the contract, its failures, and one subfolder per implementation (`dart_io/`, later `libgit2/`). A second implementation is a sibling folder, and the composition root is the only file that changes. Nothing sits loose beside the capabilities — a file in this package without a contract is a capability that was never declared.
+
+  **One failure file per capability, beside the contract**, and every variant in it is one a second implementation must also be able to produce — that is what makes it the contract rather than one adapter's diary. An adapter keeps nothing of its own: what the dependency said and the contract has no word for is dropped, because [`AppFailure.cause`](../../src/packages/core/lib/src/app_failure.dart) links two *vocabularies* — it is what a repository attaches when it turns `GitClientFailure` into `GitFailure` — and an adapter has only one.
+- **No type from a dependency crosses a contract.** A `ProcessException` dies inside `dart_io/` and leaves as a `GitClientFailure`. If it escaped, the caller would be handling exceptions from a library it is not supposed to know about, and the folder would be decoration.
 - **A comment is two or three lines.** One sentence saying what the thing is, then the reason it is that way — and there it stops. The exceptions are real but rare: a rule whose only home is this dartdoc ([the canonical form of a rule is the code that implements it](README.md#the-link-dont-restate-rule)), or a trap that costs an afternoon to rediscover. Anything longer is usually two comments, or a paragraph that belongs in `docs/technical/` with a link from here. Keep it prose — cutting a paragraph into a list of fragments is not the same as making it short.
+- **A repository obtains nothing itself.** A data source does, and the repository is left with the order the questions are asked in, the turn from a DTO into the domain's vocabulary, and the failure translation ([Decision 25](decisions/025-a-repository-reads-through-a-data-source.md)). A source is a concrete class — whatever varies, varies at the capability below — and it names no domain type. Holding a capability is what a repository may not do, and `tom rules` fails on a field of one in a `*_repository_impl.dart`; naming a capability's *failure* in order to translate it is still the repository's work.
 - `tom_core` holds **mechanism, never vocabulary**. `Result`, `AppFailure` and `Observability` belong there. Git, documents and search have vocabulary, and vocabulary belongs to `tom_domain` — otherwise the package everything depends on becomes the package that changes most.
 - `test/` **mirrors `lib/src/` exactly**, under one of three top-level folders — `unit/`, `integration/`, `integrity/` — chosen by what the test needs, not by which package it is in:
   - `unit/` — pure logic, no I/O, fakes over real dependencies (failures, parsers, `BlockDiffer`, use cases, notifiers).
   - `integration/` — talks to a real system (a `git init` temp repo, real disk, real sqlite). Slower, and the project's confidence differentiator — never mocked away.
   - `integrity/` — asserts something about the codebase itself, not its runtime behavior (the layer graph, a barrel's exports). Workspace-wide checks live here too: `src/test/architecture_test.dart` is `src/test/integrity/architecture_test.dart`.
 
-  Below that folder, the path matches `lib/src/` exactly, filename plus `_test`: `lib/src/filesystem/dart_io/dart_io_filesystem.dart` (integration, real disk) is tested by `test/integration/filesystem/dart_io/dart_io_filesystem_test.dart`. The layout answers "where are this file's tests, and what kind" without a search.
+  Below that folder, the path matches `lib/src/` exactly, filename plus `_test`: `lib/src/filesystem/dart_io/dart_io_filesystem_impl.dart` (integration, real disk) is tested by `test/integration/filesystem/dart_io/dart_io_filesystem_impl_test.dart`. The layout answers "where are this file's tests, and what kind" without a search.
 
-  **Exactly** means exactly: no test file named after a theme rather than its subject, and no second file for the same subject in the same kind. One subject can have a file under two kinds — `json_file_settings.dart` has a unit test for the failures a real disk will not produce on demand, and an integration test against a real one — because the kind is part of the path.
+  **Exactly** means exactly: no test file named after a theme rather than its subject, and no second file for the same subject in the same kind. One subject can have a file under two kinds — `json_file_settings_impl.dart` has a unit test for the failures a real disk will not produce on demand, and an integration test against a real one — because the kind is part of the path.
 
   The one exception, and it needs no other: a test whose subject is the **stack** rather than a class. `data/test/integration/spaces/opening_end_to_end_test.dart` wires real disk, real git and a real settings file the way the composition root does and asks the question the user asks. It mirrors nothing because it is about no one file, and it is the only test that fails when the pieces are each right and do not fit.
 
@@ -66,7 +71,7 @@ An exception never crosses a layer boundary ([Decision 5](decisions/005-errors-u
 
 - `Result` is **sealed**, so a `switch` over it is exhaustive — forgetting the failure branch does not compile.
 - `AppFailure` is a **marker, not sealed**; each area's hierarchy is sealed inside its own library (`GitFailure`, `DocumentFailure`, `SearchFailure`). Adding a variant breaks every switch that must handle it, and only in the packages that deal with that area. A switch over `AppFailure` itself takes a catch-all.
-- Technical failures are translated into domain failures by `tom_data`. The graph makes that mandatory rather than customary: `tom_infra` depends only on `tom_core`, so it cannot name a `GitFailure`.
+- Technical failures are translated into domain failures by `tom_data`, in the **repository** and nowhere else. The graph makes the translation mandatory rather than customary: `tom_infra` does not depend on `tom_domain`, so it cannot name a `GitFailure`. A data source hands the technical failure up untouched — translating is what the repository is at that boundary for ([Decision 25](decisions/025-a-repository-reads-through-a-data-source.md)).
 - Every use case wraps its body in a standardized `try/catch`, hands what it caught to `Observability`, and returns `UnexpectedFailure` — never rethrows, never swallows ([Decision 11](decisions/011-telemetry-is-opt-in.md)).
 
 The types are documented where they live: `packages/core/lib/src/` and `packages/domain/lib/src/<area>/<area>_failure.dart`.
@@ -104,4 +109,4 @@ Integration against real git is the project's confidence differentiator, and run
 
 ## When mobile arrives (Phase 3)
 
-`apps/mobile` sits beside `apps/desktop` with its own widgets, sharing `tom_presentation` — which is why that package is pure Dart. No shared-UI package: panels do not become screens. `tom_infra` grows a second implementation per capability (`libgit2/` next to `process/`), chosen at the composition root.
+`apps/mobile` sits beside `apps/desktop` with its own widgets, sharing `tom_presentation` — which is why that package is pure Dart. No shared-UI package: panels do not become screens. `tom_infra` grows a second implementation per capability (`libgit2/` next to `dart_io/`), chosen at the composition root.

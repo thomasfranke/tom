@@ -11,7 +11,7 @@ The filesystem watcher exists to reflect external edits (VS Code open alongside 
 ## Decision
 The filesystem contract and the git client contract cooperate through an explicit protocol:
 
-1. **Silence during git operations:** the `GitClientInterface` implementation **pauses the watcher before** running any mutating command and, at the end, **emits a single `SpaceChanged` event** (granularity: the space, not the file). The session (Decision 9) reloads state in one go.
+1. **Silence during git operations:** the `GitClient` implementation **pauses the watcher before** running any mutating command and, at the end, **emits a single `SpaceChanged` event** (granularity: the space, not the file). The session (Decision 9) reloads state in one go.
 2. **Echo suppression:** every save by the app registers its path in an in-flight write list; watcher events for registered paths are discarded (with a short expiry window).
 3. **Debounce:** external events are grouped (~100–300ms) before propagating; what reaches the session is "these paths changed", already consolidated.
 4. **One queue per space:** git operations are already serialized (queue-based executor); the watcher's pause/resume enters the same queue, guaranteeing ordering.
