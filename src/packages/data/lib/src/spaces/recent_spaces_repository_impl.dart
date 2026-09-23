@@ -1,36 +1,36 @@
-/// The recent list, kept as JSON in the settings store.
+/// The recent list, as the product's rules shape it.
 library;
 
-import 'dart:convert';
-
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_data/src/capabilities/settings/settings.dart';
-import 'package:tom_data/src/capabilities/settings/settings_failure.dart';
+import 'package:tom_data/src/spaces/recent_space_dto.dart';
+import 'package:tom_data/src/spaces/recent_spaces_data_source.dart';
 import 'package:tom_domain/tom_domain.dart';
+// For the failure vocabulary only (Decision 25).
+import 'package:tom_infra/tom_infra.dart';
 
-/// [RecentSpacesRepository] over the [Settings] capability.
+/// [RecentSpacesRepository] over [RecentSpacesDataSource].
 ///
-/// The store holds strings, so the shape of what is stored is decided here —
-/// the same split as git's output, where the capability knows the format and
-/// this layer knows the meaning.
+/// The product's rules and nothing about storage: newest first, one row per
+/// folder, a bounded list. How a row is spelled and where it is kept is the
+/// source's ([Decision
+/// 25](../../../../../../docs/technical/decisions/025-a-repository-reads-through-a-data-source.md)).
 ///
-/// **A failure never propagates as one.** Every method answers success even
-/// when the store could not be read, because the contract says everything
-/// here is a convenience and no caller should be made to handle it
-/// ([RecentSpacesRepository]). What a broken store costs is the list, not
-/// the session.
+/// **A failure never reaches the caller, and is never dropped either.**
+/// `Result<T, Never>` is the contract's promise that nothing here is worth
+/// interrupting a session for; the failure goes to [Observability] instead,
+/// so a preferences folder nobody can write is findable rather than silent.
 final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
-  /// Creates a repository over [settings].
-  const RecentSpacesRepositoryImpl({required this.settings});
+  /// Creates a repository over [recents].
+  const RecentSpacesRepositoryImpl({
+    required this.recents,
+    required this.observability,
+  });
 
-  /// Where the list is kept between runs.
-  final Settings settings;
+  /// Where the list is read and written.
+  final RecentSpacesDataSource recents;
 
-  /// The key the list is stored under.
-  ///
-  /// Namespaced, because the store is shared with every other preference and
-  /// will outlive this class.
-  static const String _key = 'spaces.recent';
+  /// Where a failure nobody handles is recorded.
+  final Observability observability;
 
   /// How many entries are kept.
   ///
@@ -42,12 +42,8 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
   static const int _limit = 10;
 
   @override
-  Future<Result<List<RecentSpaceEntity>, Never>> list() async {
-    // `valueOrNull` is the contract in one word: a store nobody can read is
-    // an empty list, and Home still offers to open a folder.
-    final Result<String?, SettingsFailure> stored = await settings.read(_key);
-    return Success<List<RecentSpaceEntity>, Never>(_decode(stored.valueOrNull));
-  }
+  Future<Result<List<RecentSpaceEntity>, Never>> list() async =>
+      Success<List<RecentSpaceEntity>, Never>(await _current());
 
   @override
   Future<Result<void, Never>> remember(SpaceEntity space) async {
@@ -73,76 +69,71 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
     );
   }
 
-  /// What is stored now, or nothing if it cannot be read.
-  Future<List<RecentSpaceEntity>> _current() async =>
-      (await list()).valueOrNull ?? <RecentSpaceEntity>[];
-
-  /// Writes [recents], reporting success whatever the store did.
-  Future<Result<void, Never>> _store(List<RecentSpaceEntity> recents) async {
-    await settings.write(
-      _key,
-      jsonEncode(<Map<String, Object?>>[
-        for (final RecentSpaceEntity recent in recents)
-          <String, Object?>{
-            'root': recent.root,
-            'name': recent.name,
-            'lastOpened': recent.lastOpened.toIso8601String(),
-          },
-      ]),
-    );
-    return const Success<void, Never>(null);
-  }
-
-  /// [text] as entries, newest first, skipping anything unreadable.
+  /// What is stored now, newest first, or nothing if it cannot be read.
   ///
-  /// Total, like every other parser in this package: one malformed row must
-  /// not cost the user the other nine. A row missing a field, carrying a
-  /// date nobody can parse, or of the wrong shape entirely is a row to drop.
-  static List<RecentSpaceEntity> _decode(String? text) {
-    if (text == null || text.isEmpty) {
+  /// A store nobody can read is an empty list, and Home still offers to open
+  /// a folder — but the reason it was empty is recorded on the way past.
+  Future<List<RecentSpaceEntity>> _current() async {
+    final Result<List<RecentSpaceDto>, SettingsFailure> stored = await recents
+        .read();
+    if (stored case Failure<List<RecentSpaceDto>, SettingsFailure>(
+      failure: final SettingsFailure failure,
+    )) {
+      await _record(failure);
       return <RecentSpaceEntity>[];
     }
-    final Object? decoded = _tryDecode(text);
-    if (decoded is! List<Object?>) {
-      return <RecentSpaceEntity>[];
-    }
-    final List<RecentSpaceEntity> recents =
-        <RecentSpaceEntity>[
-          for (final Object? row in decoded)
-            if (_rowToRecent(row) case final RecentSpaceEntity recent) recent,
-        ]..sort(
-          (RecentSpaceEntity a, RecentSpaceEntity b) =>
-              b.lastOpened.compareTo(a.lastOpened),
-        );
-    return recents;
-  }
-
-  /// One row as an entry, or null when it is not one.
-  static RecentSpaceEntity? _rowToRecent(Object? row) {
-    if (row is! Map<String, Object?>) {
-      return null;
-    }
-    final Object? root = row['root'];
-    final Object? name = row['name'];
-    final DateTime? lastOpened = DateTime.tryParse(
-      row['lastOpened'] as String? ?? '',
-    );
-    if (root is! String || name is! String || lastOpened == null) {
-      return null;
-    }
-    return RecentSpaceEntity(
-      root: root,
-      name: name,
-      lastOpened: lastOpened.toUtc(),
+    return <RecentSpaceEntity>[
+      for (final RecentSpaceDto row
+          in (stored as Success<List<RecentSpaceDto>, SettingsFailure>).value)
+        if (_asEntity(row) case final RecentSpaceEntity recent) recent,
+    ]..sort(
+      (RecentSpaceEntity a, RecentSpaceEntity b) =>
+          b.lastOpened.compareTo(a.lastOpened),
     );
   }
 
-  /// [text] as JSON, or null when it is not.
-  static Object? _tryDecode(String text) {
-    try {
-      return jsonDecode(text);
-    } on FormatException {
-      return null;
+  /// Hands [failure] to [Observability], which is where it ends.
+  ///
+  /// `StackTrace.current` because nothing threw — the trace is here to name
+  /// the call site that gave up on the store.
+  Future<void> _record(SettingsFailure failure) =>
+      observability.capture(failure, StackTrace.current, layer: 'data');
+
+  /// [row] in the domain's vocabulary, or null when its date is not one.
+  ///
+  /// The store keeps text; only here does it have to be an instant. A row
+  /// carrying a date nobody can parse is dropped rather than defaulted,
+  /// because a made-up date would reorder the user's list.
+  static RecentSpaceEntity? _asEntity(RecentSpaceDto row) {
+    final DateTime? lastOpened = DateTime.tryParse(row.lastOpened);
+    return lastOpened == null
+        ? null
+        : RecentSpaceEntity(
+            root: row.root,
+            name: row.name,
+            lastOpened: lastOpened.toUtc(),
+          );
+  }
+
+  /// Writes [entities], reporting success whatever the store did.
+  ///
+  /// The write's answer is read rather than discarded — that silence is what
+  /// would cost the user their list on every restart.
+  Future<Result<void, Never>> _store(List<RecentSpaceEntity> entities) async {
+    final Result<void, SettingsFailure> written = await recents
+        .write(<RecentSpaceDto>[
+          for (final RecentSpaceEntity recent in entities)
+            RecentSpaceDto(
+              root: recent.root,
+              name: recent.name,
+              lastOpened: recent.lastOpened.toIso8601String(),
+            ),
+        ]);
+    if (written case Failure<void, SettingsFailure>(
+      failure: final SettingsFailure failure,
+    )) {
+      await _record(failure);
     }
+    return const Success<void, Never>(null);
   }
 }

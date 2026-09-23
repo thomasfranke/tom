@@ -164,8 +164,8 @@ final class _Blocks implements BlockReaderPort {
     DocumentEntity document,
   ) => _reader.read(document);
 
-  static const MarkdownBlockReader _reader = MarkdownBlockReader(
-    parser: MarkdownPackageParser(),
+  static const MarkdownBlockReaderImpl _reader = MarkdownBlockReaderImpl(
+    markdown: MarkdownDataSource(parser: MarkdownPackageParserImpl()),
   );
 }
 

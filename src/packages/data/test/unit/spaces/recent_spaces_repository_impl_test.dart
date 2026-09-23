@@ -11,9 +11,11 @@ import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_infra/tom_infra.dart';
 
 void main() {
   late _Settings settings;
+  late _Observability observability;
   late RecentSpacesRepositoryImpl repository;
 
   SpaceEntity spaceAt(String root, {String? name}) => SpaceEntity(
@@ -36,7 +38,11 @@ void main() {
 
   setUp(() {
     settings = _Settings();
-    repository = RecentSpacesRepositoryImpl(settings: settings);
+    observability = _Observability();
+    repository = RecentSpacesRepositoryImpl(
+      recents: RecentSpacesDataSource(settings: settings),
+      observability: observability,
+    );
   });
 
   group('the first run', () {
@@ -172,6 +178,16 @@ void main() {
       expect(valueOf(await repository.list()), isEmpty);
     });
 
+    test('and the failure is recorded rather than lost', () async {
+      // Not handed to the caller is not the same as dropped: a preferences
+      // folder nobody can write would otherwise forget the user's spaces on
+      // every restart with nothing behind the bug report.
+      await repository.remember(spaceAt('/code/app'));
+
+      expect(observability.captured, everyElement(isA<SettingsFailure>()));
+      expect(observability.captured, isNotEmpty);
+    });
+
     test('remembering reports success anyway', () async {
       expect(
         await repository.remember(spaceAt('/code/app')),
@@ -186,6 +202,18 @@ void main() {
       );
     });
   });
+}
+
+/// An [Observability] that remembers what it was handed.
+final class _Observability implements Observability {
+  final List<Object> captured = <Object>[];
+
+  @override
+  Future<void> capture(
+    Object error,
+    StackTrace stackTrace, {
+    required String layer,
+  }) async => captured.add(error);
 }
 
 /// A [Settings] that keeps values in a map, and can be made to fail.

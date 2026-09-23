@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_desktop/bootstrap/core_module.dart';
+import 'package:tom_desktop/bootstrap/core_module_impl.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
@@ -21,11 +21,11 @@ void main() {
   ///
   /// A variable rather than an argument baked into an override, because the
   /// container is made once per test: see [pumpShell].
-  List<TomModule> registered = const <TomModule>[CoreModule()];
+  List<TomModule> registered = const <TomModule>[CoreModuleImpl()];
   late ProviderContainer container;
 
   setUp(() {
-    registered = const <TomModule>[CoreModule()];
+    registered = const <TomModule>[CoreModuleImpl()];
     // One container per test, not one per mount: a test that pumps twice —
     // the same shell in the other mode — would otherwise leave the first
     // one alive, and a provider still scheduling its own disposal is a
@@ -59,7 +59,7 @@ void main() {
   /// theme, never another set of panels.
   Future<void> pumpShell(
     WidgetTester tester, {
-    List<TomModule> modules = const <TomModule>[CoreModule()],
+    List<TomModule> modules = const <TomModule>[CoreModuleImpl()],
     Size size = const Size(1280, 800),
     Brightness brightness = Brightness.light,
     SpaceEntity? space,
@@ -101,7 +101,7 @@ void main() {
       WidgetTester tester,
     ) async {
       // The claim Decision 12 makes: the app's own panels are registered,
-      // not wired into the shell. If this passes with CoreModule and the
+      // not wired into the shell. If this passes with CoreModuleImpl and the
       // next group passes with a stranger's module, the extension point is
       // real rather than decorative.
       await pumpShell(tester);
@@ -132,7 +132,7 @@ void main() {
       await pumpShell(
         tester,
         modules: <TomModule>[
-          const CoreModule(),
+          const CoreModuleImpl(),
           _Module(<PanelDescriptor>[
             panelSaying('TASKS', placement: PanelPlacementEnum.aside),
           ]),

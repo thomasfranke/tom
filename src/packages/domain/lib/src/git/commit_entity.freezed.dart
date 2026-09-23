@@ -19,6 +19,10 @@ mixin _$CommitEntity {
  AuthorValueObject get author;/// When it was written, and where the author's clock stood.
  CommitDateValueObject get date;/// The first line of the message.
  String get subject;/// Everything after the first line. Empty when there is none.
+///
+/// **Leading whitespace is content and is never trimmed.** In a markdown
+/// tool a body opening with an indented code block or a nested list
+/// means the indentation; only the trailing newline a tool adds may go.
  String get body;
 /// Create a copy of CommitEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -245,6 +249,10 @@ class _CommitEntity implements CommitEntity {
 /// The first line of the message.
 @override final  String subject;
 /// Everything after the first line. Empty when there is none.
+///
+/// **Leading whitespace is content and is never trimmed.** In a markdown
+/// tool a body opening with an indented code block or a nested list
+/// means the indentation; only the trailing newline a tool adds may go.
 @override final  String body;
 
 /// Create a copy of CommitEntity

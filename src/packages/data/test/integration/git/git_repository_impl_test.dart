@@ -1,4 +1,4 @@
-/// [GitRepositoryImpl] over a real [DartIoGitClient] and a real repository.
+/// [GitRepositoryImpl] over a real [DartIoGitClientImpl] and a real repository.
 ///
 /// The unit test beside this one proves the translation in isolation, with a
 /// client that answers whatever it is told to. This one proves the stack
@@ -64,7 +64,9 @@ void main() {
       git(<String>['config', ...setting]);
     }
     repository = GitRepositoryImpl(
-      client: DartIoGitClient(workingDirectory: repoPath),
+      git: GitDataSource(
+        client: DartIoGitClientImpl(workingDirectory: repoPath),
+      ),
     );
   });
 
@@ -303,7 +305,9 @@ void main() {
       final String outside = '${tempDir.path}/outside';
       Directory(outside).createSync();
       final GitRepositoryImpl elsewhere = GitRepositoryImpl(
-        client: DartIoGitClient(workingDirectory: outside),
+        git: GitDataSource(
+          client: DartIoGitClientImpl(workingDirectory: outside),
+        ),
       );
 
       expect(

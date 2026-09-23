@@ -11,7 +11,7 @@ import 'package:tom_presentation/tom_presentation.dart';
 
 /// The file tree, and the search field that will sit above it in M2.
 ///
-/// Registered by `CoreModule` through the same `PanelDescriptor` a
+/// Registered by `CoreModuleImpl` through the same `PanelDescriptor` a
 /// stranger's module would use, and it draws its own caption because the
 /// shell draws no panel chrome.
 ///

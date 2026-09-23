@@ -59,9 +59,11 @@ void main() {
     // a symlink, and git reports the real path in its own spelling.
     base = tempDir.resolveSymbolicLinksSync().replaceAll(r'\', '/');
     repository = SpaceRepositoryImpl(
-      filesystem: const DartIoFilesystem(),
-      gitClientFor: (String folder) =>
-          DartIoGitClient(workingDirectory: folder),
+      spaces: SpaceDataSource(
+        filesystem: const DartIoFilesystemImpl(),
+        gitClientFor: (String folder) =>
+            DartIoGitClientImpl(workingDirectory: folder),
+      ),
     );
   });
 

@@ -12,7 +12,7 @@
 /// tests would be proving something about a configuration nobody ships.
 library;
 
-export 'e2e_module.dart';
+export 'e2e_module_impl.dart';
 export 'fixture.dart';
 export 'robot.dart';
 export 'scenario.dart';

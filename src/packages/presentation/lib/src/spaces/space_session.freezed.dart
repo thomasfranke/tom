@@ -19,8 +19,9 @@ mixin _$SpaceSessionState {
 /// none has been chosen.
 ///
 /// Null is the state a space opens in, not an error. It is a
-/// [SpaceRelativePathValueObject] because that is what the app navigates in — git's
-/// spelling is [SpaceEntity.toRepoRelative]'s to produce, and nobody else's.
+/// [SpaceRelativePathValueObject] because that is what the app navigates
+/// in — git's spelling is [SpaceEntity.toRepoRelative]'s to produce, and
+/// nobody else's.
  SpaceRelativePathValueObject? get openDocument;
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
@@ -232,8 +233,9 @@ class _SpaceSessionState implements SpaceSessionState {
 /// none has been chosen.
 ///
 /// Null is the state a space opens in, not an error. It is a
-/// [SpaceRelativePathValueObject] because that is what the app navigates in — git's
-/// spelling is [SpaceEntity.toRepoRelative]'s to produce, and nobody else's.
+/// [SpaceRelativePathValueObject] because that is what the app navigates
+/// in — git's spelling is [SpaceEntity.toRepoRelative]'s to produce, and
+/// nobody else's.
 @override final  SpaceRelativePathValueObject? openDocument;
 
 /// Create a copy of SpaceSessionState

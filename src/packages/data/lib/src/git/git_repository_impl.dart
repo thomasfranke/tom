@@ -2,17 +2,18 @@
 library;
 
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_data/src/capabilities/git_client/git_client.dart';
-import 'package:tom_data/src/capabilities/git_client/git_client_failure.dart';
 import 'package:tom_data/src/git/git_branch_parser.dart';
+import 'package:tom_data/src/git/git_data_source.dart';
 import 'package:tom_data/src/git/git_log_parser.dart';
 import 'package:tom_data/src/git/git_status_parser.dart';
 import 'package:tom_domain/tom_domain.dart';
+// For the failure vocabulary only (Decision 25).
+import 'package:tom_infra/tom_infra.dart';
 
-/// [GitRepository] over the [GitClient] capability.
+/// [GitRepository] over [GitDataSource].
 ///
-/// The seam the layer graph exists for. `GitClient` knows how to run git and
-/// returns text and [GitClientFailure]; the domain knows [CommitEntity],
+/// The seam the layer graph exists for. The source runs git and returns text
+/// and [GitClientFailure]; the domain knows [CommitEntity],
 /// [GitStatusValueObject] and [GitFailure] and nothing about processes. This
 /// class is the only place the two meet: it hands the text to a parser and
 /// the
@@ -26,21 +27,21 @@ import 'package:tom_domain/tom_domain.dart';
 /// One instance per space, holding that space's client — the client
 /// serializes its own commands, so nothing here has to.
 final class GitRepositoryImpl implements GitRepository {
-  /// Creates a repository over [client].
+  /// Creates a repository over [git].
   ///
   /// The parsers are stateless and default to their shared instances; they
   /// are parameters so a test can substitute one, and so the composition
   /// root keeps deciding what is wired to what
   /// (`docs/technical/flows.md#wiring-three-lifetimes`).
   const GitRepositoryImpl({
-    required this.client,
+    required this.git,
     this.statusParser = const GitStatusParser(),
     this.logParser = const GitLogParser(),
     this.branchParser = const GitBranchParser(),
   });
 
-  /// What runs git for this space.
-  final GitClient client;
+  /// Where git's answers come from.
+  final GitDataSource git;
 
   /// Reads `status --porcelain=v2 -z`.
   final GitStatusParser statusParser;
@@ -53,60 +54,60 @@ final class GitRepositoryImpl implements GitRepository {
 
   @override
   Future<Result<GitStatusValueObject, GitFailure>> status() =>
-      client.status().map(statusParser.parse).mapFailure(_asGitFailure);
+      git.status().map(statusParser.parse).mapFailure(_asGitFailure);
 
   @override
   Future<Result<List<CommitEntity>, GitFailure>> history({
     RepoRelativePathValueObject? path,
     int? limit,
-  }) => client
+  }) => git
       .log(path: path?.value, limit: limit)
       .map(logParser.parse)
       .mapFailure(_asGitFailure);
 
   @override
   Future<Result<List<BranchEntity>, GitFailure>> branches() =>
-      client.branches().map(branchParser.parse).mapFailure(_asGitFailure);
+      git.branches().map(branchParser.parse).mapFailure(_asGitFailure);
 
   @override
   Future<Result<String, GitFailure>> contentAt({
     required String revision,
     required RepoRelativePathValueObject path,
-  }) => client.show(revision, path.value).mapFailure(_asGitFailure);
+  }) => git.show(revision, path.value).mapFailure(_asGitFailure);
 
   @override
   Future<Result<void, GitFailure>> stage(
     List<RepoRelativePathValueObject> paths,
-  ) => client.stage(_values(paths)).mapFailure(_asGitFailure);
+  ) => git.stage(_values(paths)).mapFailure(_asGitFailure);
 
   @override
   Future<Result<void, GitFailure>> unstage(
     List<RepoRelativePathValueObject> paths,
-  ) => client.unstage(_values(paths)).mapFailure(_asGitFailure);
+  ) => git.unstage(_values(paths)).mapFailure(_asGitFailure);
 
   @override
   Future<Result<void, GitFailure>> commit(String message) =>
-      client.commit(message).mapFailure(_asGitFailure);
+      git.commit(message).mapFailure(_asGitFailure);
 
   @override
   Future<Result<void, GitFailure>> createBranch(BranchNameValueObject name) =>
-      client.createBranch(name.value).mapFailure(_asGitFailure);
+      git.createBranch(name.value).mapFailure(_asGitFailure);
 
   @override
   Future<Result<void, GitFailure>> switchBranch(BranchNameValueObject name) =>
-      client.switchBranch(name.value).mapFailure(_asGitFailure);
+      git.switchBranch(name.value).mapFailure(_asGitFailure);
 
   @override
   Future<Result<void, GitFailure>> fetch() =>
-      client.fetch().mapFailure(_asGitFailure);
+      git.fetch().mapFailure(_asGitFailure);
 
   @override
   Future<Result<void, GitFailure>> pull() =>
-      client.pull().mapFailure(_asGitFailure);
+      git.pull().mapFailure(_asGitFailure);
 
   @override
   Future<Result<void, GitFailure>> push() =>
-      client.push().mapFailure(_asGitFailure);
+      git.push().mapFailure(_asGitFailure);
 
   /// [paths] as the strings the capability takes.
   static List<String> _values(List<RepoRelativePathValueObject> paths) =>

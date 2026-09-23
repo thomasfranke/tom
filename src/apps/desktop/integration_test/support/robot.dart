@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_desktop/bootstrap/run_tom.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
-import 'e2e_module.dart';
+import 'e2e_module_impl.dart';
 
 /// Drives the assembled app.
 ///
@@ -55,7 +55,7 @@ final class TomRobot {
     await tester.pumpWidget(
       tomApp(
         modules: <TomModule>[
-          E2eModule(folder: pickFolder, settingsPath: settingsPath),
+          E2eModuleImpl(folder: pickFolder, settingsPath: settingsPath),
         ],
       ),
     );

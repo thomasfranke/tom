@@ -1,8 +1,8 @@
 /// Turning the log format `GitClient` asks for into [CommitEntity]s.
 library;
 
-import 'package:tom_data/src/capabilities/git_client/git_client.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_infra/tom_infra.dart';
 
 /// Reads what `GitClient.log` returned.
 ///
@@ -35,11 +35,9 @@ final class GitLogParser {
   /// each one, which lands at the head of the next; the sha that follows it
   /// is hexadecimal, so nothing of the record is lost.
   ///
-  /// The body is trimmed on the right only. `%b` ends with the newline git
-  /// puts there rather than one the author typed, so the right side is
-  /// formatting; the left side is content, and in a markdown tool it is
-  /// load-bearing — a body opening with an indented code block or a nested
-  /// list means the indentation.
+  /// The body is trimmed on the right only: `%b` ends with a newline git
+  /// puts there rather than one the author typed. Why the left side is never
+  /// touched is the type's own rule, on [CommitEntity.body].
   CommitEntity? _parseRecord(String record) {
     final List<String> fields = record.trimLeft().split(
       GitClient.unitSeparator,

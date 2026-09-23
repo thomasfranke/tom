@@ -3,29 +3,30 @@ library;
 
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/src/capabilities/markdown_parser/markdown_outline_dto.dart';
-import 'package:tom_data/src/capabilities/markdown_parser/markdown_parser.dart';
-import 'package:tom_data/src/capabilities/markdown_parser/markdown_parser_failure.dart';
 import 'package:tom_data/src/capabilities/markdown_parser/markdown_span_dto.dart';
 import 'package:tom_data/src/capabilities/markdown_parser/markdown_span_kind_enum.dart';
+import 'package:tom_data/src/documents/markdown_data_source.dart';
 import 'package:tom_domain/tom_domain.dart';
+// For the failure vocabulary only (Decision 25).
+import 'package:tom_infra/tom_infra.dart';
 
-/// [BlockReaderPort] over the [MarkdownParser] capability.
+/// [BlockReaderPort] over [MarkdownDataSource].
 ///
-/// Two translations and nothing else. Spans into blocks: the capability
-/// reports where each construct is and this slices the document's own lines
-/// for it, so a block's text stays a view of the document rather than a
-/// second copy. Failures into the product's vocabulary.
-final class MarkdownBlockReader implements BlockReaderPort {
-  /// Creates a reader over [parser].
-  const MarkdownBlockReader({required this.parser});
+/// Two translations and nothing else. Spans into blocks: the source reports
+/// where each construct is and this slices the document's own lines for it,
+/// so a block's text stays a view of the document rather than a second
+/// copy. Failures into the product's vocabulary.
+final class MarkdownBlockReaderImpl implements BlockReaderPort {
+  /// Creates a reader over [markdown].
+  const MarkdownBlockReaderImpl({required this.markdown});
 
-  /// What finds the constructs.
-  final MarkdownParser parser;
+  /// Where the outline comes from.
+  final MarkdownDataSource markdown;
 
   @override
   Future<Result<ParsedDocumentValueObject, DocumentFailure>> read(
     DocumentEntity document,
-  ) => parser
+  ) => markdown
       .outline(document.content)
       .map((MarkdownOutlineDto outline) => _documentOf(document, outline))
       .mapFailure(

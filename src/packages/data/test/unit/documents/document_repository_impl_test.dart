@@ -9,6 +9,7 @@ import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_infra/tom_infra.dart';
 
 void main() {
   late _ScriptedFilesystem filesystem;
@@ -24,7 +25,10 @@ void main() {
 
   setUp(() {
     filesystem = _ScriptedFilesystem();
-    repository = DocumentRepositoryImpl(filesystem: filesystem, space: space);
+    repository = DocumentRepositoryImpl(
+      documents: DocumentDataSource(filesystem: filesystem),
+      space: space,
+    );
   });
 
   /// What [result] holds, or a failure of the test if it did not succeed.

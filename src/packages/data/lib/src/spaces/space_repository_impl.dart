@@ -2,15 +2,16 @@
 library;
 
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_data/src/capabilities/filesystem/filesystem.dart';
 import 'package:tom_data/src/capabilities/filesystem/filesystem_entry_dto.dart';
 import 'package:tom_data/src/capabilities/filesystem/filesystem_entry_type_enum.dart';
-import 'package:tom_data/src/capabilities/filesystem/filesystem_failure.dart';
-import 'package:tom_data/src/capabilities/git_client/git_client_failure.dart';
-import 'package:tom_data/src/capabilities/git_client/git_client_for.dart';
+import 'package:tom_data/src/spaces/space_data_source.dart';
 import 'package:tom_domain/tom_domain.dart';
+// For the failure vocabularies only. Naming a failure in order to translate
+// it is a repository's job; reaching a capability to obtain data is not, and
+// no repository holds one (Decision 25).
+import 'package:tom_infra/tom_infra.dart';
 
-/// [SpaceRepository] over the [Filesystem] and `GitClient` capabilities.
+/// [SpaceRepository] over [SpaceDataSource].
 ///
 /// Two jobs that look unrelated and are not. Opening a folder asks git where
 /// the repository is; listing one asks the disk what is inside. Both are
@@ -18,30 +19,17 @@ import 'package:tom_domain/tom_domain.dart';
 /// the failures they produce send the user to another space rather than to
 /// another file.
 ///
-/// The file tree's policy lives here too: `.git/` is out, every other
-/// dotfolder is in (`docs/product/navigation/file-tree/doc.md`). The
-/// capability filters nothing on purpose — it has no idea what a space is —
-/// so this is the layer that knows.
+/// What is left here is what a repository owes: the **order** the two
+/// questions are asked in, the turn from a DTO into the domain's vocabulary,
+/// and the translation of failures. How the entries are gathered — and the
+/// `.git/` rule that shapes the walk — belongs to the source
+/// ([Decision 25](../../../../../../docs/technical/decisions/025-a-repository-reads-through-a-data-source.md)).
 final class SpaceRepositoryImpl implements SpaceRepository {
-  /// Creates a repository over [filesystem], making git clients with
-  /// [gitClientFor].
-  const SpaceRepositoryImpl({
-    required this.filesystem,
-    required this.gitClientFor,
-  });
+  /// Creates a repository over [spaces].
+  const SpaceRepositoryImpl({required this.spaces});
 
-  /// What lists the disk.
-  final Filesystem filesystem;
-
-  /// How to get a git client for a folder the user just picked.
-  final GitClientFor gitClientFor;
-
-  /// What git keeps its repository in, and the one name the tree hides.
-  ///
-  /// Matched whatever it turns out to be: a folder in an ordinary clone, a
-  /// *file* pointing elsewhere in a worktree or a submodule. Both are git's
-  /// plumbing and neither is documentation.
-  static const String _gitDirectory = '.git';
+  /// Where a space's folder is read.
+  final SpaceDataSource spaces;
 
   @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async {
@@ -49,8 +37,8 @@ final class SpaceRepositoryImpl implements SpaceRepository {
     // that is not there and a folder that holds no repository send the user
     // somewhere different — forget this space, against open another one —
     // and git reports both as "not a repository".
-    final Result<bool, SpaceFailure> exists = await filesystem
-        .directoryExists(folder)
+    final Result<bool, SpaceFailure> exists = await spaces
+        .exists(folder)
         .mapFailure(_asSpaceFailure);
     switch (exists) {
       case Failure<bool, SpaceFailure>(failure: final SpaceFailure failure):
@@ -61,8 +49,8 @@ final class SpaceRepositoryImpl implements SpaceRepository {
         break;
     }
 
-    return gitClientFor(folder)
-        .repositoryRoot()
+    return spaces
+        .repositoryRootOf(folder)
         .map(
           (String repositoryRoot) => SpaceEntity(
             root: folder,
@@ -78,74 +66,24 @@ final class SpaceRepositoryImpl implements SpaceRepository {
   @override
   Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
     SpaceEntity space,
-  ) async {
-    final List<SpaceEntryValueObject> collected = <SpaceEntryValueObject>[];
-    final Result<void, SpaceFailure> walked = await _walk(
-      space,
-      space.root,
-      collected,
-      isRoot: true,
-    );
-    return walked.map(
-      (_) => List<SpaceEntryValueObject>.unmodifiable(collected),
-    );
-  }
-
-  /// Lists [directory], appending what it holds to [into], deepest last.
-  ///
-  /// One level at a time rather than [Filesystem.listDirectory] with
-  /// `recursive: true`, for a reason that is not style: a recursive listing
-  /// walks into `.git/` before anything can filter it out, and the `.git/`
-  /// of a mature repository holds more entries than every document the
-  /// product will ever show. Skipping a folder is only cheap if the decision
-  /// is taken *before* descending into it.
-  ///
-  /// The children of a folder are appended immediately after it, so the flat
-  /// list a caller receives is already in tree order.
-  ///
-  /// A folder below the root that the machine will not open is skipped and
-  /// the rest is still returned: one unreadable folder costs that folder,
-  /// not the file tree. [isRoot] is what makes the space's own folder the
-  /// exception — a space whose root cannot be read has nothing to show.
-  Future<Result<void, SpaceFailure>> _walk(
-    SpaceEntity space,
-    String directory,
-    List<SpaceEntryValueObject> into, {
-    required bool isRoot,
-  }) async {
-    final Result<List<FilesystemEntryDto>, FilesystemFailure> listed =
-        await filesystem.listDirectory(directory);
-    if (listed case Failure<List<FilesystemEntryDto>, FilesystemFailure>(
-      failure: final FilesystemFailure failure,
-    )) {
-      return isRoot
-          ? Failure<void, SpaceFailure>(_asSpaceFailure(failure))
-          : _walked;
-    }
-    for (final FilesystemEntryDto entry
-        in (listed as Success<List<FilesystemEntryDto>, FilesystemFailure>)
-            .value) {
-      final SpaceRelativePathValueObject? path = space.relativize(entry.path);
-      if (path == null || path.name == _gitDirectory) {
-        continue;
-      }
-      into.add(
-        SpaceEntryValueObject(
-          path: path,
-          type: _asSpaceEntryTypeEnum(entry.type),
-        ),
-      );
-      if (entry.type == FilesystemEntryTypeEnum.directory) {
-        await _walk(space, entry.path, into, isRoot: false);
-      }
-    }
-    return _walked;
-  }
-
-  /// A walk that produced whatever it could — the only success this has.
-  static const Result<void, SpaceFailure> _walked = Success<void, SpaceFailure>(
-    null,
-  );
+  ) => spaces
+      .entries(space.root)
+      .map(
+        (List<FilesystemEntryDto> gathered) =>
+            List<SpaceEntryValueObject>.unmodifiable(<SpaceEntryValueObject>[
+              for (final FilesystemEntryDto entry in gathered)
+                // A path the space does not contain is dropped rather
+                // than spelled: `relativize` answering null is the last
+                // guard that nothing outside the folder reaches the tree.
+                if (space.relativize(entry.path)
+                    case final SpaceRelativePathValueObject path)
+                  SpaceEntryValueObject(
+                    path: path,
+                    type: _asSpaceEntryTypeEnum(entry.type),
+                  ),
+            ]),
+      )
+      .mapFailure(_asSpaceFailure);
 
   /// The same kind, in the product's vocabulary.
   ///

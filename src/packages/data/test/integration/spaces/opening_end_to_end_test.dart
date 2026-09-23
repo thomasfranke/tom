@@ -57,14 +57,22 @@ void main() {
     base = tempDir.resolveSymbolicLinksSync().replaceAll(r'\', '/');
     preferences = '$base/support/preferences.json';
     // Exactly the graph `providers.dart` builds, with nothing faked.
-    const Filesystem filesystem = DartIoFilesystem();
+    const Filesystem filesystem = DartIoFilesystemImpl();
     spaces = SpaceRepositoryImpl(
-      filesystem: filesystem,
-      gitClientFor: (String folder) =>
-          DartIoGitClient(workingDirectory: folder),
+      spaces: SpaceDataSource(
+        filesystem: filesystem,
+        gitClientFor: (String folder) =>
+            DartIoGitClientImpl(workingDirectory: folder),
+      ),
     );
     recents = RecentSpacesRepositoryImpl(
-      settings: JsonFileSettings(filesystem: filesystem, path: preferences),
+      recents: RecentSpacesDataSource(
+        settings: JsonFileSettingsImpl(
+          filesystem: filesystem,
+          path: preferences,
+        ),
+      ),
+      observability: const _Observability(),
     );
   });
 
@@ -85,10 +93,13 @@ void main() {
     // And it survives the process: a second repository over the same file
     // is what a restart looks like.
     final RecentSpacesRepository reopened = RecentSpacesRepositoryImpl(
-      settings: JsonFileSettings(
-        filesystem: const DartIoFilesystem(),
-        path: preferences,
+      recents: RecentSpacesDataSource(
+        settings: JsonFileSettingsImpl(
+          filesystem: const DartIoFilesystemImpl(),
+          path: preferences,
+        ),
       ),
+      observability: const _Observability(),
     );
     final List<RecentSpaceEntity> remembered = valueOf(await reopened.list());
     expect(remembered.single.root, '$repoPath/docs');
@@ -122,4 +133,16 @@ void main() {
     // A user who never opens a space never gets a preferences file.
     expect(File(preferences).existsSync(), isFalse);
   });
+}
+
+/// An [Observability] that keeps nothing — this test is about the disk.
+final class _Observability implements Observability {
+  const _Observability();
+
+  @override
+  Future<void> capture(
+    Object error,
+    StackTrace stackTrace, {
+    required String layer,
+  }) async {}
 }

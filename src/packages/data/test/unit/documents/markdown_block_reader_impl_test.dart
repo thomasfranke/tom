@@ -2,6 +2,7 @@ import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_infra/tom_infra.dart';
 
 void main() {
   /// The document `content` is, at a fixed path.
@@ -11,14 +12,16 @@ void main() {
   );
 
   /// The reader over a parser answering [answer].
-  MarkdownBlockReader readerOf(
+  MarkdownBlockReaderImpl readerOf(
     Result<MarkdownOutlineDto, MarkdownParserFailure> answer,
-  ) => MarkdownBlockReader(parser: _Parser(answer: answer));
+  ) => MarkdownBlockReaderImpl(
+    markdown: MarkdownDataSource(parser: _Parser(answer: answer)),
+  );
 
   group('spans become blocks', () {
     test('each block carries the document lines its span names', () async {
       const String content = '# Title\n\nSome prose.\n';
-      final MarkdownBlockReader reader = readerOf(
+      final MarkdownBlockReaderImpl reader = readerOf(
         const Success<MarkdownOutlineDto, MarkdownParserFailure>(
           MarkdownOutlineDto(
             spans: <MarkdownSpanDto>[
@@ -63,7 +66,7 @@ void main() {
     });
 
     test('a long span keeps its lines joined, newlines and all', () async {
-      final MarkdownBlockReader reader = readerOf(
+      final MarkdownBlockReaderImpl reader = readerOf(
         const Success<MarkdownOutlineDto, MarkdownParserFailure>(
           MarkdownOutlineDto(
             spans: <MarkdownSpanDto>[
@@ -94,7 +97,7 @@ void main() {
     test('the definitions travel with the document, not a block', () async {
       // A block rendered alone needs them; putting a copy on every block
       // would be the same string as many times as there are blocks.
-      final MarkdownBlockReader reader = readerOf(
+      final MarkdownBlockReaderImpl reader = readerOf(
         const Success<MarkdownOutlineDto, MarkdownParserFailure>(
           MarkdownOutlineDto(
             spans: <MarkdownSpanDto>[],
@@ -116,7 +119,7 @@ void main() {
 
     test('the document comes back with its blocks', () async {
       final DocumentEntity document = documentOf('Prose.\n');
-      final MarkdownBlockReader reader = readerOf(
+      final MarkdownBlockReaderImpl reader = readerOf(
         const Success<MarkdownOutlineDto, MarkdownParserFailure>(
           MarkdownOutlineDto(spans: <MarkdownSpanDto>[], linkDefinitions: ''),
         ),
@@ -136,7 +139,7 @@ void main() {
 
   group('every kind has a word in the domain', () {
     test('and the translation is one to one', () async {
-      final MarkdownBlockReader reader = readerOf(
+      final MarkdownBlockReaderImpl reader = readerOf(
         Success<MarkdownOutlineDto, MarkdownParserFailure>(
           MarkdownOutlineDto(
             spans: <MarkdownSpanDto>[
@@ -178,7 +181,7 @@ void main() {
       const MarkdownParserFailed reported = MarkdownParserFailed(
         'stack overflow',
       );
-      final MarkdownBlockReader reader = readerOf(
+      final MarkdownBlockReaderImpl reader = readerOf(
         const Failure<MarkdownOutlineDto, MarkdownParserFailure>(reported),
       );
 

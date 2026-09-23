@@ -2,31 +2,26 @@
 library;
 
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_data/src/capabilities/filesystem/filesystem.dart';
-import 'package:tom_data/src/capabilities/filesystem/filesystem_failure.dart';
+import 'package:tom_data/src/documents/document_data_source.dart';
 import 'package:tom_domain/tom_domain.dart';
+// For the failure vocabulary only (Decision 25).
+import 'package:tom_infra/tom_infra.dart';
 
-/// [DocumentRepository] over the [Filesystem] capability.
+/// [DocumentRepository] over [DocumentDataSource].
 ///
-/// Two translations, and nothing else. Paths: the capability works in
-/// absolute paths because it knows nothing about spaces, and the domain
-/// works in paths relative to the space root — [SpaceEntity] is what
-/// converts, and holding one is what makes this repository belong to a
-/// space. Failures: a
+/// Two translations, and nothing else. Paths: the source works in absolute
+/// paths because the disk does, and the domain works in paths relative to
+/// the space root — [SpaceEntity] is what converts, and holding one is what
+/// makes this repository belong to a space. Failures: a
 /// [FilesystemFailure] is technical and names an absolute path, a
 /// [DocumentFailure] is the product's vocabulary and names the document the
 /// user asked for.
-///
-/// The disk is read on every call. There is no cache here to go stale, which
-/// is the whole reason editing a space alongside VS Code is a supported way
-/// to work rather than a race
-/// ([flows](../../../../../../docs/technical/flows.md)).
 final class DocumentRepositoryImpl implements DocumentRepository {
-  /// Creates a repository over [filesystem], for [space].
-  const DocumentRepositoryImpl({required this.filesystem, required this.space});
+  /// Creates a repository over [documents], for [space].
+  const DocumentRepositoryImpl({required this.documents, required this.space});
 
-  /// What reads and writes the disk.
-  final Filesystem filesystem;
+  /// Where a document's text is read and written.
+  final DocumentDataSource documents;
 
   /// The space every path on this repository is relative to.
   final SpaceEntity space;
@@ -34,8 +29,8 @@ final class DocumentRepositoryImpl implements DocumentRepository {
   @override
   Future<Result<DocumentEntity, DocumentFailure>> read(
     SpaceRelativePathValueObject path,
-  ) => filesystem
-      .readFile(space.absolutePathOf(path))
+  ) => documents
+      .read(space.absolutePathOf(path))
       .map((String text) => DocumentEntity(path: path, content: text))
       .mapFailure(
         (FilesystemFailure failure) => _asDocumentFailure(failure, path),
@@ -43,8 +38,8 @@ final class DocumentRepositoryImpl implements DocumentRepository {
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) =>
-      filesystem
-          .writeFile(space.absolutePathOf(document.path), document.content)
+      documents
+          .write(space.absolutePathOf(document.path), document.content)
           .mapFailure(
             (FilesystemFailure failure) =>
                 _asDocumentFailure(failure, document.path),

@@ -11,6 +11,7 @@ import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_infra/tom_infra.dart';
 
 void main() {
   late _RecordingGitClient client;
@@ -18,7 +19,7 @@ void main() {
 
   setUp(() {
     client = _RecordingGitClient();
-    repository = GitRepositoryImpl(client: client);
+    repository = GitRepositoryImpl(git: GitDataSource(client: client));
   });
 
   /// What [result] holds, or a failure of the test if it did not succeed.

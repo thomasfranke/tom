@@ -67,7 +67,7 @@ final class ObservabilityProvider
   }
 }
 
-String _$observabilityHash() => r'2c9c1d6bb22827babcfaa4acf8e57f54dec0216f';
+String _$observabilityHash() => r'e73188f30469fceda69cec07b25f099649d1118b';
 
 /// Reading and writing files.
 
@@ -113,7 +113,7 @@ final class FilesystemProvider
   }
 }
 
-String _$filesystemHash() => r'b17beefa8352fa34399a7350ca9bf0ec9cc87998';
+String _$filesystemHash() => r'1a4248bf6a67aa5d464587e1e0c9e525093b0be0';
 
 /// How to get a git client for a folder.
 ///
@@ -171,31 +171,89 @@ final class GitClientForProvider
   }
 }
 
-String _$gitClientForHash() => r'1902b90e84caf93d9cc9e6bc0e590ed2b288d0a3';
+String _$gitClientForHash() => r'169285c18d1b9ce0f46a03cbcbe745921a9ff0dc';
+
+/// What this platform calls its folders.
+
+@ProviderFor(platformPaths)
+final platformPathsProvider = PlatformPathsProvider._();
+
+/// What this platform calls its folders.
+
+final class PlatformPathsProvider
+    extends $FunctionalProvider<PlatformPaths, PlatformPaths, PlatformPaths>
+    with $Provider<PlatformPaths> {
+  /// What this platform calls its folders.
+  PlatformPathsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'platformPathsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$platformPathsHash();
+
+  @$internal
+  @override
+  $ProviderElement<PlatformPaths> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  PlatformPaths create(Ref ref) {
+    return platformPaths(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PlatformPaths value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PlatformPaths>(value),
+    );
+  }
+}
+
+String _$platformPathsHash() => r'e68b7ff10e441ba5eb21d528dbcb654f27baef16';
 
 /// Per-machine preferences.
 ///
-/// One JSON file in the platform's application-support folder. Not
+/// One JSON file in the folder this platform keeps app data in. Not
 /// `shared_preferences`: it is a Flutter plugin, and settings belong to
 /// `tom_infra`, which is pure Dart.
+/// The throw is deliberate and belongs here rather than in `tom_infra`: a
+/// machine that names no folder for an app's files is one TOM cannot run on
+/// at all, and deciding that is the composition root's call, not a
+/// capability's.
 
 @ProviderFor(settings)
 final settingsProvider = SettingsProvider._();
 
 /// Per-machine preferences.
 ///
-/// One JSON file in the platform's application-support folder. Not
+/// One JSON file in the folder this platform keeps app data in. Not
 /// `shared_preferences`: it is a Flutter plugin, and settings belong to
 /// `tom_infra`, which is pure Dart.
+/// The throw is deliberate and belongs here rather than in `tom_infra`: a
+/// machine that names no folder for an app's files is one TOM cannot run on
+/// at all, and deciding that is the composition root's call, not a
+/// capability's.
 
 final class SettingsProvider
     extends $FunctionalProvider<Settings, Settings, Settings>
     with $Provider<Settings> {
   /// Per-machine preferences.
   ///
-  /// One JSON file in the platform's application-support folder. Not
+  /// One JSON file in the folder this platform keeps app data in. Not
   /// `shared_preferences`: it is a Flutter plugin, and settings belong to
   /// `tom_infra`, which is pure Dart.
+  /// The throw is deliberate and belongs here rather than in `tom_infra`: a
+  /// machine that names no folder for an app's files is one TOM cannot run on
+  /// at all, and deciding that is the composition root's call, not a
+  /// capability's.
   SettingsProvider._()
     : super(
         from: null,
@@ -229,7 +287,7 @@ final class SettingsProvider
   }
 }
 
-String _$settingsHash() => r'0961b52a01f6bd1df9396a89f32e0e78a69c5ed3';
+String _$settingsHash() => r'85eb0764b984379c92bc857bd2dd7af347aef6a0';
 
 /// The folders spaces are made of.
 
@@ -276,7 +334,7 @@ final class SpaceRepositoryProvider
   }
 }
 
-String _$spaceRepositoryHash() => r'56cc8770fc0d1676f0a618fa7d1a63dc2c8404d3';
+String _$spaceRepositoryHash() => r'6fd24995c6baf79245228f8b7c1bd58f7d20393c';
 
 /// The spaces Home offers to go back to.
 
@@ -329,7 +387,7 @@ final class RecentSpacesRepositoryProvider
 }
 
 String _$recentSpacesRepositoryHash() =>
-    r'5455b229f81cffe1c7a5b446c0765016f2d315b8';
+    r'5661f76eeb1090b4ec05139ce031b53221146bbf';
 
 /// How to reach the documents of a space.
 ///
@@ -394,7 +452,7 @@ final class DocumentRepositoryForProvider
 }
 
 String _$documentRepositoryForHash() =>
-    r'dae4e9c5c37f0e0994733d233e82a1b2d23f403e';
+    r'd5aa73313822ce4ebff02349ab0d660c2d006bf8';
 
 /// What splits a document into blocks.
 
@@ -404,8 +462,9 @@ final blockReaderProvider = BlockReaderProvider._();
 /// What splits a document into blocks.
 
 final class BlockReaderProvider
-    extends $FunctionalProvider<BlockReader, BlockReader, BlockReader>
-    with $Provider<BlockReader> {
+    extends
+        $FunctionalProvider<BlockReaderPort, BlockReaderPort, BlockReaderPort>
+    with $Provider<BlockReaderPort> {
   /// What splits a document into blocks.
   BlockReaderProvider._()
     : super(
@@ -423,21 +482,21 @@ final class BlockReaderProvider
 
   @$internal
   @override
-  $ProviderElement<BlockReader> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<BlockReaderPort> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  BlockReader create(Ref ref) {
+  BlockReaderPort create(Ref ref) {
     return blockReader(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(BlockReader value) {
+  Override overrideWithValue(BlockReaderPort value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<BlockReader>(value),
+      providerOverride: $SyncValueProvider<BlockReaderPort>(value),
     );
   }
 }
 
-String _$blockReaderHash() => r'5ac3b474afb0811b712b918bcde79e213d3a0c26';
+String _$blockReaderHash() => r'cc3900403c3cedc679d2a596f456b0289f048cbc';

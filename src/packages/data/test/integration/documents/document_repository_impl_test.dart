@@ -56,12 +56,17 @@ void main() {
       repositoryRoot: repositoryRoot,
       name: 'docs',
     );
-    const Filesystem filesystem = DartIoFilesystem();
-    documents = DocumentRepositoryImpl(filesystem: filesystem, space: space);
+    const Filesystem filesystem = DartIoFilesystemImpl();
+    documents = DocumentRepositoryImpl(
+      documents: const DocumentDataSource(filesystem: filesystem),
+      space: space,
+    );
     spaces = SpaceRepositoryImpl(
-      filesystem: filesystem,
-      gitClientFor: (String folder) =>
-          DartIoGitClient(workingDirectory: folder),
+      spaces: SpaceDataSource(
+        filesystem: filesystem,
+        gitClientFor: (String folder) =>
+            DartIoGitClientImpl(workingDirectory: folder),
+      ),
     );
   });
 
@@ -93,15 +98,16 @@ void main() {
     });
 
     test('and the whole chain reaches the diagnostics', () async {
-      // Three links, one per boundary crossed: what the product says, what
-      // the capability said, and what the operating system said. The path the
-      // user sees is space-relative; the absolute one is further down.
+      // Two links, one per vocabulary crossed: what the product says and
+      // what the capability said. The operating system's own words are not a
+      // third link — an adapter keeps nothing of its own. The path the user
+      // sees is space-relative; the absolute one is further down.
       final AppFailure failure = failureOf(
         await documents.read(SpaceRelativePathValueObject('missing.md')),
       );
 
-      expect(failure.chain, hasLength(3));
-      expect(failure.diagnostics, contains('No such file'));
+      expect(failure.chain, hasLength(2));
+      expect(failure.diagnostics, contains('missing.md'));
       expect(failure.diagnostics, contains(space.root));
     });
 

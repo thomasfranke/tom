@@ -4,7 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
-import 'package:tom_desktop/bootstrap/core_module.dart';
+import 'package:tom_desktop/bootstrap/core_module_impl.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/bootstrap/providers.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
@@ -27,7 +27,7 @@ import 'package:window_manager/window_manager.dart';
 /// changes — the app never imports one
 /// ([Decision 12](../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
 ///
-/// [CoreModule] is first, so a module's provider override wins over the
+/// [CoreModuleImpl] is first, so a module's provider override wins over the
 /// app's default: `ProviderScope` takes the last override for a provider,
 /// and a module that could not replace a default would not be an extension
 /// point.
@@ -48,12 +48,12 @@ Future<void> runTom({List<TomModule> modules = const <TomModule>[]}) async {
 /// no screen to assert about — and nothing else. The object graph, the
 /// modules and the overrides are the ones the product runs with.
 ///
-/// [CoreModule] is first, so a module's provider override wins over the
+/// [CoreModuleImpl] is first, so a module's provider override wins over the
 /// app's default: `ProviderScope` takes the last override for a provider,
 /// and a module that could not replace a default would not be an extension
 /// point.
 Widget tomApp({List<TomModule> modules = const <TomModule>[]}) {
-  final List<TomModule> all = <TomModule>[const CoreModule(), ...modules];
+  final List<TomModule> all = <TomModule>[const CoreModuleImpl(), ...modules];
   return ProviderScope(
     overrides: <Override>[
       panelRegistryProvider.overrideWithValue(PanelRegistry(all)),

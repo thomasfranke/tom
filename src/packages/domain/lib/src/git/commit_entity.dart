@@ -30,6 +30,10 @@ abstract class CommitEntity with _$CommitEntity {
     required String subject,
 
     /// Everything after the first line. Empty when there is none.
+    ///
+    /// **Leading whitespace is content and is never trimmed.** In a markdown
+    /// tool a body opening with an indented code block or a nested list
+    /// means the indentation; only the trailing newline a tool adds may go.
     required String body,
   }) = _CommitEntity;
 }

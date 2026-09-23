@@ -1,8 +1,8 @@
 /// Turning `status --porcelain=v2 -z` into a [GitStatusValueObject].
 library;
 
-import 'package:tom_data/src/capabilities/git_client/git_client.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_infra/tom_infra.dart';
 
 /// Reads what `GitClient.status` returned.
 ///

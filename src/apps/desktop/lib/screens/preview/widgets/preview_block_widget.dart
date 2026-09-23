@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tom_desktop/screens/preview/code_highlighter.dart';
+import 'package:tom_desktop/screens/preview/code_highlighter_impl.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
 import 'package:tom_desktop/theme/tom_colors.dart';
 import 'package:tom_desktop/theme/tom_metrics.dart';
@@ -61,7 +61,7 @@ class PreviewBlockWidget extends ConsumerWidget {
           : '${block.source}\n\n${document.linkDefinitions}',
       selectable: true,
       styleSheet: _styleSheetOf(context, colors),
-      syntaxHighlighter: CodeHighlighter(
+      syntaxHighlighter: CodeHighlighterImpl(
         language: _languageOf(block),
         brightness: Theme.of(context).brightness,
       ),
