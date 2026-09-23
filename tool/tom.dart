@@ -25,9 +25,11 @@ import 'src/commands/e2e.dart';
 import 'src/commands/e2e_catalogue.dart';
 import 'src/commands/process.dart';
 import 'src/commands/quality.dart';
+import 'src/commands/rules.dart';
 import 'src/commands/tests.dart';
 import 'src/commands/updates.dart';
 import 'src/commands/workspace.dart';
+
 import 'src/theme/theme.dart';
 
 const _title = Layout.appTitle;
@@ -160,6 +162,16 @@ const _commands = <_Command>[
         'which step it is on. Prepare builds the folders the scenarios run '
         'against; the list remembers when each last passed, and on which '
         'version of the app.',
+  ),
+  _Command(
+    'rules',
+    "The project's naming and shape rules, against the tree",
+    description:
+        'Checks what the analyzer cannot: that an implementation says so in '
+        'its class and its file, that a capability is a complete folder, '
+        'that the infrastructure barrel is its whole lib/src, that no '
+        'repository holds a capability, and that no comment has run away. '
+        'Reports every break in one pass, because each one is a rename.',
   ),
   _Command(
     'verify',
@@ -393,6 +405,9 @@ bool _hasOwnScreen(String name, List<String> carried) => switch (name) {
   'build' || 'clean' || 'codegen' => true,
   // Two screens of its own, so it always has one to return to.
   'e2e' => true,
+  // The list of rules is the screen — a run goes back to it, because
+  // reading one break and checking the next is the normal way through.
+  'rules' => true,
   // Only the per-package form asks anything; `coverage last` and
   // `coverage diff` already know what they are about.
   'coverage' => carried.isEmpty,
@@ -450,7 +465,7 @@ const _prompt = 'What do you want to run?';
 /// `test` itself is here because the screen offers its kinds rather than the
 /// command; `coverage` because someone looking for it is thinking about
 /// tests, not about the browser it happens to open.
-const _testGroup = {'test', 'coverage', 'e2e'};
+const _testGroup = {'test', 'coverage', 'e2e', 'rules'};
 
 /// Commands the root screen lists under `Dev Tools`.
 ///
@@ -519,6 +534,15 @@ List<MenuItem<String>> get _rootItems => [
         'Reads every pubspec and asserts the layer graph: each package may '
         'depend only on the ones below it, and exactly one knows Flutter '
         'exists. The fastest answer to "did I just break a boundary".',
+  ),
+  const MenuItem(
+    'Rules',
+    'rules',
+    description:
+        'The naming and shape rules the analyzer cannot see — an '
+        'implementation that says so, a capability as a complete folder, a '
+        'repository that holds no capability. Architecture answers who may '
+        'depend on whom; this answers how things are named and shaped.',
   ),
   const MenuItem(
     'CLI',
@@ -614,9 +638,61 @@ Future<List<String>?> _promptFor(
   'codegen' => await _askCodegen(terminal),
   'coverage' => carried.isEmpty ? await _askCoverageTarget(terminal) : carried,
   'e2e' => await _askE2e(terminal, carried),
+  'rules' => await _askRule(terminal),
   'test' => await _askTestTarget(terminal, carried),
   _ => carried,
 };
+
+/// Asks which rule file to check, with running all of them as the first row.
+///
+/// A row is a file in `tool/src/rules/`, so a break names what to open, and
+/// the description under it is what that file checks — which makes the
+/// screen a map of the folder rather than a second list to keep in step
+/// with it.
+///
+/// Each row carries what it last said, the way the scenario list does:
+/// "checked since?" is the question this screen is opened to answer, and a
+/// tick against an older version is not the same claim as one against this.
+Future<List<String>?> _askRule(Terminal terminal) async {
+  final results = readRuleResults();
+  final chosen = await showMenu<String>(
+    terminal,
+    title: _title,
+    titleSuffix: _subtitle,
+    section: 'Rules',
+    prompt: 'Which rule file?',
+    items: <MenuItem<String>>[
+      const MenuItem<String>(
+        'All of them',
+        '',
+        emphasized: true,
+        description:
+            'Every file below, in one pass, reporting all the breaks rather '
+            'than stopping at the first.',
+      ),
+      const MenuItem<String>.rule(),
+      const MenuItem<String>.section('Files'),
+      for (final entry in catalogue)
+        MenuItem<String>(
+          entry.label,
+          entry.name,
+          detail: describeRuleResult(results[entry.name]),
+          // Green for a pass, red for a break, grey for never run: "it
+          // passed" and "it ran" are different claims.
+          detailColor: switch (results[entry.name]) {
+            null => palette.rowDisabled,
+            final result when result.passed => palette.ok,
+            _ => palette.fail,
+          },
+          description: entry.description,
+        ),
+      const MenuItem<String>.rule(),
+      const MenuItem<String>.back(),
+    ],
+  );
+  if (chosen == null) return null;
+  return chosen.isEmpty ? const <String>[] : <String>[chosen];
+}
 
 /// Asks which app to drive, and then what to do with it.
 ///
@@ -1108,6 +1184,7 @@ Future<int> _dispatch(String name, List<String> rest) async {
       // Anything else is a scenario name, in prose.
       _ => await runNamedScenario(rest.join(' ')),
     },
+    'rules' => await runRules(rest.isEmpty ? null : rest.first),
     'verify' => await runVerify(),
     _ => 64,
   };
@@ -1137,6 +1214,9 @@ List<String> _unrecognized(String command, List<String> arguments) {
 /// The bare words [command] accepts.
 Set<String> _wordsFor(String command) => switch (command) {
   'build' || 'run' => const {..._platformNames},
+  // The catalogue is the list, so a rule added there is accepted here
+  // without a second copy to forget.
+  'rules' => <String>{for (final entry in catalogue) entry.name},
   'clean' => const {_allTargets, ...allTargets},
   'coverage' => const {_allTargets, ...allTargets, changed, last},
   'e2e' => const {_allTargets, 'prepare', 'clean', 'list', 'fixtures'},

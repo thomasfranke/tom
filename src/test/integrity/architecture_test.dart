@@ -29,9 +29,16 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
   'tom_core': <String>{},
   'tom_domain': <String>{'tom_core'},
   'tom_application': <String>{'tom_core', 'tom_domain'},
-  // The ports are `tom_data`'s and the adapters are `tom_infra`'s, so the
-  // arrow between them points inwards (Decision 22).
-  'tom_data': <String>{'tom_core', 'tom_domain'},
+  // The two halves of the data layer, and they depend on each other on
+  // purpose (Decision 24): `tom_infra` holds each capability's contract and
+  // failures, `tom_data` the DTOs that cross those contracts and the
+  // repositories written against them. One layer, two packages, and pub
+  // resolves the cycle.
+  //
+  // What `tom_infra` may *not* have is `tom_domain`, which is the whole
+  // guarantee: an adapter cannot name a domain type, because the package
+  // holding them is not on its list.
+  'tom_data': <String>{'tom_core', 'tom_domain', 'tom_infra'},
   'tom_infra': <String>{'tom_core', 'tom_data'},
   'tom_presentation': <String>{'tom_core', 'tom_domain', 'tom_application'},
   'tom_desktop': <String>{
@@ -55,17 +62,12 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
 
 /// What each package may depend on **to test only**, on top of [graph].
 ///
-/// One entry, and it is the price of Decision 22: the ports live in
-/// `tom_data`, so `tom_data`'s integration tests — the ones that prove a
-/// repository works against a real disk and a real `git init` — need the
-/// adapters that fulfil them, which are `tom_infra`'s.
-///
-/// The arrow comes back here and nowhere else. `lib/` importing one of these
-/// is caught by the test below, so what this allows is a test run, never a
-/// build.
-const Map<String, Set<String>> testOnlyGraph = <String, Set<String>>{
-  'tom_data': <String>{'tom_infra'},
-};
+/// Empty, and worth keeping: `tom_data` needed `tom_infra` as a dev
+/// dependency only while the ports lived in `tom_data` and the arrow pointed
+/// the other way. It is an ordinary dependency now (Decision 24), so the
+/// exception is gone — and the next package that wants one has somewhere to
+/// declare it, and a test below proving `lib/` never uses it.
+const Map<String, Set<String>> testOnlyGraph = <String, Set<String>>{};
 
 /// Libraries each package may not import, whatever its pubspec says.
 ///
@@ -371,6 +373,12 @@ void main() {
           'apps/desktop/lib/widgets/ and let both import it from there.',
     );
   });
+
+  // The naming and shape rules — `Impl` in the class and in the file, a
+  // capability as a complete folder, the barrel as its whole `lib/src`, a
+  // repository holding no capability — live in `tom rules`
+  // (`tool/src/commands/rules.dart`), which `tom verify` runs. Same
+  // mechanism, different subject: this file is about the graph.
 
   test('nothing overrides a dependency', () {
     final List<String> overriding = <String>[

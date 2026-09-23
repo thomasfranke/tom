@@ -1,6 +1,6 @@
 # Skills — TOM
 
-Four skills holding the project's operational conventions, one folder each
+Five skills holding the project's operational conventions, one folder each
 with a `SKILL.md`. They cover procedure — how work is done here — not product
 or architecture, which live in [`docs/`](../../docs/about.md). `tom-code-review`
 is the one that comes closest to the line: it does not restate the rules, it

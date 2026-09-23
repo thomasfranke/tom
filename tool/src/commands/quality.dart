@@ -8,6 +8,7 @@ import '../theme/theme.dart';
 import 'codegen.dart';
 import 'coverage.dart';
 import 'process.dart';
+import 'rules.dart';
 import 'tests.dart';
 
 /// Formats every Dart file, failing if anything was not already formatted.
@@ -48,6 +49,7 @@ Future<int> runVerify() async {
   final steps = <String, Future<int> Function()>{
     'format': runFormat,
     'analyze': runAnalyze,
+    'rules': runRules,
     'codegen gate': runCodegenGate,
     'tests': runTests,
     'coverage gate': runCoverageGate,
