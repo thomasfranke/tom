@@ -10,9 +10,8 @@ import 'package:tom_desktop/bootstrap/providers.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_desktop/screens/home/home_screen.dart';
 import 'package:tom_desktop/screens/shell/tom_shell.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
-import 'package:tom_desktop/theme/tom_theme.dart';
 import 'package:tom_presentation/tom_presentation.dart';
+import 'package:tom_ui/tom_ui.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// Starts TOM with [modules] added to the app's own.

@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
+import 'package:tom_ui/src/theme/tom_colors.dart';
 
 /// The app's theme for [brightness].
 ///

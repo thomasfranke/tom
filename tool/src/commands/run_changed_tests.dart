@@ -45,6 +45,7 @@ const _pkgOrder = [
   'infra',
   'data',
   'presentation',
+  'ui',
 ];
 
 const _apps = ['desktop', 'mobile'];

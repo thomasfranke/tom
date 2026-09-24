@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_block_widget.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_note_widget.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// The document, scrolling as one column of blocks.
 ///

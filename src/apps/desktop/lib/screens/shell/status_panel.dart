@@ -5,9 +5,9 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// What the status bar says.
 ///

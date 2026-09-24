@@ -10,10 +10,9 @@ import 'package:tom_desktop/screens/home/widgets/home_status_strip_widget.dart';
 import 'package:tom_desktop/screens/home/widgets/home_top_strip_widget.dart';
 import 'package:tom_desktop/screens/home/widgets/home_welcome_widget.dart';
 import 'package:tom_desktop/screens/home/widgets/home_working_widget.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/widgets/commit_trunk_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// Home: open a space, or go back to one.
 ///

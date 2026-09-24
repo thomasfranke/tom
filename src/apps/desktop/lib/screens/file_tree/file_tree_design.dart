@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// The numbers the explorer is drawn against.
 ///

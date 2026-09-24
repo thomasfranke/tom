@@ -33,6 +33,7 @@ Internal format (known in the community as an *ADR — Architecture Decision Rec
 | [023](023-domain-types-say-entity-or-value-object.md) | A domain type says whether it is an entity or a value object |
 | [024](024-a-capability-is-a-folder.md) | A capability is a folder in `tom_infra`: contract, failures, one subfolder per implementation |
 | [025](025-a-repository-reads-through-a-data-source.md) | A repository obtains nothing itself — a data source does, and the repository orchestrates and translates |
+| [026](026-the-look-is-a-package.md) | The look is a package both applications draw from; the screens are each application's own |
 
 ---
 

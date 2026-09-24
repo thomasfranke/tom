@@ -60,6 +60,11 @@ dependencies:
   tom_presentation:
     path: ../../packages/presentation
 
+  # The look, shared with tom_mobile: colour roles, metrics, the marks and the
+  # components. A screen is this application's; what it is drawn with is not.
+  tom_ui:
+    path: ../../packages/ui
+
   # Window control: title, and a minimum size the layout holds together in
   # (docs/product/workspace/doc.md).
   window_manager: ^0.5.2

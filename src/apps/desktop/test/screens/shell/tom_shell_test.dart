@@ -10,11 +10,9 @@ import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_desktop/screens/shell/tom_shell.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
-import 'package:tom_desktop/theme/tom_theme.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 void main() {
   /// What the registry is built from, read when the shell first asks.

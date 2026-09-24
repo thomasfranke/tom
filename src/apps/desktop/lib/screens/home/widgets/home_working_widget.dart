@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// Something is happening and there is nothing to decide yet.
 ///

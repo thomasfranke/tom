@@ -9,10 +9,9 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/screens/preview/code_highlighter_impl.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// One block, in the container the app owns.
 ///
@@ -51,6 +50,13 @@ class PreviewBlockWidget extends ConsumerWidget {
         (SpaceSessionState? session) => session?.space,
       ),
     );
+    // A link or an image is written relative to the document it is in, so
+    // the block needs to know which document that is — not just the space.
+    final SpaceRelativePathValueObject? origin = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) => session?.openDocument,
+      ),
+    );
     return MarkdownBody(
       // The link reference definitions travel with the block: they are
       // declared at document scope, so a block rendered on its own would
@@ -66,9 +72,9 @@ class PreviewBlockWidget extends ConsumerWidget {
         brightness: Theme.of(context).brightness,
       ),
       imageBuilder: (Uri uri, String? title, String? alt) =>
-          _image(uri, alt, space, colors),
+          _image(uri, alt, space, origin, colors),
       onTapLink: (String text, String? href, String? title) =>
-          _follow(href, space, ref),
+          _follow(href, origin, ref),
     );
   }
 
@@ -90,19 +96,22 @@ class PreviewBlockWidget extends ConsumerWidget {
   ///
   /// Local files only: a document's images live beside it in the repository,
   /// which is the whole point of keeping documentation in one. A remote
-  /// image would be the network, and nothing in TOM reaches it yet.
+  /// image would be the network, and nothing in TOM reaches it yet. The
+  /// path is read from [origin]'s folder, the way the document's author
+  /// wrote it.
   static Widget _image(
     Uri uri,
     String? alt,
     SpaceEntity? space,
+    SpaceRelativePathValueObject? origin,
     TomColors colors,
   ) {
     if (uri.hasScheme && !uri.isScheme('file')) {
       return _missing(alt ?? uri.toString(), colors);
     }
-    final SpaceRelativePathValueObject? path = space == null
-        ? null
-        : SpaceRelativePathValueObject.tryParse(Uri.decodeFull(uri.path));
+    final SpaceRelativePathValueObject? path = origin?.resolve(
+      Uri.decodeFull(uri.path),
+    );
     if (path == null || space == null) {
       return _missing(alt ?? uri.toString(), colors);
     }
@@ -127,18 +136,25 @@ class PreviewBlockWidget extends ConsumerWidget {
   /// Opens [href] when it names a document in this space.
   ///
   /// A relative link to a `.md` file is navigation the app already has, so
-  /// it moves the session. **An external link does nothing yet**: opening a
+  /// it moves the session — read from [origin]'s folder, so `../about.md`
+  /// in `guides/writing.md` is `about.md`, and a link that climbs out of
+  /// the space is refused. **An external link does nothing yet**: opening a
   /// browser needs a plugin, and taking one is the maintainer's call.
-  static void _follow(String? href, SpaceEntity? space, WidgetRef ref) {
-    if (href == null || space == null) {
+  static void _follow(
+    String? href,
+    SpaceRelativePathValueObject? origin,
+    WidgetRef ref,
+  ) {
+    if (href == null || origin == null) {
       return;
     }
     final Uri? uri = Uri.tryParse(href);
-    if (uri == null || uri.hasScheme) {
+    if (uri == null || uri.hasScheme || uri.path.isEmpty) {
       return;
     }
-    final SpaceRelativePathValueObject? path =
-        SpaceRelativePathValueObject.tryParse(Uri.decodeFull(uri.path));
+    final SpaceRelativePathValueObject? path = origin.resolve(
+      Uri.decodeFull(uri.path),
+    );
     if (path != null && path.isMarkdown) {
       ref.read(spaceSessionProvider.notifier).show(path);
     }

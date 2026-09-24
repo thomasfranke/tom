@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// The strip below everything: branch, ahead/behind, counts.
 ///

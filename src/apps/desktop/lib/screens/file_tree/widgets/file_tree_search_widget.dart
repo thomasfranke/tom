@@ -3,9 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_design.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
-import 'package:tom_desktop/widgets/milestone_chip_widget.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// The search field, on screen and disabled.
 ///

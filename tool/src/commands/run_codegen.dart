@@ -40,6 +40,10 @@ import '../theme/theme.dart';
 import '../tty.dart';
 import 'process.dart';
 
+// Every package, including the ones with no generator — `_hasBuildRunner`
+// skips those. A package missing from this list is an unknown target, and an
+// unknown target fails the run *after* `tom codegen --hard` has deleted the
+// output it was about to rebuild.
 const _pkgOrder = [
   'core',
   'domain',
@@ -47,6 +51,7 @@ const _pkgOrder = [
   'infra',
   'data',
   'presentation',
+  'ui',
 ];
 
 const _apps = ['desktop', 'mobile'];

@@ -8,9 +8,8 @@ import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/home/folder_picker.dart';
 import 'package:tom_desktop/screens/home/home_design.dart';
 import 'package:tom_desktop/screens/home/widgets/home_primary_button_widget.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// The one way opening a folder fails, and everything else.
 ///

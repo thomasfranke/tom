@@ -1,0 +1,26 @@
+name: tom_ui
+description: >-
+  The look: colour roles, metrics, the brand marks and the components both
+  applications draw. Flutter, and deliberately nothing else — it holds no
+  state, reaches no contract, and knows no screen.
+publish_to: none
+repository: https://github.com/thomasfranke/tom
+
+# The product version. Every package moves in lockstep with this number — none
+# is published separately, so independent versioning would be bookkeeping with
+# no reader. Releases are tags; see docs/versioning.md.
+version: 0.1.0
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter

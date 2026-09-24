@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_design.dart';
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_centred_widget.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
 import 'package:tom_presentation/tom_presentation.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// One entry, as the design draws it.
 ///

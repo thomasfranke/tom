@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
+import 'package:tom_ui/src/theme/tom_colors.dart';
 
 /// A 30×20 outline saying which milestone something arrives in.
 ///

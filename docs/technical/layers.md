@@ -13,12 +13,13 @@ core ← domain ← application ← presentation
 | `tom_core` | `Result`, `AppFailure`, ports every layer needs (`Observability`) | nothing | no |
 | `tom_domain` | entities, value objects, failures, repository contracts, `BlockDiffer` | `tom_core` | no |
 | `tom_application` | use cases | `tom_core`, `tom_domain` | no |
-| `tom_infra` | capability contracts **and** their implementations — git, filesystem, settings, platform paths, markdown, search | `tom_core` | no |
+| `tom_infra` | capability contracts **and** their implementations — git, filesystem, settings, platform paths, markdown, search | `tom_core`, `tom_data` (for the DTOs that cross its contracts — [Decision 24](decisions/024-a-capability-is-a-folder.md); never `tom_domain`) | no |
 | `tom_data` | DTOs, data sources, parsers, repository implementations | `tom_core`, `tom_domain`, `tom_infra` | no |
 | `tom_presentation` | space session, notifiers, view state | `tom_core`, `tom_domain`, `tom_application` | no |
-| `tom_desktop` | composition root, widgets | all of the above | **yes** |
+| `tom_ui` | colour roles, metrics, the brand marks, the components both applications draw ([Decision 26](decisions/026-the-look-is-a-package.md)) | nothing | **yes** |
+| `tom_desktop` | composition root, screens | all of the above | **yes** |
 
-Six of the seven run under `dart test`, with no Flutter binding available. Folder names are short (`packages/core`); package names carry the `tom_` prefix, because the folder is only a path while the package name is what every import says.
+Six of the eight run under `dart test`, with no Flutter binding available. Folder names are short (`packages/core`); package names carry the `tom_` prefix, because the folder is only a path while the package name is what every import says.
 
 ## What enforces it
 
@@ -88,7 +89,7 @@ Every external dependency is reached through a contract ([Decision 7](decisions/
 
 | Structural | Allowed in | Why the boundary |
 |---|---|---|
-| **Flutter** | `tom_desktop` only | the pubspecs enforce it; the other six compile and test as pure Dart |
+| **Flutter** | the applications, and `tom_ui` | the pubspecs enforce it; the other six compile and test as pure Dart. `tom_ui` draws and wires nothing, which is what keeps it from becoming a third application ([Decision 26](decisions/026-the-look-is-a-package.md)) |
 | **Riverpod** | `tom_presentation` and the composition root | it is *runtime* — lifecycle, scope, invalidation. Use cases and repositories receive dependencies through constructors. A use case that needs a `Ref` is a design error |
 | **Freezed** | any layer | pure build-time; the generated code is ours and carries no runtime coupling. Mandatory for immutable data classes wherever one qualifies — entities, multi-field value objects, view-state, sealed hierarchies ([Decision 16](decisions/016-freezed-is-mandatory-for-immutable-data.md)) |
 
@@ -109,4 +110,4 @@ Integration against real git is the project's confidence differentiator, and run
 
 ## When mobile arrives (Phase 3)
 
-`apps/mobile` sits beside `apps/desktop` with its own widgets, sharing `tom_presentation` — which is why that package is pure Dart. No shared-UI package: panels do not become screens. `tom_infra` grows a second implementation per capability (`libgit2/` next to `dart_io/`), chosen at the composition root.
+`apps/mobile` sits beside `apps/desktop` with its **own screens**, sharing `tom_presentation` — which is why that package is pure Dart. Panels do not become screens: a layout drawn for a phone is drawn from the job, not ported from the desktop. What the two do share is the look — `tom_ui`, the marks and the tokens ([Decision 26](decisions/026-the-look-is-a-package.md), which revises the "no shared-UI package" this section used to state: the objection was to sharing *layout*, and identity is not layout). `tom_infra` grows a second implementation per capability (`libgit2/` next to `dart_io/`), chosen at the composition root.

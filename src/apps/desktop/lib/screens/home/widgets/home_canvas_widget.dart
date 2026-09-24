@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// The body between the two bars, with the content where the design put it.
 ///

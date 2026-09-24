@@ -7,10 +7,10 @@ import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
-import 'package:tom_desktop/theme/tom_theme.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_infra/tom_infra.dart';
 import 'package:tom_presentation/tom_presentation.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 void main() {
   late _Documents documents;
@@ -132,6 +132,53 @@ void main() {
       find.text('That file is not UTF-8 text, so TOM will not open it.'),
       findsOneWidget,
     );
+  });
+
+  group('a link in the document', () {
+    /// The document the session is showing after whatever was tapped.
+    SpaceRelativePathValueObject? shown() =>
+        container.read(spaceSessionProvider)?.openDocument;
+
+    testWidgets('is read from the document\'s own folder', (
+      WidgetTester tester,
+    ) async {
+      // The way the author wrote it: `about.md` beside `guides/writing.md`
+      // is `guides/about.md`, and `../about.md` is the one at the root.
+      documents.content = '[about](../about.md)\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('about', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(shown()?.value, 'about.md');
+    });
+
+    testWidgets('that leaves the space is not followed', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '[out](../../secret.md)\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('out', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(shown(), writing);
+    });
+  });
+
+  testWidgets('an image is looked for beside the document', (
+    WidgetTester tester,
+  ) async {
+    documents.content = '![logo](../logo.png)\n';
+
+    await pumpPreview(tester, document: writing);
+
+    // Offstage included: an image that has not loaded lays out at zero
+    // height, and the list reports a zero-height block as not on screen.
+    final Image image = tester.widget<Image>(
+      find.byType(Image, skipOffstage: false),
+    );
+    expect((image.image as FileImage).file.path, '/code/app/docs/logo.png');
   });
 }
 

@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/home/home_design.dart';
 import 'package:tom_desktop/screens/home/widgets/home_recent_row_widget.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// The spaces to go back to, one click each.
 ///

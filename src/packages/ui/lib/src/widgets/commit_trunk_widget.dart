@@ -7,8 +7,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/widgets/tom_wordmark_widget.dart';
+import 'package:tom_ui/src/theme/tom_colors.dart';
+import 'package:tom_ui/src/widgets/tom_wordmark_widget.dart';
 
 /// Home's ground: the commit line the wordmark's O sits on.
 ///

@@ -3,8 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/home/widgets/home_bar_widget.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// Home's status bar.
 ///

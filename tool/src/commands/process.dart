@@ -94,8 +94,7 @@ Directory directoryFor(String target) => Directory(
   '$target',
 );
 
-/// The Flutter apps, which differ from the packages in where they live and in
-/// which test runner they need.
+/// The Flutter apps, which differ from the packages in where they live.
 const apps = {'desktop', 'mobile'};
 
 /// Every package the workspace holds, in dependency order.
@@ -106,7 +105,16 @@ const packages = [
   'infra',
   'data',
   'presentation',
+  'ui',
 ];
+
+/// What needs `flutter test` rather than `dart test`.
+///
+/// The applications, and `ui` — which lives with the packages but draws
+/// ([Decision 26](../../../docs/technical/decisions/026-the-look-is-a-package.md)).
+/// Where a target lives and what runs it stopped being the same question the
+/// moment the look became shareable.
+const drawn = {...apps, 'ui'};
 
 /// Packages and apps together — the full set of build and test targets.
 const allTargets = [...packages, ...apps];

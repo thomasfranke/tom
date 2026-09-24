@@ -22,7 +22,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The state and the widgets, shared with tom_desktop; not the infra/data
+  # The state and the look, both shared with tom_desktop; not the infra/data
   # implementations, which are platform-specific and arrive with Phase 3.
   tom_application:
     path: ../../packages/application
@@ -32,6 +32,8 @@ dependencies:
     path: ../../packages/domain
   tom_presentation:
     path: ../../packages/presentation
+  tom_ui:
+    path: ../../packages/ui
 
 dev_dependencies:
   flutter_lints: ^6.0.0

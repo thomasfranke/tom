@@ -46,9 +46,14 @@ const _pkgOrder = [
   'infra',
   'data',
   'presentation',
+  'ui',
 ];
 
 const _apps = ['desktop', 'mobile'];
+
+// Lives under packages/ and still needs `flutter test`: it draws
+// (Decision 26). Where a target lives and what runs it are two questions.
+const _drawnPackages = ['ui'];
 
 void main(List<String> rawArgs) async {
   final coverage = rawArgs.contains('--coverage');
@@ -207,7 +212,7 @@ _Target _resolve(Directory src, String spec) {
       return _Target(
         pkg,
         Directory('${src.path}/packages/$pkg'),
-        'dart',
+        _drawnPackages.contains(pkg) ? 'flutter' : 'dart',
         files,
       );
   }

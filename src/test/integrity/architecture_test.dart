@@ -41,6 +41,11 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
   'tom_data': <String>{'tom_core', 'tom_domain', 'tom_infra'},
   'tom_infra': <String>{'tom_core', 'tom_data'},
   'tom_presentation': <String>{'tom_core', 'tom_domain', 'tom_application'},
+  // The look, and nothing else: it draws what it is handed. Depending on
+  // nothing is what makes it shareable — a component that reached a contract
+  // or a use case would drag the graph into whichever application drew it
+  // (Decision 26).
+  'tom_ui': <String>{},
   'tom_desktop': <String>{
     'tom_core',
     'tom_domain',
@@ -48,6 +53,7 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
     'tom_infra',
     'tom_data',
     'tom_presentation',
+    'tom_ui',
   },
   // Reserved skeleton for Phase 3 (docs/roadmap.md). No infra/data
   // yet — those are platform-specific and arrive with the mobile-specific
@@ -57,6 +63,7 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
     'tom_domain',
     'tom_application',
     'tom_presentation',
+    'tom_ui',
   },
 };
 
@@ -101,6 +108,10 @@ const Map<String, Set<String>> forbiddenImports = <String, Set<String>>{
   'tom_data': <String>{'dart:io', 'dart:ffi', 'package:flutter'},
   'tom_presentation': <String>{'dart:io', 'dart:ffi', 'package:flutter'},
   'tom_infra': <String>{'package:flutter'},
+  // Flutter is the point of this one; the machine is not. A component that
+  // reads a file or spawns a process is a component that cannot be drawn on
+  // the other platform, which is the whole reason the package exists.
+  'tom_ui': <String>{'dart:io', 'dart:ffi', 'dart:isolate'},
   'tom_desktop': <String>{},
   'tom_mobile': <String>{},
 };
@@ -118,15 +129,23 @@ const Set<String> flutterPackages = <String>{
   'integration_test',
 };
 
-/// The composition roots — the only packages allowed to know Flutter exists.
+/// The composition roots — the packages that wire an application together.
 ///
-/// The end-to-end harness is not a fourth entry here, and the reason is
+/// The end-to-end harness is not a third entry here, and the reason is
 /// worth knowing before anyone tries: an end-to-end run happens inside the
 /// app's own native runner, with the app's entitlements and its Podfile. A
 /// package of its own would need a second runner, and a second runner
 /// drifts — at which point the tests prove something about a configuration
 /// nobody ships. So the scenarios live in `apps/desktop/integration_test/`.
 const Set<String> compositionRoots = <String>{'tom_desktop', 'tom_mobile'};
+
+/// The packages allowed to know Flutter exists.
+///
+/// The roots, plus `tom_ui` — which is Flutter and nothing else, so that the
+/// two applications draw the same marks and the same colours instead of each
+/// keeping its own copy (Decision 26). It is *not* a root: it wires nothing,
+/// and the graph above is what keeps it from growing into one.
+const Set<String> framework = <String>{...compositionRoots, 'tom_ui'};
 
 /// An `import` or `export`, with the URI it names.
 final RegExp directive = RegExp(
@@ -251,24 +270,24 @@ void main() {
 
   group('framework isolation', () {
     for (final String package in graph.keys) {
-      final bool isRoot = compositionRoots.contains(package);
+      final bool draws = framework.contains(package);
 
       test(
-        isRoot
-            ? '$package is a composition root with Flutter'
+        draws
+            ? '$package is a Flutter package and says so'
             : '$package declares no Flutter package, not even to test',
         () {
           final Set<String> flutter = allDependenciesOf(
             package,
           ).intersection(flutterPackages);
 
-          if (isRoot) {
+          if (draws) {
             expect(
               flutter,
               contains('flutter'),
               reason:
-                  '$package is a composition root; it is meant to have '
-                  'Flutter.',
+                  '$package draws — a composition root or the shared look; '
+                  'it is meant to have Flutter.',
             );
           } else {
             expect(
@@ -331,8 +350,8 @@ void main() {
     // is what said "these are Home's, not yours". Splitting them into files
     // made them public — privacy in Dart is per file — so the statement
     // moved here. `screens/<a>/widgets/` is readable from `screens/<a>/`
-    // and nowhere else; anything shared between two screens belongs in the
-    // app's own `widgets/`, which is what that folder is for.
+    // and nowhere else; anything two screens both draw belongs in `tom_ui`,
+    // where the other application can draw it too (Decision 26).
     final RegExp owned = RegExp(
       r'package:tom_desktop/screens/([a-z_]+)/widgets/',
     );
@@ -369,8 +388,8 @@ void main() {
       isEmpty,
       reason:
           "A screen reached into another screen's widgets. A widget two "
-          'screens both draw is not either one\'s — move it to '
-          'apps/desktop/lib/widgets/ and let both import it from there.',
+          "screens both draw is not either one's — move it to packages/ui "
+          'and let both import it from there.',
     );
   });
 

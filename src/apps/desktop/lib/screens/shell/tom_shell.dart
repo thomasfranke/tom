@@ -8,8 +8,7 @@ import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_region_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_status_bar_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_top_bar_widget.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// The window: explorer, document area, aside and status bar, all at once.
 ///

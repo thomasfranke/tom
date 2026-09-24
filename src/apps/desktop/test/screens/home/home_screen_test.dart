@@ -5,10 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/home/home_screen.dart';
-import 'package:tom_desktop/theme/tom_theme.dart';
-import 'package:tom_desktop/widgets/tom_wordmark_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 void main() {
   late _Spaces spaces;

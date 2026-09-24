@@ -29,6 +29,10 @@ import 'process.dart';
 // comment inside them would not survive.
 const String generatedFileGlobs = '**.freezed.dart,**.g.dart';
 
+// The pure Dart layers, which is what the gate is for. `ui` is not here for
+// the same reason the two applications are not: what it holds is drawn, and a
+// widget's line count says very little about whether the drawing is right —
+// `tom_ui` is covered by widget tests of its own (Decision 26).
 const List<String> _pkgOrder = <String>[
   'core',
   'domain',

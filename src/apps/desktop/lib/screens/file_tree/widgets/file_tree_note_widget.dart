@@ -4,8 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_design.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// One muted line, standing in for the tree.
 ///

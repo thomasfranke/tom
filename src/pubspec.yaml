@@ -19,6 +19,7 @@ workspace:
   - packages/infra
   - packages/data
   - packages/presentation
+  - packages/ui
   - apps/desktop
   - apps/mobile
 

@@ -4,7 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/home/home_design.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// A way forward that is not open yet.
 ///

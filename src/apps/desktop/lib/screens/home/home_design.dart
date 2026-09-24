@@ -1,7 +1,7 @@
 /// What the design fixes about Home.
 library;
 
-import 'package:tom_desktop/theme/tom_metrics.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// The numbers Home is drawn against.
 ///

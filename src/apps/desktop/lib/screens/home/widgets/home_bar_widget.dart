@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// Which edge a bar's rule sits on.
 enum HomeBarEdgeEnum {

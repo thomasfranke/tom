@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tom_desktop/theme/tom_theme.dart';
-import 'package:tom_desktop/widgets/commit_trunk_widget.dart';
-import 'package:tom_desktop/widgets/tom_wordmark_widget.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 void main() {
   /// Mounts [child] under a trunk, optionally with animations switched off

@@ -9,12 +9,8 @@ import 'package:tom_desktop/screens/home/home_design.dart';
 import 'package:tom_desktop/screens/home/widgets/home_primary_button_widget.dart';
 import 'package:tom_desktop/screens/home/widgets/home_recent_list_widget.dart';
 import 'package:tom_desktop/screens/home/widgets/home_secondary_button_widget.dart';
-import 'package:tom_desktop/theme/tom_colors.dart';
-import 'package:tom_desktop/theme/tom_metrics.dart';
-import 'package:tom_desktop/widgets/commit_trunk_widget.dart';
-import 'package:tom_desktop/widgets/milestone_chip_widget.dart';
-import 'package:tom_desktop/widgets/tom_wordmark_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_ui/tom_ui.dart';
 
 /// The empty state: brand, the ways in, and what was open before.
 class HomeWelcomeWidget extends ConsumerWidget {
