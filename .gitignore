@@ -151,6 +151,11 @@ app.*.symbols
 # the agent-agnostic content lives in AGENTS.md and .ai/skills/.
 .claude/
 
+# Editor configuration, by the same rule: a launch configuration describes
+# one machine's checkout, and `tool/` is where a way of running the app is
+# written down for everyone.
+.vscode/
+
 # The end-to-end environment, built by `tom e2e prepare`. Real
 # repositories with real markdown in them: disposable by design, and the
 # next prepare throws it away.
