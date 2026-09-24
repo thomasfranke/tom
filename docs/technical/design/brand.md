@@ -28,7 +28,7 @@ Two colourways, both from the palette roles:
 
 | | Tile | Page | Where |
 |---|---|---|---|
-| **cream** — `tom-icon.svg` | `surface` `#FAF9F6`, with a 6px `border_strong` hairline inset so the tile has an edge on white | `accent` `#4C7D6E` | The app icon: dock, launcher, installer. The default. |
+| **cream** — `tom-icon.svg` | `surface` `#FAF9F6` | `accent` `#4C7D6E` | The app icon: dock, launcher, installer. The default. |
 | **sage** — `tom-icon-sage.svg` | `accent` `#4C7D6E` | `surface` `#FAF9F6` | Where the tile has to carry the colour: a dark surface, a favicon, a social avatar. |
 
 The icon does not change with the app's theme — a dock icon is a fixed object — but a *mark* placed on a surface inside the app (a title bar, an about box) uses whichever colourway contrasts with that surface.
@@ -48,7 +48,7 @@ Icon and wordmark side by side: the icon at 128, a 36px gap, the wordmark at cap
 1. **The commit is never redrawn.** The O of the wordmark and the node in the icon come from the same numbers in `brand.py`; a wordmark set in Sora with the font's own O is not the wordmark.
 2. **Cap height sets the size.** Scale the wordmark so its capitals are the height wanted and let the trunk reach where it reaches. Cropping the trunk to the cap line removes the mark.
 3. **Roles, not colours.** Letters are `text_primary`, the commit is `accent`, tiles are `surface` or `accent`. Any other colour is a new decision, made in [visual-language.md](visual-language.md) first.
-4. **Two colours per mark, no more.** No gradient, shadow, outline or third tone — the icon's hairline is an edge, not a decoration, and only the cream tile has one.
+4. **Two colours per mark, no more.** No gradient, shadow, outline or third tone — and no edge around the tile either: the cream tile carried a hairline until macOS 26, whose dark icon treatment keeps a drawn edge while replacing the tile under it, turned it into a bright ring around a plate that is no longer cream. Where the cream tile needs separating from a white surface, use the sage colourway.
 5. **Minimum sizes.** The icon holds down to 16px. The wordmark holds down to cap 20 (about 30px tall); below that use the icon.
 6. **Clear space** is half the icon's width around the icon and the trunk's reach around the wordmark — the same distance the mark already keeps from its own box.
 
@@ -68,7 +68,7 @@ docs/technical/design/
 └── tools/brand.py         ← the decision, as code
 ```
 
-The rasters — PNG sets, `.icns`, `.ico` — are build outputs for the desktop runners, not documentation, so they are produced on demand with `--rasters` and are not committed here. The Penpot screens take the same marks from the same file: `penpot_build.py` emits them into the bundle, and `homeEmpty()` places the wordmark by its cap height, so the empty state shows the identity rather than the name set in type.
+The rasters — PNG sets, `.icns`, `.ico` — are build outputs for the desktop runners, not documentation, so they are produced on demand with `--rasters` and are not committed here. What *is* committed is the copy each runner needs to build: the cream PNGs at 16–1024 in `src/apps/desktop/macos/Runner/Assets.xcassets/AppIcon.appiconset/` (Xcode compiles them into the bundle's `.icns`) and `tom-icon.ico` as `src/apps/desktop/windows/runner/resources/app_icon.ico`. Changing the shape means running `--rasters` into a scratch folder and copying those files over again; the Linux runner has no icon of its own, since GTK takes it from the desktop entry the packaging step writes (M3). The Penpot screens take the same marks from the same file: `penpot_build.py` emits them into the bundle, and `homeEmpty()` places the wordmark by its cap height, so the empty state shows the identity rather than the name set in type.
 
 ## Where it came from
 

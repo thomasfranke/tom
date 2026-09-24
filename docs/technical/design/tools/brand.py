@@ -81,19 +81,20 @@ def wordmark(letter, accent):
 # in the tile colour, so the mark is two colours wherever it goes.
 TILE = 512
 TILE_RADIUS = 112
-HAIRLINE = 6
 PAGE = ("M 154 64 L 304 64 L 388 148 L 388 418 Q 388 448 358 448 L 154 448 "
         "Q 124 448 124 418 L 124 94 Q 124 64 154 64 Z")
 CREASE = "M 304 54 L 304 148 L 398 148"
 ICON_NODE = dict(cx=256, cy=278, r=52, w=38)
 ICON_TRUNK_W = 24          # 38 × 0.6, rounded to the grid
 
-# The two colourways. `cream` is the app icon on a light desktop and gets a
-# hairline so the tile has an edge on white; `sage` is the same mark inverted,
-# for dark surfaces and for anywhere the tile itself has to carry the colour.
+# The two colourways. `cream` is the app icon on a light desktop, `sage` the
+# same mark inverted, for dark surfaces and for anywhere the tile itself has to
+# carry the colour. Neither has an outline: macOS 26 renders a legacy icon in
+# its own dark treatment, which keeps a drawn edge and drops the tile under it,
+# so the edge arrives as a bright ring around a plate that is no longer cream.
 COLOURWAYS = {
-    "cream": dict(tile=LIGHT["surface"], page=LIGHT["accent"], hairline=LIGHT["border_strong"]),
-    "sage": dict(tile=LIGHT["accent"], page=LIGHT["surface"], hairline=None),
+    "cream": dict(tile=LIGHT["surface"], page=LIGHT["accent"]),
+    "sage": dict(tile=LIGHT["accent"], page=LIGHT["surface"]),
 }
 
 
@@ -104,14 +105,9 @@ def icon(colourway):
     outer = n["r"] + n["w"] / 2
     trunk = (f"M {n['cx']} 64 L {n['cx']} {n['cy'] - outer + 4} "
              f"M {n['cx']} {n['cy'] + outer - 4} L {n['cx']} 448")
-    inset = HAIRLINE / 2
-    hairline = (f'<rect id="hairline" x="{inset}" y="{inset}" width="{TILE - HAIRLINE}" '
-                f'height="{TILE - HAIRLINE}" rx="{TILE_RADIUS - inset}" fill="none" '
-                f'stroke="{c["hairline"]}" stroke-width="{HAIRLINE}"/>') if c["hairline"] else ""
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {TILE} {TILE}" '
             f'width="{TILE}" height="{TILE}">'
             f'<rect id="tile" x="0" y="0" width="{TILE}" height="{TILE}" rx="{TILE_RADIUS}" fill="{c["tile"]}"/>'
-            f'{hairline}'
             f'<path id="page" d="{PAGE}" fill="{c["page"]}"/>'
             f'<path id="crease" d="{CREASE}" fill="none" stroke="{c["tile"]}" stroke-width="20" '
             f'stroke-linecap="butt" stroke-linejoin="miter"/>'
