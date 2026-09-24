@@ -25,6 +25,15 @@ class PreviewPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final PreviewState state = ref.watch(previewProvider);
+    // Preview-only is the mode the generous measure belongs to: nothing is
+    // sharing the pane, and this is how a reader sees the document.
+    final bool isReading =
+        ref.watch(
+          spaceSessionProvider.select(
+            (SpaceSessionState? session) => session?.mode,
+          ),
+        ) ==
+        DocumentModeEnum.preview;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -47,7 +56,7 @@ class PreviewPanel extends ConsumerWidget {
             PreviewFailed(failure: final AppFailure failure) =>
               PreviewNoteWidget(_explain(failure)),
             PreviewReady(document: final ParsedDocumentValueObject document) =>
-              PreviewDocumentWidget(document: document),
+              PreviewDocumentWidget(document: document, isReading: isReading),
           },
         ),
       ],

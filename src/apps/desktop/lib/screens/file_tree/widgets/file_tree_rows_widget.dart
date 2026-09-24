@@ -37,6 +37,11 @@ class FileTreeRowsWidget extends ConsumerWidget {
         (SpaceSessionState? session) => session?.openDocument,
       ),
     );
+    // The dot belongs to the open document and to no other row, so it is
+    // read once here rather than in every row.
+    final bool isDirty = ref.watch(
+      editorProvider.select((EditorState state) => state.isDirty),
+    );
     return ListView.builder(
       // The design's pitch, and what lets the list build lazily: a space
       // with a thousand documents lays out the dozen rows on screen.
@@ -45,6 +50,7 @@ class FileTreeRowsWidget extends ConsumerWidget {
       itemBuilder: (BuildContext context, int index) => FileTreeRowWidget(
         row: rows[index],
         isOpen: rows[index].entry.path == open,
+        isDirty: isDirty && rows[index].entry.path == open,
       ),
     );
   }

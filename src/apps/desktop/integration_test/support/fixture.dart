@@ -49,6 +49,14 @@ final class Fixture {
   /// What the space is called once it is open.
   String get name => _values['name']! as String;
 
+  /// The bare repository this one tracks, for a fixture that has a remote.
+  ///
+  /// A path on disk, because that is what the remote *is*: git treats one as
+  /// a real remote, so fetch, push and pull take the same code path they
+  /// would against a server — with no network, no credentials and no state
+  /// anybody else shares.
+  String get remoteRoot => _values['remoteRoot']! as String;
+
   /// The markdown files the space holds, relative to [root] and sorted.
   List<String> get documents =>
       ((_values['documents'] ?? const <String>[]) as List<Object?>)

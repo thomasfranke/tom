@@ -39,6 +39,17 @@ void main() {
             observability: _Silent(),
           ),
         ),
+        // The aside holds the changes panel now, and a space open means it
+        // asks git. These tests are about the layout and the chrome, so it
+        // is answered by a repository with nothing in it
+        // (`test/screens/changes/changes_panel_test.dart` is where the panel
+        // lives).
+        readGitStatusProvider.overrideWithValue(
+          const ReadGitStatusUseCase(
+            gitFor: _cleanTree,
+            observability: _Silent(),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -274,6 +285,83 @@ void main() {
     });
   });
 
+  group('the mode bar', () {
+    /// A space, because the bar writes the mode into the session and there
+    /// is no session without one — and no shell either.
+    final SpaceEntity open = SpaceEntity(
+      root: '/code/app/docs',
+      repositoryRoot: '/code/app',
+      name: 'docs',
+    );
+
+    testWidgets('a space opens with source and preview side by side', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, space: open);
+
+      expect(find.text('Split'), findsOneWidget);
+      expect(find.text('SOURCE'), findsOneWidget);
+      expect(find.text('PREVIEW'), findsOneWidget);
+    });
+
+    testWidgets('preview-only leaves the preview the whole area', (
+      WidgetTester tester,
+    ) async {
+      // Reading is not a lesser mode: for anyone who does not write
+      // markdown by hand, this is the product.
+      await pumpShell(tester, space: open);
+
+      await tester.tap(find.text('Preview'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('SOURCE'), findsNothing);
+      expect(find.text('PREVIEW'), findsOneWidget);
+    });
+
+    testWidgets('source-only leaves the source the whole area', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, space: open);
+
+      await tester.tap(find.text('Source'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('SOURCE'), findsOneWidget);
+      expect(find.text('PREVIEW'), findsNothing);
+    });
+
+    testWidgets('a module panel that names no mode is in all of them', (
+      WidgetTester tester,
+    ) async {
+      // Modules add; they never have to learn about a mode that arrived
+      // after they were written.
+      await pumpShell(
+        tester,
+        space: open,
+        modules: <TomModule>[
+          _Module(<PanelDescriptor>[
+            panelSaying('TASKS', placement: PanelPlacementEnum.document),
+          ]),
+        ],
+      );
+
+      await tester.tap(find.text('Preview'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('TASKS'), findsOneWidget);
+    });
+
+    testWidgets('with nothing in the document area there is no bar', (
+      WidgetTester tester,
+    ) async {
+      // The bar governs the document region, so a region with nothing in it
+      // has nothing to offer three modes of.
+      await pumpShell(tester, modules: const <TomModule>[]);
+
+      expect(find.text('Split'), findsNothing);
+    });
+  });
+
   group('the theme', () {
     testWidgets('both modes render, and differ', (WidgetTester tester) async {
       // A colour added in one mode without its counterpart is a bug, not a
@@ -292,6 +380,76 @@ void main() {
       expect(light.accent, isNot(dark.accent));
     });
   });
+}
+
+/// Git for any space, reporting a tree with nothing changed in it.
+GitRepository _cleanTree(SpaceEntity space) => const _Clean();
+
+/// A repository whose working tree is clean and which does nothing else.
+final class _Clean implements GitRepository {
+  const _Clean();
+
+  @override
+  Future<Result<GitStatusValueObject, GitFailure>> status() async =>
+      Success<GitStatusValueObject, GitFailure>(
+        GitStatusValueObject(
+          branch: BranchNameValueObject('main'),
+          upstream: null,
+          ahead: 0,
+          behind: 0,
+          entries: const <StatusEntryValueObject>[],
+          isDetached: false,
+        ),
+      );
+
+  @override
+  Future<Result<List<CommitEntity>, GitFailure>> history({
+    RepoRelativePathValueObject? path,
+    int? limit,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Result<List<BranchEntity>, GitFailure>> branches() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<String, GitFailure>> contentAt({
+    required String revision,
+    required RepoRelativePathValueObject path,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> stage(
+    List<RepoRelativePathValueObject> paths,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> unstage(
+    List<RepoRelativePathValueObject> paths,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> commit(String message) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> createBranch(
+    BranchNameValueObject name,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> switchBranch(
+    BranchNameValueObject name,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> fetch() async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> pull() async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> push() async => throw UnimplementedError();
 }
 
 /// A space that holds nothing, so the explorer has nothing to draw.

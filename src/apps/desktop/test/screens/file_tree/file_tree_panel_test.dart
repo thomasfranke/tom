@@ -49,6 +49,14 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        // The tree marks the open document when its buffer has drifted from
+        // the file, so opening one now means a read.
+        readDocumentProvider.overrideWithValue(
+          const ReadDocumentUseCase(
+            documentsFor: _documentsFor,
+            observability: _Silent(),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -199,6 +207,27 @@ void main() {
       expect(styleOf(tester, 'guides').color, isNot(colors.accent));
     });
 
+    testWidgets('a document with unsaved edits is marked, and only it', (
+      WidgetTester tester,
+    ) async {
+      // The tree is how a file is chosen, so it is where a file with work
+      // the disk does not have has to say so — and the mark belongs to that
+      // one row, not to the space.
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+      await tester.tap(find.text('index.md'));
+      await tester.pumpAndSettle();
+      expect(_dots(tester), isEmpty);
+
+      container.read(editorProvider.notifier).edit('# changed\n');
+      await tester.pumpAndSettle();
+
+      final TomColors colors = TomColors.of(
+        tester.element(find.byType(FileTreePanel)),
+      );
+      expect(_dots(tester), <Color>[colors.modified]);
+    });
+
     testWidgets('a file the editor cannot open is muted and does not react', (
       WidgetTester tester,
     ) async {
@@ -344,6 +373,36 @@ final class _Spaces implements SpaceRepository {
   Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
     SpaceEntity space,
   ) async => throws ? throw StateError('the disk caught fire') : answer;
+}
+
+/// The colour of every round mark the tree is drawing.
+///
+/// Found by shape rather than by a key: what makes it a mark is that it is a
+/// circle, and a key would make the test pass on a square.
+List<Color> _dots(WidgetTester tester) => tester
+    .widgetList<DecoratedBox>(find.byType(DecoratedBox))
+    .map((DecoratedBox box) => box.decoration as BoxDecoration)
+    .where((BoxDecoration decoration) => decoration.shape == BoxShape.circle)
+    .map((BoxDecoration decoration) => decoration.color!)
+    .toList();
+
+/// A repository for any space, since the tree only needs one to exist.
+DocumentRepository _documentsFor(SpaceEntity space) => const _Documents();
+
+/// A repository that reads an empty document and writes nowhere.
+final class _Documents implements DocumentRepository {
+  const _Documents();
+
+  @override
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
+  ) async => Success<DocumentEntity, DocumentFailure>(
+    DocumentEntity(path: path, content: ''),
+  );
+
+  @override
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
+      const Success<void, DocumentFailure>(null);
 }
 
 /// The no-op observability, which is also the shipping default.

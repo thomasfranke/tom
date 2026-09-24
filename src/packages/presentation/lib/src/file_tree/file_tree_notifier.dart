@@ -48,6 +48,21 @@ class FileTreeNotifier extends _$FileTreeNotifier {
     return const FileTreeState.loading();
   }
 
+  /// Walks the space again, because something changed it.
+  ///
+  /// For when **TOM itself** wrote to the disk and therefore knows: a pull
+  /// brings files in, and a tree that still showed the old list would be
+  /// describing a folder the user does not have. Changes made *outside* the
+  /// app are the watcher's to notice ([Decision
+  /// 10](../../../../../../docs/technical/decisions/010-watcher-and-git-cooperate-by-protocol.md)),
+  /// which is a different problem and not this method's.
+  Future<void> refresh() async {
+    final SpaceEntity? space = ref.read(spaceSessionProvider)?.space;
+    if (space != null) {
+      await _load(space);
+    }
+  }
+
   /// Opens or closes [entry] — whichever clicking its row means.
   ///
   /// A folder toggles, a markdown file becomes the open document, and

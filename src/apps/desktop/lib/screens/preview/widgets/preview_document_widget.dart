@@ -16,17 +16,30 @@ import 'package:tom_ui/tom_ui.dart';
 /// ([flows](../../../../../../../docs/technical/flows.md#the-preview-is-assembled-block-by-block)).
 class PreviewDocumentWidget extends StatelessWidget {
   /// Creates the column for [document].
-  const PreviewDocumentWidget({required this.document, super.key});
+  const PreviewDocumentWidget({
+    required this.document,
+    required this.isReading,
+    super.key,
+  });
 
   /// What to render.
   final ParsedDocumentValueObject document;
 
+  /// Whether the preview has the document area to itself.
+  ///
+  /// The mode the wider measure and the larger prose belong to: reading is
+  /// not a lesser mode, and for anyone who never opens the source it is the
+  /// product.
+  final bool isReading;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(
-      DiagnosticsProperty<ParsedDocumentValueObject>('document', document),
-    );
+    properties
+      ..add(
+        DiagnosticsProperty<ParsedDocumentValueObject>('document', document),
+      )
+      ..add(DiagnosticsProperty<bool>('isReading', isReading));
   }
 
   @override
@@ -34,12 +47,17 @@ class PreviewDocumentWidget extends StatelessWidget {
     if (document.blocks.isEmpty) {
       return const PreviewNoteWidget('This document is empty.');
     }
+    final double measure = isReading
+        ? PreviewDesign.readingMeasure
+        : PreviewDesign.measure;
     return Align(
-      alignment: Alignment.topLeft,
+      // Centred when the pane is the document's, left when it is sharing:
+      // a reading column hugging the divider would read as a leftover.
+      alignment: isReading ? Alignment.topCenter : Alignment.topLeft,
       child: SizedBox(
         // A measure, not a pane: the column keeps its line length whatever
         // the window does, and the pane grows around it.
-        width: PreviewDesign.measure + TomMetrics.pad * 2,
+        width: measure + TomMetrics.pad * 2,
         child: ListView.separated(
           padding: const EdgeInsets.fromLTRB(
             TomMetrics.pad,
@@ -53,6 +71,7 @@ class PreviewDocumentWidget extends StatelessWidget {
           itemBuilder: (BuildContext context, int index) => PreviewBlockWidget(
             block: document.blocks[index],
             document: document,
+            body: isReading ? PreviewDesign.readingBody : PreviewDesign.body,
           ),
         ),
       ),

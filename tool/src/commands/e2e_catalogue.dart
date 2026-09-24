@@ -99,6 +99,24 @@ final class ScenarioResult {
   }
 }
 
+/// The headings the menu lists, in the order somebody walks through the app.
+///
+/// **Declared, not discovered.** Groups used to come out in whatever order
+/// the first scenario of each happened to be read in — alphabetical by name
+/// — which put `Editor` above `Home` and read as no journey at all.
+///
+/// A group a scenario names but this list does not is listed last rather
+/// than hidden: a typo should be visible, not silently dropped.
+const scenarioGroups = <String>[
+  'Home',
+  'Workspace',
+  'Editor',
+  'Git — local',
+  'Git — branches',
+  'Git — history',
+  'Git — remote',
+];
+
 /// Every scenario declared under [scenarioDirectory], sorted by name.
 ///
 /// Read from the source rather than from a registry someone has to keep up

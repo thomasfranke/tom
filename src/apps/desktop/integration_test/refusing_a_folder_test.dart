@@ -10,7 +10,6 @@ void main() {
 
   scenario(
     'Refuses a folder that is not inside a repository',
-    group: 'Validations',
     describe:
         'A named failure with an explanation, never a crash and never a '
         'quieter mode. The screen also says that creating a repository is '
@@ -35,7 +34,6 @@ void main() {
 
   scenario(
     'Offers another folder after refusing one',
-    group: 'Validations',
     describe:
         'Refusing is a state to move on from, not a dead end: the screen '
         'offers the picker again, and choosing a real space from there works '

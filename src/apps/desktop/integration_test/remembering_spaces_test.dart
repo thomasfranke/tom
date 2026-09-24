@@ -9,7 +9,6 @@ void main() {
 
   scenario(
     'Remembers a space, and offers it on the next visit',
-    group: 'Validations',
     describe:
         'One click back into a space is the reason Home has a list at all. '
         'Opening one records it; starting again offers it by name.',
@@ -38,7 +37,6 @@ void main() {
 
   scenario(
     'Forgets a space without touching the folder',
-    group: 'Validations',
     describe:
         'What the user reaches for when a row points somewhere that is gone. '
         'Forgetting removes the row and nothing else — the folder is still '

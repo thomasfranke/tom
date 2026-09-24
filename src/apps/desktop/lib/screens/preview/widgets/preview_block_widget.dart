@@ -23,6 +23,7 @@ class PreviewBlockWidget extends ConsumerWidget {
   const PreviewBlockWidget({
     required this.block,
     required this.document,
+    required this.body,
     super.key,
   });
 
@@ -32,6 +33,9 @@ class PreviewBlockWidget extends ConsumerWidget {
   /// The document it belongs to, for the scope it needs to render alone.
   final ParsedDocumentValueObject document;
 
+  /// The prose size, which is the reading mode's answer or the split's.
+  final double body;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -39,7 +43,8 @@ class PreviewBlockWidget extends ConsumerWidget {
       ..add(DiagnosticsProperty<BlockValueObject>('block', block))
       ..add(
         DiagnosticsProperty<ParsedDocumentValueObject>('document', document),
-      );
+      )
+      ..add(DoubleProperty('body', body));
   }
 
   @override
@@ -66,7 +71,7 @@ class PreviewBlockWidget extends ConsumerWidget {
           ? block.source
           : '${block.source}\n\n${document.linkDefinitions}',
       selectable: true,
-      styleSheet: _styleSheetOf(context, colors),
+      styleSheet: _styleSheetOf(context, colors, body),
       syntaxHighlighter: CodeHighlighterImpl(
         language: _languageOf(block),
         brightness: Theme.of(context).brightness,
@@ -167,9 +172,10 @@ class PreviewBlockWidget extends ConsumerWidget {
   static MarkdownStyleSheet _styleSheetOf(
     BuildContext context,
     TomColors colors,
+    double body,
   ) {
     final TextStyle prose = TextStyle(
-      fontSize: PreviewDesign.body,
+      fontSize: body,
       height: PreviewDesign.bodyHeight,
       color: colors.textPrimary,
     );
@@ -178,9 +184,9 @@ class PreviewBlockWidget extends ConsumerWidget {
       h1: _headingStyle(PreviewDesign.headingLarge, colors),
       h2: _headingStyle(PreviewDesign.headingLarge, colors),
       h3: _headingStyle(PreviewDesign.heading, colors),
-      h4: _headingStyle(PreviewDesign.body, colors),
-      h5: _headingStyle(PreviewDesign.body, colors),
-      h6: _headingStyle(PreviewDesign.body, colors),
+      h4: _headingStyle(body, colors),
+      h5: _headingStyle(body, colors),
+      h6: _headingStyle(body, colors),
       a: prose.copyWith(color: colors.accent),
       em: prose.copyWith(fontStyle: FontStyle.italic),
       strong: prose.copyWith(fontWeight: FontWeight.w600),

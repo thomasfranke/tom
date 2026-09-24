@@ -5,17 +5,20 @@ import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_presentation/tom_presentation.dart';
 
 void main() {
   PanelDescriptor panel(
     String id, {
     PanelPlacementEnum placement = PanelPlacementEnum.document,
     int order = 0,
+    List<DocumentModeEnum> modes = DocumentModeEnum.values,
   }) => PanelDescriptor(
     id: id,
     title: id,
     placement: placement,
     order: order,
+    modes: modes,
     builder: (BuildContext context) => const SizedBox.shrink(),
   );
 
@@ -116,6 +119,82 @@ void main() {
         'early',
         'late',
       ]);
+    });
+  });
+
+  group('the document modes', () {
+    test('a panel with no modes named is in all of them', () {
+      // Modules add; one written before the mode bar existed must not
+      // disappear because a mode arrived.
+      final PanelRegistry registry = PanelRegistry(<TomModule>[
+        _Module('m', <PanelDescriptor>[panel('anywhere')]),
+      ]);
+
+      for (final DocumentModeEnum mode in DocumentModeEnum.values) {
+        expect(
+          registry
+              .at(PanelPlacementEnum.document, mode: mode)
+              .map((PanelDescriptor descriptor) => descriptor.id),
+          <String>['anywhere'],
+        );
+      }
+    });
+
+    test('a panel is drawn only in the modes it named', () {
+      // The filtering is the registry's, so the shell never reads `modes`
+      // and never learns what a panel is for.
+      final PanelRegistry registry = PanelRegistry(<TomModule>[
+        _Module('m', <PanelDescriptor>[
+          panel(
+            'source',
+            modes: const <DocumentModeEnum>[
+              DocumentModeEnum.source,
+              DocumentModeEnum.split,
+            ],
+          ),
+          panel(
+            'preview',
+            order: 1,
+            modes: const <DocumentModeEnum>[
+              DocumentModeEnum.split,
+              DocumentModeEnum.preview,
+            ],
+          ),
+        ]),
+      ]);
+
+      expect(
+        registry
+            .at(PanelPlacementEnum.document, mode: DocumentModeEnum.split)
+            .map((PanelDescriptor descriptor) => descriptor.id),
+        <String>['source', 'preview'],
+      );
+      expect(
+        registry
+            .at(PanelPlacementEnum.document, mode: DocumentModeEnum.preview)
+            .map((PanelDescriptor descriptor) => descriptor.id),
+        <String>['preview'],
+      );
+      expect(
+        registry
+            .at(PanelPlacementEnum.document, mode: DocumentModeEnum.source)
+            .map((PanelDescriptor descriptor) => descriptor.id),
+        <String>['source'],
+      );
+    });
+
+    test('asking without a mode asks about the whole region', () {
+      // Which is how the other three regions ask: they are not in a mode.
+      final PanelRegistry registry = PanelRegistry(<TomModule>[
+        _Module('m', <PanelDescriptor>[
+          panel(
+            'preview',
+            modes: const <DocumentModeEnum>[DocumentModeEnum.preview],
+          ),
+        ]),
+      ]);
+
+      expect(idsAt(registry, PanelPlacementEnum.document), <String>['preview']);
     });
   });
 

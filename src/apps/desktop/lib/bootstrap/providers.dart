@@ -91,6 +91,19 @@ DocumentRepositoryFor documentRepositoryFor(Ref ref) {
       DocumentRepositoryImpl(documents: documents, space: space);
 }
 
+/// How to reach git for a space.
+///
+/// Per space, for the same reason a document repository is: the client runs
+/// in one folder and serializes that folder's commands, so what is app-wide
+/// is the way to build one.
+@Riverpod(keepAlive: true)
+GitRepositoryFor gitRepositoryFor(Ref ref) {
+  final GitClientFor clients = ref.watch(gitClientForProvider);
+  return (SpaceEntity space) => GitRepositoryImpl(
+    git: GitDataSource(client: clients(space.repositoryRoot)),
+  );
+}
+
 /// What splits a document into blocks.
 @Riverpod(keepAlive: true)
 BlockReaderPort blockReader(Ref ref) => const MarkdownBlockReaderImpl(
@@ -132,7 +145,78 @@ List<Override> appOverrides = <Override>[
   readDocumentProvider.overrideWith(
     (Ref ref) => ReadDocumentUseCase(
       documentsFor: ref.watch(documentRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  saveDocumentProvider.overrideWith(
+    (Ref ref) => SaveDocumentUseCase(
+      documentsFor: ref.watch(documentRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  splitDocumentProvider.overrideWith(
+    (Ref ref) => SplitDocumentUseCase(
       blocks: ref.watch(blockReaderProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  readGitStatusProvider.overrideWith(
+    (Ref ref) => ReadGitStatusUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  stageChangesProvider.overrideWith(
+    (Ref ref) => StageChangesUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  commitChangesProvider.overrideWith(
+    (Ref ref) => CommitChangesUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  fetchRemoteProvider.overrideWith(
+    (Ref ref) => FetchRemoteUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  pullRemoteProvider.overrideWith(
+    (Ref ref) => PullRemoteUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  pushRemoteProvider.overrideWith(
+    (Ref ref) => PushRemoteUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  listBranchesProvider.overrideWith(
+    (Ref ref) => ListBranchesUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  switchBranchProvider.overrideWith(
+    (Ref ref) => SwitchBranchUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  readFileHistoryProvider.overrideWith(
+    (Ref ref) => ReadFileHistoryUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  readVersionProvider.overrideWith(
+    (Ref ref) => ReadVersionUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
       observability: ref.watch(observabilityProvider),
     ),
   ),

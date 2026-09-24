@@ -8,15 +8,24 @@ library;
 /// the table in
 /// [components.md](../../../../../../docs/technical/design/components.md).
 ///
-/// These are the split-view numbers, which is where the preview sits while
-/// it shares the document area. Reading mode's more generous 660 and 16
-/// arrive with the mode bar, in source mode's milestone.
+/// Two sets of them, because the preview has two jobs: beside the source it
+/// is a companion, and alone it is the document — which is the whole claim
+/// of preview-only reading (`docs/product/editor/markdown-preview/doc.md`).
 ///
 /// Public and beside the panel rather than private inside it: the panel and
 /// its widgets are separate files now, and three copies of 540 would drift.
 abstract final class PreviewDesign {
   /// The reading measure, beside the source pane.
   static const double measure = 540;
+
+  /// The reading measure with the pane to itself.
+  ///
+  /// Wider *and* set larger: nothing is competing for the width, and this is
+  /// the mode somebody reads a whole document in.
+  static const double readingMeasure = 660;
+
+  /// Prose size with the pane to itself.
+  static const double readingBody = 16;
 
   /// Panel top to the caption's baseline box.
   static const double captionTop = 18;

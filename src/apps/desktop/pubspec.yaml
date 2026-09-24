@@ -38,6 +38,11 @@ dependencies:
   # generates against: the pair moves together or not at all.
   flutter_riverpod: 3.2.1
 
+  # Source mode. Measured against the fallback and kept: 4.4ms build p50
+  # while typing a 2853-line document, against a plain TextField's 38.8ms
+  # (Decision 18).
+  re_editor: ^0.10.0
+
   # Syntax highlighting for the code blocks in the preview — the same
   # package `re_editor` brings for source mode (Decision 18).
   re_highlight: ^0.0.3

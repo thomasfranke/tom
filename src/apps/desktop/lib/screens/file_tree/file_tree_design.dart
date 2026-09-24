@@ -45,6 +45,12 @@ abstract final class FileTreeDesign {
   /// How far the row's box is inset from both edges.
   static const double rowInset = 12;
 
+  /// The mark against a document with unsaved edits.
+  static const double dirtyDot = 8;
+
+  /// How far the dot's own right edge sits from the panel's.
+  static const double dirtyDotRight = 26;
+
   /// One level of nesting.
   static const double indent = 16;
 

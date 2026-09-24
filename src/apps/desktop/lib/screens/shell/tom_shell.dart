@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
+import 'package:tom_desktop/screens/shell/widgets/shell_mode_bar_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_region_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_status_bar_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_top_bar_widget.dart';
+import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// The window: explorer, document area, aside and status bar, all at once.
@@ -27,6 +29,25 @@ class TomShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final PanelRegistry registry = ref.watch(panelRegistryProvider);
+    final bool readingVersion = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) => session?.readingVersion != null,
+      ),
+    );
+    final DocumentModeEnum chosen =
+        ref.watch(
+          spaceSessionProvider.select(
+            (SpaceSessionState? session) => session?.mode,
+          ),
+        ) ??
+        DocumentModeEnum.split;
+    // A version being read draws as preview whatever the bar last said —
+    // **nothing types into the past**. The choice itself is untouched, so
+    // coming back to now comes back to the mode that was being worked in
+    // (`docs/product/git-workflow/file-history/doc.md`).
+    final DocumentModeEnum mode = readingVersion
+        ? DocumentModeEnum.preview
+        : chosen;
     final TomColors colors = TomColors.of(context);
     return Scaffold(
       backgroundColor: colors.surface,
@@ -44,9 +65,25 @@ class TomShell extends ConsumerWidget {
                   width: TomMetrics.explorer,
                 ),
                 Expanded(
-                  child: ShellRegionWidget(
-                    placement: PanelPlacementEnum.document,
-                    registry: registry,
+                  child: Column(
+                    children: <Widget>[
+                      // The bar belongs to the document area and stops
+                      // where it stops: the explorer and the git panel are
+                      // not in a mode.
+                      if (registry
+                          .at(PanelPlacementEnum.document)
+                          .isNotEmpty) ...<Widget>[
+                        const ShellModeBarWidget(),
+                        Divider(height: 1, color: colors.border),
+                      ],
+                      Expanded(
+                        child: ShellRegionWidget(
+                          placement: PanelPlacementEnum.document,
+                          registry: registry,
+                          mode: mode,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 ShellRegionWidget(

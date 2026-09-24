@@ -6,7 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
+import 'package:tom_desktop/screens/preview/preview_design.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
+import 'package:tom_desktop/screens/preview/widgets/preview_block_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_infra/tom_infra.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -32,8 +34,13 @@ void main() {
         readDocumentProvider.overrideWithValue(
           ReadDocumentUseCase(
             documentsFor: (SpaceEntity space) => documents,
-            blocks: const _Blocks(),
             observability: const _Silent(),
+          ),
+        ),
+        splitDocumentProvider.overrideWithValue(
+          const SplitDocumentUseCase(
+            blocks: _Blocks(),
+            observability: _Silent(),
           ),
         ),
       ],
@@ -95,6 +102,55 @@ void main() {
 
     expect(find.textContaining('Title', findRichText: true), findsOneWidget);
     expect(find.textContaining('Prose.', findRichText: true), findsOneWidget);
+  });
+
+  group('the reading measure', () {
+    /// The width of the column the blocks are laid out in.
+    double measure(WidgetTester tester) => tester
+        .widget<SizedBox>(
+          find
+              .ancestor(
+                of: find.byType(ListView),
+                matching: find.byType(SizedBox),
+              )
+              .first,
+        )
+        .width!;
+
+    testWidgets('beside the source it is the companion measure', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '# Title\n';
+
+      await pumpPreview(tester, document: writing);
+
+      expect(measure(tester), PreviewDesign.measure + TomMetrics.pad * 2);
+    });
+
+    testWidgets('with the pane to itself it is wider, and set larger', (
+      WidgetTester tester,
+    ) async {
+      // Reading is not a lesser mode: nothing is competing for the width,
+      // and this is the mode somebody reads a whole document in.
+      documents.content = '# Title\n\nProse.\n';
+      await pumpPreview(tester, document: writing);
+
+      container
+          .read(spaceSessionProvider.notifier)
+          .look(DocumentModeEnum.preview);
+      await tester.pumpAndSettle();
+
+      expect(
+        measure(tester),
+        PreviewDesign.readingMeasure + TomMetrics.pad * 2,
+      );
+      expect(
+        tester
+            .widgetList<PreviewBlockWidget>(find.byType(PreviewBlockWidget))
+            .map((PreviewBlockWidget block) => block.body),
+        everyElement(PreviewDesign.readingBody),
+      );
+    });
   });
 
   testWidgets('an empty document says so rather than looking broken', (

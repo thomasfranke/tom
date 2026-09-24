@@ -22,6 +22,7 @@ export 'src/git/commit_sha_value_object.dart';
 export 'src/git/file_state_enum.dart';
 export 'src/git/git_failure.dart';
 export 'src/git/git_repository.dart';
+export 'src/git/git_repository_for.dart';
 export 'src/git/git_status_value_object.dart';
 export 'src/git/status_entry_value_object.dart';
 export 'src/paths/repo_relative_path_value_object.dart';

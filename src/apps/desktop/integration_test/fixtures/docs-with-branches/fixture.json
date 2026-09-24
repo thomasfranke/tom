@@ -1,0 +1,20 @@
+{
+  "summary": "A docs folder with a second branch that holds different files",
+  "description": "What branch switch exists for. `main` has the index and one guide; `feat/rendered-diff` has a document `main` has never seen and a different index. The two differ on purpose — a branch holding the same files would let a switch that never touched the working tree pass — so a scenario can check that the explorer and the open document really follow. The repository is left on `main`, which is where a person would find it.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "branches": [
+    {
+      "name": "feat/rendered-diff",
+      "commits": [
+        {
+          "message": "docs: draft the rendered diff",
+          "write": {
+            "docs/rendered-diff.md": "# Rendered diff\n\nThis document exists only on feat/rendered-diff.\n",
+            "docs/index.md": "# Documentation\n\nThe index, as the feature branch rewrote it.\n"
+          }
+        }
+      ]
+    }
+  ]
+}

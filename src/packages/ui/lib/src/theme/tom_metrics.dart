@@ -16,6 +16,10 @@ abstract final class TomMetrics {
   /// Height of the bar below everything: branch, status, counts.
   static const double statusBar = 32;
 
+  /// Height of the bar above the document area: the three modes, and
+  /// whether the buffer has reached the disk.
+  static const double modeBar = 36;
+
   /// Width of the explorer.
   ///
   /// **Constant across every screen.** The explorer never moves and never
@@ -25,6 +29,14 @@ abstract final class TomMetrics {
 
   /// Width of the git panel, which arrives in M1.
   static const double git = 280;
+
+  /// The least height a stacked panel is given before the column scrolls.
+  ///
+  /// Not taste: it is the tallest fixed furniture a panel here carries — the
+  /// changes column's caption, message box and commit button — plus one row
+  /// of the list underneath them. Below this a panel is a caption with
+  /// nothing under it, so the region scrolls instead of squeezing.
+  static const double minimumStackedPanel = 280;
 
   /// Panel edge to content.
   static const double pad = 20;

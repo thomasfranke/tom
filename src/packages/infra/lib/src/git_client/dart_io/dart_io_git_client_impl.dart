@@ -196,7 +196,16 @@ final class DartIoGitClientImpl implements GitClient {
 
   @override
   Future<Result<void, GitClientFailure>> pull() =>
-      _gitVoid(<String>['pull'], limit: networkTimeout);
+      // `--no-rebase` because a bare `git pull` **fails** on divergent
+      // branches unless the machine has `pull.rebase` or `pull.ff` set —
+      // git has demanded that choice since 2.27, and the choice is the
+      // product's to make, not something to inherit from whoever set up the
+      // laptop. Merge rather than rebase because the app promises, in those
+      // words, that *nothing you committed has been lost*: a merge keeps
+      // every local commit where it is, while a rebase rewrites them and
+      // can stop halfway somewhere a reader of documentation has no way out
+      // of (`docs/product/git-workflow/push-pull/doc.md`).
+      _gitVoid(<String>['pull', '--no-rebase'], limit: networkTimeout);
 
   @override
   Future<Result<void, GitClientFailure>> push() =>

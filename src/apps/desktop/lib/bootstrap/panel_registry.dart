@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_presentation/tom_presentation.dart';
 
 part 'panel_registry.g.dart';
 
@@ -54,8 +55,21 @@ class PanelRegistry {
   /// An empty list is an ordinary answer: a region with nothing registered
   /// in it draws nothing, which is how a build with a panel's feature flag
   /// off looks from here.
-  List<PanelDescriptor> at(PanelPlacementEnum placement) =>
-      List<PanelDescriptor>.unmodifiable(_byPlacement[placement]!);
+  ///
+  /// [mode] narrows it to the panels that belong in that document mode. The
+  /// filtering lives here rather than in the shell because the descriptor is
+  /// what carries the answer, and a shell that read `modes` would be a shell
+  /// that knows what a panel is for.
+  List<PanelDescriptor> at(
+    PanelPlacementEnum placement, {
+    DocumentModeEnum? mode,
+  }) => List<PanelDescriptor>.unmodifiable(
+    mode == null
+        ? _byPlacement[placement]!
+        : _byPlacement[placement]!.where(
+            (PanelDescriptor panel) => panel.modes.contains(mode),
+          ),
+  );
 
   /// Whether anything at all is registered.
   bool get isEmpty =>

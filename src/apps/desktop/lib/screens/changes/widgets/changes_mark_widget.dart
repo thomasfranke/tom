@@ -1,0 +1,95 @@
+/// What happened to a file, as a letter in a tinted box.
+library;
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:tom_desktop/screens/changes/changes_design.dart';
+import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_ui/tom_ui.dart';
+
+/// The diff mark: a letter on a tinted square.
+///
+/// **A letter as well as a colour** — roughly one in twelve men cannot
+/// separate the red from the green, so the state is never the tint alone
+/// (`docs/technical/design/visual-language.md`).
+///
+/// The letters are the *domain's* alphabet, not git's: git's `U` means
+/// unmerged, so an untracked file cannot borrow it, and `?` is not a word.
+/// The tooltip carries the whole word for whoever has not learnt them.
+class ChangesMarkWidget extends StatelessWidget {
+  /// Creates the mark for [state].
+  const ChangesMarkWidget({required this.state, super.key});
+
+  /// What happened to the file.
+  final FileStateEnum state;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<FileStateEnum>('state', state));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final TomColors colors = TomColors.of(context);
+    final (Color ink, Color fill) = _rolesOf(colors);
+    return Tooltip(
+      message: _words[state]!,
+      child: SizedBox(
+        width: ChangesDesign.mark,
+        height: ChangesDesign.mark,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Center(
+            child: Text(
+              _letters[state]!,
+              style: TextStyle(
+                fontSize: 11,
+                height: 1,
+                fontWeight: FontWeight.w600,
+                color: ink,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The pair of roles this state is drawn in.
+  ///
+  /// Three roles for six states: what the diff palette names is *appeared*,
+  /// *went* and *changed*, and a rename or an untracked file is one of those
+  /// with a different letter on it.
+  (Color, Color) _rolesOf(TomColors colors) => switch (state) {
+    FileStateEnum.added ||
+    FileStateEnum.untracked => (colors.added, colors.addedSoft),
+    FileStateEnum.deleted => (colors.removed, colors.removedSoft),
+    FileStateEnum.modified ||
+    FileStateEnum.renamed => (colors.modified, colors.modifiedSoft),
+    // A conflict is not a kind of change, it is a question — and the one
+    // thing on this list that cannot be committed as it stands.
+    FileStateEnum.conflicted => (colors.removed, colors.removedSoft),
+  };
+
+  static const Map<FileStateEnum, String> _letters = <FileStateEnum, String>{
+    FileStateEnum.modified: 'M',
+    FileStateEnum.added: 'A',
+    FileStateEnum.deleted: 'D',
+    FileStateEnum.renamed: 'R',
+    FileStateEnum.untracked: 'N',
+    FileStateEnum.conflicted: 'C',
+  };
+
+  static const Map<FileStateEnum, String> _words = <FileStateEnum, String>{
+    FileStateEnum.modified: 'Modified',
+    FileStateEnum.added: 'Added',
+    FileStateEnum.deleted: 'Deleted',
+    FileStateEnum.renamed: 'Renamed',
+    FileStateEnum.untracked: 'New — git has never been told about it',
+    FileStateEnum.conflicted: 'Conflicted — resolve it before committing',
+  };
+}

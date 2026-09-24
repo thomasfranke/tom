@@ -138,7 +138,13 @@ class _WindowContents extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
-      ref.watch(spaceSessionProvider) == null
+      // Whether, not what: the session changes whenever a document opens or
+      // the mode moves, and neither swaps the window.
+      ref.watch(
+        spaceSessionProvider.select(
+          (SpaceSessionState? session) => session == null,
+        ),
+      )
       ? const HomeScreen()
       : const TomShell();
 }

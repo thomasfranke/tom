@@ -17,7 +17,12 @@ import 'package:tom_ui/tom_ui.dart';
 /// (`docs/product/navigation/file-tree/doc.md`).
 class FileTreeRowWidget extends ConsumerWidget {
   /// Creates the row for [row].
-  const FileTreeRowWidget({required this.row, required this.isOpen, super.key});
+  const FileTreeRowWidget({
+    required this.row,
+    required this.isOpen,
+    this.isDirty = false,
+    super.key,
+  });
 
   /// What this row shows.
   final FileTreeRow row;
@@ -25,12 +30,19 @@ class FileTreeRowWidget extends ConsumerWidget {
   /// Whether this is the document the window is showing.
   final bool isOpen;
 
+  /// Whether this document has edits the file on disk does not.
+  ///
+  /// Drawn where the eye already is — the tree is how a file is chosen, so
+  /// it is where a file with unsaved work has to say so.
+  final bool isDirty;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty<FileTreeRow>('row', row))
-      ..add(DiagnosticsProperty<bool>('isOpen', isOpen));
+      ..add(DiagnosticsProperty<bool>('isOpen', isOpen))
+      ..add(DiagnosticsProperty<bool>('isDirty', isDirty));
   }
 
   @override
@@ -71,9 +83,31 @@ class FileTreeRowWidget extends ConsumerWidget {
               ),
             ),
           ),
+        if (isDirty)
+          Positioned(
+            right: FileTreeDesign.dirtyDotRight,
+            top: 0,
+            height: FileTreeDesign.rowHeight,
+            child: Center(
+              child: SizedBox(
+                width: FileTreeDesign.dirtyDot,
+                height: FileTreeDesign.dirtyDot,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colors.modified,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+          ),
         FileTreeCentredWidget(
           left: labelLeft,
-          right: FileTreeDesign.rowInset,
+          // The name stops before the dot rather than running under it: an
+          // ellipsis is a smaller loss than a mark nobody can see.
+          right: isDirty
+              ? FileTreeDesign.dirtyDotRight + FileTreeDesign.dirtyDot + 8
+              : FileTreeDesign.rowInset,
           child: Text(
             row.entry.name,
             maxLines: 1,

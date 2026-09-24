@@ -8,66 +8,130 @@ part of 'preview_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Reads a document and splits it into blocks.
+/// Splits a document's source into blocks.
 ///
 /// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and cannot see which parser or which disk
-/// ends up behind it.
+/// names the use case it needs and cannot see which parser ends up behind
+/// it.
 
-@ProviderFor(readDocument)
-final readDocumentProvider = ReadDocumentProvider._();
+@ProviderFor(splitDocument)
+final splitDocumentProvider = SplitDocumentProvider._();
 
-/// Reads a document and splits it into blocks.
+/// Splits a document's source into blocks.
 ///
 /// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and cannot see which parser or which disk
-/// ends up behind it.
+/// names the use case it needs and cannot see which parser ends up behind
+/// it.
 
-final class ReadDocumentProvider
+final class SplitDocumentProvider
     extends
         $FunctionalProvider<
-          ReadDocumentUseCase,
-          ReadDocumentUseCase,
-          ReadDocumentUseCase
+          SplitDocumentUseCase,
+          SplitDocumentUseCase,
+          SplitDocumentUseCase
         >
-    with $Provider<ReadDocumentUseCase> {
-  /// Reads a document and splits it into blocks.
+    with $Provider<SplitDocumentUseCase> {
+  /// Splits a document's source into blocks.
   ///
   /// Declared here and **overridden by the composition root**: this package
-  /// names the use case it needs and cannot see which parser or which disk
-  /// ends up behind it.
-  ReadDocumentProvider._()
+  /// names the use case it needs and cannot see which parser ends up behind
+  /// it.
+  SplitDocumentProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'readDocumentProvider',
+        name: r'splitDocumentProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$readDocumentHash();
+  String debugGetCreateSourceHash() => _$splitDocumentHash();
 
   @$internal
   @override
-  $ProviderElement<ReadDocumentUseCase> $createElement(
+  $ProviderElement<SplitDocumentUseCase> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  ReadDocumentUseCase create(Ref ref) {
-    return readDocument(ref);
+  SplitDocumentUseCase create(Ref ref) {
+    return splitDocument(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ReadDocumentUseCase value) {
+  Override overrideWithValue(SplitDocumentUseCase value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ReadDocumentUseCase>(value),
+      providerOverride: $SyncValueProvider<SplitDocumentUseCase>(value),
     );
   }
 }
 
-String _$readDocumentHash() => r'67451dad96922ca9d240e8d62aaabf2032500249';
+String _$splitDocumentHash() => r'46bb11a7f94f0107d8e6aaaf1a3dc7207e613d07';
+
+/// Reads a document as one commit left it.
+///
+/// Here rather than beside the history panel because the preview is what
+/// needs it: history says *which* version is on screen, and this is what
+/// turns that into text to render.
+
+@ProviderFor(readVersion)
+final readVersionProvider = ReadVersionProvider._();
+
+/// Reads a document as one commit left it.
+///
+/// Here rather than beside the history panel because the preview is what
+/// needs it: history says *which* version is on screen, and this is what
+/// turns that into text to render.
+
+final class ReadVersionProvider
+    extends
+        $FunctionalProvider<
+          ReadVersionUseCase,
+          ReadVersionUseCase,
+          ReadVersionUseCase
+        >
+    with $Provider<ReadVersionUseCase> {
+  /// Reads a document as one commit left it.
+  ///
+  /// Here rather than beside the history panel because the preview is what
+  /// needs it: history says *which* version is on screen, and this is what
+  /// turns that into text to render.
+  ReadVersionProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'readVersionProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$readVersionHash();
+
+  @$internal
+  @override
+  $ProviderElement<ReadVersionUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ReadVersionUseCase create(Ref ref) {
+    return readVersion(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ReadVersionUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ReadVersionUseCase>(value),
+    );
+  }
+}
+
+String _$readVersionHash() => r'3cf6e48a1aea455f24126f74f342442fe1b4184f';

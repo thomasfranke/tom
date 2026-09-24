@@ -73,6 +73,7 @@ Future<int> runScenario(
   SuiteProgress? suite,
 }) async {
   final screen = _ScenarioScreen(scenario, quiet: quiet, suite: suite)..start();
+  _forget(scenario);
 
   final process = await Process.start('flutter', <String>[
     'test',
@@ -119,6 +120,22 @@ Future<int> runScenario(
   return code;
 }
 
+/// Throws away what the last run of [scenario] left, before this one starts.
+///
+/// **A log outlives the run that wrote it, and that is how it lies.** The
+/// transcript is written when the scenario ends, so a run killed during the
+/// build — or one that never got that far — leaves the *previous* run's log
+/// under the same name, with its events and its verdict intact. Two
+/// scenarios in one file share the name too, so the survivor may not even be
+/// the same scenario. Reading it then reports a pass that did not happen.
+///
+/// Deleting first costs nothing: a run that reaches the end writes its own,
+/// and one that does not should leave no answer rather than an old one.
+void _forget(Scenario scenario) {
+  final file = File('${repoRoot().path}/${_logPath(scenario)}');
+  if (file.existsSync()) file.deleteSync();
+}
+
 /// Where everything a scenario printed is kept, and its path.
 ///
 /// **The screen shows the handful of lines worth reading; this is the rest.**
@@ -131,13 +148,19 @@ Future<int> runScenario(
 /// throws that folder away, and a log of what happened is not something
 /// anything rebuilds.
 String _keep(Scenario scenario, String transcript) {
-  final slug = scenario.file.replaceAll(RegExp(r'\.dart$'), '');
-  final path = '${repoRoot().path}/$logDirectory/$slug.log';
-  File(path)
+  final path = _logPath(scenario);
+  File('${repoRoot().path}/$path')
     ..parent.createSync(recursive: true)
     ..writeAsStringSync(transcript);
-  return '$logDirectory/$slug.log';
+  return path;
 }
+
+/// Where [scenario]'s transcript lives, relative to the repository.
+///
+/// Named after the *file*, so two scenarios declared together share it —
+/// which is why [_forget] exists.
+String _logPath(Scenario scenario) =>
+    '$logDirectory/${scenario.file.replaceAll(RegExp(r'\.dart$'), '')}.log';
 
 /// Where the transcripts go.
 const logDirectory = '.e2e-logs';

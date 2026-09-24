@@ -1,0 +1,32 @@
+{
+  "summary": "A docs folder whose index has been changed more than once",
+  "description": "What file history exists for. `index.md` is written three times; the first commit and one later one touch other files entirely. So the repository has five commits and the index has three — which is the only way to check that the panel is scoped to the open document rather than to the repository. The three versions say which one they are, so a past one can be told apart from the working copy by reading it. The documents are created by the commits rather than sitting in `content/`, because a commit that writes a file already on disk changes nothing and git refuses it.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "commits": [
+    {
+      "message": "docs: write the index",
+      "write": {
+        "docs/index.md": "# Documentation\n\nThe index, as the first commit wrote it.\n"
+      }
+    },
+    {
+      "message": "docs: expand the index",
+      "write": {
+        "docs/index.md": "# Documentation\n\nThe index, as the second commit left it.\n"
+      }
+    },
+    {
+      "message": "docs: add a writing guide",
+      "write": {
+        "docs/guides/writing.md": "# Writing\n\nA guide, which the index's history must not mention.\n"
+      }
+    },
+    {
+      "message": "docs: fix a typo in the index",
+      "write": {
+        "docs/index.md": "# Documentation\n\nThe index, as the working copy has it.\n"
+      }
+    }
+  ]
+}

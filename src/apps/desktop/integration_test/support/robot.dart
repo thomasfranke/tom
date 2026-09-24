@@ -1,11 +1,20 @@
 /// Everything a scenario can do to the app, and everything it can see.
 library;
 
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:re_editor/re_editor.dart';
 import 'package:tom_desktop/bootstrap/run_tom.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_desktop/screens/branches/branches_control_widget.dart';
+import 'package:tom_desktop/screens/branches/widgets/branches_popover_widget.dart';
+import 'package:tom_desktop/screens/changes/changes_panel.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
+import 'package:tom_desktop/screens/history/history_panel.dart';
+import 'package:tom_desktop/screens/shell/status_panel.dart';
 import 'e2e_module_impl.dart';
 
 /// Drives the assembled app.
@@ -166,12 +175,169 @@ final class TomRobot {
     await settle();
   }
 
+  /// Chooses one of the modes on the bar above the document area.
+  ///
+  /// By its label — `Source`, `Split`, `Preview` — which is what a person
+  /// clicks.
+  Future<void> looksAt(String mode) async {
+    await tapText(mode);
+  }
+
+  /// Replaces what the source pane holds with [source].
+  ///
+  /// **The one place this file touches a widget rather than the screen.** A
+  /// code editor is not a `TextField` and has no `enterText`; what it does
+  /// have is the controller the editor on screen is actually driving, so
+  /// this is still the real editor being edited and not a provider being
+  /// written to behind it.
+  Future<void> typesInTheSource(String source) async {
+    tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text =
+        source;
+    await settle();
+  }
+
+  /// Ticks the changes row that shows [name], staging it.
+  ///
+  /// Scoped to the row rather than to the panel: the caption carries a
+  /// checkbox of its own — *All* — and a tap that found that one would
+  /// stage everything while the step said one file.
+  Future<void> stages(String name) async {
+    await _waitUntil(() => _showing(_inTheChanges(name)));
+    Finder box() => find.descendant(
+      of: find
+          .ancestor(of: _inTheChanges(name), matching: find.byType(Row))
+          .first,
+      matching: find.byType(Checkbox),
+    );
+    await tester.tap(box());
+    // Waited for, not settled: staging runs git in another process and then
+    // reads it again, and a screen with nothing animating settles in a
+    // millisecond while both are still in flight.
+    await _waitUntil(
+      () => _showing(box()) && tester.widget<Checkbox>(box()).value == true,
+    );
+    await settle();
+  }
+
+  /// Presses *Fetch* and waits for git to answer.
+  ///
+  /// The wait is for the button to come back: all three remote actions are
+  /// disabled while one runs, and settling only says no frame is scheduled
+  /// while git is still in another process.
+  Future<void> fetches() => _remoteAction('Fetch');
+
+  /// Presses *Push*.
+  Future<void> pushes() => _remoteAction('Push');
+
+  /// Presses *Pull*, which lives inside the rejection rather than the bar.
+  Future<void> pulls() => _remoteAction('Pull');
+
+  /// Presses the remote action saying [label], and waits for it to finish.
+  Future<void> _remoteAction(String label) async {
+    await _waitUntil(() => _showing(find.text(label)));
+    await tester.tap(find.text(label));
+    // While it runs the bar's own buttons read `Fetch…` and are disabled;
+    // the label coming back is the action having finished *and* the status
+    // having been read again.
+    await _waitUntil(() => _showing(find.text(label)));
+    await settle();
+  }
+
+  /// Ticks *All*, staging everything the panel is listing.
+  ///
+  /// The caption's own checkbox, which is the other half of "everything at
+  /// once, or one file at a time" — and the reason [stages] is careful to
+  /// find a *row's* box rather than this one.
+  Future<void> stagesEverything() async {
+    final Finder all = find.descendant(
+      of: find.ancestor(of: find.text('All'), matching: find.byType(Row)).first,
+      matching: find.byType(Checkbox),
+    );
+    await _waitUntil(() => _showing(all));
+    await tester.tap(all);
+    await _waitUntil(
+      () => _showing(all) && tester.widget<Checkbox>(all).value == true,
+    );
+    await settle();
+  }
+
+  /// Asserts *Commit* cannot be pressed.
+  ///
+  /// Unavailable rather than absent, and refused before the attempt rather
+  /// than reported after it.
+  Future<void> seesCommitUnavailable() async {
+    final Finder button = find.descendant(
+      of: find.byType(ChangesPanel),
+      matching: find.byType(FilledButton),
+    );
+    await _waitUntil(() => _showing(button));
+    expect(
+      tester.widget<FilledButton>(button).onPressed,
+      isNull,
+      reason: 'Commit is available with nothing staged or nothing written',
+    );
+  }
+
+  /// Types [message] into the commit box.
+  Future<void> describesTheCommit(String message) async {
+    await tester.enterText(
+      find.descendant(of: find.byType(ChangesPanel), matching: _anyField),
+      message,
+    );
+    await settle();
+  }
+
+  /// Presses *Commit*.
+  ///
+  /// Checked before it is pressed, because a disabled button swallows a tap
+  /// without a word: the step would go green and the assertion after it
+  /// would fail somewhere else entirely.
+  Future<void> commits() async {
+    final Finder button = find.descendant(
+      of: find.byType(ChangesPanel),
+      matching: find.byType(FilledButton),
+    );
+    expect(
+      tester.widget<FilledButton>(button).onPressed,
+      isNotNull,
+      reason: 'Commit is disabled — is anything staged, and described?',
+    );
+    await tester.tap(button);
+    // The box emptying is what says the commit landed *and* the status has
+    // been read again — settling only says no frame is scheduled, and git
+    // is another process.
+    await _waitUntil(
+      () => tester.widget<TextField>(_anyField).controller!.text.isEmpty,
+    );
+    await settle();
+  }
+
+  /// Presses the save shortcut, the way a person does.
+  ///
+  /// The platform's own — a Mac user presses ⌘S — and the editor has to have
+  /// the focus, which is what the tap is for.
+  Future<void> saves() async {
+    await tester.tap(find.byType(CodeEditor));
+    await tester.pump(const Duration(milliseconds: 200));
+    final LogicalKeyboardKey modifier = Platform.isMacOS
+        ? LogicalKeyboardKey.meta
+        : LogicalKeyboardKey.control;
+    await tester.sendKeyDownEvent(modifier);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+    await tester.sendKeyUpEvent(modifier);
+    await settle();
+  }
+
   /// Clicks the row of the file tree that shows [name].
   ///
   /// Scoped to the explorer rather than to the window: the space's own folder
   /// is named in the top bar too, and a tap that found the chrome instead of
   /// the tree would pass while doing nothing.
   Future<void> clickInTheTree(String name) async {
+    // Waited for, not assumed: opening a space walks a real folder, and the
+    // shell is on screen before that answer has arrived. Here rather than in
+    // each scenario, so the race is paid for once.
+    await _waitUntil(() => _showing(_inTheTree(name)));
     await tester.tap(_inTheTree(name));
     await settle();
   }
@@ -235,12 +401,380 @@ final class TomRobot {
   }
 
   /// Asserts the status bar names [path] as the document that is open.
+  ///
+  /// Scoped to the bar, because a document at the space's root has the same
+  /// spelling in the tree — and a finder that matched either would pass
+  /// while the bar said nothing.
   Future<void> seesTheOpenDocument(String path) async {
-    await _waitUntil(() => _showing(find.text(path)));
+    final Finder shown = find.descendant(
+      of: find.byType(StatusPanel),
+      matching: find.text(path),
+    );
+    await _waitUntil(() => _showing(shown));
+    expect(shown, findsOneWidget, reason: 'the status bar does not name $path');
+  }
+
+  /// Asserts the source pane is showing [text].
+  ///
+  /// Through the editor's own controller, for the reason [typesInTheSource]
+  /// gives: what a code editor paints is not a `Text` widget.
+  Future<void> seesInTheSource(String text) async {
+    await _waitUntil(() => _showing(find.byType(CodeEditor)));
     expect(
-      find.text(path),
+      tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
+      contains(text),
+      reason: 'the source pane is not showing "$text"',
+    );
+  }
+
+  /// Asserts the changes panel lists [names], each exactly once.
+  Future<void> seesInTheChanges(List<String> names) async {
+    await _waitUntil(() => _showing(_inTheChanges(names.first)));
+    for (final String name in names) {
+      expect(
+        _inTheChanges(name),
+        findsOneWidget,
+        reason: '$name is not in the changes panel',
+      );
+    }
+  }
+
+  /// Asserts the changes panel does not list [name].
+  ///
+  /// Waits for the row to *go*, which is the same race read backwards: a
+  /// file stops differing because git was asked again, and the row is still
+  /// on screen until that answer arrives.
+  Future<void> seesNotInTheChanges(String name) async {
+    await _waitUntil(() => !_showing(_inTheChanges(name)));
+    expect(
+      _inTheChanges(name),
+      findsNothing,
+      reason: '$name should not be in the changes panel',
+    );
+  }
+
+  /// Asserts nothing differs from the last commit.
+  Future<void> seesACleanTree() async {
+    const String clean = 'Nothing has changed since the last commit.';
+    await _waitUntil(() => _showing(find.text(clean)));
+    expect(find.text(clean), findsOneWidget);
+  }
+
+  /// Asserts the top bar says how far the branch has drifted.
+  ///
+  /// [ahead] and [behind] are what the two arrows should read; zero means
+  /// that half should be absent, because a counter with nothing to count is
+  /// chrome read twice and ignored.
+  Future<void> seesTheDrift({int ahead = 0, int behind = 0}) async {
+    final String expected = <String>[
+      if (ahead > 0) '↑ $ahead',
+      if (behind > 0) '↓ $behind',
+    ].join('  ');
+    if (expected.isEmpty) {
+      await _waitUntil(() => !_showing(find.textContaining('↑')));
+      expect(find.textContaining('↑'), findsNothing);
+      expect(find.textContaining('↓'), findsNothing);
+      return;
+    }
+    await _waitUntil(() => _showing(find.text(expected)));
+    expect(
+      find.text(expected),
       findsOneWidget,
-      reason: 'the status bar does not name $path',
+      reason: 'the top bar does not say the branch is $expected',
+    );
+  }
+
+  /// Asserts the push was refused, in the words the product chose.
+  ///
+  /// All three sentences, because the wording *is* the product here: who
+  /// got there first, what to do, and that nothing committed was lost
+  /// (`docs/product/git-workflow/push-pull/doc.md`).
+  Future<void> seesThePushRefused({required int commits}) async {
+    final String headline =
+        'Someone pushed $commits commit${commits == 1 ? '' : 's'} first.';
+    await _waitUntil(() => _showing(find.text(headline)));
+    expect(find.text(headline), findsOneWidget, reason: 'no rejection said');
+    expect(
+      find.text(
+        'Pull them, then push again. Nothing you committed has been lost.',
+      ),
+      findsOneWidget,
+      reason: 'the rejection does not say the work is safe',
+    );
+    expect(find.text('Pull'), findsOneWidget, reason: 'no way out of it');
+  }
+
+  /// Asserts nothing on screen is claiming a push was refused.
+  void seesNoRefusal() {
+    expect(find.textContaining('Someone pushed'), findsNothing);
+    expect(find.text('Pull'), findsNothing);
+  }
+
+  /// Asserts the status bar names [branch] as the one checked out.
+  Future<void> seesTheBranch(String branch) async {
+    final Finder shown = find.descendant(
+      of: find.byType(StatusPanel),
+      matching: find.text(branch),
+    );
+    await _waitUntil(() => _showing(shown));
+    expect(
+      shown,
+      findsOneWidget,
+      reason:
+          'the status bar does not say the '
+          'branch is $branch',
+    );
+  }
+
+  // ── History ───────────────────────────────────────────────────────────
+
+  /// Clicks the history entry whose message is [subject].
+  Future<void> opensTheVersion(String subject) async {
+    await _waitUntil(() => _showing(_inTheHistory(subject)));
+    await tester.tap(_inTheHistory(subject));
+    await settle();
+  }
+
+  /// Presses *Back to now*, leaving the past version.
+  Future<void> goesBackToNow() async {
+    await tapText('Back to now');
+  }
+
+  /// Asserts the history panel is offering each of [subjects].
+  Future<void> seesInTheHistory(List<String> subjects) async {
+    await _waitUntil(() => _showing(_inTheHistory(subjects.first)));
+    for (final String subject in subjects) {
+      expect(
+        _inTheHistory(subject),
+        findsOneWidget,
+        reason: '"$subject" is not in the history',
+      );
+    }
+  }
+
+  /// Asserts the history panel is not offering [subject].
+  void seesNotInTheHistory(String subject) {
+    expect(
+      _inTheHistory(subject),
+      findsNothing,
+      reason: '"$subject" should not be in this document\'s history',
+    );
+  }
+
+  /// Asserts the bar above the document says a past version is on screen.
+  Future<void> seesReadingAVersion() async {
+    await _waitUntil(() => _showing(find.textContaining('Reading ')));
+    expect(find.textContaining('Reading '), findsOneWidget);
+    expect(find.text('Back to now'), findsOneWidget);
+    // Nothing types into the past, so the three modes give way entirely.
+    expect(
+      find.text('Split'),
+      findsNothing,
+      reason: 'the modes are still being offered over a past version',
+    );
+  }
+
+  /// Asserts the working copy is what is on screen.
+  Future<void> seesTheWorkingCopy() async {
+    await _waitUntil(() => _showing(find.text('Split')));
+    expect(find.textContaining('Reading '), findsNothing);
+    expect(find.text('Back to now'), findsNothing);
+  }
+
+  /// Whatever the history panel shows as [text].
+  ///
+  /// Scoped to the panel, because a commit's message can name a file the
+  /// tree is showing too.
+  Finder _inTheHistory(String text) =>
+      find.descendant(of: find.byType(HistoryPanel), matching: find.text(text));
+
+  // ── Branches ──────────────────────────────────────────────────────────
+
+  /// Opens the branch popover from the control in the top bar.
+  Future<void> opensTheBranches() async {
+    final Finder control = find.descendant(
+      of: find.byType(BranchesControlWidget),
+      matching: find.byType(OutlinedButton),
+    );
+    await _waitUntil(() => _showing(control));
+    await tester.tap(control);
+    await _waitUntil(() => _showing(find.text('Create branch…')));
+  }
+
+  /// Closes it the way a keyboard would.
+  Future<void> closesTheBranches() async {
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await settle();
+  }
+
+  /// Opens the popover and clicks [branch].
+  ///
+  /// Does not wait for the switch: what happens next is the step's to
+  /// assert — it may be a checkout, or it may be the question about an
+  /// unsaved buffer.
+  Future<void> switchesTo(String branch) async {
+    await opensTheBranches();
+    await tester.tap(_inTheBranches(branch));
+    await settle();
+  }
+
+  /// Opens the popover, names a branch and creates it.
+  Future<void> startsABranch(String name) async {
+    await opensTheBranches();
+    await tapText('Create branch…');
+    await tester.enterText(_theBranchField, name);
+    await settle();
+    await tapText('Create branch');
+  }
+
+  /// Answers the unsaved question by letting the edit go.
+  Future<void> discardsTheEdit() async {
+    await tapText('Discard and switch');
+  }
+
+  /// Answers it by writing the buffer first.
+  Future<void> savesAndSwitches() async {
+    await tapText('Save and switch');
+  }
+
+  /// Answers it by staying put.
+  Future<void> staysOnTheBranch() async {
+    await tapText('Stay on this branch');
+  }
+
+  /// Asserts the control in the top bar names [branch].
+  Future<void> seesTheBranchControl(String branch) async {
+    final Finder shown = find.descendant(
+      of: find.byType(BranchesControlWidget),
+      matching: find.text(branch),
+    );
+    await _waitUntil(() => _showing(shown));
+    expect(
+      shown,
+      findsOneWidget,
+      reason: 'the top bar does not say the branch is $branch',
+    );
+  }
+
+  /// Asserts the open popover is offering each of [names].
+  void seesTheBranches(List<String> names) {
+    for (final String name in names) {
+      expect(
+        _inTheBranches(name),
+        findsOneWidget,
+        reason: '$name is not among the branches offered',
+      );
+    }
+  }
+
+  /// Asserts the switch stopped to ask about [document] rather than
+  /// replacing it.
+  Future<void> seesTheUnsavedQuestion(String document) async {
+    final Finder asked = find.text('$document has unsaved changes.');
+    await _waitUntil(() => _showing(asked));
+    expect(asked, findsOneWidget, reason: 'it switched without asking');
+    expect(find.text('Save and switch'), findsOneWidget);
+    expect(find.text('Discard and switch'), findsOneWidget);
+  }
+
+  /// Asserts nothing is asking about unsaved work.
+  void seesNoQuestion() {
+    expect(find.textContaining('has unsaved changes.'), findsNothing);
+  }
+
+  /// Whatever the branch popover shows as [name].
+  ///
+  /// Scoped to the popover, because the control above it names a branch too
+  /// — and it is the one the popover would be switching *from*.
+  Finder _inTheBranches(String name) => find.descendant(
+    of: find.byType(BranchesPopoverWidget),
+    matching: find.text(name),
+  );
+
+  /// The popover's own box, which is the one field on screen while it is up.
+  Finder get _theBranchField => find.descendant(
+    of: find.byType(BranchesPopoverWidget),
+    matching: find.byType(TextField),
+  );
+
+  /// Whatever the changes panel shows as [name].
+  ///
+  /// Scoped to the panel, because the same file is named in the tree too.
+  Finder _inTheChanges(String name) =>
+      find.descendant(of: find.byType(ChangesPanel), matching: find.text(name));
+
+  /// The commit box.
+  ///
+  /// Scoped to the panel now that the branch popover has a field of its own;
+  /// the search above the tree is still not a field.
+  Finder get _anyField => find.descendant(
+    of: find.byType(ChangesPanel),
+    matching: find.byType(TextField),
+  );
+
+  /// Asserts which of the two panes the document area is showing.
+  ///
+  /// By each panel's own caption, which is what a person reads — and what a
+  /// panel the shell had hardcoded would keep showing whatever the mode bar
+  /// said.
+  void seesThePanes({required bool source, required bool preview}) {
+    expect(
+      find.text('SOURCE'),
+      source ? findsOneWidget : findsNothing,
+      reason: 'the source pane should ${source ? '' : 'not '}be on screen',
+    );
+    expect(
+      find.text('PREVIEW'),
+      preview ? findsOneWidget : findsNothing,
+      reason: 'the preview should ${preview ? '' : 'not '}be on screen',
+    );
+  }
+
+  /// Asserts the app says, in each place it says it, that [path] is unsaved.
+  ///
+  /// All three at once on purpose: the one thing a text editor may never do
+  /// is lose work quietly, so a mark that went missing in one place is a
+  /// failure even while the other two still show it.
+  Future<void> seesUnsaved(String path) async {
+    await _waitUntil(() => _showing(find.text('Unsaved')));
+    expect(find.text('Unsaved'), findsOneWidget, reason: 'no mark on the bar');
+    await seesTheOpenDocument('$path — unsaved');
+    // And the third place: a dot against the file in the explorer, found by
+    // being round rather than by a key — what makes it a mark is its shape,
+    // and a key would let a square pass.
+    expect(
+      _marksInTheTree(),
+      hasLength(1),
+      reason: 'the explorer does not mark the file as unsaved',
+    );
+  }
+
+  /// Every round mark the file tree is drawing.
+  Iterable<BoxDecoration> _marksInTheTree() => tester
+      .widgetList<DecoratedBox>(
+        find.descendant(
+          of: find.byType(FileTreePanel),
+          matching: find.byType(DecoratedBox),
+        ),
+      )
+      .map((DecoratedBox box) => box.decoration)
+      .whereType<BoxDecoration>()
+      .where((BoxDecoration it) => it.shape == BoxShape.circle);
+
+  /// Asserts nothing is waiting to be written.
+  Future<void> seesNothingUnsaved(String path) async {
+    await _waitUntil(() => !_showing(find.text('Unsaved')));
+    expect(find.text('Unsaved'), findsNothing);
+    expect(
+      find.text('Not saved'),
+      findsNothing,
+      reason: 'the save was refused',
+    );
+    await seesTheOpenDocument(path);
+    expect(
+      _marksInTheTree(),
+      isEmpty,
+      reason: 'the explorer still marks a file that was saved',
     );
   }
 

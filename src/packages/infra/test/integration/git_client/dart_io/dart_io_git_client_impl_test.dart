@@ -43,11 +43,13 @@ void main() {
     if (bare) {
       return;
     }
+    // Deliberately *not* `pull.rebase`: setting it here would configure the
+    // machine the way `git pull` silently needed, and hide that the client
+    // has to say so itself. It used to be set, and it hid exactly that.
     for (final List<String> setting in const <List<String>>[
       <String>['user.name', 'Test'],
       <String>['user.email', 'test@example.com'],
       <String>['commit.gpgsign', 'false'],
-      <String>['pull.rebase', 'false'],
     ]) {
       git(<String>['config', ...setting], inside: path);
     }
@@ -582,6 +584,25 @@ void main() {
 
       expect(await client.pull(), isA<Success<void, GitClientFailure>>());
 
+      expect(File('$repoPath/a.md').readAsStringSync(), '# A from elsewhere\n');
+    });
+
+    test('pull merges divergent branches on an unconfigured machine', () async {
+      // The one the app's own Pull button lives or dies by. Since git 2.27 a
+      // bare `git pull` *refuses* to reconcile divergent branches unless the
+      // machine says how — so a user who never set `pull.rebase`, which is
+      // most of them, would have found the remedy offered by the rejection
+      // screen failing in the one situation it exists for.
+      pushFromElsewhere('# A from elsewhere\n', 'A elsewhere');
+      write('mine.md', '# Mine\n');
+      await client.stage(<String>['mine.md']);
+      await client.commit('Mine here');
+
+      expect(await client.pull(), isA<Success<void, GitClientFailure>>());
+
+      // Merged, not rebased: the local commit is still there, which is what
+      // "nothing you committed has been lost" means.
+      expect(File('$repoPath/mine.md').existsSync(), isTrue);
       expect(File('$repoPath/a.md').readAsStringSync(), '# A from elsewhere\n');
     });
 

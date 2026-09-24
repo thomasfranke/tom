@@ -454,6 +454,69 @@ final class DocumentRepositoryForProvider
 String _$documentRepositoryForHash() =>
     r'd5aa73313822ce4ebff02349ab0d660c2d006bf8';
 
+/// How to reach git for a space.
+///
+/// Per space, for the same reason a document repository is: the client runs
+/// in one folder and serializes that folder's commands, so what is app-wide
+/// is the way to build one.
+
+@ProviderFor(gitRepositoryFor)
+final gitRepositoryForProvider = GitRepositoryForProvider._();
+
+/// How to reach git for a space.
+///
+/// Per space, for the same reason a document repository is: the client runs
+/// in one folder and serializes that folder's commands, so what is app-wide
+/// is the way to build one.
+
+final class GitRepositoryForProvider
+    extends
+        $FunctionalProvider<
+          GitRepositoryFor,
+          GitRepositoryFor,
+          GitRepositoryFor
+        >
+    with $Provider<GitRepositoryFor> {
+  /// How to reach git for a space.
+  ///
+  /// Per space, for the same reason a document repository is: the client runs
+  /// in one folder and serializes that folder's commands, so what is app-wide
+  /// is the way to build one.
+  GitRepositoryForProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'gitRepositoryForProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$gitRepositoryForHash();
+
+  @$internal
+  @override
+  $ProviderElement<GitRepositoryFor> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  GitRepositoryFor create(Ref ref) {
+    return gitRepositoryFor(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(GitRepositoryFor value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<GitRepositoryFor>(value),
+    );
+  }
+}
+
+String _$gitRepositoryForHash() => r'a4c8b05b0e581fdfcfa426133a33480581a7fb1d';
+
 /// What splits a document into blocks.
 
 @ProviderFor(blockReader)

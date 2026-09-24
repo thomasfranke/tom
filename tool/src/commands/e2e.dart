@@ -60,6 +60,9 @@ final class E2eFixture {
     required this.untracked,
     required this.uncommitted,
     required this.outsideTheProject,
+    required this.remote,
+    required this.branches,
+    required this.commits,
   });
 
   /// Reads the fixture in [directory], whose folder name is its [name].
@@ -92,6 +95,13 @@ final class E2eFixture {
           entry.key: entry.value! as String,
       },
       outsideTheProject: decoded['outsideTheProject'] as bool? ?? false,
+      remote: E2eRemote.read(decoded['remote']),
+      branches: E2eBranch.read(decoded['branches']),
+      commits: <E2eCommit>[
+        for (final entry
+            in (decoded['commits'] as List<Object?>? ?? const <Object?>[]))
+          E2eCommit.read(entry! as Map<String, Object?>),
+      ],
     );
   }
 
@@ -121,6 +131,23 @@ final class E2eFixture {
   /// tail and writing it back afterwards is what makes the file *modified*
   /// — which is a state on disk, and cannot be a file of its own.
   final Map<String, String> uncommitted;
+
+  /// The remote this repository tracks, or null when it tracks none.
+  final E2eRemote? remote;
+
+  /// Further commits on the fixture's own branch, oldest first.
+  ///
+  /// What gives a document a *history*: one commit is a file that has been
+  /// recorded, and it takes several — some of them touching other files —
+  /// before "the commits that changed this one" means anything.
+  final List<E2eCommit> commits;
+
+  /// Branches beside the fixture's own, each with its own commits.
+  ///
+  /// What gives a switch somewhere to go *and something to change*: a branch
+  /// holding the same files as `main` would let a switch that did nothing to
+  /// the working tree pass.
+  final List<E2eBranch> branches;
 
   /// Whether it has to be staged outside the repository.
   ///
@@ -193,6 +220,7 @@ Future<int> runAllScenarios() async {
     // scrolling to find what is running now, and a finished one says nothing
     // the summary below will not say better.
     clearScreen();
+    _freshEnvironmentFor(scenario);
     final code = await runScenario(scenario, suite: progress);
     if (code == 0) {
       progress.passed++;
@@ -261,7 +289,19 @@ Future<int> runNamedScenario(String name) async {
     }
     return 64; // EX_USAGE
   }
+  _freshEnvironmentFor(match.first);
   return runScenario(match.first);
+}
+
+/// Rebuilds the environment before [scenario], when it reads one.
+///
+/// **Scenarios write.** One commits, one saves a file, one pushes — so the
+/// situation the next scenario opens is not the one its fixture describes
+/// unless somebody rebuilds it. Running the same scenario twice used to
+/// fail the second time, and the failure pointed at the app rather than at
+/// the leftovers.
+void _freshEnvironmentFor(Scenario scenario) {
+  if (scenario.needsEnvironment) buildEnvironment();
 }
 
 /// The header every screen carries.
@@ -299,10 +339,16 @@ Future<int> runE2eList() async {
   }
 
   final prepared = environmentIsPrepared();
-  final groups = <String, List<Scenario>>{};
+  final groups = <String, List<Scenario>>{
+    // Seeded in the declared order, so the menu reads as the journey
+    // through the app rather than as the order the files were read in.
+    // Empty ones are dropped below; an undeclared one lands at the end.
+    for (final heading in scenarioGroups) heading: <Scenario>[],
+  };
   for (final scenario in scenarios) {
     groups.putIfAbsent(scenario.group, () => <Scenario>[]).add(scenario);
   }
+  groups.removeWhere((_, scenarios) => scenarios.isEmpty);
   final width = scenarios
       .map((s) => s.name.length)
       .reduce((a, b) => a > b ? a : b);
@@ -364,16 +410,19 @@ Future<int> runE2eFixtures() async {
   return 0;
 }
 
-/// Builds the environment from scratch.
+/// Builds the environment from scratch, and answers the fixtures it made.
 ///
-/// Destructive on purpose: it deletes what was there first. A scenario the
-/// last run left modified is not a scenario, and "prepare" that sometimes
-/// prepared would be the worst kind of flake — the one that depends on
-/// whether the previous test passed.
-Future<int> runE2ePrepare() async {
+/// **Destructive on purpose**: it deletes what was there first. A scenario
+/// the last run left modified is not a scenario, and a prepare that
+/// sometimes prepared would be the worst kind of flake — the one that
+/// depends on whether the previous test passed.
+///
+/// Which is why [runScenario] is given a fresh one every time rather than
+/// trusting whatever is on disk: the scenarios *write*. One commits, one
+/// saves a file, one pushes — and the next then starts from a situation
+/// nobody described. It costs a second; a build costs a minute.
+List<E2eFixture> buildEnvironment() {
   final directory = Directory('${repoRoot().path}/$e2eDirectory');
-  _printTitle();
-  announce('End-to-end — prepare');
   if (directory.existsSync()) {
     directory.deleteSync(recursive: true);
   }
@@ -394,6 +443,14 @@ Future<int> runE2ePrepare() async {
     '${const JsonEncoder.withIndent('  ').convert(manifest)}\n',
   );
   File('${directory.path}/README.md').writeAsStringSync(_readme);
+  return fixtures;
+}
+
+/// Builds the environment and says where it went.
+Future<int> runE2ePrepare() async {
+  _printTitle();
+  announce('End-to-end — prepare');
+  final fixtures = buildEnvironment();
 
   stdout
     ..writeln()
@@ -415,6 +472,110 @@ Future<int> runE2eClean() async {
   directory.deleteSync(recursive: true);
   stdout.writeln('  Removed $e2eDirectory/');
   return 0;
+}
+
+/// A remote the fixture tracks, and how far each side has drifted from it.
+///
+/// **A bare repository beside the working tree, never a server.** To git a
+/// filesystem path is as real a remote as GitHub — `fetch`, `push` and
+/// `pull` take the same code path, and the transport is the one part TOM
+/// does not implement anyway ([Decision
+/// 2](../../../docs/technical/decisions/002-git-via-system-binary.md): it is
+/// the user's own git). What that buys is a suite with no network, no
+/// credentials and no shared state, on a divergence built to order.
+final class E2eRemote {
+  const E2eRemote({required this.theirs, required this.mine});
+
+  /// Reads the `remote` block, or answers null when there is none.
+  static E2eRemote? read(Object? decoded) {
+    if (decoded == null) return null;
+    if (decoded is! Map<String, Object?>) {
+      throw StateError('tom e2e: a fixture\'s "remote" must be an object.');
+    }
+    return E2eRemote(
+      theirs: _commits(decoded['theirs']),
+      mine: _commits(decoded['mine']),
+    );
+  }
+
+  static List<E2eCommit> _commits(Object? decoded) => <E2eCommit>[
+    for (final entry in (decoded as List<Object?>? ?? const <Object?>[]))
+      E2eCommit.read(entry! as Map<String, Object?>),
+  ];
+
+  /// Commits only the remote has — what a fetch discovers and a push is
+  /// refused for.
+  ///
+  /// Made *after* the first push and never fetched, so the working tree
+  /// starts out not knowing about them: `behind` is zero until the app asks,
+  /// which is the whole point of having a Fetch button.
+  final List<E2eCommit> theirs;
+
+  /// Commits only the working tree has — what there is to publish.
+  final List<E2eCommit> mine;
+}
+
+/// A branch to manufacture, and the commits that make it differ.
+///
+/// Built from the fixture's first commit and left behind: the repository
+/// ends on its own branch, so a scenario starts where the user would and
+/// has somewhere to switch *to*.
+final class E2eBranch {
+  const E2eBranch({required this.name, required this.commits});
+
+  /// Reads the `branches` block, which may be absent.
+  static List<E2eBranch> read(Object? decoded) {
+    if (decoded == null) return const <E2eBranch>[];
+    if (decoded is! List<Object?>) {
+      throw StateError('tom e2e: a fixture\'s "branches" must be a list.');
+    }
+    return <E2eBranch>[
+      for (final entry in decoded)
+        E2eBranch(
+          name: (entry! as Map<String, Object?>)['name']! as String,
+          commits: <E2eCommit>[
+            for (final commit
+                in ((entry as Map<String, Object?>)['commits']
+                        as List<Object?>? ??
+                    const <Object?>[]))
+              E2eCommit.read(commit! as Map<String, Object?>),
+          ],
+        ),
+    ];
+  }
+
+  /// What it is called, and what a scenario clicks on.
+  final String name;
+
+  /// What is on it that is not on the branch it started from.
+  final List<E2eCommit> commits;
+}
+
+/// One commit to manufacture: a message, and the files it writes.
+final class E2eCommit {
+  const E2eCommit({required this.message, required this.write});
+
+  /// Reads one entry of a `theirs` or `mine` list.
+  factory E2eCommit.read(Map<String, Object?> decoded) => E2eCommit(
+    message: decoded['message']! as String,
+    write: <String, String>{
+      for (final entry
+          in (decoded['write'] as Map<String, Object?>? ??
+                  const <String, Object?>{})
+              .entries)
+        entry.key: entry.value! as String,
+    },
+  );
+
+  /// What it is called in the history.
+  final String message;
+
+  /// The files it creates or replaces, by path inside the repository.
+  ///
+  /// The two sides write *different* files on purpose: a pull that has to
+  /// merge cleanly is what the recovery scenario needs, and a conflict is a
+  /// situation of its own that nothing draws yet.
+  final Map<String, String> write;
 }
 
 /// Stages [fixture] and returns what the manifest says about it.
@@ -452,6 +613,23 @@ Map<String, Object?> _build(E2eFixture fixture, Directory root) {
       for (final path in fixture.untracked) ':(exclude)$path',
     ]);
     _git(destination, ['commit', '--quiet', '--message', fixture.commit]);
+    // On this branch, before any other is made, so every branch starts from
+    // the whole history rather than from the first commit of it.
+    for (final commit in fixture.commits) {
+      _commit(destination, commit);
+    }
+    // Each branch starts from that first commit and the repository comes
+    // back to `main`, so a scenario opens where a person would.
+    for (final branch in fixture.branches) {
+      _git(destination, ['switch', '--quiet', '--create', branch.name]);
+      for (final commit in branch.commits) {
+        _commit(destination, commit);
+      }
+      _git(destination, ['switch', '--quiet', 'main']);
+    }
+    if (fixture.remote case final E2eRemote remote) {
+      _attachRemote(destination, remote);
+    }
     fixture.uncommitted.forEach((path, tail) {
       _write(
         '$destination/$path',
@@ -463,6 +641,11 @@ Map<String, Object?> _build(E2eFixture fixture, Directory root) {
   return <String, Object?>{
     'root': space,
     if (!fixture.outsideTheProject) 'repositoryRoot': destination,
+    // So a scenario can ask the *remote* what actually arrived, which is
+    // the only way to tell a push that landed from a button that lit up.
+    if (fixture.remote != null) 'remoteRoot': '$destination.git',
+    if (fixture.branches.isNotEmpty)
+      'branches': <String>[for (final branch in fixture.branches) branch.name],
     'name': space.split('/').last,
     'documents': _documentsIn(space),
     if (fixture.untracked.isNotEmpty)
@@ -539,10 +722,61 @@ void _copy(Directory from, Directory to) {
 ///
 /// `symbolic-ref` rather than `init --initial-branch`, which needs git 2.28:
 /// the environment must not be stricter about git than the app is.
-void _initRepository(String path) {
-  Directory(path).createSync(recursive: true);
-  _git(path, ['init', '--quiet', '.']);
-  _git(path, ['symbolic-ref', 'HEAD', 'refs/heads/main']);
+/// Gives the repository at [path] a remote, and the drift [remote] asks for.
+///
+/// The order is the whole trick, and it is why this cannot be declared as
+/// two numbers:
+///
+/// 1. a bare repository beside the working tree, and a first push — now the
+///    two agree and `origin/main` is tracked;
+/// 2. *their* commits, made through a throwaway clone and pushed, so the
+///    bare moves while this repository's `origin/main` stays where it was —
+///    which is what leaves `behind` at zero until somebody fetches;
+/// 3. *my* commits, made here and not pushed — which is what leaves
+///    something to publish, and what a rejection is about.
+///
+/// The result is the `push-rejected` mock, built rather than hoped for.
+void _attachRemote(String path, E2eRemote remote) {
+  final bare = '$path.git';
+  if (Directory(bare).existsSync()) {
+    Directory(bare).deleteSync(recursive: true);
+  }
+  Directory(bare).createSync(recursive: true);
+  _git(bare, ['init', '--quiet', '--bare', '--initial-branch', 'main', '.']);
+  _git(path, ['remote', 'add', 'origin', bare]);
+  _git(path, ['push', '--quiet', '--set-upstream', 'origin', 'main']);
+
+  if (remote.theirs.isNotEmpty) {
+    // Through a clone, because a bare repository has no working tree to
+    // commit in — and this is also how the commits actually get there in
+    // life: somebody else's checkout pushed first.
+    final theirs = '${Directory.systemTemp.path}/tom-e2e-theirs';
+    if (Directory(theirs).existsSync()) {
+      Directory(theirs).deleteSync(recursive: true);
+    }
+    _git(Directory.systemTemp.path, ['clone', '--quiet', bare, theirs]);
+    _configure(theirs);
+    for (final commit in remote.theirs) {
+      _commit(theirs, commit);
+    }
+    _git(theirs, ['push', '--quiet', 'origin', 'main']);
+    Directory(theirs).deleteSync(recursive: true);
+  }
+
+  for (final commit in remote.mine) {
+    _commit(path, commit);
+  }
+}
+
+/// Writes [commit]'s files in [path] and records them.
+void _commit(String path, E2eCommit commit) {
+  commit.write.forEach((file, content) => _write('$path/$file', content));
+  _git(path, ['add', '--', '.']);
+  _git(path, ['commit', '--quiet', '--message', commit.message]);
+}
+
+/// The identity and settings every manufactured repository commits with.
+void _configure(String path) {
   for (final setting in const [
     ['user.name', 'TOM E2E'],
     ['user.email', 'e2e@example.invalid'],
@@ -550,6 +784,13 @@ void _initRepository(String path) {
   ]) {
     _git(path, ['config', ...setting]);
   }
+}
+
+void _initRepository(String path) {
+  Directory(path).createSync(recursive: true);
+  _git(path, ['init', '--quiet', '.']);
+  _git(path, ['symbolic-ref', 'HEAD', 'refs/heads/main']);
+  _configure(path);
 }
 
 /// Runs git inside [directory], failing loudly.

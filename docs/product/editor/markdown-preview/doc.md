@@ -7,7 +7,7 @@ Render the document as formatted output, not raw text — the primary way anyone
 ## Rules — desktop
 
 - The preview renders headings, lists, tables, code blocks (with syntax highlighting), local images and links.
-- The preview is a first-class reading mode on its own, not just a companion to editing — a document can be opened preview-only.
+- The preview is a first-class reading mode on its own, not just a companion to editing — a document can be opened preview-only. With the pane to itself it is set wider and larger than beside the source: reading is not a lesser mode ([source mode](../source-mode/doc.md) is where the three modes are described).
 - Rendering quality is treated as product work, not polish: what shows up here is what an audience that never opens the source will judge.
 
 ## Rules — mobile ("reading")
