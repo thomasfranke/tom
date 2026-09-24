@@ -52,6 +52,13 @@ final class TomRobot {
     // it is asserting.
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+    // Home's trunk animates forever, and `pumpAndSettle` waits for a frame
+    // that never comes. The platform's own "no animations" switch is what
+    // the widget honours, so the run asks for the still screen the way an
+    // accessibility setting would — the product's own path, not a test hook.
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await tester.pumpWidget(
       tomApp(
         modules: <TomModule>[

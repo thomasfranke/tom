@@ -30,7 +30,16 @@ Future<int> runCodegen({
   if (hard) {
     var deleted = 0;
     for (final target in targets) {
-      deleted += _deleteGenerated(directoryFor(target));
+      final directory = directoryFor(target);
+      deleted += _deleteGenerated(directory);
+      // The cache goes with them, and this is the half that was missing:
+      // `--force` only skips the diff of which packages changed, while
+      // build_runner's own asset graph still records every output as
+      // written. Deleting the files without it leaves a package that
+      // rebuilds nothing and reports success — the tree half generated, the
+      // analyzer full of undefined types, and the gate the only thing that
+      // notices.
+      _deleteBuildCache(directory);
     }
     stdout.writeln(
       '${palette.prompt}• Deleted $deleted generated file'
@@ -39,6 +48,13 @@ Future<int> runCodegen({
   }
 
   return dart(['run', _runner, if (hard) '--force', ...targets]);
+}
+
+/// Removes build_runner's asset graph for [directory], which is what
+/// `build_runner clean` does and the only way to make it build again.
+void _deleteBuildCache(Directory directory) {
+  final cache = Directory('${directory.path}/.dart_tool/build');
+  if (cache.existsSync()) cache.deleteSync(recursive: true);
 }
 
 /// Deletes every generated file under [directory], returning how many.

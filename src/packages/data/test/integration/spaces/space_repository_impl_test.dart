@@ -120,6 +120,27 @@ void main() {
       expect(space.rootWithinRepository?.value, 'docs/adr');
     });
 
+    test(
+      'a folder reached through a link is the folder it points at',
+      () async {
+        // The picker answers with the link the user clicked; git answers with
+        // where the repository really is. On macOS `/tmp` itself is such a
+        // link, so this is the ordinary case and not an exotic one.
+        Link('$base/linked').createSync(repoPath);
+
+        final SpaceEntity space = valueOf(
+          await repository.open('$base/linked/docs'),
+        );
+
+        expect(space.root, '$repoPath/docs');
+        expect(space.repositoryRoot, repoPath);
+        expect(space.rootWithinRepository?.value, 'docs');
+      },
+      skip: Platform.isWindows
+          ? 'creating a symbolic link needs a privilege on Windows'
+          : false,
+    );
+
     test('and the paths convert both ways', () async {
       // What every later git call depends on: a path the file tree shows
       // and a path git accepts are the same file.

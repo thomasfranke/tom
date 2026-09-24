@@ -140,5 +140,28 @@ void main() {
 
       expect(valueOf(await settings.read('theme')), isNull);
     });
+
+    test('a value that is not a string reads as nothing stored', () async {
+      // Valid JSON, wrong shape: a number, or the list someone typed in
+      // place of the encoded string the store writes. Neither may throw
+      // out of a contract whose whole promise is that losing it is never
+      // fatal.
+      File(path)
+        ..parent.createSync(recursive: true)
+        ..writeAsStringSync('{"theme": 1, "spaces.recent": ["/a", "/b"]}');
+
+      expect(valueOf(await settings.read('theme')), isNull);
+      expect(valueOf(await settings.read('spaces.recent')), isNull);
+    });
+
+    test('and writing over such a value recovers it', () async {
+      File(path)
+        ..parent.createSync(recursive: true)
+        ..writeAsStringSync('{"theme": 1}');
+
+      valueOf(await settings.write('theme', 'dark'));
+
+      expect(valueOf(await settings.read('theme')), 'dark');
+    });
   });
 }

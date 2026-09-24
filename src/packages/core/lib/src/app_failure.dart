@@ -53,8 +53,28 @@ extension FailureChain on AppFailure {
   ///
   /// Never shown as the explanation of what happened — that is the UI's job,
   /// per failure. This is what goes behind "details" and into a bug report.
-  String get diagnostics =>
-      chain.map((AppFailure failure) => failure.toString()).join('\n');
+  String get diagnostics => chain.map(_ownText).join('\n');
+
+  /// [failure]'s text with its cause's cut out.
+  ///
+  /// A generated `toString` prints every field, `cause` included, so the
+  /// text of one link already nests every link under it — and a chain
+  /// joined as-is repeats the bottom failure once per ancestor. What a link
+  /// contributes is its own fields; the next line is where its cause goes.
+  static String _ownText(AppFailure failure) {
+    final String text = failure.toString();
+    // `cause: null` at the bottom of a chain is cut for the same reason: it
+    // says nothing the line below it does not.
+    final String slot = 'cause: ${failure.cause}';
+    final int at = text.indexOf(slot);
+    if (at < 0) {
+      return text;
+    }
+    // The separator before the field goes with it, so `(a: 1, cause: …)`
+    // reads `(a: 1)` and `(cause: …)` reads `()`.
+    final int from = at >= 2 && text.startsWith(', ', at - 2) ? at - 2 : at;
+    return text.replaceRange(from, at + slot.length, '');
+  }
 }
 
 /// The failure of last resort: something threw where nothing was expected to.

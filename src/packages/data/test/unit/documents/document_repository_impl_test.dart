@@ -227,4 +227,8 @@ final class _ScriptedFilesystem implements Filesystem {
   @override
   Future<Result<bool, FilesystemFailure>> directoryExists(String path) async =>
       throw UnimplementedError();
+
+  @override
+  Future<Result<String, FilesystemFailure>> resolvePath(String path) async =>
+      throw UnimplementedError();
 }

@@ -67,6 +67,16 @@ abstract class SpaceEntity with _$SpaceEntity {
     return segments.isEmpty ? root : segments.last;
   }
 
+  /// Whether [repositoryRoot] is [root] or a folder above it — the
+  /// constructor's invariant, asked before constructing.
+  ///
+  /// For the one caller that builds a space from two answers it did not
+  /// choose: the picker's folder and git's root. The assertion is stripped
+  /// from a release build, so a pair that does not enclose has to be refused
+  /// as a failure rather than trusted to throw.
+  static bool isEnclosedBy(String root, String repositoryRoot) =>
+      _isEnclosedBy(root, repositoryRoot);
+
   /// Where [root] sits inside the repository, or null when it *is* the
   /// repository.
   ///

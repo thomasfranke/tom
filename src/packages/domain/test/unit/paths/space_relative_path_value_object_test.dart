@@ -69,6 +69,54 @@ void main() {
     });
   });
 
+  group('resolve', () {
+    final SpaceRelativePathValueObject writing = SpaceRelativePathValueObject(
+      'guides/writing.md',
+    );
+
+    test('reads a sibling from the document\'s own folder', () {
+      // The way every renderer reads a link: beside the document, not at
+      // the space root.
+      expect(writing.resolve('reviewing.md')?.value, 'guides/reviewing.md');
+      expect(writing.resolve('./reviewing.md')?.value, 'guides/reviewing.md');
+    });
+
+    test('climbs with .. and stays inside the space', () {
+      expect(writing.resolve('../about.md')?.value, 'about.md');
+      expect(writing.resolve('../adr/001.md')?.value, 'adr/001.md');
+      expect(
+        writing.resolve('sub/../reviewing.md')?.value,
+        'guides/reviewing.md',
+      );
+    });
+
+    test('starts from the root for a reference that says so', () {
+      expect(writing.resolve('/adr/001.md')?.value, 'adr/001.md');
+    });
+
+    test('answers null for a reference that leaves the space', () {
+      expect(writing.resolve('../../secret.md'), isNull);
+      expect(writing.resolve('/../secret.md'), isNull);
+    });
+
+    test('a bare . or nothing at all is the document\'s own folder', () {
+      expect(writing.resolve('.')?.value, 'guides');
+      expect(writing.resolve('')?.value, 'guides');
+    });
+
+    test('answers null for what is not a path at all', () {
+      expect(writing.resolve(r'..\a.md'), isNull);
+    });
+
+    test('works from a document at the root', () {
+      final SpaceRelativePathValueObject readme = SpaceRelativePathValueObject(
+        'README.md',
+      );
+      expect(readme.resolve('guides/writing.md')?.value, 'guides/writing.md');
+      expect(readme.resolve('../x.md'), isNull);
+    });
+  });
+
   group('the two relative-path types do not mix', () {
     test('both accept the same syntax, from the same rule', () {
       expect(SpaceRelativePathValueObject.tryParse('notes/a.md'), isNotNull);

@@ -439,4 +439,54 @@ void main() {
       expect((exists as Success<bool, FilesystemFailure>).value, isFalse);
     });
   });
+
+  group('resolvePath', () {
+    test(
+      'follows a link to where the folder really is',
+      () async {
+        final String real = '${tempDir.path}/real';
+        Directory('$real/docs').createSync(recursive: true);
+        Link('${tempDir.path}/link').createSync(real);
+
+        final Result<String, FilesystemFailure> resolved = await filesystem
+            .resolvePath('${tempDir.path}/link/docs');
+
+        expect(
+          (resolved as Success<String, FilesystemFailure>).value,
+          Directory('$real/docs').resolveSymbolicLinksSync(),
+        );
+      },
+      skip: Platform.isWindows
+          ? 'creating a symbolic link needs a privilege on Windows'
+          : false,
+    );
+
+    test(
+      'spells a folder with no link on it the way the machine does',
+      () async {
+        final String path = '${tempDir.path}/plain';
+        Directory(path).createSync();
+
+        final Result<String, FilesystemFailure> resolved = await filesystem
+            .resolvePath(path);
+
+        expect(
+          (resolved as Success<String, FilesystemFailure>).value,
+          Directory(path).resolveSymbolicLinksSync(),
+        );
+      },
+    );
+
+    test('fails for a path with nothing at it', () async {
+      final String path = '${tempDir.path}/gone';
+
+      final Result<String, FilesystemFailure> resolved = await filesystem
+          .resolvePath(path);
+
+      expect(
+        (resolved as Failure<String, FilesystemFailure>).failure,
+        named<FilesystemEntryNotFound>(path),
+      );
+    });
+  });
 }

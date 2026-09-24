@@ -42,8 +42,11 @@ Iterable<Offence> implementationsSaySo(Directory root) sync* {
 /// top-level classes Freezed generates, so two hierarchies naming the same
 /// concept would collide, and the one that reads first wins silently.
 Iterable<Offence> failuresCarryTheirPrefix(Directory root) sync* {
-  final hierarchy = RegExp(r'sealed class (\w+)Failure with');
-  final variant = RegExp(r'\}\) = (\w+);');
+  // `\s+` rather than a space: dartfmt wraps a long declaration onto the
+  // next line, and a hierarchy the rule silently skipped was one where a
+  // variant could drop its prefix and keep the check green.
+  final hierarchy = RegExp(r'sealed class (\w+)Failure\s+with');
+  final variant = RegExp(r'\)\s*=\s*(\w+);');
 
   for (final file in libraryFilesUnder(root)) {
     if (!file.path.endsWith('_failure.dart')) continue;

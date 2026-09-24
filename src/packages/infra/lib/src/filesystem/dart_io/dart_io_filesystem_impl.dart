@@ -116,6 +116,19 @@ final class DartIoFilesystemImpl implements Filesystem {
     }
   }
 
+  @override
+  Future<Result<String, FilesystemFailure>> resolvePath(String path) async {
+    try {
+      // Type-agnostic: the resolution is `realpath` on the string, and a
+      // `Directory` is only the handle `dart:io` needs to call it on.
+      return Success<String, FilesystemFailure>(
+        await Directory(path).resolveSymbolicLinks(),
+      );
+    } on FileSystemException catch (exception) {
+      return Failure<String, FilesystemFailure>(_translate(path, exception));
+    }
+  }
+
   /// A sibling path of [path] no other write is using.
   ///
   /// It is visible on disk for as long as the write takes: [listDirectory]

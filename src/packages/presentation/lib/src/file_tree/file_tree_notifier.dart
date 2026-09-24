@@ -68,6 +68,11 @@ class FileTreeNotifier extends _$FileTreeNotifier {
   Future<void> _load(SpaceEntity space) async {
     final Result<List<SpaceEntryValueObject>, AppFailure> listed =
         await listSpaceEntries.list(space);
+    // The walk is real disk, and the panel can be gone by the time it
+    // answers — a window closed, a space switched. Nothing to show then.
+    if (!ref.mounted) {
+      return;
+    }
     state = switch (listed) {
       Success<List<SpaceEntryValueObject>, AppFailure>(
         value: final List<SpaceEntryValueObject> entries,

@@ -44,6 +44,36 @@ extension type const SpaceRelativePathValueObject._(String value) {
   /// Never empty: [tryParse] refuses a path with an empty segment.
   String get name => value.split('/').last;
 
+  /// The path [reference] names when written inside this document, or null
+  /// when it points outside the space.
+  ///
+  /// How a link or an image in a document is read: relative to the folder
+  /// the document is in, the way every markdown renderer resolves it, and
+  /// from the space root when it starts with `/`. `.` and `..` are folded
+  /// here — this is the one place `..` is welcome, because it is resolved
+  /// before it can become a segment — and a reference that climbs above the
+  /// root has left the space, which nothing may follow.
+  SpaceRelativePathValueObject? resolve(String reference) {
+    final bool fromRoot = reference.startsWith('/');
+    final List<String> segments = fromRoot
+        ? <String>[]
+        : (value.split('/')..removeLast());
+    for (final String segment in reference.split('/')) {
+      switch (segment) {
+        case '' || '.':
+          continue;
+        case '..':
+          if (segments.isEmpty) {
+            return null;
+          }
+          segments.removeLast();
+        default:
+          segments.add(segment);
+      }
+    }
+    return tryParse(segments.join('/'));
+  }
+
   /// Whether this path names a markdown file.
   ///
   /// The file tree shows everything and the editor opens only this

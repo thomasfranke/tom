@@ -26,9 +26,9 @@ Iterable<Offence> capabilitiesAreFolders(Directory root) sync* {
   }
 
   for (final capability in source.listSync().whereType<Directory>()) {
-    final name = capability.path.split('/').last;
+    final name = nameOf(capability);
     final held = capability.listSync();
-    final files = held.whereType<File>().map((f) => f.path.split('/').last);
+    final files = held.whereType<File>().map(nameOf);
     for (final required in <String>['$name.dart', '${name}_failure.dart']) {
       if (!files.contains(required)) {
         yield (
@@ -59,7 +59,7 @@ Iterable<Offence> barrelIsWholeOfSrc(Directory root) sync* {
 
   final exported = barrel.readAsStringSync();
   for (final file in dartFilesUnder(Directory('${lib.path}/src'))) {
-    final path = file.path.replaceFirst('${lib.path}/', '');
+    final path = slashed(file.path).replaceFirst('${slashed(lib.path)}/', '');
     if (exported.contains("export '$path';")) continue;
     yield (
       rule: 'the infrastructure barrel is the whole of its lib/src',

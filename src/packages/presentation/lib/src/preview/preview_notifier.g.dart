@@ -59,7 +59,7 @@ final class PreviewNotifierProvider
   }
 }
 
-String _$previewNotifierHash() => r'7a426121ff6377251bf2d1da46bb8e2d19c8a054';
+String _$previewNotifierHash() => r'ab414920a436f280bb91ae4a708757b7eaf64cb8';
 
 /// Reads whatever document the session says is open.
 ///

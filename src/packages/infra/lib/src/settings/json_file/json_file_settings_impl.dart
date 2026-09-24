@@ -42,7 +42,13 @@ final class JsonFileSettingsImpl implements Settings {
 
   @override
   Future<Result<String?, SettingsFailure>> read(String key) async =>
-      (await _load()).map((Map<String, Object?> all) => all[key] as String?);
+      (await _load()).map((Map<String, Object?> all) {
+        // Anything but a string was not written by this store, and is
+        // treated like the rest of a hand-edited file: as nothing stored.
+        // A cast would throw out of a contract that promises not to.
+        final Object? stored = all[key];
+        return stored is String ? stored : null;
+      });
 
   @override
   Future<Result<void, SettingsFailure>> write(String key, String value) =>

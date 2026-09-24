@@ -66,4 +66,14 @@ abstract interface class Filesystem {
   /// (`docs/product/home/doc.md`). A parent the machine will not let it read
   /// is a different thing, and fails.
   Future<Result<bool, FilesystemFailure>> directoryExists(String path);
+
+  /// [path] with every symbolic link on it followed, as the machine spells
+  /// the real location.
+  ///
+  /// What makes two spellings of one folder comparable: a folder picker
+  /// answers with the link the user clicked, git answers with where it
+  /// really is, and a space built from both would not contain itself.
+  ///
+  /// Fails with [FilesystemEntryNotFound] if nothing exists at [path].
+  Future<Result<String, FilesystemFailure>> resolvePath(String path);
 }

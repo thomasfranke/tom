@@ -46,6 +46,12 @@ class PreviewNotifier extends _$PreviewNotifier {
   ) async {
     final Result<ParsedDocumentValueObject, AppFailure> read =
         await readDocument.read(space, path);
+    // The read is real disk, and the document can have changed under the
+    // panel by the time it answers — the notifier is rebuilt for the next
+    // one, and this instance has nobody left to tell.
+    if (!ref.mounted) {
+      return;
+    }
     state = switch (read) {
       Success<ParsedDocumentValueObject, AppFailure>(
         value: final ParsedDocumentValueObject document,

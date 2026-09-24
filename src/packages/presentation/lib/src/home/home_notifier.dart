@@ -48,6 +48,9 @@ class HomeNotifier extends _$HomeNotifier {
   Future<void> load() async {
     final Result<List<RecentSpaceEntity>, AppFailure> listed =
         await listRecentSpaces.list();
+    if (!ref.mounted) {
+      return;
+    }
     state = HomeState.ready(_recentsOf(listed));
   }
 
@@ -63,6 +66,12 @@ class HomeNotifier extends _$HomeNotifier {
   Future<void> open(String folder) async {
     state = const HomeState.loading();
     final Result<SpaceEntity, AppFailure> opened = await openSpace.open(folder);
+    // Opening runs git in another process, and the window can be gone by
+    // the time it answers — closed, or restarted by a scenario. A notifier
+    // nobody holds any more has nothing to say and no `Ref` to say it with.
+    if (!ref.mounted) {
+      return;
+    }
     if (opened case Success<SpaceEntity, AppFailure>(
       value: final SpaceEntity space,
     )) {
@@ -74,15 +83,23 @@ class HomeNotifier extends _$HomeNotifier {
     }
     // The list is re-read rather than remembered: opening may have changed
     // it, and the screen the user lands on should show what is there.
+    final Result<List<RecentSpaceEntity>, AppFailure> listed =
+        await listRecentSpaces.list();
+    if (!ref.mounted) {
+      return;
+    }
     state = HomeState.failed(
       failure: (opened as Failure<SpaceEntity, AppFailure>).failure,
-      recents: _recentsOf(await listRecentSpaces.list()),
+      recents: _recentsOf(listed),
     );
   }
 
   /// Drops [root] from the recent list, and shows what is left.
   Future<void> forget(String root) async {
     await forgetRecentSpace.forget(root);
+    if (!ref.mounted) {
+      return;
+    }
     await load();
   }
 

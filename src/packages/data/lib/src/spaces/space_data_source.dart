@@ -30,6 +30,14 @@ final class SpaceDataSource {
   Future<Result<bool, FilesystemFailure>> exists(String folder) =>
       filesystem.directoryExists(folder);
 
+  /// Where [folder] really is, every link on the way followed.
+  ///
+  /// Asked before git is, so the two answers a space is built from spell the
+  /// folder the same way: `git rev-parse` resolves links on its own, and a
+  /// picker does not.
+  Future<Result<String, FilesystemFailure>> resolve(String folder) =>
+      filesystem.resolvePath(folder);
+
   /// The root of the repository [folder] sits in.
   ///
   /// The relationship a space is built on — a space is a folder, and the

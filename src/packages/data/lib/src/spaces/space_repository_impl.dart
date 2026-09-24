@@ -49,18 +49,44 @@ final class SpaceRepositoryImpl implements SpaceRepository {
         break;
     }
 
-    return spaces
-        .repositoryRootOf(folder)
-        .map(
-          (String repositoryRoot) => SpaceEntity(
-            root: folder,
+    // Links are followed before git is asked, because git follows them on
+    // its own: a picker answers `/tmp/x/docs`, `git rev-parse` answers
+    // `/private/tmp/x`, and a space built from the two would not enclose
+    // itself. The resolved spelling is the space's identity from here on.
+    final Result<String, SpaceFailure> resolved = await spaces
+        .resolve(folder)
+        .mapFailure(_asSpaceFailure);
+    if (resolved case Failure<String, SpaceFailure>(
+      failure: final SpaceFailure failure,
+    )) {
+      return Failure<SpaceEntity, AppFailure>(failure);
+    }
+    final String root = (resolved as Success<String, SpaceFailure>).value;
+
+    final Result<String, GitClientFailure> located = await spaces
+        .repositoryRootOf(root);
+    switch (located) {
+      case Failure<String, GitClientFailure>(
+        failure: final GitClientFailure failure,
+      ):
+        return Failure<SpaceEntity, AppFailure>(_asGitFailure(failure, folder));
+      case Success<String, GitClientFailure>(value: final String repositoryRoot)
+          when !SpaceEntity.isEnclosedBy(root, repositoryRoot):
+        // An answer the invariant refuses, reported rather than asserted:
+        // the assertion is stripped from a release build, and a space that
+        // does not contain itself would fail on the first path conversion.
+        return Failure<SpaceEntity, AppFailure>(SpaceOperationFailed(folder));
+      case Success<String, GitClientFailure>(
+        value: final String repositoryRoot,
+      ):
+        return Success<SpaceEntity, AppFailure>(
+          SpaceEntity(
+            root: root,
             repositoryRoot: repositoryRoot,
-            name: SpaceEntity.nameOfFolder(folder),
+            name: SpaceEntity.nameOfFolder(root),
           ),
-        )
-        .mapFailure(
-          (GitClientFailure failure) => _asGitFailure(failure, folder),
         );
+    }
   }
 
   @override

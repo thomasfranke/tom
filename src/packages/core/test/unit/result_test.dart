@@ -240,6 +240,25 @@ void main() {
 
       expect(failure.diagnostics.split('\n'), hasLength(2));
     });
+
+    test('diagnostics prints each link once, however deep the chain', () {
+      // A generated `toString` prints the cause inside its own text, so a
+      // chain joined naively would repeat the bottom failure once per
+      // ancestor. `UnexpectedFailure` is the one Freezed failure this
+      // package holds, which makes it the real thing rather than a stand-in.
+      const UnexpectedFailure failure = UnexpectedFailure(
+        'top',
+        cause: UnexpectedFailure('middle', cause: UnexpectedFailure('bottom')),
+      );
+
+      final List<String> lines = failure.diagnostics.split('\n');
+
+      expect(lines, hasLength(3));
+      expect(lines[0], 'UnexpectedFailure(description: top)');
+      expect(lines[1], 'UnexpectedFailure(description: middle)');
+      expect(lines[2], 'UnexpectedFailure(description: bottom)');
+      expect('bottom'.allMatches(failure.diagnostics), hasLength(1));
+    });
   });
 
   group('UnexpectedFailure', () {
