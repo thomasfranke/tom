@@ -45,10 +45,9 @@ class HomeScreen extends ConsumerWidget {
               // wordmark, and the refusal does not show one.
               HomeReady(recents: final List<RecentSpaceEntity> recents) =>
                 CommitTrunkWidget(
-                  // The line's own history is the only history this screen
-                  // has: the spaces that were opened, newest first. Invented
-                  // hashes belong to the website, not to someone's app.
-                  commits: _commits(recents),
+                  // The log down the line is the ground's own (TOM's history),
+                  // not the spaces: those are on the card in front of it, and
+                  // saying the same thing twice is what makes a screen busy.
                   child: HomeCanvasWidget(
                     // 98 above and 166 below, on the 900-tall window the
                     // design was drawn for. Kept as a ratio rather than as a
@@ -71,29 +70,4 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// The remembered spaces as entries on the trunk behind them.
-///
-/// Three at most: the line has room for three before it reaches the status
-/// bar, and a fourth would be a list rather than a ground.
-List<TrunkCommit> _commits(List<RecentSpaceEntity> recents) => <TrunkCommit>[
-  for (final RecentSpaceEntity recent in recents.take(3))
-    TrunkCommit(subject: recent.name, meta: _ago(recent.lastOpened)),
-];
-
-/// When something happened, in the words a log uses.
-///
-/// Rounded down on purpose: the point is *how long ago*, and a space opened
-/// 30 hours ago reads better as yesterday than as a number of hours.
-String _ago(DateTime moment) {
-  final Duration since = DateTime.now().toUtc().difference(moment);
-  return switch (since.inDays) {
-    0 => 'today',
-    1 => 'yesterday',
-    < 7 => '${since.inDays} days ago',
-    < 14 => 'last week',
-    < 60 => '${since.inDays ~/ 7} weeks ago',
-    _ => '${since.inDays ~/ 30} months ago',
-  };
 }
