@@ -92,9 +92,13 @@ Two contracts, one per space, because they fail differently: a document that can
 
 **One construct does not survive isolation: footnotes.** A block carrying `[^ref]` renders it as literal text, because the definition is another block and the reference map does not carry it. Reference links do survive, because `linkReferences` can travel with the block. The parser also synthesises a footnotes `section` node that corresponds to no lines at all, so a block list must tolerate a node with no span. What to do about footnotes is M2's, not settled here.
 
-### `DiffBlock`
+### `DiffBlockValueObject`
 
-The output of `BlockDiffer` and the reason the product exists: a block paired with a classification — `unchanged` · `added` · `removed` · `modified`. `modified` also carries the before and after sides, so the UI can render intra-block changes later (diff v2).
+The output of `BlockDifferService` and the reason the product exists: a block paired with what happened to it. Sealed rather than a block carrying a flag, because only one of the four holds two things — `unchanged` · `added` · `removed` each carry one block, and `modified` carries the before and after sides, which is what a word-level diff *inside* a block starts from (diff v2).
+
+A removal carries the block from the **old** version, so the preview can render a paragraph that is in no file on disk. What it needs to render it — the link reference definitions of the version it was written in — comes from `DocumentDiffValueObject`, which carries both parsed versions beside the blocks and answers `isUnchanged`: the question the preview asks before decorating anything.
+
+**How two blocks are paired is [Decision 27](decisions/027-blocks-are-aligned-by-myers-and-paired-by-words.md)**: Myers over the block sources, with two of them counting as the same block when they share at least half their words. The threshold is the domain's (`BlockDifferService.pairingThreshold`); the measure belongs to the capability under `BlockAlignerPort`.
 
 ## Open — with the question formulated
 

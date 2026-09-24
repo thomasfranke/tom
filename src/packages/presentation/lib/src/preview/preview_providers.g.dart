@@ -72,6 +72,70 @@ final class SplitDocumentProvider
 
 String _$splitDocumentHash() => r'46bb11a7f94f0107d8e6aaaf1a3dc7207e613d07';
 
+/// Compares the document on screen against what `HEAD` holds.
+///
+/// Beside the preview because the preview is what draws the answer: the
+/// rendered diff is decoration on the blocks that are already there, not a
+/// second screen (`docs/product/diff/rendered-diff/doc.md`).
+
+@ProviderFor(diffDocument)
+final diffDocumentProvider = DiffDocumentProvider._();
+
+/// Compares the document on screen against what `HEAD` holds.
+///
+/// Beside the preview because the preview is what draws the answer: the
+/// rendered diff is decoration on the blocks that are already there, not a
+/// second screen (`docs/product/diff/rendered-diff/doc.md`).
+
+final class DiffDocumentProvider
+    extends
+        $FunctionalProvider<
+          DiffDocumentUseCase,
+          DiffDocumentUseCase,
+          DiffDocumentUseCase
+        >
+    with $Provider<DiffDocumentUseCase> {
+  /// Compares the document on screen against what `HEAD` holds.
+  ///
+  /// Beside the preview because the preview is what draws the answer: the
+  /// rendered diff is decoration on the blocks that are already there, not a
+  /// second screen (`docs/product/diff/rendered-diff/doc.md`).
+  DiffDocumentProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'diffDocumentProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$diffDocumentHash();
+
+  @$internal
+  @override
+  $ProviderElement<DiffDocumentUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DiffDocumentUseCase create(Ref ref) {
+    return diffDocument(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DiffDocumentUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DiffDocumentUseCase>(value),
+    );
+  }
+}
+
+String _$diffDocumentHash() => r'45f90a1c47ad07bf2ef0d0a0e876281b00e4ddc6';
+
 /// Reads a document as one commit left it.
 ///
 /// Here rather than beside the history panel because the preview is what

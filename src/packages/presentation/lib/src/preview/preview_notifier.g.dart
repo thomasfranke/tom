@@ -10,58 +10,40 @@ part of 'preview_notifier.dart';
 // ignore_for_file: type=lint, type=warning
 /// Renders whatever the editor is holding — or the version being read.
 ///
-/// **It reads the buffer, never the disk** — which is what makes an edit
-/// appear here with no refresh step, and what keeps one document from being
-/// read twice per open (`docs/product/editor/source-mode/doc.md`).
+/// **It reads the buffer, never the disk**, which is what makes an edit
+/// appear here with no refresh step (`docs/product/editor/source-mode/doc.md`).
+/// The one exception is an opened history entry: the session names a commit,
+/// that version is what is rendered — not diff text — and the editor is not
+/// listened to at all while it is on screen.
 ///
-/// The one exception is a history entry that has been opened: the session
-/// then names a commit, and what is rendered is that version, which the
-/// product asks to be shown **rendered rather than as diff text**
-/// (`docs/product/git-workflow/file-history/doc.md`). The editor is not
-/// listened to at all while that is on screen — a buffer arriving from a
-/// pane nobody is being shown must not replace the past.
-///
-/// It *listens* to the editor rather than watching it: a rebuild would throw
-/// the rendered blocks away and flash the pane back to "reading it" on every
-/// keystroke.
+/// It *listens* rather than watching: a rebuild would throw the rendered
+/// blocks away and flash the pane back to "reading it" on every keystroke.
 
 @ProviderFor(PreviewNotifier)
 final previewProvider = PreviewNotifierProvider._();
 
 /// Renders whatever the editor is holding — or the version being read.
 ///
-/// **It reads the buffer, never the disk** — which is what makes an edit
-/// appear here with no refresh step, and what keeps one document from being
-/// read twice per open (`docs/product/editor/source-mode/doc.md`).
+/// **It reads the buffer, never the disk**, which is what makes an edit
+/// appear here with no refresh step (`docs/product/editor/source-mode/doc.md`).
+/// The one exception is an opened history entry: the session names a commit,
+/// that version is what is rendered — not diff text — and the editor is not
+/// listened to at all while it is on screen.
 ///
-/// The one exception is a history entry that has been opened: the session
-/// then names a commit, and what is rendered is that version, which the
-/// product asks to be shown **rendered rather than as diff text**
-/// (`docs/product/git-workflow/file-history/doc.md`). The editor is not
-/// listened to at all while that is on screen — a buffer arriving from a
-/// pane nobody is being shown must not replace the past.
-///
-/// It *listens* to the editor rather than watching it: a rebuild would throw
-/// the rendered blocks away and flash the pane back to "reading it" on every
-/// keystroke.
+/// It *listens* rather than watching: a rebuild would throw the rendered
+/// blocks away and flash the pane back to "reading it" on every keystroke.
 final class PreviewNotifierProvider
     extends $NotifierProvider<PreviewNotifier, PreviewState> {
   /// Renders whatever the editor is holding — or the version being read.
   ///
-  /// **It reads the buffer, never the disk** — which is what makes an edit
-  /// appear here with no refresh step, and what keeps one document from being
-  /// read twice per open (`docs/product/editor/source-mode/doc.md`).
+  /// **It reads the buffer, never the disk**, which is what makes an edit
+  /// appear here with no refresh step (`docs/product/editor/source-mode/doc.md`).
+  /// The one exception is an opened history entry: the session names a commit,
+  /// that version is what is rendered — not diff text — and the editor is not
+  /// listened to at all while it is on screen.
   ///
-  /// The one exception is a history entry that has been opened: the session
-  /// then names a commit, and what is rendered is that version, which the
-  /// product asks to be shown **rendered rather than as diff text**
-  /// (`docs/product/git-workflow/file-history/doc.md`). The editor is not
-  /// listened to at all while that is on screen — a buffer arriving from a
-  /// pane nobody is being shown must not replace the past.
-  ///
-  /// It *listens* to the editor rather than watching it: a rebuild would throw
-  /// the rendered blocks away and flash the pane back to "reading it" on every
-  /// keystroke.
+  /// It *listens* rather than watching: a rebuild would throw the rendered
+  /// blocks away and flash the pane back to "reading it" on every keystroke.
   PreviewNotifierProvider._()
     : super(
         from: null,
@@ -89,24 +71,18 @@ final class PreviewNotifierProvider
   }
 }
 
-String _$previewNotifierHash() => r'ac1ab5906880d37a92549d875142f6e24860db9d';
+String _$previewNotifierHash() => r'0da6066542b844596c6363c4adaad6012e0d08fa';
 
 /// Renders whatever the editor is holding — or the version being read.
 ///
-/// **It reads the buffer, never the disk** — which is what makes an edit
-/// appear here with no refresh step, and what keeps one document from being
-/// read twice per open (`docs/product/editor/source-mode/doc.md`).
+/// **It reads the buffer, never the disk**, which is what makes an edit
+/// appear here with no refresh step (`docs/product/editor/source-mode/doc.md`).
+/// The one exception is an opened history entry: the session names a commit,
+/// that version is what is rendered — not diff text — and the editor is not
+/// listened to at all while it is on screen.
 ///
-/// The one exception is a history entry that has been opened: the session
-/// then names a commit, and what is rendered is that version, which the
-/// product asks to be shown **rendered rather than as diff text**
-/// (`docs/product/git-workflow/file-history/doc.md`). The editor is not
-/// listened to at all while that is on screen — a buffer arriving from a
-/// pane nobody is being shown must not replace the past.
-///
-/// It *listens* to the editor rather than watching it: a rebuild would throw
-/// the rendered blocks away and flash the pane back to "reading it" on every
-/// keystroke.
+/// It *listens* rather than watching: a rebuild would throw the rendered
+/// blocks away and flash the pane back to "reading it" on every keystroke.
 
 abstract class _$PreviewNotifier extends $Notifier<PreviewState> {
   PreviewState build();

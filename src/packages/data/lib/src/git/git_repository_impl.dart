@@ -141,6 +141,8 @@ final class GitRepositoryImpl implements GitRepository {
           cause: failure,
         ),
         GitClientPushRejected() => GitPushRejected(cause: failure),
+        GitClientPathNotInRevision(path: final String path) =>
+          GitPathNotInRevision(path, cause: failure),
         GitClientTimedOut() => GitTimedOut(cause: failure),
         GitClientCommandFailed() => GitOperationFailed(cause: failure),
       };

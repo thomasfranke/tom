@@ -514,10 +514,49 @@ void main() {
       expect(valueOf(await client.show('HEAD', 'a.md')), '# A\n');
     });
 
-    test('a path absent from the revision fails', () async {
+    test('a path absent from the revision says so, and names both', () async {
+      // Its own failure rather than the fallback: "this file has no earlier
+      // version" is the normal state of a new document, and the rendered
+      // diff answers it with every block added instead of an error.
       expect(
         failureOf(await client.show('HEAD', 'missing.md')),
-        isA<GitClientCommandFailed>(),
+        isA<GitClientPathNotInRevision>()
+            .having(
+              (GitClientPathNotInRevision failure) => failure.revision,
+              'revision',
+              'HEAD',
+            )
+            .having(
+              (GitClientPathNotInRevision failure) => failure.path,
+              'path',
+              'missing.md',
+            ),
+      );
+    });
+
+    test('a file on disk that was never committed says the same', () async {
+      write('untracked.md', '# Not committed\n');
+
+      expect(
+        failureOf(await client.show('HEAD', 'untracked.md')),
+        isA<GitClientPathNotInRevision>(),
+      );
+    });
+
+    test('a repository with no commits yet says the same', () async {
+      final String freshPath = '$base/fresh';
+      initRepository(freshPath);
+      File('$freshPath/a.md').writeAsStringSync('# A\n');
+      final DartIoGitClientImpl fresh = DartIoGitClientImpl(
+        workingDirectory: freshPath,
+      );
+
+      // An unborn `HEAD` resolves to nothing at all, so neither the revision
+      // nor the file is there — which is the same answer to the same
+      // question, and a space opened on a fresh `git init` is normal.
+      expect(
+        failureOf(await fresh.show('HEAD', 'a.md')),
+        isA<GitClientPathNotInRevision>(),
       );
     });
   });

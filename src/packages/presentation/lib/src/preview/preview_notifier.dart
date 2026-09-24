@@ -41,6 +41,9 @@ class PreviewNotifier extends _$PreviewNotifier {
   /// Reads a document as one commit left it.
   ReadVersionUseCase get readVersion => ref.read(readVersionProvider);
 
+  /// Compares what is on screen against what `HEAD` holds.
+  DiffDocumentUseCase get diffDocument => ref.read(diffDocumentProvider);
+
   Timer? _scheduled;
 
   /// Which render is the current one, so a slow parse cannot land after a
@@ -139,7 +142,9 @@ class PreviewNotifier extends _$PreviewNotifier {
       case Success<DocumentEntity, AppFailure>(
         value: final DocumentEntity document,
       ):
-        await _render(document);
+        // Not decorated: a version being read is the past, and nothing is
+        // being changed against it. Comparing two commits is its own item.
+        await _render(document, decorate: false);
       case Failure<DocumentEntity, AppFailure>(
         failure: final AppFailure failure,
       ):
@@ -148,7 +153,7 @@ class PreviewNotifier extends _$PreviewNotifier {
   }
 
   /// Splits [document] and shows what it holds.
-  Future<void> _render(DocumentEntity document) async {
+  Future<void> _render(DocumentEntity document, {bool decorate = true}) async {
     final int generation = ++_generation;
     final Result<ParsedDocumentValueObject, AppFailure> split =
         await splitDocument.split(document);
@@ -156,15 +161,48 @@ class PreviewNotifier extends _$PreviewNotifier {
     if (!ref.mounted || generation != _generation) {
       return;
     }
-    state = switch (split) {
-      Success<ParsedDocumentValueObject, AppFailure>(
+    switch (split) {
+      case Success<ParsedDocumentValueObject, AppFailure>(
         value: final ParsedDocumentValueObject parsed,
-      ) =>
-        PreviewState.ready(parsed),
-      Failure<ParsedDocumentValueObject, AppFailure>(
+      ):
+        state = PreviewState.ready(parsed);
+        if (decorate) {
+          await _decorate(parsed, generation);
+        }
+      case Failure<ParsedDocumentValueObject, AppFailure>(
         failure: final AppFailure failure,
-      ) =>
-        PreviewState.failed(failure),
-    };
+      ):
+        state = PreviewState.failed(failure);
+    }
+  }
+
+  /// Asks what [parsed] changed against `HEAD`, and says so on the state.
+  ///
+  /// After the render rather than before it: the text is already in hand and
+  /// the comparison is a git process, so the document is read while the
+  /// decoration is still being worked out.
+  ///
+  /// **A comparison that fails leaves the document undecorated** rather than
+  /// replacing it with an error. What failed is the diff, and the document
+  /// is readable either way — which is the same answer the product gives for
+  /// a file that has not changed.
+  Future<void> _decorate(
+    ParsedDocumentValueObject parsed,
+    int generation,
+  ) async {
+    final SpaceEntity? space = ref.read(spaceSessionProvider)?.space;
+    if (space == null) {
+      return;
+    }
+    final Result<DocumentDiffValueObject, AppFailure> diffed =
+        await diffDocument.diff(space: space, after: parsed);
+    if (!ref.mounted || generation != _generation) {
+      return;
+    }
+    if (diffed case Success<DocumentDiffValueObject, AppFailure>(
+      value: final DocumentDiffValueObject diff,
+    )) {
+      state = PreviewState.ready(parsed, diff: diff);
+    }
   }
 }

@@ -110,6 +110,14 @@ BlockReaderPort blockReader(Ref ref) => const MarkdownBlockReaderImpl(
   markdown: MarkdownDataSource(parser: MarkdownPackageParserImpl()),
 );
 
+/// What tells two versions of a document apart, block by block.
+@Riverpod(keepAlive: true)
+BlockDifferService blockDiffer(Ref ref) => const BlockDifferService(
+  aligner: TextDifferBlockAlignerImpl(
+    differ: TextDifferDataSource(differ: DiffutilTextDifferImpl()),
+  ),
+);
+
 /// The overrides that turn the contracts above into the app's own wiring.
 ///
 /// `tom_presentation` declares the use cases it needs and nothing else: it
@@ -157,6 +165,14 @@ List<Override> appOverrides = <Override>[
   splitDocumentProvider.overrideWith(
     (Ref ref) => SplitDocumentUseCase(
       blocks: ref.watch(blockReaderProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  diffDocumentProvider.overrideWith(
+    (Ref ref) => DiffDocumentUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      blocks: ref.watch(blockReaderProvider),
+      differ: ref.watch(blockDifferProvider),
       observability: ref.watch(observabilityProvider),
     ),
   ),

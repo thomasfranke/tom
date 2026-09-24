@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_block_widget.dart';
+import 'package:tom_desktop/screens/preview/widgets/preview_diff_widget.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_note_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -19,11 +20,19 @@ class PreviewDocumentWidget extends StatelessWidget {
   const PreviewDocumentWidget({
     required this.document,
     required this.isReading,
+    this.diff,
     super.key,
   });
 
   /// What to render.
   final ParsedDocumentValueObject document;
+
+  /// What changed against `HEAD`, when that is known and anything did.
+  ///
+  /// The column is then the *diff's* sequence rather than the document's,
+  /// because a removed block is in neither version on disk and has to be
+  /// drawn where it used to be.
+  final DocumentDiffValueObject? diff;
 
   /// Whether the preview has the document area to itself.
   ///
@@ -39,14 +48,21 @@ class PreviewDocumentWidget extends StatelessWidget {
       ..add(
         DiagnosticsProperty<ParsedDocumentValueObject>('document', document),
       )
-      ..add(DiagnosticsProperty<bool>('isReading', isReading));
+      ..add(DiagnosticsProperty<bool>('isReading', isReading))
+      ..add(DiagnosticsProperty<DocumentDiffValueObject?>('diff', diff));
   }
 
   @override
   Widget build(BuildContext context) {
-    if (document.blocks.isEmpty) {
+    if (document.blocks.isEmpty && (diff?.blocks.isEmpty ?? true)) {
       return const PreviewNoteWidget('This document is empty.');
     }
+    // A document nothing changed is drawn as a document: the diff never adds
+    // decoration to a file that matches `HEAD`
+    // (`docs/product/diff/rendered-diff/doc.md`).
+    final DocumentDiffValueObject? changes = (diff?.isUnchanged ?? true)
+        ? null
+        : diff;
     final double measure = isReading
         ? PreviewDesign.readingMeasure
         : PreviewDesign.measure;
@@ -56,8 +72,12 @@ class PreviewDocumentWidget extends StatelessWidget {
       alignment: isReading ? Alignment.topCenter : Alignment.topLeft,
       child: SizedBox(
         // A measure, not a pane: the column keeps its line length whatever
-        // the window does, and the pane grows around it.
-        width: measure + TomMetrics.pad * 2,
+        // the window does, and the pane grows around it — the diff's gutter
+        // and tint included.
+        width:
+            measure +
+            TomMetrics.pad * 2 +
+            (changes == null ? 0 : PreviewDesign.diffInset),
         child: ListView.separated(
           padding: const EdgeInsets.fromLTRB(
             TomMetrics.pad,
@@ -65,14 +85,24 @@ class PreviewDocumentWidget extends StatelessWidget {
             TomMetrics.pad,
             TomMetrics.pad,
           ),
-          itemCount: document.blocks.length,
+          itemCount: changes?.blocks.length ?? document.blocks.length,
           separatorBuilder: (BuildContext context, int index) =>
               const SizedBox(height: PreviewDesign.blockGap),
-          itemBuilder: (BuildContext context, int index) => PreviewBlockWidget(
-            block: document.blocks[index],
-            document: document,
-            body: isReading ? PreviewDesign.readingBody : PreviewDesign.body,
-          ),
+          itemBuilder: (BuildContext context, int index) => changes == null
+              ? PreviewBlockWidget(
+                  block: document.blocks[index],
+                  document: document,
+                  body: isReading
+                      ? PreviewDesign.readingBody
+                      : PreviewDesign.body,
+                )
+              : PreviewDiffWidget(
+                  block: changes.blocks[index],
+                  diff: changes,
+                  body: isReading
+                      ? PreviewDesign.readingBody
+                      : PreviewDesign.body,
+                ),
         ),
       ),
     );

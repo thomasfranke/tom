@@ -83,6 +83,21 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
     AppFailure? cause,
   }) = GitClientTimedOut;
 
+  /// The revision holds no such path.
+  ///
+  /// Not an error for the caller that asked "what did this file look like
+  /// before": a document that is new, renamed or in a repository with no
+  /// commits yet has no earlier version, and a repository whose `HEAD` is
+  /// unborn lands here too — neither the revision nor the file is there.
+  const factory GitClientFailure.pathNotInRevision(
+    /// The revision as it was asked for — a sha, a branch, `HEAD`.
+    String revision,
+
+    /// The path, relative to the repository root.
+    String path, {
+    AppFailure? cause,
+  }) = GitClientPathNotInRevision;
+
   /// A git command failed in a way the contract has no name for.
   ///
   /// The typed fallback: unexpected, but still a [GitClientFailure] rather

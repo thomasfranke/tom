@@ -1,6 +1,8 @@
 /// What the design fixes about the preview.
 library;
 
+import 'package:tom_ui/tom_ui.dart';
+
 /// The numbers the preview is drawn against.
 ///
 /// The reading column is a *measure*, not a pane width: prose is set to a
@@ -59,4 +61,24 @@ abstract final class PreviewDesign {
 
   /// The rule down the left of a quote.
   static const double quoteBar = 3;
+
+  /// The rule down the left of a changed block.
+  ///
+  /// Wider than a quote's, because this one is the *second* signal after the
+  /// tint and has to survive being glanced at
+  /// (`docs/technical/design/visual-language.md`).
+  static const double diffBar = 4;
+
+  /// Block edge to content, inside a changed block's tint.
+  static const double diffPad = 12;
+
+  /// The corner a changed block's tint is drawn with.
+  static const double diffRadius = 6;
+
+  /// What the decoration takes around the prose: gutter, bar and padding.
+  ///
+  /// Taken out of the **pane**, never out of the measure — a document keeps
+  /// its line length whether or not anything changed in it, so a first
+  /// keystroke does not reflow everything that was already on screen.
+  static const double diffInset = TomMetrics.mark + diffPad * 3 + diffBar;
 }

@@ -14,7 +14,9 @@ import 'package:tom_desktop/screens/branches/widgets/branches_popover_widget.dar
 import 'package:tom_desktop/screens/changes/changes_panel.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/history/history_panel.dart';
+import 'package:tom_desktop/screens/preview/preview_panel.dart';
 import 'package:tom_desktop/screens/shell/status_panel.dart';
+import 'package:tom_ui/tom_ui.dart';
 import 'e2e_module_impl.dart';
 
 /// Drives the assembled app.
@@ -399,6 +401,44 @@ final class TomRobot {
     await _waitUntil(() => _showing(shown));
     expect(shown, findsWidgets, reason: 'the preview is not showing "$text"');
   }
+
+  /// Asserts the rendered diff is marking [letters], top to bottom.
+  ///
+  /// Scoped to the preview, because the changes column draws the same mark
+  /// about whole files — a finder that matched either would pass while the
+  /// document carried no decoration at all.
+  Future<void> seesTheDiffMarks(List<String> letters) async {
+    // On the letters and not on how many there are: a block going from
+    // added to modified is one mark either way, and a wait that counted
+    // them would come back happy with the decoration from before the edit.
+    await _waitUntil(() => _diffMarks().join() == letters.join());
+    expect(
+      _diffMarks(),
+      letters,
+      reason: 'the rendered diff is not marking $letters',
+    );
+  }
+
+  /// Asserts the preview is drawing no diff decoration at all.
+  Future<void> seesNoDiffMarks() async {
+    await settle();
+    expect(
+      _diffMarks(),
+      isEmpty,
+      reason: 'the preview is decorating a document that did not change',
+    );
+  }
+
+  /// The letter of every diff mark in the preview, in order.
+  List<String> _diffMarks() => tester
+      .widgetList<DiffMarkWidget>(
+        find.descendant(
+          of: find.byType(PreviewPanel),
+          matching: find.byType(DiffMarkWidget),
+        ),
+      )
+      .map((DiffMarkWidget mark) => mark.letter)
+      .toList();
 
   /// Asserts the status bar names [path] as the document that is open.
   ///

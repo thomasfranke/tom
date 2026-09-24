@@ -24,6 +24,7 @@ class PreviewBlockWidget extends ConsumerWidget {
     required this.block,
     required this.document,
     required this.body,
+    this.struckThrough = false,
     super.key,
   });
 
@@ -36,6 +37,13 @@ class PreviewBlockWidget extends ConsumerWidget {
   /// The prose size, which is the reading mode's answer or the split's.
   final double body;
 
+  /// Whether the text is drawn as gone.
+  ///
+  /// What a removed block looks like in the rendered diff: still rendered,
+  /// because reading what was deleted is the point, and struck through
+  /// because it is not in the document any more.
+  final bool struckThrough;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -44,7 +52,8 @@ class PreviewBlockWidget extends ConsumerWidget {
       ..add(
         DiagnosticsProperty<ParsedDocumentValueObject>('document', document),
       )
-      ..add(DoubleProperty('body', body));
+      ..add(DoubleProperty('body', body))
+      ..add(DiagnosticsProperty<bool>('struckThrough', struckThrough));
   }
 
   @override
@@ -71,7 +80,7 @@ class PreviewBlockWidget extends ConsumerWidget {
           ? block.source
           : '${block.source}\n\n${document.linkDefinitions}',
       selectable: true,
-      styleSheet: _styleSheetOf(context, colors, body),
+      styleSheet: _styleSheetOf(context, colors, body, struckThrough),
       syntaxHighlighter: CodeHighlighterImpl(
         language: _languageOf(block),
         brightness: Theme.of(context).brightness,
@@ -173,20 +182,28 @@ class PreviewBlockWidget extends ConsumerWidget {
     BuildContext context,
     TomColors colors,
     double body,
+    bool struckThrough,
   ) {
+    // The one thing a removed block changes about its own rendering: it is
+    // still the document's type at the document's size, because it is being
+    // read, and the line through it is what says it is gone.
+    final TextDecoration? gone = struckThrough
+        ? TextDecoration.lineThrough
+        : null;
     final TextStyle prose = TextStyle(
       fontSize: body,
       height: PreviewDesign.bodyHeight,
       color: colors.textPrimary,
+      decoration: gone,
     );
     return MarkdownStyleSheet(
       p: prose,
-      h1: _headingStyle(PreviewDesign.headingLarge, colors),
-      h2: _headingStyle(PreviewDesign.headingLarge, colors),
-      h3: _headingStyle(PreviewDesign.heading, colors),
-      h4: _headingStyle(body, colors),
-      h5: _headingStyle(body, colors),
-      h6: _headingStyle(body, colors),
+      h1: _headingStyle(PreviewDesign.headingLarge, colors, gone),
+      h2: _headingStyle(PreviewDesign.headingLarge, colors, gone),
+      h3: _headingStyle(PreviewDesign.heading, colors, gone),
+      h4: _headingStyle(body, colors, gone),
+      h5: _headingStyle(body, colors, gone),
+      h6: _headingStyle(body, colors, gone),
       a: prose.copyWith(color: colors.accent),
       em: prose.copyWith(fontStyle: FontStyle.italic),
       strong: prose.copyWith(fontWeight: FontWeight.w600),
@@ -227,10 +244,15 @@ class PreviewBlockWidget extends ConsumerWidget {
   }
 
   /// A heading at [size].
-  static TextStyle _headingStyle(double size, TomColors colors) => TextStyle(
+  static TextStyle _headingStyle(
+    double size,
+    TomColors colors,
+    TextDecoration? decoration,
+  ) => TextStyle(
     fontSize: size,
     height: 1.3,
     fontWeight: FontWeight.w600,
     color: colors.textPrimary,
+    decoration: decoration,
   );
 }

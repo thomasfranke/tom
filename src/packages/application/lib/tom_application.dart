@@ -8,6 +8,7 @@
 /// file is the whole public surface.
 library;
 
+export 'src/diff/diff_document_use_case.dart';
 export 'src/documents/read_document_use_case.dart';
 export 'src/documents/save_document_use_case.dart';
 export 'src/documents/split_document_use_case.dart';

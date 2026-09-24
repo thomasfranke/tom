@@ -34,3 +34,6 @@ export 'src/platform_paths/platform_paths_failure.dart';
 export 'src/settings/json_file/json_file_settings_impl.dart';
 export 'src/settings/settings.dart';
 export 'src/settings/settings_failure.dart';
+export 'src/text_differ/diffutil/diffutil_text_differ_impl.dart';
+export 'src/text_differ/text_differ.dart';
+export 'src/text_differ/text_differ_failure.dart';

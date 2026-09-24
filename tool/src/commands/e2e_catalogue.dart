@@ -111,6 +111,7 @@ const scenarioGroups = <String>[
   'Home',
   'Workspace',
   'Editor',
+  'Diff',
   'Git — local',
   'Git — branches',
   'Git — history',

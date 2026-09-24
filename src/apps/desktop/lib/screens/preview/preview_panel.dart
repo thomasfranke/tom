@@ -55,8 +55,15 @@ class PreviewPanel extends ConsumerWidget {
             ),
             PreviewFailed(failure: final AppFailure failure) =>
               PreviewNoteWidget(_explain(failure)),
-            PreviewReady(document: final ParsedDocumentValueObject document) =>
-              PreviewDocumentWidget(document: document, isReading: isReading),
+            PreviewReady(
+              document: final ParsedDocumentValueObject document,
+              diff: final DocumentDiffValueObject? diff,
+            ) =>
+              PreviewDocumentWidget(
+                document: document,
+                isReading: isReading,
+                diff: diff,
+              ),
           },
         ),
       ],

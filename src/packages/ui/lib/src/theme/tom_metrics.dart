@@ -52,6 +52,16 @@ abstract final class TomMetrics {
   /// three files would otherwise hold three copies of the same 4.
   static const double chromeInset = 4;
 
+  /// The square a diff mark is drawn in.
+  ///
+  /// Here rather than beside one of them because two screens draw it — the
+  /// changes column and the rendered diff — and the mark is one component
+  /// (`docs/technical/design/components.md`).
+  static const double mark = 20;
+
+  /// The corner radius of a mark, a checkbox, a tab indicator.
+  static const double radiusTight = 4;
+
   /// The smallest window the layout still holds together in.
   ///
   /// Explorer plus git panel plus a document area wide enough to read a

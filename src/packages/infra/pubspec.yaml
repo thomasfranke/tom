@@ -13,6 +13,11 @@ environment:
 resolution: workspace
 
 dependencies:
+  # Myers over lists, for the rendered diff (Decision 27). It stays with the
+  # adapter that uses it: the capability answers positions, so no package
+  # type crosses the contract.
+  diffutil_dart: ^5.0.0
+
   # Generated equality for the failures this package owns, which is all of
   # the technical ones (Decision 16).
   freezed_annotation: ^3.1.0

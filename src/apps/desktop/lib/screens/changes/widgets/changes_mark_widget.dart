@@ -3,7 +3,6 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:tom_desktop/screens/changes/changes_design.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_ui/tom_ui.dart';
 
@@ -33,29 +32,11 @@ class ChangesMarkWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final TomColors colors = TomColors.of(context);
     final (Color ink, Color fill) = _rolesOf(colors);
-    return Tooltip(
-      message: _words[state]!,
-      child: SizedBox(
-        width: ChangesDesign.mark,
-        height: ChangesDesign.mark,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Center(
-            child: Text(
-              _letters[state]!,
-              style: TextStyle(
-                fontSize: 11,
-                height: 1,
-                fontWeight: FontWeight.w600,
-                color: ink,
-              ),
-            ),
-          ),
-        ),
-      ),
+    return DiffMarkWidget(
+      letter: _letters[state]!,
+      ink: ink,
+      fill: fill,
+      tooltip: _words[state]!,
     );
   }
 

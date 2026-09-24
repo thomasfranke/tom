@@ -11,7 +11,7 @@ core ← domain ← application ← presentation
 | Package | Holds | May depend on | Flutter |
 |---|---|---|---|
 | `tom_core` | `Result`, `AppFailure`, ports every layer needs (`Observability`) | nothing | no |
-| `tom_domain` | entities, value objects, failures, repository contracts, `BlockDiffer` | `tom_core` | no |
+| `tom_domain` | entities, value objects, failures, repository contracts, ports, `BlockDifferService` | `tom_core` | no |
 | `tom_application` | use cases | `tom_core`, `tom_domain` | no |
 | `tom_infra` | capability contracts **and** their implementations — git, filesystem, settings, platform paths, markdown, search | `tom_core`, `tom_data` (for the DTOs that cross its contracts — [Decision 24](decisions/024-a-capability-is-a-folder.md); never `tom_domain`) | no |
 | `tom_data` | DTOs, data sources, parsers, repository implementations | `tom_core`, `tom_domain`, `tom_infra` | no |
@@ -43,7 +43,9 @@ The test carries three checks the mechanisms above cannot make:
 
   The same goes for every role the reader needs in order to use the thing: `SpaceRepository`, `HomeState`, `FileTreePanel`, `GitFailure`, `MarkdownParser`, `FileTreeNotifier`, `BlockKindEnum`, and — when a store forces a shape that is not a domain type — `Dto` and `Dao` ([Decision 21](decisions/021-dtos-and-daos-when-they-are-real.md)).
 
-  **A domain type says which of the two kinds it is**, because they are not the same thing and the difference decides how the code may treat them. An **entity** has an identity that outlives its values — a `SpaceEntity` is the folder it was opened at, whatever it is renamed to; a `DocumentEntity` is its path, whatever it holds. A **value object** is wholly what it carries, so two of them with the same contents are not equal but *the same*: `SpaceEntryValueObject`, `BranchNameValueObject`, `GitStatusValueObject`. Entities today: `SpaceEntity`, `DocumentEntity`, `CommitEntity`, `BranchEntity`, `RecentSpaceEntity`. Everything else in `tom_domain` that is not a failure, a contract or an enum is a value object.
+  **A domain type says which of the two kinds it is**, because they are not the same thing and the difference decides how the code may treat them. An **entity** has an identity that outlives its values — a `SpaceEntity` is the folder it was opened at, whatever it is renamed to; a `DocumentEntity` is its path, whatever it holds. A **value object** is wholly what it carries, so two of them with the same contents are not equal but *the same*: `SpaceEntryValueObject`, `BranchNameValueObject`, `GitStatusValueObject`. Entities today: `SpaceEntity`, `DocumentEntity`, `CommitEntity`, `BranchEntity`, `RecentSpaceEntity`. Everything else in `tom_domain` that is not a failure, a contract, an enum or a service is a value object.
+
+  **A rule that belongs to no single type is a `Service`**, and `BlockDifferService` is the first: what counts as a *modified* block rather than a removal beside an addition is the product's rule, it is about two documents rather than one, and putting it on either of them would make one document the authority on the other ([Decision 27](decisions/027-blocks-are-aligned-by-myers-and-paired-by-words.md)). A service holds no state and reaches nothing — it is handed what it compares, and the seam under it is a port. `tom rules naming` reads the suffix the same way it reads `Port`, `Repository` and `Enum`.
 
   **An implementation ends in `Impl`, and says what makes it different before that**: `DartIoFilesystemImpl`, `MarkdownPackageParserImpl`, `GitRepositoryImpl`. The two halves answer different questions and the name owes both — `DartIo` says *which* implementation, so a second one is a sibling rather than a rename; `Impl` says it fulfils a contract declared somewhere else, which is the thing a reader cannot see from the position of the file. A bare `FilesystemImpl` is the name that does not survive the second.
 
@@ -56,7 +58,7 @@ The test carries three checks the mechanisms above cannot make:
 - **A repository obtains nothing itself.** A data source does, and the repository is left with the order the questions are asked in, the turn from a DTO into the domain's vocabulary, and the failure translation ([Decision 25](decisions/025-a-repository-reads-through-a-data-source.md)). A source is a concrete class — whatever varies, varies at the capability below — and it names no domain type. Holding a capability is what a repository may not do, and `tom rules` fails on a field of one in a `*_repository_impl.dart`; naming a capability's *failure* in order to translate it is still the repository's work.
 - `tom_core` holds **mechanism, never vocabulary**. `Result`, `AppFailure` and `Observability` belong there. Git, documents and search have vocabulary, and vocabulary belongs to `tom_domain` — otherwise the package everything depends on becomes the package that changes most.
 - `test/` **mirrors `lib/src/` exactly**, under one of three top-level folders — `unit/`, `integration/`, `integrity/` — chosen by what the test needs, not by which package it is in:
-  - `unit/` — pure logic, no I/O, fakes over real dependencies (failures, parsers, `BlockDiffer`, use cases, notifiers).
+  - `unit/` — pure logic, no I/O, fakes over real dependencies (failures, parsers, `BlockDifferService`, use cases, notifiers).
   - `integration/` — talks to a real system (a `git init` temp repo, real disk, real sqlite). Slower, and the project's confidence differentiator — never mocked away.
   - `integrity/` — asserts something about the codebase itself, not its runtime behavior (the layer graph, a barrel's exports). Workspace-wide checks live here too: `src/test/architecture_test.dart` is `src/test/integrity/architecture_test.dart`.
 
@@ -100,7 +102,7 @@ Every external dependency is reached through a contract ([Decision 7](decisions/
 | Target | Type | Approach |
 |---|---|---|
 | Parsers (git porcelain, log, markdown AST) | unit | fixtures of real git output; pure and fast |
-| `BlockDiffer` | unit / golden | versioned pairs of md input + expected result |
+| `BlockDifferService` | unit + integration | a fake alignment for the classification; the real parser and the real differ over real markdown for what the two of them decide together |
 | Use cases | unit | fake repositories; orchestration and failure propagation |
 | Repository implementations | integration | a real repo created by `git init` in a temp dir |
 | Notifiers | unit | `ProviderContainer` with overridden use cases |

@@ -9,6 +9,9 @@ import 'package:tom_presentation/tom_presentation.dart';
 void main() {
   late _Documents documents;
   late _Blocks blocks;
+  late _Blocks committed;
+  late _Git git;
+  late _Aligner aligner;
   late ProviderContainer container;
 
   final SpaceEntity docs = SpaceEntity(
@@ -26,6 +29,9 @@ void main() {
   setUp(() {
     documents = _Documents();
     blocks = _Blocks();
+    committed = _Blocks();
+    git = _Git();
+    aligner = _Aligner();
     container = ProviderContainer(
       overrides: <Override>[
         readDocumentProvider.overrideWithValue(
@@ -42,6 +48,23 @@ void main() {
         ),
         splitDocumentProvider.overrideWithValue(
           SplitDocumentUseCase(blocks: blocks, observability: const _Silent()),
+        ),
+        readVersionProvider.overrideWithValue(
+          ReadVersionUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
+        diffDocumentProvider.overrideWithValue(
+          DiffDocumentUseCase(
+            gitFor: (SpaceEntity space) => git,
+            // Its own reader: the committed version is a second parse, of a
+            // different document, and counting it against the buffer's would
+            // make "typing parses once" mean something else.
+            blocks: committed,
+            differ: BlockDifferService(aligner: aligner),
+            observability: const _Silent(),
+          ),
         ),
       ],
     );
@@ -224,6 +247,87 @@ void main() {
       expect(blocks.asked.length, before);
     });
   });
+
+  group('the rendered diff', () {
+    /// What the state says changed, once everything scheduled has run.
+    DocumentDiffValueObject? diffOf() =>
+        (container.read(previewProvider) as PreviewReady).diff;
+
+    test('the document is drawn first and decorated after', () async {
+      start();
+      show(docs, writing);
+      await settle();
+
+      // The text is already in hand and the comparison is a git process, so
+      // the pane is never held back waiting for it.
+      expect(container.read(previewProvider), isA<PreviewReady>());
+      await settle();
+      expect(diffOf(), isNotNull);
+    });
+
+    test('what changed is what git said, against the buffer', () async {
+      git.content = '# Committed\n';
+      start();
+      show(docs, writing);
+      await settle();
+      container.read(editorProvider.notifier).edit('# Typed\n');
+      await settleTyping();
+      await settle();
+
+      // The buffer, never the disk: an edit is compared before it is saved,
+      // which is the whole reason the preview holds the after side.
+      final DocumentDiffValueObject diff = diffOf()!;
+      expect(diff.before.document.content, '# Committed\n');
+      expect(diff.after.document.content, '# Typed\n');
+    });
+
+    test('a comparison git refused leaves the document on screen', () async {
+      git.answer = const Failure<String, GitFailure>(GitNotInstalled());
+      start();
+      show(docs, writing);
+      await settle();
+      await settle();
+
+      // What failed is the comparison. The document is readable either way,
+      // so the pane keeps it and simply carries no decoration.
+      expect(container.read(previewProvider), isA<PreviewReady>());
+      expect(diffOf(), isNull);
+    });
+
+    test('a version being read is not compared against anything', () async {
+      start();
+      show(docs, writing);
+      await settle();
+      aligner.asked = 0;
+
+      container
+          .read(spaceSessionProvider.notifier)
+          .read(
+            CommitEntity(
+              sha: CommitShaValueObject(
+                'abc1234def5678901234567890abcdef12345678',
+              ),
+              subject: 'Earlier',
+              body: '',
+              author: const AuthorValueObject(
+                name: 'Test',
+                email: 'test@example.com',
+              ),
+              date: CommitDateValueObject(
+                utc: DateTime.utc(2026),
+                offset: Duration.zero,
+              ),
+            ),
+          );
+      await settle();
+      await settle();
+
+      // Nothing is being changed against the past: comparing two commits is
+      // the branch and commit diff, which is its own item.
+      expect(aligner.asked, 0);
+      expect(diffOf(), isNull);
+    });
+  });
 }
 
 /// A repository that answers what it was told to, and remembers what it was
@@ -290,6 +394,53 @@ final class _Blocks implements BlockReaderPort {
         ],
         linkDefinitions: '',
       ),
+    );
+  }
+}
+
+/// Git, answering with whatever the test says the revision holds.
+final class _Git implements GitRepository {
+  String content = '';
+  Result<String, GitFailure>? answer;
+
+  @override
+  Future<Result<String, GitFailure>> contentAt({
+    required String revision,
+    required RepoRelativePathValueObject path,
+  }) async => answer ?? Success<String, GitFailure>(content);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// An aligner calling every block of the old side gone and every new one new.
+///
+/// The classification is the domain's and is tested there; what this test is
+/// about is *when* the preview asks and what it does with the answer.
+final class _Aligner implements BlockAlignerPort {
+  /// How many times it was asked.
+  int asked = 0;
+
+  @override
+  Future<Result<List<SequenceEditValueObject>, DocumentFailure>> align(
+    ParsedDocumentValueObject before,
+    ParsedDocumentValueObject after, {
+    required double threshold,
+  }) async {
+    asked++;
+    return Success<List<SequenceEditValueObject>, DocumentFailure>(
+      <SequenceEditValueObject>[
+        for (int index = 0; index < before.blocks.length; index++)
+          SequenceEditValueObject(
+            kind: SequenceEditKindEnum.removed,
+            beforeIndex: index,
+          ),
+        for (int index = 0; index < after.blocks.length; index++)
+          SequenceEditValueObject(
+            kind: SequenceEditKindEnum.added,
+            afterIndex: index,
+          ),
+      ],
     );
   }
 }

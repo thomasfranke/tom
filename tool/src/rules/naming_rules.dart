@@ -73,14 +73,16 @@ Iterable<Offence> failuresCarryTheirPrefix(Directory root) sync* {
 ///
 /// They are not the same thing and the difference decides how the code may
 /// treat them: an entity has an identity that outlives its values, a value
-/// object is wholly what it carries. Failures, contracts, ports, enums and
-/// syntax rules say what they are already.
+/// object is wholly what it carries. Failures, contracts, ports, enums,
+/// services and syntax rules say what they are already.
 Iterable<Offence> domainTypesSayWhichKind(Directory root) sync* {
   final declared = RegExp(
     r'^(?:final |abstract |sealed )?class (\w+)',
     multiLine: true,
   );
-  final saysAlready = RegExp(r'_(?:failure|enum|repository|port|rule)\.dart$');
+  final saysAlready = RegExp(
+    r'_(?:failure|enum|repository|port|rule|service)\.dart$',
+  );
 
   for (final file in dartFilesUnder(
     Directory('${root.path}/src/packages/domain/lib/src'),

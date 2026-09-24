@@ -86,7 +86,7 @@ extension GitFailurePatterns on GitFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( GitNotInstalled value)?  notInstalled,TResult Function( GitNotARepository value)?  notARepository,TResult Function( GitMergeConflict value)?  mergeConflict,TResult Function( GitAuthenticationFailed value)?  authenticationFailed,TResult Function( GitDetachedHead value)?  detachedHead,TResult Function( GitPushRejected value)?  pushRejected,TResult Function( GitTimedOut value)?  timedOut,TResult Function( GitOperationFailed value)?  operationFailed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( GitNotInstalled value)?  notInstalled,TResult Function( GitNotARepository value)?  notARepository,TResult Function( GitMergeConflict value)?  mergeConflict,TResult Function( GitAuthenticationFailed value)?  authenticationFailed,TResult Function( GitDetachedHead value)?  detachedHead,TResult Function( GitPushRejected value)?  pushRejected,TResult Function( GitTimedOut value)?  timedOut,TResult Function( GitPathNotInRevision value)?  pathNotInRevision,TResult Function( GitOperationFailed value)?  operationFailed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
@@ -96,7 +96,8 @@ return mergeConflict(_that);case GitAuthenticationFailed() when authenticationFa
 return authenticationFailed(_that);case GitDetachedHead() when detachedHead != null:
 return detachedHead(_that);case GitPushRejected() when pushRejected != null:
 return pushRejected(_that);case GitTimedOut() when timedOut != null:
-return timedOut(_that);case GitOperationFailed() when operationFailed != null:
+return timedOut(_that);case GitPathNotInRevision() when pathNotInRevision != null:
+return pathNotInRevision(_that);case GitOperationFailed() when operationFailed != null:
 return operationFailed(_that);case _:
   return orElse();
 
@@ -115,7 +116,7 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( GitNotInstalled value)  notInstalled,required TResult Function( GitNotARepository value)  notARepository,required TResult Function( GitMergeConflict value)  mergeConflict,required TResult Function( GitAuthenticationFailed value)  authenticationFailed,required TResult Function( GitDetachedHead value)  detachedHead,required TResult Function( GitPushRejected value)  pushRejected,required TResult Function( GitTimedOut value)  timedOut,required TResult Function( GitOperationFailed value)  operationFailed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( GitNotInstalled value)  notInstalled,required TResult Function( GitNotARepository value)  notARepository,required TResult Function( GitMergeConflict value)  mergeConflict,required TResult Function( GitAuthenticationFailed value)  authenticationFailed,required TResult Function( GitDetachedHead value)  detachedHead,required TResult Function( GitPushRejected value)  pushRejected,required TResult Function( GitTimedOut value)  timedOut,required TResult Function( GitPathNotInRevision value)  pathNotInRevision,required TResult Function( GitOperationFailed value)  operationFailed,}){
 final _that = this;
 switch (_that) {
 case GitNotInstalled():
@@ -125,7 +126,8 @@ return mergeConflict(_that);case GitAuthenticationFailed():
 return authenticationFailed(_that);case GitDetachedHead():
 return detachedHead(_that);case GitPushRejected():
 return pushRejected(_that);case GitTimedOut():
-return timedOut(_that);case GitOperationFailed():
+return timedOut(_that);case GitPathNotInRevision():
+return pathNotInRevision(_that);case GitOperationFailed():
 return operationFailed(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -140,7 +142,7 @@ return operationFailed(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( GitNotInstalled value)?  notInstalled,TResult? Function( GitNotARepository value)?  notARepository,TResult? Function( GitMergeConflict value)?  mergeConflict,TResult? Function( GitAuthenticationFailed value)?  authenticationFailed,TResult? Function( GitDetachedHead value)?  detachedHead,TResult? Function( GitPushRejected value)?  pushRejected,TResult? Function( GitTimedOut value)?  timedOut,TResult? Function( GitOperationFailed value)?  operationFailed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( GitNotInstalled value)?  notInstalled,TResult? Function( GitNotARepository value)?  notARepository,TResult? Function( GitMergeConflict value)?  mergeConflict,TResult? Function( GitAuthenticationFailed value)?  authenticationFailed,TResult? Function( GitDetachedHead value)?  detachedHead,TResult? Function( GitPushRejected value)?  pushRejected,TResult? Function( GitTimedOut value)?  timedOut,TResult? Function( GitPathNotInRevision value)?  pathNotInRevision,TResult? Function( GitOperationFailed value)?  operationFailed,}){
 final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
@@ -150,7 +152,8 @@ return mergeConflict(_that);case GitAuthenticationFailed() when authenticationFa
 return authenticationFailed(_that);case GitDetachedHead() when detachedHead != null:
 return detachedHead(_that);case GitPushRejected() when pushRejected != null:
 return pushRejected(_that);case GitTimedOut() when timedOut != null:
-return timedOut(_that);case GitOperationFailed() when operationFailed != null:
+return timedOut(_that);case GitPathNotInRevision() when pathNotInRevision != null:
+return pathNotInRevision(_that);case GitOperationFailed() when operationFailed != null:
 return operationFailed(_that);case _:
   return null;
 
@@ -168,7 +171,7 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( AppFailure? cause)?  notInstalled,TResult Function( String path,  AppFailure? cause)?  notARepository,TResult Function( List<String> conflictedFiles,  AppFailure? cause)?  mergeConflict,TResult Function( AppFailure? cause)?  authenticationFailed,TResult Function( AppFailure? cause)?  detachedHead,TResult Function( AppFailure? cause)?  pushRejected,TResult Function( AppFailure? cause)?  timedOut,TResult Function( AppFailure? cause)?  operationFailed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( AppFailure? cause)?  notInstalled,TResult Function( String path,  AppFailure? cause)?  notARepository,TResult Function( List<String> conflictedFiles,  AppFailure? cause)?  mergeConflict,TResult Function( AppFailure? cause)?  authenticationFailed,TResult Function( AppFailure? cause)?  detachedHead,TResult Function( AppFailure? cause)?  pushRejected,TResult Function( AppFailure? cause)?  timedOut,TResult Function( String path,  AppFailure? cause)?  pathNotInRevision,TResult Function( AppFailure? cause)?  operationFailed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
 return notInstalled(_that.cause);case GitNotARepository() when notARepository != null:
@@ -177,7 +180,8 @@ return mergeConflict(_that.conflictedFiles,_that.cause);case GitAuthenticationFa
 return authenticationFailed(_that.cause);case GitDetachedHead() when detachedHead != null:
 return detachedHead(_that.cause);case GitPushRejected() when pushRejected != null:
 return pushRejected(_that.cause);case GitTimedOut() when timedOut != null:
-return timedOut(_that.cause);case GitOperationFailed() when operationFailed != null:
+return timedOut(_that.cause);case GitPathNotInRevision() when pathNotInRevision != null:
+return pathNotInRevision(_that.path,_that.cause);case GitOperationFailed() when operationFailed != null:
 return operationFailed(_that.cause);case _:
   return orElse();
 
@@ -196,7 +200,7 @@ return operationFailed(_that.cause);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( AppFailure? cause)  notInstalled,required TResult Function( String path,  AppFailure? cause)  notARepository,required TResult Function( List<String> conflictedFiles,  AppFailure? cause)  mergeConflict,required TResult Function( AppFailure? cause)  authenticationFailed,required TResult Function( AppFailure? cause)  detachedHead,required TResult Function( AppFailure? cause)  pushRejected,required TResult Function( AppFailure? cause)  timedOut,required TResult Function( AppFailure? cause)  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( AppFailure? cause)  notInstalled,required TResult Function( String path,  AppFailure? cause)  notARepository,required TResult Function( List<String> conflictedFiles,  AppFailure? cause)  mergeConflict,required TResult Function( AppFailure? cause)  authenticationFailed,required TResult Function( AppFailure? cause)  detachedHead,required TResult Function( AppFailure? cause)  pushRejected,required TResult Function( AppFailure? cause)  timedOut,required TResult Function( String path,  AppFailure? cause)  pathNotInRevision,required TResult Function( AppFailure? cause)  operationFailed,}) {final _that = this;
 switch (_that) {
 case GitNotInstalled():
 return notInstalled(_that.cause);case GitNotARepository():
@@ -205,7 +209,8 @@ return mergeConflict(_that.conflictedFiles,_that.cause);case GitAuthenticationFa
 return authenticationFailed(_that.cause);case GitDetachedHead():
 return detachedHead(_that.cause);case GitPushRejected():
 return pushRejected(_that.cause);case GitTimedOut():
-return timedOut(_that.cause);case GitOperationFailed():
+return timedOut(_that.cause);case GitPathNotInRevision():
+return pathNotInRevision(_that.path,_that.cause);case GitOperationFailed():
 return operationFailed(_that.cause);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -220,7 +225,7 @@ return operationFailed(_that.cause);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( AppFailure? cause)?  notInstalled,TResult? Function( String path,  AppFailure? cause)?  notARepository,TResult? Function( List<String> conflictedFiles,  AppFailure? cause)?  mergeConflict,TResult? Function( AppFailure? cause)?  authenticationFailed,TResult? Function( AppFailure? cause)?  detachedHead,TResult? Function( AppFailure? cause)?  pushRejected,TResult? Function( AppFailure? cause)?  timedOut,TResult? Function( AppFailure? cause)?  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( AppFailure? cause)?  notInstalled,TResult? Function( String path,  AppFailure? cause)?  notARepository,TResult? Function( List<String> conflictedFiles,  AppFailure? cause)?  mergeConflict,TResult? Function( AppFailure? cause)?  authenticationFailed,TResult? Function( AppFailure? cause)?  detachedHead,TResult? Function( AppFailure? cause)?  pushRejected,TResult? Function( AppFailure? cause)?  timedOut,TResult? Function( String path,  AppFailure? cause)?  pathNotInRevision,TResult? Function( AppFailure? cause)?  operationFailed,}) {final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
 return notInstalled(_that.cause);case GitNotARepository() when notARepository != null:
@@ -229,7 +234,8 @@ return mergeConflict(_that.conflictedFiles,_that.cause);case GitAuthenticationFa
 return authenticationFailed(_that.cause);case GitDetachedHead() when detachedHead != null:
 return detachedHead(_that.cause);case GitPushRejected() when pushRejected != null:
 return pushRejected(_that.cause);case GitTimedOut() when timedOut != null:
-return timedOut(_that.cause);case GitOperationFailed() when operationFailed != null:
+return timedOut(_that.cause);case GitPathNotInRevision() when pathNotInRevision != null:
+return pathNotInRevision(_that.path,_that.cause);case GitOperationFailed() when operationFailed != null:
 return operationFailed(_that.cause);case _:
   return null;
 
@@ -712,6 +718,75 @@ class _$GitTimedOutCopyWithImpl<$Res>
 @override @pragma('vm:prefer-inline') $Res call({Object? cause = freezed,}) {
   return _then(GitTimedOut(
 cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class GitPathNotInRevision implements GitFailure {
+  const GitPathNotInRevision(this.path, {this.cause});
+  
+
+/// The path, as the user's repository spells it.
+ final  String path;
+@override final  AppFailure? cause;
+
+/// Create a copy of GitFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$GitPathNotInRevisionCopyWith<GitPathNotInRevision> get copyWith => _$GitPathNotInRevisionCopyWithImpl<GitPathNotInRevision>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitPathNotInRevision&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,path,cause);
+
+@override
+String toString() {
+  return 'GitFailure.pathNotInRevision(path: $path, cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $GitPathNotInRevisionCopyWith<$Res> implements $GitFailureCopyWith<$Res> {
+  factory $GitPathNotInRevisionCopyWith(GitPathNotInRevision value, $Res Function(GitPathNotInRevision) _then) = _$GitPathNotInRevisionCopyWithImpl;
+@override @useResult
+$Res call({
+ String path, AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$GitPathNotInRevisionCopyWithImpl<$Res>
+    implements $GitPathNotInRevisionCopyWith<$Res> {
+  _$GitPathNotInRevisionCopyWithImpl(this._self, this._then);
+
+  final GitPathNotInRevision _self;
+  final $Res Function(GitPathNotInRevision) _then;
+
+/// Create a copy of GitFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
+  return _then(GitPathNotInRevision(
+null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
 as AppFailure?,
   ));
 }

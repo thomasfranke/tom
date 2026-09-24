@@ -125,12 +125,12 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  empty,TResult Function()?  loading,TResult Function( ParsedDocumentValueObject document)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  empty,TResult Function()?  loading,TResult Function( ParsedDocumentValueObject document,  DocumentDiffValueObject? diff)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case PreviewEmpty() when empty != null:
 return empty();case PreviewLoading() when loading != null:
 return loading();case PreviewReady() when ready != null:
-return ready(_that.document);case PreviewFailed() when failed != null:
+return ready(_that.document,_that.diff);case PreviewFailed() when failed != null:
 return failed(_that.failure);case _:
   return orElse();
 
@@ -149,12 +149,12 @@ return failed(_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  empty,required TResult Function()  loading,required TResult Function( ParsedDocumentValueObject document)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  empty,required TResult Function()  loading,required TResult Function( ParsedDocumentValueObject document,  DocumentDiffValueObject? diff)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
 switch (_that) {
 case PreviewEmpty():
 return empty();case PreviewLoading():
 return loading();case PreviewReady():
-return ready(_that.document);case PreviewFailed():
+return ready(_that.document,_that.diff);case PreviewFailed():
 return failed(_that.failure);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -169,12 +169,12 @@ return failed(_that.failure);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  empty,TResult? Function()?  loading,TResult? Function( ParsedDocumentValueObject document)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  empty,TResult? Function()?  loading,TResult? Function( ParsedDocumentValueObject document,  DocumentDiffValueObject? diff)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
 switch (_that) {
 case PreviewEmpty() when empty != null:
 return empty();case PreviewLoading() when loading != null:
 return loading();case PreviewReady() when ready != null:
-return ready(_that.document);case PreviewFailed() when failed != null:
+return ready(_that.document,_that.diff);case PreviewFailed() when failed != null:
 return failed(_that.failure);case _:
   return null;
 
@@ -251,10 +251,17 @@ String toString() {
 
 
 class PreviewReady implements PreviewState {
-  const PreviewReady(this.document);
+  const PreviewReady(this.document, {this.diff});
   
 
  final  ParsedDocumentValueObject document;
+/// What it changed against `HEAD`, once git has said.
+///
+/// Null until then, and null for a version being read: the text is
+/// already here and a git call is a process, so the pane draws the
+/// document first and decorates it when the answer lands
+/// (`docs/product/diff/rendered-diff/doc.md`).
+ final  DocumentDiffValueObject? diff;
 
 /// Create a copy of PreviewState
 /// with the given fields replaced by the non-null parameter values.
@@ -266,16 +273,16 @@ $PreviewReadyCopyWith<PreviewReady> get copyWith => _$PreviewReadyCopyWithImpl<P
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PreviewReady&&(identical(other.document, document) || other.document == document));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PreviewReady&&(identical(other.document, document) || other.document == document)&&(identical(other.diff, diff) || other.diff == diff));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,document);
+int get hashCode => Object.hash(runtimeType,document,diff);
 
 @override
 String toString() {
-  return 'PreviewState.ready(document: $document)';
+  return 'PreviewState.ready(document: $document, diff: $diff)';
 }
 
 
@@ -286,11 +293,11 @@ abstract mixin class $PreviewReadyCopyWith<$Res> implements $PreviewStateCopyWit
   factory $PreviewReadyCopyWith(PreviewReady value, $Res Function(PreviewReady) _then) = _$PreviewReadyCopyWithImpl;
 @useResult
 $Res call({
- ParsedDocumentValueObject document
+ ParsedDocumentValueObject document, DocumentDiffValueObject? diff
 });
 
 
-$ParsedDocumentValueObjectCopyWith<$Res> get document;
+$ParsedDocumentValueObjectCopyWith<$Res> get document;$DocumentDiffValueObjectCopyWith<$Res>? get diff;
 
 }
 /// @nodoc
@@ -303,10 +310,11 @@ class _$PreviewReadyCopyWithImpl<$Res>
 
 /// Create a copy of PreviewState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? document = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? document = null,Object? diff = freezed,}) {
   return _then(PreviewReady(
 null == document ? _self.document : document // ignore: cast_nullable_to_non_nullable
-as ParsedDocumentValueObject,
+as ParsedDocumentValueObject,diff: freezed == diff ? _self.diff : diff // ignore: cast_nullable_to_non_nullable
+as DocumentDiffValueObject?,
   ));
 }
 
@@ -318,6 +326,18 @@ $ParsedDocumentValueObjectCopyWith<$Res> get document {
   
   return $ParsedDocumentValueObjectCopyWith<$Res>(_self.document, (value) {
     return _then(_self.copyWith(document: value));
+  });
+}/// Create a copy of PreviewState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$DocumentDiffValueObjectCopyWith<$Res>? get diff {
+    if (_self.diff == null) {
+    return null;
+  }
+
+  return $DocumentDiffValueObjectCopyWith<$Res>(_self.diff!, (value) {
+    return _then(_self.copyWith(diff: value));
   });
 }
 }

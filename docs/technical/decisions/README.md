@@ -34,6 +34,7 @@ Internal format (known in the community as an *ADR — Architecture Decision Rec
 | [024](024-a-capability-is-a-folder.md) | A capability is a folder in `tom_infra`: contract, failures, one subfolder per implementation |
 | [025](025-a-repository-reads-through-a-data-source.md) | A repository obtains nothing itself — a data source does, and the repository orchestrates and translates |
 | [026](026-the-look-is-a-package.md) | The look is a package both applications draw from; the screens are each application's own |
+| [027](027-blocks-are-aligned-by-myers-and-paired-by-words.md) | Blocks are aligned by Myers over `diffutil_dart`, and paired as rewrites by word overlap |
 
 ---
 

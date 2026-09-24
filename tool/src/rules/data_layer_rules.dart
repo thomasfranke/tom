@@ -16,10 +16,10 @@ import '../rule.dart';
 Iterable<Offence> repositoriesReadThroughDataSources(Directory root) sync* {
   final holdsACapability = RegExp(
     r'^  final (Filesystem|GitClient|GitClientFor|Settings|MarkdownParser|'
-    r'PlatformPaths) ',
+    r'PlatformPaths|TextDiffer) ',
     multiLine: true,
   );
-  final isRepository = RegExp(r'_(?:repository|reader)_impl\.dart$');
+  final isRepository = RegExp(r'_(?:repository|reader|aligner)_impl\.dart$');
 
   for (final file in libraryFilesUnder(root)) {
     if (!isRepository.hasMatch(file.path)) continue;

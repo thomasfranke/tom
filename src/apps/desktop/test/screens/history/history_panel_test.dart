@@ -141,9 +141,7 @@ void main() {
     );
   });
 
-  testWidgets('a list says what it is scoped to', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('a list says what it is scoped to', (WidgetTester tester) async {
     // The whole difference between this panel and a log, said where
     // somebody would otherwise wonder why a busy repository has one entry.
     git.reported = <CommitEntity>[commit('aaa1111', 'docs: a change')];

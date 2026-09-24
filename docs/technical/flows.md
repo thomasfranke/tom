@@ -66,6 +66,8 @@ Presentation receives an ordered list of blocks, not a document. Each is rendere
 
 Rendering the document as one opaque widget tree would make the rendered diff impossible to express and would have to be undone at M2. Inline markdown *inside* a block is delegated to the markdown package, where CommonMark's real complexity lives; the app owns block-level layout only.
 
+**That container is now carrying its first job.** The rendered diff is decoration on the blocks that are already there, not a second screen: the preview renders the buffer, then asks what it changed against `HEAD` and says so on the state it has already published — so the document is on screen while the comparison, which is a git process, is still being made. When a diff arrives the column is the *diff's* sequence rather than the document's, because a removed block is in no file on disk and has to be drawn where it used to be. A document that matches `HEAD` is drawn as a document.
+
 That hazard is now measured ([Decision 19](decisions/019-blocks-come-from-the-markdown-package.md)): reference links and footnotes are defined at document scope, and they behave differently. **Reference links survive** — the parser's `linkReferences` map travels with the blocks and the output is identical. **Footnotes do not**: `[^ref]` in an isolated block renders as literal text, because its definition is a different block. Every other construct in this repository's 848 blocks renders identically alone. Deciding what the preview does about footnotes is M2's, and there is a failing case waiting for it.
 
 ## Panels are registered, never hardcoded

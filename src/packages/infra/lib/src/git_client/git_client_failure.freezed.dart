@@ -86,7 +86,7 @@ extension GitClientFailurePatterns on GitClientFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( GitClientExecutableNotFound value)?  executableNotFound,TResult Function( GitClientNotARepository value)?  notARepository,TResult Function( GitClientMergeConflict value)?  mergeConflict,TResult Function( GitClientAuthenticationFailed value)?  authenticationFailed,TResult Function( GitClientPushRejected value)?  pushRejected,TResult Function( GitClientTimedOut value)?  timedOut,TResult Function( GitClientCommandFailed value)?  commandFailed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( GitClientExecutableNotFound value)?  executableNotFound,TResult Function( GitClientNotARepository value)?  notARepository,TResult Function( GitClientMergeConflict value)?  mergeConflict,TResult Function( GitClientAuthenticationFailed value)?  authenticationFailed,TResult Function( GitClientPushRejected value)?  pushRejected,TResult Function( GitClientTimedOut value)?  timedOut,TResult Function( GitClientPathNotInRevision value)?  pathNotInRevision,TResult Function( GitClientCommandFailed value)?  commandFailed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound() when executableNotFound != null:
@@ -95,7 +95,8 @@ return notARepository(_that);case GitClientMergeConflict() when mergeConflict !=
 return mergeConflict(_that);case GitClientAuthenticationFailed() when authenticationFailed != null:
 return authenticationFailed(_that);case GitClientPushRejected() when pushRejected != null:
 return pushRejected(_that);case GitClientTimedOut() when timedOut != null:
-return timedOut(_that);case GitClientCommandFailed() when commandFailed != null:
+return timedOut(_that);case GitClientPathNotInRevision() when pathNotInRevision != null:
+return pathNotInRevision(_that);case GitClientCommandFailed() when commandFailed != null:
 return commandFailed(_that);case _:
   return orElse();
 
@@ -114,7 +115,7 @@ return commandFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( GitClientExecutableNotFound value)  executableNotFound,required TResult Function( GitClientNotARepository value)  notARepository,required TResult Function( GitClientMergeConflict value)  mergeConflict,required TResult Function( GitClientAuthenticationFailed value)  authenticationFailed,required TResult Function( GitClientPushRejected value)  pushRejected,required TResult Function( GitClientTimedOut value)  timedOut,required TResult Function( GitClientCommandFailed value)  commandFailed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( GitClientExecutableNotFound value)  executableNotFound,required TResult Function( GitClientNotARepository value)  notARepository,required TResult Function( GitClientMergeConflict value)  mergeConflict,required TResult Function( GitClientAuthenticationFailed value)  authenticationFailed,required TResult Function( GitClientPushRejected value)  pushRejected,required TResult Function( GitClientTimedOut value)  timedOut,required TResult Function( GitClientPathNotInRevision value)  pathNotInRevision,required TResult Function( GitClientCommandFailed value)  commandFailed,}){
 final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound():
@@ -123,7 +124,8 @@ return notARepository(_that);case GitClientMergeConflict():
 return mergeConflict(_that);case GitClientAuthenticationFailed():
 return authenticationFailed(_that);case GitClientPushRejected():
 return pushRejected(_that);case GitClientTimedOut():
-return timedOut(_that);case GitClientCommandFailed():
+return timedOut(_that);case GitClientPathNotInRevision():
+return pathNotInRevision(_that);case GitClientCommandFailed():
 return commandFailed(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -138,7 +140,7 @@ return commandFailed(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( GitClientExecutableNotFound value)?  executableNotFound,TResult? Function( GitClientNotARepository value)?  notARepository,TResult? Function( GitClientMergeConflict value)?  mergeConflict,TResult? Function( GitClientAuthenticationFailed value)?  authenticationFailed,TResult? Function( GitClientPushRejected value)?  pushRejected,TResult? Function( GitClientTimedOut value)?  timedOut,TResult? Function( GitClientCommandFailed value)?  commandFailed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( GitClientExecutableNotFound value)?  executableNotFound,TResult? Function( GitClientNotARepository value)?  notARepository,TResult? Function( GitClientMergeConflict value)?  mergeConflict,TResult? Function( GitClientAuthenticationFailed value)?  authenticationFailed,TResult? Function( GitClientPushRejected value)?  pushRejected,TResult? Function( GitClientTimedOut value)?  timedOut,TResult? Function( GitClientPathNotInRevision value)?  pathNotInRevision,TResult? Function( GitClientCommandFailed value)?  commandFailed,}){
 final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound() when executableNotFound != null:
@@ -147,7 +149,8 @@ return notARepository(_that);case GitClientMergeConflict() when mergeConflict !=
 return mergeConflict(_that);case GitClientAuthenticationFailed() when authenticationFailed != null:
 return authenticationFailed(_that);case GitClientPushRejected() when pushRejected != null:
 return pushRejected(_that);case GitClientTimedOut() when timedOut != null:
-return timedOut(_that);case GitClientCommandFailed() when commandFailed != null:
+return timedOut(_that);case GitClientPathNotInRevision() when pathNotInRevision != null:
+return pathNotInRevision(_that);case GitClientCommandFailed() when commandFailed != null:
 return commandFailed(_that);case _:
   return null;
 
@@ -165,7 +168,7 @@ return commandFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( AppFailure? cause)?  executableNotFound,TResult Function( String path,  AppFailure? cause)?  notARepository,TResult Function( List<String> conflictedPaths,  AppFailure? cause)?  mergeConflict,TResult Function( String stderr,  AppFailure? cause)?  authenticationFailed,TResult Function( String stderr,  AppFailure? cause)?  pushRejected,TResult Function( String command,  Duration timeout,  AppFailure? cause)?  timedOut,TResult Function( String command,  int exitCode,  String stderr,  AppFailure? cause)?  commandFailed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( AppFailure? cause)?  executableNotFound,TResult Function( String path,  AppFailure? cause)?  notARepository,TResult Function( List<String> conflictedPaths,  AppFailure? cause)?  mergeConflict,TResult Function( String stderr,  AppFailure? cause)?  authenticationFailed,TResult Function( String stderr,  AppFailure? cause)?  pushRejected,TResult Function( String command,  Duration timeout,  AppFailure? cause)?  timedOut,TResult Function( String revision,  String path,  AppFailure? cause)?  pathNotInRevision,TResult Function( String command,  int exitCode,  String stderr,  AppFailure? cause)?  commandFailed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound() when executableNotFound != null:
 return executableNotFound(_that.cause);case GitClientNotARepository() when notARepository != null:
@@ -173,7 +176,8 @@ return notARepository(_that.path,_that.cause);case GitClientMergeConflict() when
 return mergeConflict(_that.conflictedPaths,_that.cause);case GitClientAuthenticationFailed() when authenticationFailed != null:
 return authenticationFailed(_that.stderr,_that.cause);case GitClientPushRejected() when pushRejected != null:
 return pushRejected(_that.stderr,_that.cause);case GitClientTimedOut() when timedOut != null:
-return timedOut(_that.command,_that.timeout,_that.cause);case GitClientCommandFailed() when commandFailed != null:
+return timedOut(_that.command,_that.timeout,_that.cause);case GitClientPathNotInRevision() when pathNotInRevision != null:
+return pathNotInRevision(_that.revision,_that.path,_that.cause);case GitClientCommandFailed() when commandFailed != null:
 return commandFailed(_that.command,_that.exitCode,_that.stderr,_that.cause);case _:
   return orElse();
 
@@ -192,7 +196,7 @@ return commandFailed(_that.command,_that.exitCode,_that.stderr,_that.cause);case
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( AppFailure? cause)  executableNotFound,required TResult Function( String path,  AppFailure? cause)  notARepository,required TResult Function( List<String> conflictedPaths,  AppFailure? cause)  mergeConflict,required TResult Function( String stderr,  AppFailure? cause)  authenticationFailed,required TResult Function( String stderr,  AppFailure? cause)  pushRejected,required TResult Function( String command,  Duration timeout,  AppFailure? cause)  timedOut,required TResult Function( String command,  int exitCode,  String stderr,  AppFailure? cause)  commandFailed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( AppFailure? cause)  executableNotFound,required TResult Function( String path,  AppFailure? cause)  notARepository,required TResult Function( List<String> conflictedPaths,  AppFailure? cause)  mergeConflict,required TResult Function( String stderr,  AppFailure? cause)  authenticationFailed,required TResult Function( String stderr,  AppFailure? cause)  pushRejected,required TResult Function( String command,  Duration timeout,  AppFailure? cause)  timedOut,required TResult Function( String revision,  String path,  AppFailure? cause)  pathNotInRevision,required TResult Function( String command,  int exitCode,  String stderr,  AppFailure? cause)  commandFailed,}) {final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound():
 return executableNotFound(_that.cause);case GitClientNotARepository():
@@ -200,7 +204,8 @@ return notARepository(_that.path,_that.cause);case GitClientMergeConflict():
 return mergeConflict(_that.conflictedPaths,_that.cause);case GitClientAuthenticationFailed():
 return authenticationFailed(_that.stderr,_that.cause);case GitClientPushRejected():
 return pushRejected(_that.stderr,_that.cause);case GitClientTimedOut():
-return timedOut(_that.command,_that.timeout,_that.cause);case GitClientCommandFailed():
+return timedOut(_that.command,_that.timeout,_that.cause);case GitClientPathNotInRevision():
+return pathNotInRevision(_that.revision,_that.path,_that.cause);case GitClientCommandFailed():
 return commandFailed(_that.command,_that.exitCode,_that.stderr,_that.cause);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -215,7 +220,7 @@ return commandFailed(_that.command,_that.exitCode,_that.stderr,_that.cause);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( AppFailure? cause)?  executableNotFound,TResult? Function( String path,  AppFailure? cause)?  notARepository,TResult? Function( List<String> conflictedPaths,  AppFailure? cause)?  mergeConflict,TResult? Function( String stderr,  AppFailure? cause)?  authenticationFailed,TResult? Function( String stderr,  AppFailure? cause)?  pushRejected,TResult? Function( String command,  Duration timeout,  AppFailure? cause)?  timedOut,TResult? Function( String command,  int exitCode,  String stderr,  AppFailure? cause)?  commandFailed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( AppFailure? cause)?  executableNotFound,TResult? Function( String path,  AppFailure? cause)?  notARepository,TResult? Function( List<String> conflictedPaths,  AppFailure? cause)?  mergeConflict,TResult? Function( String stderr,  AppFailure? cause)?  authenticationFailed,TResult? Function( String stderr,  AppFailure? cause)?  pushRejected,TResult? Function( String command,  Duration timeout,  AppFailure? cause)?  timedOut,TResult? Function( String revision,  String path,  AppFailure? cause)?  pathNotInRevision,TResult? Function( String command,  int exitCode,  String stderr,  AppFailure? cause)?  commandFailed,}) {final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound() when executableNotFound != null:
 return executableNotFound(_that.cause);case GitClientNotARepository() when notARepository != null:
@@ -223,7 +228,8 @@ return notARepository(_that.path,_that.cause);case GitClientMergeConflict() when
 return mergeConflict(_that.conflictedPaths,_that.cause);case GitClientAuthenticationFailed() when authenticationFailed != null:
 return authenticationFailed(_that.stderr,_that.cause);case GitClientPushRejected() when pushRejected != null:
 return pushRejected(_that.stderr,_that.cause);case GitClientTimedOut() when timedOut != null:
-return timedOut(_that.command,_that.timeout,_that.cause);case GitClientCommandFailed() when commandFailed != null:
+return timedOut(_that.command,_that.timeout,_that.cause);case GitClientPathNotInRevision() when pathNotInRevision != null:
+return pathNotInRevision(_that.revision,_that.path,_that.cause);case GitClientCommandFailed() when commandFailed != null:
 return commandFailed(_that.command,_that.exitCode,_that.stderr,_that.cause);case _:
   return null;
 
@@ -646,6 +652,78 @@ class _$GitClientTimedOutCopyWithImpl<$Res>
 null == command ? _self.command : command // ignore: cast_nullable_to_non_nullable
 as String,null == timeout ? _self.timeout : timeout // ignore: cast_nullable_to_non_nullable
 as Duration,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class GitClientPathNotInRevision implements GitClientFailure {
+  const GitClientPathNotInRevision(this.revision, this.path, {this.cause});
+  
+
+/// The revision as it was asked for — a sha, a branch, `HEAD`.
+ final  String revision;
+/// The path, relative to the repository root.
+ final  String path;
+@override final  AppFailure? cause;
+
+/// Create a copy of GitClientFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$GitClientPathNotInRevisionCopyWith<GitClientPathNotInRevision> get copyWith => _$GitClientPathNotInRevisionCopyWithImpl<GitClientPathNotInRevision>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitClientPathNotInRevision&&(identical(other.revision, revision) || other.revision == revision)&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,revision,path,cause);
+
+@override
+String toString() {
+  return 'GitClientFailure.pathNotInRevision(revision: $revision, path: $path, cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $GitClientPathNotInRevisionCopyWith<$Res> implements $GitClientFailureCopyWith<$Res> {
+  factory $GitClientPathNotInRevisionCopyWith(GitClientPathNotInRevision value, $Res Function(GitClientPathNotInRevision) _then) = _$GitClientPathNotInRevisionCopyWithImpl;
+@override @useResult
+$Res call({
+ String revision, String path, AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$GitClientPathNotInRevisionCopyWithImpl<$Res>
+    implements $GitClientPathNotInRevisionCopyWith<$Res> {
+  _$GitClientPathNotInRevisionCopyWithImpl(this._self, this._then);
+
+  final GitClientPathNotInRevision _self;
+  final $Res Function(GitClientPathNotInRevision) _then;
+
+/// Create a copy of GitClientFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? revision = null,Object? path = null,Object? cause = freezed,}) {
+  return _then(GitClientPathNotInRevision(
+null == revision ? _self.revision : revision // ignore: cast_nullable_to_non_nullable
+as String,null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
 as AppFailure?,
   ));
 }

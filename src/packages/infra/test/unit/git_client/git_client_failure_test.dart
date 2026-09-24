@@ -14,6 +14,11 @@ void main() {
       GitClientPushRejected() => 'Rejected',
       GitClientTimedOut(timeout: final Duration timeout) =>
         'Timed out after ${timeout.inSeconds}s',
+      GitClientPathNotInRevision(
+        revision: final String revision,
+        path: final String path,
+      ) =>
+        'No $path in $revision',
       GitClientCommandFailed(exitCode: final int exitCode) => 'Exit $exitCode',
     };
 
@@ -35,6 +40,10 @@ void main() {
       expect(
         headline(const GitClientTimedOut('git push', Duration(seconds: 30))),
         'Timed out after 30s',
+      );
+      expect(
+        headline(const GitClientPathNotInRevision('HEAD', 'docs/new.md')),
+        'No docs/new.md in HEAD',
       );
       expect(
         headline(const GitClientCommandFailed('git commit', 1, 'nothing')),

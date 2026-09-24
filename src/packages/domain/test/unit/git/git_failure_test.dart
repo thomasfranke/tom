@@ -19,6 +19,8 @@ void main() {
       GitDetachedHead() => 'Detached HEAD',
       GitPushRejected() => 'The remote moved first',
       GitTimedOut() => 'That took too long',
+      GitPathNotInRevision(path: final String path) =>
+        'No earlier version of $path',
       GitOperationFailed() => 'Git could not do that',
     };
 
@@ -36,6 +38,10 @@ void main() {
       expect(headline(const GitDetachedHead()), 'Detached HEAD');
       expect(headline(const GitPushRejected()), 'The remote moved first');
       expect(headline(const GitTimedOut()), 'That took too long');
+      expect(
+        headline(const GitPathNotInRevision('guides/writing.md')),
+        contains('guides/writing.md'),
+      );
       expect(headline(const GitOperationFailed()), 'Git could not do that');
     });
   });

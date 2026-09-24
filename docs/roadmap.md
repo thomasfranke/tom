@@ -39,8 +39,8 @@ All four run Git through the system binary via `dart:io Process` behind a `GitCl
 
 **M2 — The differentiator**
 
-- [ ] [Rendered diff](product/diff/rendered-diff/doc.md) — `diff_match_patch` or `diffutil_dart` for block alignment, on top of Spike B's `BlockValueObject` shape
-- [ ] [Branch / commit diff](product/diff/branch-diff/doc.md) — same diff packages, over `git show`
+- [x] [Rendered diff](product/diff/rendered-diff/doc.md) — `diffutil_dart` behind the new `TextDiffer` capability ([Decision 27](technical/decisions/027-blocks-are-aligned-by-myers-and-paired-by-words.md)); `diff_match_patch` was the alternative and does not resolve on Dart 3. The decoration is **on the preview**, not a second screen: the container `flows.md` reserved per block is what carries it. Spike B's constraint shapes the whole feature — blocks have no identity, so `BlockDifferService` aligns by position and calls two blocks the same one when they share at least half their words; the threshold is the domain's, the measure is the capability's. **What is compared is the buffer**, so an edit is marked as it is typed, and the `before` side is read with `git show` once per render — a document git has never seen is every block added (`GitPathNotInRevision`, promoted out of the fallback), and a comparison git could not make leaves the document undecorated rather than replacing it with an error. A removed block is still rendered, struck through, from the *old* version's scope. Not drawn yet, and now behind the code: the mock of the decoration itself
+- [ ] [Branch / commit diff](product/diff/branch-diff/doc.md) — the same `BlockDifferService` against another revision, which `DiffDocumentUseCase` already takes as an argument; no new algorithm
 - [ ] [Full-text search](product/search/full-text-search/doc.md) — `sqlite3` + `sqlite3_flutter_libs` (FTS5)
 
 **M3 — Launch polish**

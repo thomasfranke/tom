@@ -17,6 +17,17 @@ SplitDocumentUseCase splitDocument(Ref ref) => throw StateError(
   '— see runTom() in tom_desktop.',
 );
 
+/// Compares the document on screen against what `HEAD` holds.
+///
+/// Beside the preview because the preview is what draws the answer: the
+/// rendered diff is decoration on the blocks that are already there, not a
+/// second screen (`docs/product/diff/rendered-diff/doc.md`).
+@riverpod
+DiffDocumentUseCase diffDocument(Ref ref) => throw StateError(
+  'diffDocumentProvider has no default. The composition root overrides it '
+  '— see runTom() in tom_desktop.',
+);
+
 /// Reads a document as one commit left it.
 ///
 /// Here rather than beside the history panel because the preview is what

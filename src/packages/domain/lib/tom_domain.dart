@@ -5,6 +5,12 @@
 /// is the whole public surface.
 library;
 
+export 'src/diff/block_aligner_port.dart';
+export 'src/diff/block_differ_service.dart';
+export 'src/diff/diff_block_value_object.dart';
+export 'src/diff/document_diff_value_object.dart';
+export 'src/diff/sequence_edit_kind_enum.dart';
+export 'src/diff/sequence_edit_value_object.dart';
 export 'src/documents/block_kind_enum.dart';
 export 'src/documents/block_reader_port.dart';
 export 'src/documents/block_value_object.dart';

@@ -138,8 +138,29 @@ final class DartIoGitClientImpl implements GitClient {
       _git(<String>['branch', '--format=$_branchFormat']);
 
   @override
-  Future<Result<String, GitClientFailure>> show(String revision, String path) =>
-      _git(<String>['show', '$revision:$path']);
+  Future<Result<String, GitClientFailure>> show(
+    String revision,
+    String path,
+  ) async {
+    final Result<String, GitClientFailure> result = await _git(<String>[
+      'show',
+      '$revision:$path',
+    ]);
+    // "This file has no earlier version" is an answer, not a breakage: a new
+    // document, a renamed one, a repository with no commits yet. Recognised
+    // here rather than in `_translate`, which is handed the command line and
+    // not the two halves of it.
+    return switch (result) {
+      Failure<String, GitClientFailure>(
+        failure: GitClientCommandFailed(:final String stderr),
+      )
+          when _pathNotInRevision.hasMatch(stderr) =>
+        Failure<String, GitClientFailure>(
+          GitClientPathNotInRevision(revision, path, cause: result.failure),
+        ),
+      _ => result,
+    };
+  }
 
   @override
   Future<Result<void, GitClientFailure>> stage(List<String> paths) =>
@@ -474,6 +495,16 @@ final class DartIoGitClientImpl implements GitClient {
   static final RegExp _conflictedPath = RegExp(
     r'^CONFLICT \([^)]*\): Merge conflict in (.+)$',
     multiLine: true,
+  );
+
+  /// The revision holds no such path.
+  ///
+  /// Three phrasings for one answer: the file is not in that tree, it is on
+  /// disk but not in that tree, or the revision itself resolves to nothing —
+  /// which is what an unborn `HEAD` and a sha that is not there both say.
+  static final RegExp _pathNotInRevision = RegExp(
+    'does not exist in|exists on disk, but not in|invalid object name',
+    caseSensitive: false,
   );
 
   /// `HEAD` names no commit — the branch exists but carries none yet.

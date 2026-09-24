@@ -20,8 +20,17 @@ sealed class PreviewState with _$PreviewState {
   const factory PreviewState.loading() = PreviewLoading;
 
   /// The document was read, and this is what it holds.
-  const factory PreviewState.ready(ParsedDocumentValueObject document) =
-      PreviewReady;
+  const factory PreviewState.ready(
+    ParsedDocumentValueObject document, {
+
+    /// What it changed against `HEAD`, once git has said.
+    ///
+    /// Null until then, and null for a version being read: the text is
+    /// already here and a git call is a process, so the pane draws the
+    /// document first and decorates it when the answer lands
+    /// (`docs/product/diff/rendered-diff/doc.md`).
+    DocumentDiffValueObject? diff,
+  }) = PreviewReady;
 
   /// The document could not be read or could not be parsed.
   const factory PreviewState.failed(AppFailure failure) = PreviewFailed;

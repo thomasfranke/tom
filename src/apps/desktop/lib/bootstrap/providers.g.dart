@@ -563,3 +563,55 @@ final class BlockReaderProvider
 }
 
 String _$blockReaderHash() => r'cc3900403c3cedc679d2a596f456b0289f048cbc';
+
+/// What tells two versions of a document apart, block by block.
+
+@ProviderFor(blockDiffer)
+final blockDifferProvider = BlockDifferProvider._();
+
+/// What tells two versions of a document apart, block by block.
+
+final class BlockDifferProvider
+    extends
+        $FunctionalProvider<
+          BlockDifferService,
+          BlockDifferService,
+          BlockDifferService
+        >
+    with $Provider<BlockDifferService> {
+  /// What tells two versions of a document apart, block by block.
+  BlockDifferProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'blockDifferProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$blockDifferHash();
+
+  @$internal
+  @override
+  $ProviderElement<BlockDifferService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  BlockDifferService create(Ref ref) {
+    return blockDiffer(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(BlockDifferService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<BlockDifferService>(value),
+    );
+  }
+}
+
+String _$blockDifferHash() => r'ac9901d4e6782f9392343d3247255351f91b8588';

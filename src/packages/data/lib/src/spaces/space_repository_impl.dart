@@ -174,6 +174,7 @@ final class SpaceRepositoryImpl implements SpaceRepository {
         GitClientCommandFailed() ||
         GitClientMergeConflict() ||
         GitClientAuthenticationFailed() ||
-        GitClientPushRejected() => GitOperationFailed(cause: failure),
+        GitClientPushRejected() ||
+        GitClientPathNotInRevision() => GitOperationFailed(cause: failure),
       };
 }

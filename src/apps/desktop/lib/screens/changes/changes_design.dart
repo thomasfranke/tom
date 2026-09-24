@@ -1,6 +1,8 @@
 /// What the design fixes about the changes panel.
 library;
 
+import 'package:tom_ui/tom_ui.dart';
+
 /// The numbers the changes panel is drawn against.
 ///
 /// The `committing` wireframe's git column
@@ -27,12 +29,11 @@ abstract final class ChangesDesign {
   /// Corner radius: a row, the message box, the button.
   static const double radius = 6;
 
-  /// The mark that says what happened to a file.
+  /// The mark that says what happened to a file, and the column it sits in.
   ///
-  /// Twenty square with a letter in it, because **colour is never the only
-  /// signal** — roughly one in twelve men cannot separate the red from the
-  /// green (`docs/technical/design/components.md`).
-  static const double mark = 20;
+  /// The shared square, because the checkbox beside it and the caption above
+  /// it line up with the mark rather than with a number of their own.
+  static const double mark = TomMetrics.mark;
 
   /// The message box, which is as tall as the design draws it.
   static const double messageHeight = 96;

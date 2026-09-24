@@ -76,6 +76,19 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
   /// says "this took too long", not `git fetch --prune`.
   const factory GitFailure.timedOut({AppFailure? cause}) = GitTimedOut;
 
+  /// The document has no version at that revision.
+  ///
+  /// What the rendered diff asks about a file git has never seen: a new
+  /// document, one that has only ever been renamed into place, or a space
+  /// on a repository with no commits yet. Every block of it is an addition,
+  /// which is an answer rather than a failure to report at the user
+  /// (`docs/product/diff/rendered-diff/doc.md`).
+  const factory GitFailure.pathNotInRevision(
+    /// The path, as the user's repository spells it.
+    String path, {
+    AppFailure? cause,
+  }) = GitPathNotInRevision;
+
   /// Git failed in a way the product has no vocabulary for.
   ///
   /// The typed fallback, and it carries nothing: everything a reader would

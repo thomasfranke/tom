@@ -16,6 +16,7 @@ import 'package:tom_ui/tom_ui.dart';
 
 void main() {
   late _Documents documents;
+  late _Git git;
   late ProviderContainer container;
 
   final SpaceEntity docs = SpaceEntity(
@@ -29,6 +30,7 @@ void main() {
 
   setUp(() {
     documents = _Documents();
+    git = _Git(committed: () => documents.content);
     container = ProviderContainer(
       overrides: <Override>[
         readDocumentProvider.overrideWithValue(
@@ -41,6 +43,21 @@ void main() {
           const SplitDocumentUseCase(
             blocks: _Blocks(),
             observability: _Silent(),
+          ),
+        ),
+        diffDocumentProvider.overrideWithValue(
+          DiffDocumentUseCase(
+            // The committed version is whatever the working copy holds
+            // unless a test says otherwise, so a preview that is only about
+            // rendering draws no diff decoration at all.
+            gitFor: (SpaceEntity space) => git,
+            blocks: const _Blocks(),
+            differ: const BlockDifferService(
+              aligner: TextDifferBlockAlignerImpl(
+                differ: TextDifferDataSource(differ: DiffutilTextDifferImpl()),
+              ),
+            ),
+            observability: const _Silent(),
           ),
         ),
       ],
@@ -102,6 +119,108 @@ void main() {
 
     expect(find.textContaining('Title', findRichText: true), findsOneWidget);
     expect(find.textContaining('Prose.', findRichText: true), findsOneWidget);
+  });
+
+  group('the rendered diff', () {
+    /// The letters of every diff mark on screen, in order.
+    List<String> marks(WidgetTester tester) => tester
+        .widgetList<DiffMarkWidget>(find.byType(DiffMarkWidget))
+        .map((DiffMarkWidget mark) => mark.letter)
+        .toList();
+
+    testWidgets('a document matching HEAD carries no decoration at all', (
+      WidgetTester tester,
+    ) async {
+      // The rule the panel is built around: the diff is on screen for whole
+      // documents, so an unchanged one must add nothing to read past.
+      documents.content = '# Title\n\nProse.\n';
+
+      await pumpPreview(tester, document: writing);
+
+      expect(marks(tester), isEmpty);
+      expect(find.byType(MarkdownBody), findsNWidgets(2));
+    });
+
+    testWidgets('a rewritten paragraph is marked as modified', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '# Title\n\nProse, rewritten.\n';
+      git.committed = () => '# Title\n\nProse.\n';
+
+      await pumpPreview(tester, document: writing);
+
+      expect(marks(tester), <String>['M']);
+      expect(
+        find.textContaining('Prose, rewritten.', findRichText: true),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a new paragraph is marked as added', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '# Title\n\nProse.\n\nAnd more of it.\n';
+      git.committed = () => '# Title\n\nProse.\n';
+
+      await pumpPreview(tester, document: writing);
+
+      expect(marks(tester), <String>['A']);
+    });
+
+    testWidgets('a deleted paragraph is still rendered, marked as removed', (
+      WidgetTester tester,
+    ) async {
+      // The whole claim of the feature: what went is *read*, rendered as
+      // formatted output rather than shown as `-` lines of raw markdown.
+      documents.content = '# Title\n';
+      git.committed = () => '# Title\n\nThe paragraph that went.\n';
+
+      await pumpPreview(tester, document: writing);
+
+      expect(marks(tester), <String>['R']);
+      expect(
+        find.textContaining('The paragraph that went.', findRichText: true),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('what went is drawn before what arrived', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '# Title\n\nSomething else entirely, elsewhere.\n';
+      git.committed = () => '# Title\n\nThe old opening, about one thing.\n';
+
+      await pumpPreview(tester, document: writing);
+
+      expect(marks(tester), <String>['R', 'A']);
+    });
+
+    testWidgets('a document git has never seen is every block added', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '# Title\n\nProse.\n';
+      git.answer = const Failure<String, GitFailure>(
+        GitPathNotInRevision('docs/guides/writing.md'),
+      );
+
+      await pumpPreview(tester, document: writing);
+
+      expect(marks(tester), <String>['A', 'A']);
+    });
+
+    testWidgets('a comparison git could not make leaves the document alone', (
+      WidgetTester tester,
+    ) async {
+      // What failed is the comparison, and the document is readable either
+      // way — so the pane draws it undecorated rather than an error.
+      documents.content = '# Title\n\nProse.\n';
+      git.answer = const Failure<String, GitFailure>(GitNotInstalled());
+
+      await pumpPreview(tester, document: writing);
+
+      expect(marks(tester), isEmpty);
+      expect(find.byType(MarkdownBody), findsNWidgets(2));
+    });
   });
 
   group('the reading measure', () {
@@ -255,6 +374,26 @@ final class _Documents implements DocumentRepository {
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
       throw UnimplementedError();
+}
+
+/// Git, answering with whatever the test says `HEAD` holds.
+final class _Git implements GitRepository {
+  _Git({required this.committed});
+
+  /// What the committed version of the open document is.
+  String Function() committed;
+
+  /// What git answers instead, when the test is about a failure.
+  Result<String, GitFailure>? answer;
+
+  @override
+  Future<Result<String, GitFailure>> contentAt({
+    required String revision,
+    required RepoRelativePathValueObject path,
+  }) async => answer ?? Success<String, GitFailure>(committed());
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 /// The real reader, over the real parser — the panel is what is under test,
