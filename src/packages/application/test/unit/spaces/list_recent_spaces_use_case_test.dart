@@ -16,8 +16,6 @@ void main() {
       ListRecentSpacesUseCase(recents: recents, observability: observability);
 
   test('the list comes back as the repository ordered it', () async {
-    // The order is the repository's business — most recent first — and this
-    // use case does not re-sort what it was handed.
     recents.stored = <RecentSpaceEntity>[
       RecentSpaceEntity(
         root: '/b',
@@ -51,9 +49,6 @@ void main() {
   });
 
   test('nothing checks whether the folders are still there', () async {
-    // A row whose folder went away is still offered: the product's answer is
-    // to let the user forget it, and checking would be a disk read per row
-    // of a list nobody may click.
     recents.stored = <RecentSpaceEntity>[
       RecentSpaceEntity(
         root: '/gone',
@@ -103,10 +98,8 @@ final class _Recents implements RecentSpacesRepository {
       const Success<void, Never>(null);
 }
 
-/// A repository that breaks its contract by throwing.
-///
-/// [Never] says it cannot *return* a failure, which is exactly why throwing is
-/// the only way left to break it — and what the use case's guard is for.
+/// A repository that breaks its contract by throwing, the only way left when
+/// [Never] says it cannot return a failure.
 final class _ThrowingRecents implements RecentSpacesRepository {
   @override
   Future<Result<List<RecentSpaceEntity>, Never>> list() async =>

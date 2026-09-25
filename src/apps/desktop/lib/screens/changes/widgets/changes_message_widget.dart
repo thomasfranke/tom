@@ -9,15 +9,9 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// The commit message, as somebody writes it.
 ///
-/// **The controller is the draft while this is on screen** — seeded once
-/// from the state and pushing every keystroke up, for the same reason the
-/// editor's is: a field re-seeded under a cursor loses what was being typed.
-/// Re-seeded only when the notifier empties it, which is what a commit that
-/// landed does.
-///
-/// **Never disabled**, not even while git is working: describing a commit
-/// has nothing to do with git, and taking the box away mid-sentence because
-/// a file is being staged would be hostile.
+/// The controller is seeded once and cleared only when the notifier empties
+/// the draft, because re-seeding under a cursor loses what is being typed.
+/// Never disabled, even while git works: describing a commit is not git's.
 class ChangesMessageWidget extends ConsumerStatefulWidget {
   /// Creates the box.
   const ChangesMessageWidget({super.key});
@@ -43,8 +37,8 @@ class _ChangesMessageWidgetState extends ConsumerState<ChangesMessageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // The one thing worth listening for: a commit that landed empties the
-    // box, and the field is the only place that still holds the old text.
+    // A commit that landed empties the draft, and the field is the only place
+    // still holding the old text.
     ref.listen<ChangesState>(changesProvider, (
       ChangesState? previous,
       ChangesState next,

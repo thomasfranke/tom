@@ -14,11 +14,9 @@ String? get hostPlatform => switch (Platform.operatingSystem) {
   _ => null,
 };
 
-/// Compile check for [platform].
-///
-/// This produces the community build — proof that the public repository
-/// compiles on its own. The distributed artifact is the official build and is
-/// not produced here.
+/// Compile check for [platform] — the community build, proof that the public
+/// repository compiles on its own; the distributed artifact is not produced
+/// here.
 Future<int> runBuild({String? platform}) async {
   final target = platform ?? hostPlatform;
   if (target == null) {
@@ -33,11 +31,9 @@ Future<int> runBuild({String? platform}) async {
   return flutter(['build', target, '--release'], workingDirectory: _desktop);
 }
 
-/// Opens the desktop app on [device], with any build-time feature [flags].
-///
-/// Flags are `NAME=true` pairs turned into `--dart-define`; they are
-/// build-time only, so a flag changed here needs the app restarted, not
-/// hot-reloaded.
+/// Opens the desktop app on [device], with any build-time feature [flags] as
+/// `NAME=true` pairs turned into `--dart-define` — so a changed flag needs a
+/// restart, not a hot reload.
 Future<int> runApp({String? device, List<String> flags = const []}) async {
   final target = device ?? hostPlatform;
   if (target == null) {

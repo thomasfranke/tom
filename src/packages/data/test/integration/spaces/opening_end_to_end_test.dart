@@ -1,13 +1,5 @@
-/// Opening a folder, with every real implementation behind it.
-///
-/// The others in this folder each test one class against one real thing.
-/// This one wires the stack the way the composition root does — real disk,
-/// real git, real JSON file — and asks the question the user asks: *open
-/// this folder*. It is the only test that fails if the pieces are each
-/// correct and do not fit together.
-///
-/// It stands in for clicking the button, which a test cannot do: the folder
-/// picker is a native dialog.
+/// Opening a folder with the stack wired as the composition root wires it,
+/// the only test that fails when the pieces are each correct and do not fit.
 library;
 
 import 'dart:convert';
@@ -85,13 +77,11 @@ void main() {
     final SpaceEntity space = valueOf(await spaces.open('$repoPath/docs'));
     valueOf(await recents.remember(space));
 
-    // The space knows both paths, which is what every later git call needs.
     expect(space.root, '$repoPath/docs');
     expect(space.repositoryRoot, repoPath);
     expect(space.name, 'docs');
 
-    // And it survives the process: a second repository over the same file
-    // is what a restart looks like.
+    // A second repository over the same file is what a restart looks like.
     final RecentSpacesRepository reopened = RecentSpacesRepositoryImpl(
       recents: RecentSpacesDataSource(
         settings: JsonFileSettingsImpl(
@@ -117,8 +107,6 @@ void main() {
   });
 
   test('a folder outside any repository is refused, and not remembered', () {
-    // The product's rule, proved against a real git rather than a fake: TOM
-    // never creates a repository on the user's behalf.
     final String loose = '$base/loose';
     Directory(loose).createSync();
 
@@ -130,12 +118,11 @@ void main() {
   });
 
   test('nothing is written until something is actually stored', () {
-    // A user who never opens a space never gets a preferences file.
     expect(File(preferences).existsSync(), isFalse);
   });
 }
 
-/// An [Observability] that keeps nothing — this test is about the disk.
+/// An [Observability] that keeps nothing.
 final class _Observability implements Observability {
   const _Observability();
 

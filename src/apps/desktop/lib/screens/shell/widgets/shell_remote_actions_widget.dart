@@ -10,19 +10,16 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The two remote actions the top bar carries, and how far the branch has
-/// drifted from its remote.
+/// Fetch and Push, and how far the branch has drifted from its remote.
 ///
-/// **Two buttons, never one.** A combined *Sync* would be one name for three
-/// different risks — fetch touches no file, pull rewrites the working tree,
-/// push publishes — and nothing here happens on a timer
-/// (`docs/product/git-workflow/push-pull/doc.md`). Pull is not here: it is
-/// the remedy inside the rejection, which is where the design draws it.
+/// Two buttons and never a combined Sync, since that is one name for three
+/// risks (`docs/product/git-workflow/push-pull/doc.md`); Pull is the remedy
+/// inside the rejection, where the design draws it.
 class ShellRemoteActionsWidget extends ConsumerWidget {
   /// Creates the actions.
   const ShellRemoteActionsWidget({super.key});
 
-  /// What the wireframe fixes: the buttons' box and the gap before them.
+  /// The wireframe's button box and the gap before it.
   static const double _buttonWidth = 120;
   static const double _buttonHeight = 28;
   static const double _gap = 10;
@@ -33,8 +30,8 @@ class ShellRemoteActionsWidget extends ConsumerWidget {
       spaceSessionProvider.select((SpaceSessionState? session) => session?.git),
     );
     if (git == null) {
-      // Nothing has read git yet, so there is nothing true to offer. A
-      // button that cannot say what it would do is worse than no button.
+      // Nothing has read git yet: a button that cannot say what it would do
+      // is worse than no button.
       return const SizedBox.shrink();
     }
     final RemoteState remote = ref.watch(remoteProvider);
@@ -53,8 +50,7 @@ class ShellRemoteActionsWidget extends ConsumerWidget {
           label: 'Push',
           action: RemoteActionEnum.push,
           remote: remote,
-          // Nothing to publish is not a failure to report afterwards: the
-          // button says so by being unavailable.
+          // Nothing to publish is said by the button, not reported after.
           onPressed: git.ahead == 0
               ? null
               : () => unawaited(ref.read(remoteProvider.notifier).push()),
@@ -64,11 +60,8 @@ class ShellRemoteActionsWidget extends ConsumerWidget {
   }
 }
 
-/// How far ahead of and behind its remote the branch is.
-///
-/// One item, as the design writes it, and **absent when there is nothing to
-/// count** — a zero beside a zero is chrome that has to be read twice to be
-/// ignored.
+/// How far ahead of and behind its remote the branch is; one item as the
+/// design writes it, absent when there is nothing to count.
 class _DriftWidget extends StatelessWidget {
   const _DriftWidget({required this.git});
 
@@ -95,7 +88,7 @@ class _DriftWidget extends StatelessWidget {
         fontSize: 13,
         height: 1.4,
         // Behind is the half that needs doing something about, so it is the
-        // half that is allowed to carry a colour.
+        // half allowed a colour.
         color: git.behind > 0 ? colors.modified : colors.textSecondary,
       ),
     );
@@ -135,8 +128,8 @@ class _ActionWidget extends StatelessWidget {
       width: ShellRemoteActionsWidget._buttonWidth,
       height: ShellRemoteActionsWidget._buttonHeight,
       child: OutlinedButton(
-        // All three wait on one another: git serializes them per space
-        // underneath, so a second press would only queue.
+        // All wait on one another: git serializes them per space underneath,
+        // so a second press would only queue.
         onPressed: remote.isBusy ? null : onPressed,
         style: OutlinedButton.styleFrom(
           foregroundColor: colors.textSecondary,
@@ -146,7 +139,7 @@ class _ActionWidget extends StatelessWidget {
           padding: EdgeInsets.zero,
           textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
         ),
-        // The one that is working says so; the others just wait.
+        // The one that is working says so; the others wait.
         child: Text(isThisOne ? '$label…' : label),
       ),
     );

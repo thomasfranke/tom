@@ -3,17 +3,13 @@ library;
 
 /// A commit's full 40-character object name.
 ///
-/// Full rather than abbreviated: an abbreviation is a display choice, and a
-/// repository large enough to make a 7-character prefix ambiguous is exactly
-/// the one where it matters. [short] is how the UI asks for fewer.
-///
-/// An `extension type` rather than a Freezed class, per [Decision
+/// Full rather than abbreviated, because an abbreviation is a display choice
+/// ([short]); an `extension type` per [Decision
 /// 16](../../../../../../docs/technical/decisions/016-freezed-is-mandatory-for-immutable-data.md).
 extension type const CommitShaValueObject._(String value) {
-  /// Wraps [value], which must be 40 hexadecimal characters.
+  /// [value] as a sha, throwing [ArgumentError] when it is not one.
   ///
-  /// Throws [ArgumentError] when it is not. Parsing git output goes through
-  /// [tryParse] instead.
+  /// Parsing git output goes through [tryParse] instead.
   factory CommitShaValueObject(String value) =>
       tryParse(value) ??
       (throw ArgumentError.value(value, 'value', 'not a full commit sha'));

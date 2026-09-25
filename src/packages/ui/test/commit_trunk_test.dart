@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 void main() {
-  /// Mounts [child] under a trunk, optionally with animations switched off
-  /// the way the platform's accessibility setting does.
+  /// [child] under a trunk, [still] the way the platform's accessibility
+  /// setting asks.
   Widget app(Widget child, {bool still = false}) => MaterialApp(
     theme: tomTheme(Brightness.dark),
     home: MediaQuery(
@@ -13,8 +13,7 @@ void main() {
     ),
   );
 
-  /// Where the line belongs: the centre of the mark's commit, in the trunk's
-  /// own coordinates.
+  /// The centre of the mark's commit, in the trunk's own coordinates.
   double commitX(WidgetTester tester) {
     final Rect mark = tester.getRect(find.byType(TomWordmarkWidget));
     final double scale = mark.width / TomMark.boxWidth;
@@ -23,8 +22,8 @@ void main() {
         (TomMark.commitCentre.dx - TomMark.left) * scale;
   }
 
-  /// What the ground paints: the first `CustomPaint` under the trunk, the
-  /// wordmark's own being the other one.
+  /// The ground's paint: the first `CustomPaint` under the trunk, the
+  /// wordmark's own being the other.
   RenderObject ground(WidgetTester tester) => tester.renderObject(
     find
         .descendant(
@@ -66,8 +65,6 @@ void main() {
     );
     await tester.pump();
 
-    // Outside a trunk the same call answers null, which is what lets any
-    // other screen keep drawing the mark with nothing behind it.
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
@@ -89,7 +86,6 @@ void main() {
     await tester.pumpWidget(app(const SizedBox.expand()));
     await tester.pump(const Duration(milliseconds: 200));
 
-    // No anchor, no geometry, no guess at where the O might have been.
     expect(tester.takeException(), isNull);
   });
 
@@ -109,8 +105,7 @@ void main() {
 
     expect(tester.binding.hasScheduledFrame, isTrue);
 
-    // The frame that never settles is the reason Home's own tests ask for
-    // the still screen; leaving the widget running would hang them.
+    // Unmounted on purpose: a cycle that never settles outlives the test.
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -131,8 +126,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Still is a design, not a fallback: the line and the commits are there,
-    // and nothing is scheduled to move them.
     expect(tester.binding.hasScheduledFrame, isFalse);
     expect(find.byType(TomWordmarkWidget), findsOneWidget);
   });
@@ -147,8 +140,8 @@ void main() {
     await tester.pumpWidget(app(still: true, centredMark()));
     await tester.pumpAndSettle();
 
-    /// A lane is the one thing drawn from the top of the ground to the
-    /// bottom of it — the trunk itself stops at the mark, twice.
+    /// Whether a draw is a lane: the one line from the top of the ground to
+    /// the bottom, since the trunk itself stops at the mark.
     bool isLane(Symbol method, List<Object?> arguments) {
       if (method != #drawLine) {
         return false;
@@ -159,8 +152,8 @@ void main() {
           to.dy == tester.getSize(find.byType(CommitTrunkWidget)).height;
     }
 
-    // A lane that lands on the wordmark is a line through the letters, which
-    // is what placing one in pixels rather than in proportion would do.
+    /// Whether a lane misses the wordmark, which one placed in pixels rather
+    /// than in proportion would not at every width.
     bool clearsTheMark(List<Object?> arguments) {
       final Rect mark = tester
           .getRect(find.byType(TomWordmarkWidget))
@@ -199,8 +192,7 @@ void main() {
 
     expect(ground(tester), paints..line(p1: Offset(commitX(tester), 0)));
 
-    // A narrower window re-centres the mark and rebuilds nothing here — the
-    // only media query this widget depends on is `disableAnimations` — so a
+    // A resize re-centres the mark and rebuilds nothing in the trunk, so a
     // box remembered from the last frame would leave the line behind.
     tester.view.physicalSize = const Size(700, 800);
     await tester.pumpAndSettle();

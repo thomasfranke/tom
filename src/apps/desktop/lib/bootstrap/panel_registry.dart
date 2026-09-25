@@ -12,11 +12,9 @@ part 'panel_registry.g.dart';
 
 /// Every registered panel, by region.
 ///
-/// Built once from the modules `runTom` was given, and read by the shell.
-/// The shell holds no list of its own: **panels are registered, never
-/// hardcoded**
-/// ([flows](../../../../../docs/technical/flows.md#panels-are-registered-never-hardcoded)),
-/// and a shell that kept its own list would be a second, quieter registry.
+/// Built once from the modules `runTom` was given and read by the shell,
+/// which holds no list of its own
+/// ([composition](../../../../../docs/technical/runtime/composition.md)).
 @immutable
 class PanelRegistry {
   /// Collects the panels of [modules], in the order they were given.
@@ -39,8 +37,7 @@ class PanelRegistry {
     }
     for (final List<PanelDescriptor> panels in byPlacement.values) {
       // A stable sort, so a tie falls back to registration order, which is
-      // module order. Nobody has to number anything for `runTom` to be
-      // predictable.
+      // module order.
       mergeSortByOrder(panels);
     }
     return PanelRegistry._(byPlacement);
@@ -50,16 +47,12 @@ class PanelRegistry {
 
   final Map<PanelPlacementEnum, List<PanelDescriptor>> _byPlacement;
 
-  /// What belongs in [placement], lowest order first.
+  /// What belongs in [placement], lowest order first; an empty list is an
+  /// ordinary answer.
   ///
-  /// An empty list is an ordinary answer: a region with nothing registered
-  /// in it draws nothing, which is how a build with a panel's feature flag
-  /// off looks from here.
-  ///
-  /// [mode] narrows it to the panels that belong in that document mode. The
-  /// filtering lives here rather than in the shell because the descriptor is
-  /// what carries the answer, and a shell that read `modes` would be a shell
-  /// that knows what a panel is for.
+  /// [mode] narrows it to the panels of that document mode. The filtering
+  /// lives here so the shell never reads `modes` and never learns what a
+  /// panel is for.
   List<PanelDescriptor> at(
     PanelPlacementEnum placement, {
     DocumentModeEnum? mode,
@@ -93,11 +86,10 @@ void mergeSortByOrder(List<PanelDescriptor> panels) {
     ..addAll(indexed.map(((int, PanelDescriptor) e) => e.$2));
 }
 
-/// The registry in scope.
+/// The registry in scope, overridden by `runTom` at the root of the app.
 ///
-/// Overridden by `runTom` at the root of the app. It has no default: a shell
-/// built without one is a wiring mistake, and failing loudly at startup is
-/// better than drawing an empty window.
+/// No default: a shell built without one is a wiring mistake, and failing
+/// at startup beats drawing an empty window.
 @Riverpod(keepAlive: true)
 PanelRegistry panelRegistry(Ref ref) => throw StateError(
   'No PanelRegistry in scope. The app starts through runTom(), which '

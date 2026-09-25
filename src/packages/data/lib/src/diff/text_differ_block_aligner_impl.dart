@@ -11,10 +11,8 @@ import 'package:tom_infra/tom_infra.dart';
 
 /// [BlockAlignerPort] over [TextDifferDataSource].
 ///
-/// Two translations and nothing else. Blocks into the text the differ
-/// compares — **a block's own source, nothing derived** — and positions back
-/// into the domain's edits, which is why the capability never has to know
-/// what a block is.
+/// Two translations: a block's own source into the text the differ compares,
+/// and positions back into the domain's edits.
 final class TextDifferBlockAlignerImpl implements BlockAlignerPort {
   /// Creates an aligner over [differ].
   const TextDifferBlockAlignerImpl({required this.differ});
@@ -49,9 +47,8 @@ final class TextDifferBlockAlignerImpl implements BlockAlignerPort {
 
   /// The same edit, in the domain's vocabulary.
   ///
-  /// One to one today, and still written out: the two enums answer to
-  /// different owners, and the day a differ reports something the domain has
-  /// no word for, this is where the compiler says so.
+  /// Written out although one to one, so a differ reporting something the
+  /// domain has no word for breaks here.
   static SequenceEditValueObject _asSequenceEdit(TextEditDto edit) =>
       SequenceEditValueObject(
         kind: switch (edit.kind) {
@@ -66,9 +63,8 @@ final class TextDifferBlockAlignerImpl implements BlockAlignerPort {
 
   /// What the capability reported, about the document on screen.
   ///
-  /// Exhaustive over [TextDifferFailure] with no default branch. A differ
-  /// that broke is not something the product has words for, so it lands on
-  /// the fallback rather than being dressed up as a file problem.
+  /// Exhaustive over [TextDifferFailure] with no default branch; a broken
+  /// differ lands on the fallback because the product has no word for it.
   static DocumentFailure _asDocumentFailure(
     TextDifferFailure failure,
     SpaceRelativePathValueObject path,

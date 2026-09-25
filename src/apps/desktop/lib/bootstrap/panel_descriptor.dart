@@ -7,11 +7,9 @@ import 'package:tom_presentation/tom_presentation.dart';
 
 /// One panel, described rather than built.
 ///
-/// The shell never names a panel and never imports one
+/// The shell never names a panel: it asks the registry what belongs in each
+/// region and calls [builder], and the built-in panels take exactly this path
 /// ([Decision 12](../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
-/// It asks the registry what belongs in each region and calls [builder].
-/// **The built-in panels go through exactly this path** — that is what keeps
-/// the extension point real instead of letting it rot from disuse.
 @immutable
 class PanelDescriptor {
   /// Describes a panel.
@@ -24,43 +22,33 @@ class PanelDescriptor {
     this.modes = DocumentModeEnum.values,
   });
 
-  /// What identifies this panel, globally and for the life of the product.
+  /// The panel's global, stable identity — `tom.explorer`, `acme.tasks`.
   ///
-  /// Namespaced by whoever contributes it — `tom.explorer`, `acme.tasks` —
-  /// so two modules cannot collide by accident. It is what a persisted
-  /// layout, a keyboard shortcut and a test all refer to, so it outlives any
-  /// rename of the title.
+  /// Namespaced by the module that contributes it, so two modules cannot
+  /// collide; it outlives any rename of [title].
   final String id;
 
   /// What the user sees this panel called.
-  ///
-  /// Separate from [id] because it is translated, renamed, and sometimes
-  /// not shown at all.
   final String title;
 
   /// Which region of the shell it belongs to.
   final PanelPlacementEnum placement;
 
-  /// Builds the panel's content.
+  /// Builds the panel's content, inside the region's own constraints.
   ///
-  /// Called by the shell, inside the region's own constraints. A panel that
-  /// needs the space, the open document or anything else reaches it through
-  /// the providers in scope, never through arguments here — which is what
-  /// lets the descriptor stay a value.
+  /// A panel reaches the space and the open document through the providers
+  /// in scope, never through arguments here, so the descriptor stays a value.
   final WidgetBuilder builder;
 
   /// Which document modes it is drawn in — every one of them by default.
   ///
-  /// How the mode bar hides a panel without the shell knowing which panel it
-  /// is hiding: source and preview each name the modes they belong to, and
-  /// the shell only filters. Meaningless outside
-  /// [PanelPlacementEnum.document], which is the only region the bar governs.
+  /// The panel names its modes and the shell only filters, so the mode bar
+  /// hides a panel without knowing what it is. Meaningless outside
+  /// [PanelPlacementEnum.document], the only region the bar governs.
   final List<DocumentModeEnum> modes;
 
   /// Where it sits among its region's other panels, lowest first.
   ///
-  /// Ties are broken by registration order, and registration order is module
-  /// order, so `runTom(modules: [a, b])` is predictable without anyone
-  /// having to number everything.
+  /// Ties fall back to registration order, which is module order.
   final int order;
 }

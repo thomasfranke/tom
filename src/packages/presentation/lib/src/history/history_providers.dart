@@ -8,8 +8,8 @@ part 'history_providers.g.dart';
 
 /// Reads the commits that touched one document.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use cases it needs and cannot see that a process answers them.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 @riverpod
 ReadFileHistoryUseCase readFileHistory(Ref ref) => throw StateError(
   'readFileHistoryProvider has no default. The composition root overrides '

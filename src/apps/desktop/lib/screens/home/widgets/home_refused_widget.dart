@@ -13,10 +13,8 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// The one way opening a folder fails, and everything else.
 ///
-/// No recent list: the design draws this screen with the retry and the one
-/// line about repositories, and nothing else. It is a state to move on from
-/// in one click, and a second list of choices underneath would make the
-/// first one look optional.
+/// No recent list, as the design draws it: a state to move on from in one
+/// click, and a second list of choices would make the retry look optional.
 class HomeRefusedWidget extends ConsumerWidget {
   /// Creates the refusal explaining [failure].
   const HomeRefusedWidget({required this.failure, super.key});
@@ -71,18 +69,15 @@ class HomeRefusedWidget extends ConsumerWidget {
         ),
         if (said.$2 case final String path) ...<Widget>[
           const SizedBox(height: HomeDesign.headingToPath),
-          // A box, not a bare line: the folder is the one piece of this
-          // screen the user did not write, and it reads as quoted.
+          // A box, because the path reads as quoted.
           DecoratedBox(
             decoration: BoxDecoration(
               color: colors.surfaceSunken,
               borderRadius: BorderRadius.circular(HomeDesign.controlRadius),
             ),
-            // Padded to the design's height rather than given it: a box
-            // that is *told* how tall it is needs something inside to
-            // centre the text, and anything that centres also takes every
-            // pixel of width it is offered — which drew the quote as a band
-            // across the window.
+            // Padded to the design's height rather than given it: a box told
+            // its height needs something to centre the text, and anything
+            // that centres takes every pixel of width it is offered.
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: TomMetrics.pad,
@@ -120,9 +115,8 @@ class HomeRefusedWidget extends ConsumerWidget {
           onPressed: () => chooseFolder(ref),
         ),
         const SizedBox(height: HomeDesign.retryToHint),
-        // The line the product insists on: TOM never creates a repository on
-        // the user's behalf, and says so rather than leaving them looking
-        // for the button.
+        // TOM never runs `git init` for anyone, and says so rather than
+        // leaving them looking for the button.
         Text(
           'Creating a repository is not something TOM does.',
           style: TextStyle(fontSize: 13, height: 1.5, color: colors.textMuted),

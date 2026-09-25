@@ -254,11 +254,8 @@ class EditorReady extends EditorState {
   const EditorReady({required this.saved, required this.source, this.isSaving = false, this.saveFailure}): super._();
   
 
-/// The document as the disk last agreed it was.
-///
-/// What the buffer is compared against, and what a save replaces. **The
-/// file is the truth**, so this is the app's record of that truth and
-/// never a second one.
+/// The document as the disk last agreed it was — what the buffer is
+/// compared against, and what a save replaces.
  final  DocumentEntity saved;
 /// The text being edited, which is the file's content until it is not.
  final  String source;
@@ -266,8 +263,8 @@ class EditorReady extends EditorState {
 @JsonKey() final  bool isSaving;
 /// Why the last save did not land, or null when it did.
 ///
-/// A save that fails silently is the one thing a text editor may never
-/// do: the buffer still holds work and the file does not.
+/// Said rather than swallowed, because the buffer still holds work and
+/// the file does not.
  final  AppFailure? saveFailure;
 
 /// Create a copy of EditorState

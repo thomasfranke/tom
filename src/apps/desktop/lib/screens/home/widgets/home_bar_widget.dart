@@ -16,9 +16,7 @@ enum HomeBarEdgeEnum {
 
 /// One of the two bars: a fixed height, a raised fill, and one hairline.
 ///
-/// The rule is *inside* the height rather than added to it, because that is
-/// what the design measures — a bar plus a divider would make every screen
-/// one pixel taller than the drawing it came from.
+/// The rule is inside the height, because that is what the design measures.
 class HomeBarWidget extends StatelessWidget {
   /// Creates a bar [height] tall with its rule on [rule].
   const HomeBarWidget({
@@ -54,9 +52,8 @@ class HomeBarWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final BorderSide side = BorderSide(color: colors.border);
     return Container(
-      // Both, and the width is not redundant: a `Container` with a height
-      // and no width sizes itself to its child, and the top bar's child is
-      // nothing at all — which drew a bar zero pixels wide.
+      // Not redundant: a `Container` with no width sizes itself to its child,
+      // and the top bar's child is nothing at all.
       width: double.infinity,
       height: height,
       decoration: BoxDecoration(

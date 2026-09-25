@@ -5,16 +5,11 @@ import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// Moves `HEAD` onto a branch, and starts one when there is none to move to.
+/// `HEAD` moved onto a branch, started first when it does not exist.
 ///
-/// One use case for both because they are one control's two ways of
-/// arriving: starting a branch *is* switching to it
-/// (`docs/product/git-workflow/branch-switch/doc.md`), so nothing here ever
-/// leaves the user on the branch they were trying to leave.
-///
-/// Neither asks about unsaved work. Whether a switch would discard a buffer
-/// is the session's question, not git's, and it is answered before the call
-/// gets here.
+/// One use case for both because starting a branch is switching to it
+/// (`docs/product/git-workflow/branch-switch/doc.md`). Neither asks about
+/// unsaved work: that is the session's question, answered before the call.
 final class SwitchBranchUseCase with UseCase {
   /// Creates the use case.
   const SwitchBranchUseCase({

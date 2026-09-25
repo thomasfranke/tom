@@ -37,10 +37,8 @@ void main() {
 
   setUp(() {
     spaces = _Spaces();
-    // One container per test, not one per mount: a test that pumps twice —
-    // the same panel in the other mode — would otherwise leave the first
-    // one alive, and a provider still scheduling its own disposal is a timer
-    // the test framework fails on.
+    // One container per test, not per mount: a second container left alive
+    // is still scheduling its disposal, a timer the test framework fails on.
     container = ProviderContainer(
       overrides: <Override>[
         listSpaceEntriesProvider.overrideWithValue(
@@ -49,8 +47,7 @@ void main() {
             observability: const _Silent(),
           ),
         ),
-        // The tree marks the open document when its buffer has drifted from
-        // the file, so opening one now means a read.
+        // The tree marks a drifted buffer, so opening a document is a read.
         readDocumentProvider.overrideWithValue(
           const ReadDocumentUseCase(
             documentsFor: _documentsFor,
@@ -62,11 +59,9 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  /// Mounts the panel at the width the shell gives it, with [space] open.
+  /// Mounts the panel at the shell's width, with [space] open.
   ///
-  /// The panel is placed at the left edge and nowhere else, because the test
-  /// below measures indentation in absolute pixels — the design fixes where
-  /// a row's text starts, and that is only checkable against a known origin.
+  /// At the left edge, because indentation is measured in absolute pixels.
   Future<void> pumpPanel(
     WidgetTester tester, {
     SpaceEntity? space,
@@ -106,9 +101,8 @@ void main() {
     testWidgets('it names itself, and offers search as an M2 control', (
       WidgetTester tester,
     ) async {
-      // On screen and disabled rather than absent, the way Home draws
-      // cloning: the design puts it here, and a control that appears later
-      // moves everything under it.
+      // Disabled rather than absent: a control that appears later moves
+      // everything under it.
       await pumpPanel(tester);
 
       expect(find.text('EXPLORER'), findsOneWidget);
@@ -130,8 +124,7 @@ void main() {
     testWidgets('every entry is on screen, folders and files alike', (
       WidgetTester tester,
     ) async {
-      // The tree shows what the folder holds, `.git/` aside — which the walk
-      // never even descends into (docs/product/navigation/file-tree/doc.md).
+      // Everything but `.git/` (docs/product/navigation/file-tree/doc.md).
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
 
       await pumpPanel(tester, space: docs);
@@ -169,7 +162,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('▸'), findsOneWidget);
-      // And what was inside it is gone.
       expect(find.text('writing.md'), findsNothing);
     });
 
@@ -190,8 +182,7 @@ void main() {
     testWidgets('a document opens, and the row says it is the current one', (
       WidgetTester tester,
     ) async {
-      // The accent marks *the current thing* and the weight says it a second
-      // time: colour is never the only signal
+      // Accent and weight both, since colour is never the only signal
       // (docs/technical/design/visual-language.md).
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       await pumpPanel(tester, space: docs);
@@ -210,9 +201,7 @@ void main() {
     testWidgets('a document with unsaved edits is marked, and only it', (
       WidgetTester tester,
     ) async {
-      // The tree is how a file is chosen, so it is where a file with work
-      // the disk does not have has to say so — and the mark belongs to that
-      // one row, not to the space.
+      // The mark belongs to the one row, not to the space.
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       await pumpPanel(tester, space: docs);
       await tester.tap(find.text('index.md'));
@@ -231,9 +220,8 @@ void main() {
     testWidgets('a file the editor cannot open is muted and does not react', (
       WidgetTester tester,
     ) async {
-      // Two signals, not one: it is quieter, and it has no hover or press of
-      // its own — a row that answered a click with nothing would read as the
-      // app being broken.
+      // Muted and without a hover: a row that answers a click with nothing
+      // reads as the app being broken.
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       await pumpPanel(tester, space: docs);
       final TomColors colors = TomColors.of(
@@ -260,8 +248,7 @@ void main() {
     testWidgets('a link is drawn as itself and opens nothing', (
       WidgetTester tester,
     ) async {
-      // The listing never followed it, so nothing knows what is on the other
-      // side — or whether there is one.
+      // The listing never followed it, so nothing knows what is behind it.
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       await pumpPanel(tester, space: docs);
       final TomColors colors = TomColors.of(
@@ -322,10 +309,9 @@ void main() {
     testWidgets('anything else is still said out loud', (
       WidgetTester tester,
     ) async {
-      // By throwing rather than by handing over an `UnexpectedFailure`: the
-      // repository's vocabulary cannot express one, which is the point of
-      // typing it, so the only way to reach the panel's catch-all is the way
-      // it really happens — the use case's guard catching something.
+      // Thrown rather than answered: the repository's vocabulary cannot say
+      // "unexpected", so the catch-all is reached only through the use
+      // case's guard, the way it really happens.
       spaces.throws = true;
 
       await pumpPanel(tester, space: docs);
@@ -338,10 +324,8 @@ void main() {
     testWidgets('a row takes its colour from the mode it is drawn in', (
       WidgetTester tester,
     ) async {
-      // A colour added in one mode without its counterpart is a bug, not a
-      // follow-up (docs/technical/design/visual-language.md). The row asks
-      // for a role and never for a mode, which is what this checks: the same
-      // widget, two themes, two colours.
+      // The row asks for a role and never for a mode: one widget, two
+      // themes, two colours (docs/technical/design/visual-language.md).
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
 
       await pumpPanel(tester, space: docs);
@@ -375,10 +359,8 @@ final class _Spaces implements SpaceRepository {
   ) async => throws ? throw StateError('the disk caught fire') : answer;
 }
 
-/// The colour of every round mark the tree is drawing.
-///
-/// Found by shape rather than by a key: what makes it a mark is that it is a
-/// circle, and a key would make the test pass on a square.
+/// The colour of every round mark the tree is drawing, found by shape
+/// because a key would let the test pass on a square.
 List<Color> _dots(WidgetTester tester) => tester
     .widgetList<DecoratedBox>(find.byType(DecoratedBox))
     .map((DecoratedBox box) => box.decoration as BoxDecoration)

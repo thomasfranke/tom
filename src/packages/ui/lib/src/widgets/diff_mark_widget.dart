@@ -7,16 +7,10 @@ import 'package:tom_ui/src/theme/tom_metrics.dart';
 
 /// The diff mark of
 /// [components.md](../../../../../../docs/technical/design/components.md):
-/// twenty square, a letter inside it.
+/// a letter on a twenty square, because colour is never the only signal.
 ///
-/// **A letter as well as a colour** — roughly one in twelve men cannot
-/// separate the red from the green, so what happened is never the tint
-/// alone (`docs/technical/design/visual-language.md`).
-///
-/// It is handed a letter and two colours rather than anything meaning
-/// *added* or *removed*: this package draws and names nothing, so the two
-/// places that show a mark — the changes column and the rendered diff —
-/// keep their own alphabets and share the drawing.
+/// A letter and two colours rather than a meaning, so the changes column and
+/// the rendered diff keep their own alphabets and share the drawing.
 class DiffMarkWidget extends StatelessWidget {
   /// Creates the mark.
   const DiffMarkWidget({

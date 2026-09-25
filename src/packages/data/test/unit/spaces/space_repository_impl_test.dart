@@ -1,9 +1,5 @@
-/// [SpaceRepositoryImpl] against a filesystem that records what it was asked.
-///
-/// Unit, not integration: the claim worth testing here is not that a listing
-/// works — the capability's own tests cover that against real disk — but
-/// that `.git/` is never *descended into*. That is a statement about which
-/// calls are made, and only a recording double can answer it.
+/// [SpaceRepositoryImpl] against a filesystem that records what it was asked,
+/// because only a recording double can say `.git/` was never descended into.
 library;
 
 import 'package:test/test.dart';
@@ -63,7 +59,6 @@ void main() {
     });
 
     test('a folder is followed immediately by what is inside it', () async {
-      // Tree order, so a caller can build the tree in one pass.
       filesystem.tree['/code/app/docs'] = <FilesystemEntryDto>[
         _directory('/code/app/docs/adr'),
         _file('/code/app/docs/guide.md'),
@@ -82,7 +77,6 @@ void main() {
     });
 
     test('every kind is reported, not only markdown', () async {
-      // What the tree draws and what the editor opens are two questions.
       filesystem.tree['/code/app/docs'] = <FilesystemEntryDto>[
         _file('/code/app/docs/logo.png'),
         _link('/code/app/docs/shared'),
@@ -144,18 +138,12 @@ void main() {
     });
 
     test('is never descended into', () async {
-      // The reason this repository walks a level at a time instead of
-      // asking the capability for a recursive listing: a `.git/` holds more
-      // entries than every document the product will ever show, and
-      // filtering them out afterwards means reading them first.
       await repository.entries(space);
 
       expect(filesystem.listed, isNot(contains('/code/app/docs/.git')));
     });
 
     test('every other dotfolder is kept, and walked', () async {
-      // A team's own tooling is documentation too
-      // (`docs/product/navigation/file-tree/doc.md`).
       expect(pathsOf(valueOf(await repository.entries(space))), <String>[
         '.ai',
         '.ai/skills.md',
@@ -180,8 +168,6 @@ void main() {
       ];
       filesystem.unreadable.add('/code/app/docs/private');
 
-      // The folder itself is still shown — it exists, it just cannot be
-      // opened — and everything beside it survives.
       expect(pathsOf(valueOf(await repository.entries(space))), <String>[
         'private',
         'guide.md',
@@ -202,7 +188,6 @@ void main() {
     });
 
     test('a space whose folder is gone says so', () async {
-      // Home offers to forget it rather than reporting a fault.
       expect(
         failureOf(await repository.entries(space)),
         isA<SpaceFolderMissing>().having(

@@ -14,14 +14,11 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// One change: what happened, to what, and whether it is going in.
 ///
-/// **The checkbox is the staging** — whole files, one at a time, and there
-/// is no hunk-level staging (`docs/product/git-workflow/commit/doc.md`).
-///
-/// The path is the repository's, not the space's: a commit records the
-/// repository, so a file the space does not contain still has to be
-/// visible when it is about to be committed.
+/// The checkbox is the staging, whole files and nothing finer
+/// (`docs/product/git-workflow/commit/doc.md`); the path is the
+/// repository's, not the space's (see `ChangesPanel`).
 class ChangesRowWidget extends ConsumerWidget {
-  /// Creates the row for [entry], disabled while [isBusy].
+  /// Creates the row for [entry].
   const ChangesRowWidget({
     required this.entry,
     required this.isBusy,
@@ -72,9 +69,8 @@ class ChangesRowWidget extends ConsumerWidget {
               child: Tooltip(
                 message: entry.path.value,
                 child: Text(
-                  // The file's own name leads and the folders trail it,
-                  // because the column is narrow and the name is what is
-                  // being looked for.
+                  // The name alone, with the path in the tooltip: the column
+                  // is narrow and the name is what is being looked for.
                   entry.path.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

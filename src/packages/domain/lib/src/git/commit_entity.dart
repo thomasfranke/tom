@@ -10,12 +10,11 @@ part 'commit_entity.freezed.dart';
 
 /// A commit, as history shows it.
 ///
-/// Without its diff, on purpose: a history panel lists hundreds of these and
-/// needs none of them, and the panel that shows one version asks for that
-/// version by [sha] (`docs/product/git-workflow/file-history/doc.md`).
+/// Without its diff: a history panel lists hundreds and needs none, and one
+/// version is asked for by [sha] (`docs/product/git-workflow/file-history/doc.md`).
 @freezed
 abstract class CommitEntity with _$CommitEntity {
-  /// Creates a commit.
+  /// A commit.
   const factory CommitEntity({
     /// Its object name, which is its identity.
     required CommitShaValueObject sha,
@@ -29,11 +28,10 @@ abstract class CommitEntity with _$CommitEntity {
     /// The first line of the message.
     required String subject,
 
-    /// Everything after the first line. Empty when there is none.
+    /// Everything after the first line, empty when there is none.
     ///
-    /// **Leading whitespace is content and is never trimmed.** In a markdown
-    /// tool a body opening with an indented code block or a nested list
-    /// means the indentation; only the trailing newline a tool adds may go.
+    /// **Leading whitespace is content and is never trimmed**: an indented
+    /// code block or a nested list means the indentation.
     required String body,
   }) = _CommitEntity;
 }

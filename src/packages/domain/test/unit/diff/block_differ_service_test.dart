@@ -120,8 +120,6 @@ void main() {
       final DiffBlockModified block = diff.blocks.single as DiffBlockModified;
       expect(block.before.source, 'old');
       expect(block.after.source, 'new');
-      // The side the preview draws is the new one: a modification is read
-      // forwards, and the old text is what the decoration is about.
       expect(block.drawn.source, 'new');
     });
 
@@ -137,8 +135,6 @@ void main() {
         ],
       );
 
-      // A removed block is rendered from the old document's scope — its
-      // link reference definitions are the ones that resolve it.
       expect(diff.before, before);
       expect(diff.after, after);
     });

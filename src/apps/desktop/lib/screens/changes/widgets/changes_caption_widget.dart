@@ -10,16 +10,10 @@ import 'package:tom_desktop/screens/changes/changes_design.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The panel's caption, and *All* — everything at once.
-///
-/// The other half of the product's staging rule: everything at once, or one
-/// file at a time, and nothing finer than a file
-/// (`docs/product/git-workflow/commit/doc.md`).
-///
-/// Drawn by the panel itself, because the shell draws no panel chrome.
+/// The panel's caption, and *All* — the staging rule's everything-at-once
+/// half (`docs/product/git-workflow/commit/doc.md`).
 class ChangesCaptionWidget extends ConsumerWidget {
-  /// Creates the caption for a list where [allStaged] says whether
-  /// everything is already in, disabled while [isBusy].
+  /// Creates the caption.
   const ChangesCaptionWidget({
     required this.allStaged,
     required this.isBusy,
@@ -47,9 +41,9 @@ class ChangesCaptionWidget extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: TomMetrics.pad),
       child: Row(
         children: <Widget>[
-          // Expanded rather than followed by a spacer: the aside is a fixed
-          // column that a module may put a second panel into, and a caption
-          // that could not give way would overflow the day one did.
+          // Expanded rather than followed by a spacer: a module may put a
+          // second panel in the aside, and a caption that cannot give way
+          // overflows the day one does.
           Expanded(
             child: Text(
               'CHANGES',

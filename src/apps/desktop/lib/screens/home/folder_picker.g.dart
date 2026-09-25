@@ -10,45 +10,27 @@ part of 'folder_picker.dart';
 // ignore_for_file: type=lint, type=warning
 /// What Home calls when the user wants to open a folder.
 ///
-/// A provider rather than a direct call into `file_selector`, for a reason
-/// that is not testing hygiene: **a native dialog is the one thing no test
-/// can drive**, and without a seam an end-to-end run would stop exactly
-/// where the product starts.
-///
-/// The seam is the app's own: `tom_e2e` replaces it through a `TomModule`,
-/// the same mechanism a third party would use to contribute a panel
-/// ([Decision
-/// 12](../../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
+/// A seam because a native dialog is the one thing no test can drive; the
+/// e2e suite replaces it through a `TomModule`
+/// ([Decision 12](../../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
 
 @ProviderFor(folderPicker)
 final folderPickerProvider = FolderPickerProvider._();
 
 /// What Home calls when the user wants to open a folder.
 ///
-/// A provider rather than a direct call into `file_selector`, for a reason
-/// that is not testing hygiene: **a native dialog is the one thing no test
-/// can drive**, and without a seam an end-to-end run would stop exactly
-/// where the product starts.
-///
-/// The seam is the app's own: `tom_e2e` replaces it through a `TomModule`,
-/// the same mechanism a third party would use to contribute a panel
-/// ([Decision
-/// 12](../../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
+/// A seam because a native dialog is the one thing no test can drive; the
+/// e2e suite replaces it through a `TomModule`
+/// ([Decision 12](../../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
 
 final class FolderPickerProvider
     extends $FunctionalProvider<FolderPicker, FolderPicker, FolderPicker>
     with $Provider<FolderPicker> {
   /// What Home calls when the user wants to open a folder.
   ///
-  /// A provider rather than a direct call into `file_selector`, for a reason
-  /// that is not testing hygiene: **a native dialog is the one thing no test
-  /// can drive**, and without a seam an end-to-end run would stop exactly
-  /// where the product starts.
-  ///
-  /// The seam is the app's own: `tom_e2e` replaces it through a `TomModule`,
-  /// the same mechanism a third party would use to contribute a panel
-  /// ([Decision
-  /// 12](../../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
+  /// A seam because a native dialog is the one thing no test can drive; the
+  /// e2e suite replaces it through a `TomModule`
+  /// ([Decision 12](../../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
   FolderPickerProvider._()
     : super(
         from: null,

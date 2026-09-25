@@ -1,8 +1,4 @@
-/// The text-diff capability, over the `diffutil_dart` package.
-///
-/// Two halves in one file: the contract above, and below it the two things
-/// the package does not offer — how alike two entries are, and the original
-/// positions, which its update stream only says by implication.
+/// The `diffutil_dart` implementation of [TextDiffer].
 library;
 
 import 'package:diffutil_dart/diffutil.dart' as diffutil;
@@ -12,9 +8,8 @@ import 'package:tom_infra/tom_infra.dart';
 
 /// [TextDiffer] over Myers as `diffutil_dart` implements it.
 ///
-/// The package answers an *edit script* — what to insert and remove to turn
-/// one list into the other — so the positions this contract promises are
-/// recovered by replaying that script over the old ones ([_Replay]).
+/// The package answers an edit script, so the positions this contract
+/// promises are recovered by replaying it over the old ones ([_Replay]).
 final class DiffutilTextDifferImpl implements TextDiffer {
   /// Creates the differ.
   const DiffutilTextDifferImpl();
@@ -31,9 +26,8 @@ final class DiffutilTextDifferImpl implements TextDiffer {
           .calculateListDiff<String>(
             before,
             after,
-            // Off: an entry that moved is a removal and an addition, which
-            // is what a reader sees at both ends anyway. Pairing the two
-            // across a document is a diff v2 question.
+            // Off: a moved entry is a removal and an addition, which is what
+            // a reader sees at both ends anyway; pairing them is diff v2's.
             detectMoves: false,
             equalityChecker: (String old, String fresh) =>
                 similarity.of(old, fresh) >= threshold,
@@ -50,9 +44,8 @@ final class DiffutilTextDifferImpl implements TextDiffer {
 
   /// The edits [paired] describes, in reading order.
   ///
-  /// The pairs are anchors and everything between two of them is a gap —
-  /// which is emitted as what went before what arrived, the order a reader
-  /// expects a rewrite to be shown in.
+  /// The pairs are anchors and everything between two of them is a gap,
+  /// emitted as what went before what arrived.
   static List<TextEditDto> _editsOf(
     List<String> before,
     List<String> after,
@@ -100,10 +93,9 @@ final class DiffutilTextDifferImpl implements TextDiffer {
 
 /// The edit script replayed, to recover which old entry each new one is.
 ///
-/// The package reports positions in the list *as it is being changed*, not
-/// in either original: applying the script to the old positions leaves a
-/// list as long as the new side, holding the old position of every entry
-/// that survived and null where one arrived.
+/// The package reports positions in the list *as it is being changed*, so
+/// applying the script to the old positions leaves the old position of every
+/// survivor and null where one arrived.
 final class _Replay {
   const _Replay(this.beforeLength);
 
@@ -121,8 +113,8 @@ final class _Replay {
             positions.insertAll(position, List<int?>.filled(count, null)),
         remove: (int position, int count) =>
             positions.removeRange(position, position + count),
-        // A pair the package found and kept in place: it stays where it is,
-        // and which of the two texts it holds is decided by comparing them.
+        // A pair kept in place stays; which text it holds is decided by
+        // comparing them.
         change: (int position, Object? payload) {},
         move: (int from, int to) =>
             throw StateError('move detection is off, and a move was reported'),
@@ -134,10 +126,9 @@ final class _Replay {
 
 /// How alike two entries are, from 0 to 1.
 ///
-/// Word overlap (Sørensen–Dice) rather than a second Myers run: Myers asks
-/// this once per candidate pair, which on a document-sized list is tens of
-/// thousands of times, so each entry is counted once and a comparison is
-/// then a walk over the shorter of two maps.
+/// Word overlap (Sørensen–Dice) rather than a second Myers run, because Myers
+/// asks this tens of thousands of times on a document-sized list; each entry
+/// is counted once and a comparison walks the shorter of two maps.
 final class _Similarity {
   /// The word counts of every entry this has been asked about.
   final Map<String, Map<String, int>> _counts = <String, Map<String, int>>{};
@@ -150,8 +141,8 @@ final class _Similarity {
     final Map<String, int> left = _countsOf(old);
     final Map<String, int> right = _countsOf(fresh);
     final int total = _sizeOf(left) + _sizeOf(right);
-    // Two different entries with no words between them share nothing, and
-    // the division below would have no answer to give.
+    // Two different entries with no words share nothing, and the division
+    // below would have no answer.
     if (total == 0) {
       return 0;
     }
@@ -178,9 +169,8 @@ final class _Similarity {
   /// [text] split into words, each with how often it occurs.
   ///
   /// Case and the punctuation around a word are dropped, because neither
-  /// decides whether two texts are *about* the same thing: `Prose.` becoming
-  /// `Prose, rewritten.` is one sentence being rewritten, and counting the
-  /// full stop as part of the word makes it two unrelated ones.
+  /// decides whether two texts are about the same thing: `Prose.` and
+  /// `Prose, rewritten.` are one sentence rewritten.
   static Map<String, int> _countWords(String text) {
     final Map<String, int> counts = <String, int>{};
     for (final String token in text.toLowerCase().split(RegExp(r'\s+'))) {
@@ -193,10 +183,8 @@ final class _Similarity {
     return counts;
   }
 
-  /// Everything that is not a letter or a digit, at either end of a token.
-  ///
-  /// Unicode-aware, so an accented word is one word: markdown is prose, and
-  /// prose is not written in ASCII everywhere.
+  /// Everything that is not a letter or a digit, at either end of a token;
+  /// Unicode-aware, so an accented word is one word.
   static final RegExp _edgePunctuation = RegExp(
     r'^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$',
     unicode: true,

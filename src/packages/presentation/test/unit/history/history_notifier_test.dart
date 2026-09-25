@@ -72,8 +72,6 @@ void main() {
       container.read(spaceSessionProvider)?.readingVersion;
 
   test('with no document open nothing reaches git', () async {
-    // "This file has never been committed" and "you have not opened a file"
-    // are different sentences, so they are different states.
     await open();
 
     expect(git.asked, isEmpty);
@@ -119,8 +117,6 @@ void main() {
 
   group('opening a version', () {
     test('it is written to the session, not kept here', () async {
-      // The preview renders it and the bar above the document says so —
-      // two readers, which is what the session is for.
       await open(document: writing);
       final CommitEntity second = (state() as HistoryReady).commits.first;
 
@@ -139,8 +135,6 @@ void main() {
     });
 
     test('opening another document goes back to now on its own', () async {
-      // A commit is a version *of one file*; carrying it across would open a
-      // revision of something nobody asked about.
       await open(document: writing);
       notifier().open((state() as HistoryReady).commits.first);
 
@@ -152,7 +146,6 @@ void main() {
   });
 
   test('refreshing asks again, for the same document', () async {
-    // A commit lands, and the list it belongs at the top of is on screen.
     await open(document: writing);
 
     await notifier().refresh();

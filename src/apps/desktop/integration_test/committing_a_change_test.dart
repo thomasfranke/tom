@@ -66,8 +66,6 @@ void main() {
       Step('and the list now shows only what is still waiting', (
         TomRobot robot,
       ) async {
-        // After a commit the file list reflects the tree it left behind
-        // (docs/product/git-workflow/commit/doc.md).
         await robot.seesNotInTheChanges('untracked.md');
         await robot.seesInTheChanges(<String>['writing.md']);
         robot.seesNothingBroken();
@@ -112,8 +110,6 @@ void main() {
       Step('and it is still refused until it is described', (
         TomRobot robot,
       ) async {
-        // Staged is half of it: a commit requires a message
-        // (docs/product/git-workflow/commit/doc.md).
         await robot.seesCommitUnavailable();
 
         await robot.describesTheCommit('docs: everything at once');

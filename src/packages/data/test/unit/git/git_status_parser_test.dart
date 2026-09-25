@@ -1,9 +1,6 @@
-/// [GitStatusParser] over fixtures of real `git status --porcelain=v2 -z`.
-///
-/// Unit, not integration: the parser is pure, and the records below were
-/// captured from a real repository put into each state rather than written
-/// from the manual — a hand-invented fixture proves the parser agrees with
-/// whoever wrote it.
+/// [GitStatusParser] over records captured from a real repository put into
+/// each state, because a hand-written fixture proves only that the parser
+/// agrees with its author.
 library;
 
 import 'package:test/test.dart';
@@ -42,9 +39,6 @@ void main() {
     });
 
     test('a branch name this version cannot read is not a detached HEAD', () {
-      // Both answers used to be `branch == null`. Reading the unparseable
-      // one as detachment would warn about a detached HEAD on a repository
-      // sitting on a perfectly ordinary branch.
       final GitStatusValueObject status = parser.parse(
         porcelain(<String>['# branch.head feat/weird~name']),
       );
@@ -119,7 +113,7 @@ void main() {
 
     test('the entries cannot be changed behind the status', () {
       // Freezed compares element-wise but does not copy the collection, so
-      // the producer is what makes the status say the same thing tomorrow.
+      // the producer is what keeps it unmodifiable.
       expect(
         () => status.entries.add(status.entries.first),
         throwsUnsupportedError,
@@ -168,9 +162,6 @@ void main() {
     });
 
     test('a copy is an addition, and the source is not where it came from', () {
-      // Git spends a `2` record on a copy as well as a rename, and the
-      // domain has no `copied`. `previousPath` means "the file came from
-      // here", which for a copy is false: the source is still on disk.
       final GitStatusValueObject copied = parser.parse(
         porcelain(<String>[
           '# branch.head main',
@@ -237,8 +228,6 @@ void main() {
 
       expect(merging.entries.single.state, FileStateEnum.conflicted);
       expect(merging.entries.single.path, RepoRelativePathValueObject('a.md'));
-      // Not staged: a conflict is something to resolve, not something a
-      // commit would record as it stands.
       expect(merging.entries.single.isStaged, isFalse);
     });
   });
@@ -281,7 +270,6 @@ void main() {
         ]),
       );
 
-      // The point of a total parser: one unreadable line costs that line.
       expect(status.entries.single.path, RepoRelativePathValueObject('ok.md'));
     });
 

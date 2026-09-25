@@ -15,8 +15,6 @@ void main() {
 
   group('content', () {
     test('is kept exactly as it was read', () {
-      // A document written back with its line endings or its trailing
-      // newline changed produces a diff the user did not make.
       const String source = '# Title\r\n\r\nBody\n\n';
       expect(documentAt('a.md', source).content, source);
     });

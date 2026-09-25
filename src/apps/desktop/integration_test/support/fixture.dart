@@ -6,18 +6,14 @@ import 'dart:io';
 
 /// Where `tom e2e prepare` puts what the scenarios run against.
 ///
-/// Inside the repository and gitignored, rather than under the system
-/// temporary directory, for one reason: **you can open it in the app**. An
-/// end-to-end failure is read by looking at what the test was looking at,
-/// and a path under `/var/folders/…` that vanishes on reboot is not
-/// something anyone inspects.
+/// Inside the repository rather than the system temporary folder, so what a
+/// failing test was looking at can be opened in the app.
 const String e2eDirectory = '.e2e';
 
 /// Where a scenario called [name] keeps its preferences.
 ///
-/// Beside the prepared environment, so `tom e2e clean` takes it with
-/// everything else, and named after the scenario so two of them cannot see
-/// each other's recent list.
+/// Beside the environment so `tom e2e clean` takes it too, and per scenario
+/// so no two of them share a recent list.
 String scenarioSettingsPath(String name) {
   final String slug = name
       .toLowerCase()
@@ -28,12 +24,9 @@ String scenarioSettingsPath(String name) {
 
 /// One situation the app can be pointed at.
 ///
-/// Read from the manifest the CLI wrote rather than declared here, because
-/// the CLI builds the folders and these scenarios assert against them, and
-/// the two live in different worlds — `tool/` has no pubspec and can share
-/// no constant with `src/`. The manifest is the seam: one side writes it,
-/// the other reads it, and a scenario renamed on one side fails loudly on
-/// the other instead of quietly testing nothing.
+/// Read from the manifest the CLI wrote, because `tool/` has no pubspec and
+/// can share no constant with `src/`: the manifest is the seam, and a name
+/// changed on one side fails loudly on the other.
 final class Fixture {
   const Fixture._(this._values);
 
@@ -51,10 +44,8 @@ final class Fixture {
 
   /// The bare repository this one tracks, for a fixture that has a remote.
   ///
-  /// A path on disk, because that is what the remote *is*: git treats one as
-  /// a real remote, so fetch, push and pull take the same code path they
-  /// would against a server — with no network, no credentials and no state
-  /// anybody else shares.
+  /// A path on disk is a real remote to git, so fetch, push and pull take the
+  /// same code path they would against a server, with no network.
   String get remoteRoot => _values['remoteRoot']! as String;
 
   /// The markdown files the space holds, relative to [root] and sorted.
@@ -65,25 +56,22 @@ final class Fixture {
 
 /// Reads what `tom e2e prepare` built.
 ///
-/// Fails with an explanation rather than an assertion nobody can act on: a
-/// missing environment is the most common reason these scenarios fail, and
-/// the fix is one command.
+/// A missing environment is the commonest failure and the fix is one
+/// command, so that is what the error says.
 final class E2eFixtures {
   E2eFixtures._(this._scenarios);
 
   final Map<String, Object?> _scenarios;
 
-  /// The prepared environment's absolute path, once it has been found.
+  /// The prepared environment's absolute path.
   ///
-  /// Set by [E2eFixtures.load] and read by [scenarioSettingsPath], which
-  /// needs it before any fixture is asked for.
+  /// Set by [E2eFixtures.load], read by [scenarioSettingsPath].
   static late String directory;
 
   /// Loads the manifest, searching upward for the repository root.
   ///
   /// Upward, because the working directory of a test run is the package's,
-  /// not the repository's, and a relative path that only works from one of
-  /// them is a trap for whoever runs a single file.
+  /// not the repository's.
   factory E2eFixtures.load() {
     Directory directory_ = Directory.current;
     while (true) {

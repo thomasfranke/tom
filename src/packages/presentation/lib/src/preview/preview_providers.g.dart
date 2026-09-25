@@ -10,18 +10,16 @@ part of 'preview_providers.dart';
 // ignore_for_file: type=lint, type=warning
 /// Splits a document's source into blocks.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and cannot see which parser ends up behind
-/// it.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 @ProviderFor(splitDocument)
 final splitDocumentProvider = SplitDocumentProvider._();
 
 /// Splits a document's source into blocks.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and cannot see which parser ends up behind
-/// it.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 final class SplitDocumentProvider
     extends
@@ -33,9 +31,8 @@ final class SplitDocumentProvider
     with $Provider<SplitDocumentUseCase> {
   /// Splits a document's source into blocks.
   ///
-  /// Declared here and **overridden by the composition root**: this package
-  /// names the use case it needs and cannot see which parser ends up behind
-  /// it.
+  /// Declared here and overridden by the composition root, which is how every
+  /// use case reaches this package.
   SplitDocumentProvider._()
     : super(
         from: null,
@@ -74,18 +71,18 @@ String _$splitDocumentHash() => r'46bb11a7f94f0107d8e6aaaf1a3dc7207e613d07';
 
 /// Compares the document on screen against what `HEAD` holds.
 ///
-/// Beside the preview because the preview is what draws the answer: the
-/// rendered diff is decoration on the blocks that are already there, not a
-/// second screen (`docs/product/diff/rendered-diff/doc.md`).
+/// Beside the preview because the preview draws the answer: the rendered
+/// diff is decoration on the blocks already there
+/// (`docs/product/diff/rendered-diff/doc.md`).
 
 @ProviderFor(diffDocument)
 final diffDocumentProvider = DiffDocumentProvider._();
 
 /// Compares the document on screen against what `HEAD` holds.
 ///
-/// Beside the preview because the preview is what draws the answer: the
-/// rendered diff is decoration on the blocks that are already there, not a
-/// second screen (`docs/product/diff/rendered-diff/doc.md`).
+/// Beside the preview because the preview draws the answer: the rendered
+/// diff is decoration on the blocks already there
+/// (`docs/product/diff/rendered-diff/doc.md`).
 
 final class DiffDocumentProvider
     extends
@@ -97,9 +94,9 @@ final class DiffDocumentProvider
     with $Provider<DiffDocumentUseCase> {
   /// Compares the document on screen against what `HEAD` holds.
   ///
-  /// Beside the preview because the preview is what draws the answer: the
-  /// rendered diff is decoration on the blocks that are already there, not a
-  /// second screen (`docs/product/diff/rendered-diff/doc.md`).
+  /// Beside the preview because the preview draws the answer: the rendered
+  /// diff is decoration on the blocks already there
+  /// (`docs/product/diff/rendered-diff/doc.md`).
   DiffDocumentProvider._()
     : super(
         from: null,
@@ -138,18 +135,16 @@ String _$diffDocumentHash() => r'45f90a1c47ad07bf2ef0d0a0e876281b00e4ddc6';
 
 /// Reads a document as one commit left it.
 ///
-/// Here rather than beside the history panel because the preview is what
-/// needs it: history says *which* version is on screen, and this is what
-/// turns that into text to render.
+/// Beside the preview rather than history, because the preview is what
+/// turns the version history named into text to render.
 
 @ProviderFor(readVersion)
 final readVersionProvider = ReadVersionProvider._();
 
 /// Reads a document as one commit left it.
 ///
-/// Here rather than beside the history panel because the preview is what
-/// needs it: history says *which* version is on screen, and this is what
-/// turns that into text to render.
+/// Beside the preview rather than history, because the preview is what
+/// turns the version history named into text to render.
 
 final class ReadVersionProvider
     extends
@@ -161,9 +156,8 @@ final class ReadVersionProvider
     with $Provider<ReadVersionUseCase> {
   /// Reads a document as one commit left it.
   ///
-  /// Here rather than beside the history panel because the preview is what
-  /// needs it: history says *which* version is on screen, and this is what
-  /// turns that into text to render.
+  /// Beside the preview rather than history, because the preview is what
+  /// turns the version history named into text to render.
   ReadVersionProvider._()
     : super(
         from: null,

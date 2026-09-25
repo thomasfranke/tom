@@ -36,9 +36,6 @@ void main() {
   });
 
   test('creating starts it and never merely names it', () async {
-    // The product creates a branch by moving onto it, so there is no state
-    // where one exists and `HEAD` is still somewhere else
-    // (`docs/product/git-workflow/branch-switch/doc.md`).
     final Result<void, AppFailure> result = await switching().create(
       docs,
       main,

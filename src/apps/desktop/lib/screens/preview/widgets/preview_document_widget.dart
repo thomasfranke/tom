@@ -10,11 +10,9 @@ import 'package:tom_desktop/screens/preview/widgets/preview_note_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The document, scrolling as one column of blocks.
-///
-/// One [PreviewBlockWidget] per block and never one tree for the whole
-/// document
-/// ([flows](../../../../../../../docs/technical/flows.md#the-preview-is-assembled-block-by-block)).
+/// The document, scrolling as one column of blocks, one [PreviewBlockWidget]
+/// each
+/// ([runtime](../../../../../../../docs/technical/runtime/documents.md)).
 class PreviewDocumentWidget extends StatelessWidget {
   /// Creates the column for [document].
   const PreviewDocumentWidget({
@@ -29,16 +27,12 @@ class PreviewDocumentWidget extends StatelessWidget {
 
   /// What changed against `HEAD`, when that is known and anything did.
   ///
-  /// The column is then the *diff's* sequence rather than the document's,
-  /// because a removed block is in neither version on disk and has to be
-  /// drawn where it used to be.
+  /// The column is then the diff's sequence, not the document's, because a
+  /// removed block has to be drawn where it used to be.
   final DocumentDiffValueObject? diff;
 
-  /// Whether the preview has the document area to itself.
-  ///
-  /// The mode the wider measure and the larger prose belong to: reading is
-  /// not a lesser mode, and for anyone who never opens the source it is the
-  /// product.
+  /// Whether the preview has the document area to itself, which is the mode
+  /// the wider measure and the larger prose belong to.
   final bool isReading;
 
   @override
@@ -57,8 +51,7 @@ class PreviewDocumentWidget extends StatelessWidget {
     if (document.blocks.isEmpty && (diff?.blocks.isEmpty ?? true)) {
       return const PreviewNoteWidget('This document is empty.');
     }
-    // A document nothing changed is drawn as a document: the diff never adds
-    // decoration to a file that matches `HEAD`
+    // A document that matches `HEAD` is drawn undecorated
     // (`docs/product/diff/rendered-diff/doc.md`).
     final DocumentDiffValueObject? changes = (diff?.isUnchanged ?? true)
         ? null
@@ -67,13 +60,12 @@ class PreviewDocumentWidget extends StatelessWidget {
         ? PreviewDesign.readingMeasure
         : PreviewDesign.measure;
     return Align(
-      // Centred when the pane is the document's, left when it is sharing:
-      // a reading column hugging the divider would read as a leftover.
+      // Centred when the pane is the document's, left when it is shared: a
+      // column hugging the divider reads as a leftover.
       alignment: isReading ? Alignment.topCenter : Alignment.topLeft,
       child: SizedBox(
-        // A measure, not a pane: the column keeps its line length whatever
-        // the window does, and the pane grows around it — the diff's gutter
-        // and tint included.
+        // A measure, not a pane: the column keeps its line length and the
+        // pane grows around it, the diff's gutter included.
         width:
             measure +
             TomMetrics.pad * 2 +

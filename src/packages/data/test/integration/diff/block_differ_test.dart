@@ -4,11 +4,8 @@ import 'package:tom_data/tom_data.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_infra/tom_infra.dart';
 
-/// The rendered diff's core, over the real parser and the real differ.
-///
-/// Unit tests above hand the service an alignment; this one asks markdown
-/// what it becomes — which is the only place the block granularity, the
-/// pairing and the classification are answered together.
+/// The rendered diff's core over the real parser and the real differ, the
+/// only place granularity, pairing and classification are answered together.
 void main() {
   const MarkdownBlockReaderImpl reader = MarkdownBlockReaderImpl(
     markdown: MarkdownDataSource(parser: MarkdownPackageParserImpl()),
@@ -121,8 +118,7 @@ Done.
           ),
         );
 
-        // Granularity is top level (Decision 19): the list is the block, so an
-        // added bullet is a modification of it rather than an added block.
+        // Granularity is top level (Decision 19): the list is the block.
         final DiffBlockModified changed = diff.blocks
             .whereType<DiffBlockModified>()
             .single;
@@ -161,8 +157,6 @@ Done.
           document.replaceAll('## Style\n\nKeep sentences short.\n\n', ''),
         );
 
-        // The removed blocks carry their own text, which is what lets the
-        // preview draw a struck-through paragraph that is not on disk.
         expect(
           diff.blocks.whereType<DiffBlockRemoved>().map(
             (DiffBlockRemoved block) => block.block.source,

@@ -12,16 +12,11 @@ import 'package:tom_desktop/screens/shell/widgets/shell_top_bar_widget.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The window: explorer, document area, aside and status bar, all at once.
+/// The window: explorer, document area, aside and status bar, all at once
+/// and never taken over (`docs/product/workspace/doc.md`).
 ///
-/// **There is no full-screen takeover.** The explorer does not disappear
-/// while editing and the status bar does not hide while reading
-/// (`docs/product/workspace/doc.md`). A new panel is added to this layout,
-/// never bolted on as a separate window or a new top-level mode.
-///
-/// This widget names no panel. It asks [PanelRegistry] what belongs in each
-/// region and builds what it is told, which is the same answer it gives for
-/// a third party's panel and for the app's own.
+/// Names no panel: it asks [PanelRegistry] what belongs in each region and
+/// builds what it is told.
 class TomShell extends ConsumerWidget {
   /// Creates the shell.
   const TomShell({super.key});
@@ -41,9 +36,8 @@ class TomShell extends ConsumerWidget {
           ),
         ) ??
         DocumentModeEnum.split;
-    // A version being read draws as preview whatever the bar last said —
-    // **nothing types into the past**. The choice itself is untouched, so
-    // coming back to now comes back to the mode that was being worked in
+    // A version being read draws as preview, since nothing types into the
+    // past; the choice itself is untouched so coming back comes back to it
     // (`docs/product/git-workflow/file-history/doc.md`).
     final DocumentModeEnum mode = readingVersion
         ? DocumentModeEnum.preview
@@ -67,9 +61,8 @@ class TomShell extends ConsumerWidget {
                 Expanded(
                   child: Column(
                     children: <Widget>[
-                      // The bar belongs to the document area and stops
-                      // where it stops: the explorer and the git panel are
-                      // not in a mode.
+                      // The bar belongs to the document area: the explorer
+                      // and the aside are not in a mode.
                       if (registry
                           .at(PanelPlacementEnum.document)
                           .isNotEmpty) ...<Widget>[

@@ -44,8 +44,6 @@ void main() {
   });
 
   test('it splits a buffer no file holds', () async {
-    // The whole reason this is not part of reading: the preview renders
-    // what is being typed, which has not reached the disk.
     final _Blocks blocks = _Blocks(
       answer: Success<ParsedDocumentValueObject, DocumentFailure>(parsed),
     );

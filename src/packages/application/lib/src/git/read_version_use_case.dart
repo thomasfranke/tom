@@ -5,12 +5,10 @@ import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// Reads a document's text at a revision.
+/// A document's text at a revision, which is what a history entry opens.
 ///
-/// What a history entry opens: the version is **rendered like any other
-/// document**, not shown as diff text
-/// (`docs/product/git-workflow/file-history/doc.md`), so what comes back
-/// here is source and the splitting is the preview's as usual.
+/// It answers source rather than diff text because the version is rendered
+/// like any other document (`docs/product/git-workflow/file-history/doc.md`).
 final class ReadVersionUseCase with UseCase {
   /// Creates the use case.
   const ReadVersionUseCase({required this.gitFor, required this.observability});
@@ -30,9 +28,8 @@ final class ReadVersionUseCase with UseCase {
     final Result<String, GitFailure> read = await gitFor(
       space,
     ).contentAt(revision: revision.value, path: space.toRepoRelative(path));
-    // A document, because that is what the preview splits — and it carries
-    // the path so the version's own relative links resolve where the
-    // working copy's do.
+    // A document with the working copy's path, so the version's relative
+    // links resolve where the working copy's do.
     return switch (read) {
       Success<String, GitFailure>(value: final String content) =>
         Success<DocumentEntity, GitFailure>(

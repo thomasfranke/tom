@@ -1,8 +1,4 @@
-/// The markdown capability, over the `markdown` package.
-///
-/// Two halves in one file: the contract above, and below it the parse the
-/// package does not offer — nineteen `BlockSyntax` subclasses that record
-/// where each block began. The lower half is private and has one caller.
+/// The `markdown`-package implementation of [MarkdownParser].
 library;
 
 import 'package:markdown/markdown.dart' as md;
@@ -14,8 +10,8 @@ import 'package:tom_infra/tom_infra.dart';
 /// 19](../../../../../../../docs/technical/decisions/019-blocks-come-from-the-markdown-package.md)).
 ///
 /// The package reports no source positions, so this recovers them by
-/// extending every block syntax — [_RecordsPosition] below says why
-/// extending and not wrapping.
+/// extending every block syntax — [_positionedSyntaxes] says why extending
+/// and not wrapping.
 final class MarkdownPackageParserImpl implements MarkdownParser {
   /// Creates the parser.
   const MarkdownPackageParserImpl();
@@ -37,8 +33,7 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
           spans: List<MarkdownSpanDto>.unmodifiable(<MarkdownSpanDto>[
             for (final md.Node node in parsed.nodes)
               // A node the parse could not place — the synthesised footnotes
-              // section is the known one — is left out rather than guessed
-              // at, which is what the contract promises.
+              // section — is left out, as the contract promises.
               if (parsed.spans[node] case final (int, int) span)
                 if (_kindOf(node) case final MarkdownSpanKindEnum kind)
                   MarkdownSpanDto(
@@ -71,10 +66,8 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
 
   /// What [node] is, or null for something with no kind of its own.
   ///
-  /// A bare text node at top level is a raw HTML block: the package hands
-  /// those through as text rather than as an element, and everything else
-  /// that would be text — a blank run, a link definition — produces no node
-  /// at all.
+  /// A bare text node at top level is a raw HTML block, which the package
+  /// hands through as text rather than as an element.
   static MarkdownSpanKindEnum? _kindOf(md.Node node) {
     if (node is! md.Element) {
       return node is md.Text && node.text.trim().isNotEmpty
@@ -100,9 +93,8 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
 
   /// [references] written back as the lines that declared them.
   ///
-  /// Rebuilt from the parser's own map rather than read off the text: a
-  /// line that looks like a definition inside a code block is not one, and
-  /// only the parse knows the difference. What comes out parses the same.
+  /// Rebuilt from the parser's own map rather than read off the text, because
+  /// a line that looks like a definition inside a code block is not one.
   static String _definitionsOf(Map<String, md.LinkReference> references) =>
       <String>[
         for (final MapEntry<String, md.LinkReference> entry
@@ -120,13 +112,9 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
 
 /// Parses [markdown], recording where each top-level node came from.
 ///
-/// The parser tracks the line it is on and throws it away: `BlockParser`
-/// keeps `_pos` private and the AST has no field for it. What it exposes is
-/// `lines` and `current`, which a syntax can read before and after it
-/// consumes.
-///
-/// A node that arrives without a position is left in the map's absence
-/// rather than guessed at — the caller drops it.
+/// `BlockParser` keeps its line private and the AST has no field for it, so
+/// each syntax reads `current` before and after it consumes. A node that
+/// arrives without a position is absent from the map, and the caller drops it.
 ({
   List<md.Node> nodes,
   Map<md.Node, (int, int)> spans,
@@ -145,22 +133,19 @@ _parseWithPositions(String markdown) {
   );
   final List<md.Node> nodes = document.parseLines(markdown.split('\n'));
   // Read after the parse, because that is when the definitions have been
-  // collected: the map is the parser's own and knows a definition from a
-  // line that merely looks like one inside a code block.
+  // collected.
   return (nodes: nodes, spans: spans, linkReferences: document.linkReferences);
 }
 
 /// The block syntaxes the parser would have used, each recording where it
 /// parsed.
 ///
-/// **Subclasses, not wrappers.** A decorator looks like the obvious
-/// mechanism and silently changes the parse: the package's syntaxes
-/// recognise each other *by type* — `ParagraphSyntax` asks whether what
-/// interrupted it `is SetextHeaderSyntax`, and behind a decorator that
-/// answers false, so a setext heading quietly becomes a paragraph.
-///
-/// The price is one class per syntax. A package upgrade that adds one
-/// produces a construct with no position rather than a wrong one.
+/// **Subclasses, not wrappers.** The package's syntaxes recognise each other
+/// *by type* — `ParagraphSyntax` asks whether what interrupted it `is
+/// SetextHeaderSyntax` — so behind a decorator a setext heading quietly
+/// becomes a paragraph. One class per syntax is the price; a package upgrade
+/// that adds one produces a construct with no position rather than a wrong
+/// one.
 List<md.BlockSyntax> _positionedSyntaxes() => <md.BlockSyntax>[
   // gitHubWeb's additions first, exactly as the parser orders them.
   _FencedCodeBlock(),
@@ -171,10 +156,8 @@ List<md.BlockSyntax> _positionedSyntaxes() => <md.BlockSyntax>[
   _OrderedListWithCheckbox(),
   _FootnoteDef(),
   _AlertBlock(),
-  // Then the standard set, in the parser's own order. Four of it are
-  // missing on purpose: the plain header, setext header and two lists are
-  // shadowed by the GitHub variants above, which subclass them and match
-  // first, so including them would be code nothing can reach.
+  // Then the standard set in the parser's order, minus the four the GitHub
+  // variants above subclass and shadow.
   _EmptyBlock(),
   _HtmlBlock(),
   _CodeBlock(),
@@ -186,19 +169,19 @@ List<md.BlockSyntax> _positionedSyntaxes() => <md.BlockSyntax>[
 
 /// Records where the syntax it is mixed into parsed.
 ///
-/// A helper rather than an override, because the package's syntaxes do not
-/// agree on one signature: about half narrow `parse` to a non-nullable
-/// `Node`, and a mixin can only declare one of the two.
+/// A helper rather than an override, because about half the package's
+/// syntaxes narrow `parse` to a non-nullable `Node` and a mixin can declare
+/// only one signature.
 mixin _RecordsPosition on md.BlockSyntax {
   /// Where to put what it learns. Set once, right after construction.
   late final Map<md.Node, (int, int)> spans;
 
   /// Runs [inner], noting the lines it consumed.
   ///
-  /// The start is not always the line the parser is on: a setext heading is
-  /// a heading because of the line *after* its text, so the paragraph syntax
-  /// has already consumed the text and handed it back. `linesToConsume` is
-  /// that handed-back run, and its length is how far back the block began.
+  /// The start is not always the line the parser is on: a setext heading's
+  /// text was consumed by the paragraph syntax and handed back, and
+  /// `linesToConsume` is that run, so its length is how far back the block
+  /// began.
   T record<T extends md.Node?>(md.BlockParser parser, T Function() inner) {
     final int start =
         _lineOf(parser) - (parser.linesToConsume.length - 1).clamp(0, 1 << 30);
@@ -214,10 +197,8 @@ mixin _RecordsPosition on md.BlockSyntax {
 
   /// Which line the parser is on; only ever asked while it is on one.
   ///
-  /// By identity, not by content: `lines` holds one instance per line, and
-  /// an `indexOf` would find the first of two identical lines and place
-  /// every later block wrong — in a document of repeated table rows, most
-  /// of them.
+  /// By identity, not by content: an `indexOf` would find the first of two
+  /// identical lines and place every later block wrong.
   static int _lineOf(md.BlockParser parser) {
     final md.Line current = parser.current;
     for (int index = 0; index < parser.lines.length; index++) {

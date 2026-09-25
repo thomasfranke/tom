@@ -7,12 +7,9 @@ import 'package:tom_desktop/screens/file_tree/file_tree_design.dart';
 
 /// One thing in a row, centred on the row's own box.
 ///
-/// The design gives each row's text an absolute y, and placing it there
-/// draws it low: Flutter splits a line's extra leading in proportion to the
-/// font's ascent and descent, and the ascent is much the larger.
-///
-/// The drawing means *centred*, so centring is what this does — it lands on
-/// the design's number and survives a change of interface font.
+/// Centred rather than placed at the design's absolute y, because Flutter
+/// splits a line's leading by ascent and descent and the text lands low;
+/// centring hits the design's number and survives a change of font.
 class FileTreeCentredWidget extends StatelessWidget {
   /// Places [child] at [left], centred on the row.
   const FileTreeCentredWidget({
@@ -25,7 +22,7 @@ class FileTreeCentredWidget extends StatelessWidget {
   /// Where it starts, from the panel's edge.
   final double left;
 
-  /// Where it must stop, or null to take what it needs.
+  /// Where it stops, or null to take what it needs.
   final double? right;
 
   /// What to centre.

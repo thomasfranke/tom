@@ -5,11 +5,10 @@ import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// Lists the local branches, with which one is checked out.
+/// The local branches, with which one is checked out.
 ///
-/// Local only: the switcher moves between branches that exist on this
-/// machine (`docs/product/git-workflow/branch-switch/doc.md`), and a remote
-/// branch shows up only as some local branch's upstream.
+/// Local only, because the switcher moves between branches on this machine
+/// (`docs/product/git-workflow/branch-switch/doc.md`).
 final class ListBranchesUseCase with UseCase {
   /// Creates the use case.
   const ListBranchesUseCase({

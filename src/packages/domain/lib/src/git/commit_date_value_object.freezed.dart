@@ -14,10 +14,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CommitDateValueObject {
 
-/// The instant, in UTC. Comparing two commits in time uses this.
+/// The instant, in UTC; what two commits are ordered by.
  DateTime get utc;/// How far the author's clock stood from UTC, as git recorded it.
 ///
-/// Zero is a real answer — the author was on UTC — not a missing one.
+/// Zero is a real answer, the author was on UTC, not a missing one.
  Duration get offset;
 /// Create a copy of CommitDateValueObject
 /// with the given fields replaced by the non-null parameter values.
@@ -214,11 +214,11 @@ class _CommitDateValueObject extends CommitDateValueObject {
   const _CommitDateValueObject({required this.utc, required this.offset}): super._();
   
 
-/// The instant, in UTC. Comparing two commits in time uses this.
+/// The instant, in UTC; what two commits are ordered by.
 @override final  DateTime utc;
 /// How far the author's clock stood from UTC, as git recorded it.
 ///
-/// Zero is a real answer — the author was on UTC — not a missing one.
+/// Zero is a real answer, the author was on UTC, not a missing one.
 @override final  Duration offset;
 
 /// Create a copy of CommitDateValueObject

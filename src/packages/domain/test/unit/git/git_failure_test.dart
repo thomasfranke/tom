@@ -4,12 +4,9 @@ import 'package:tom_domain/tom_domain.dart';
 
 void main() {
   group('GitFailure', () {
-    // The reason the hierarchy is sealed: this compiles with no default
-    // branch, so a new variant breaks every switch that has to handle it.
-    //
-    // Every headline is a sentence a user reads. Nothing here reaches for a
-    // command line or a stderr, because no variant has one — that is the
-    // rule, and this switch is where breaking it would show.
+    // Compiles with no default branch only while the hierarchy is sealed, and
+    // no headline can reach for a command line or a stderr, since no variant
+    // carries one.
     String headline(GitFailure failure) => switch (failure) {
       GitNotInstalled() => 'Git is not installed',
       GitNotARepository(path: final String path) => 'Not a repository: $path',
@@ -48,8 +45,6 @@ void main() {
 
   group('the cause', () {
     test('is where the technical detail lives', () {
-      // The rule as a test: a variant carries what the product says, the
-      // cause carries what the machine said.
       const UnexpectedFailure reported = UnexpectedFailure(
         'git push: ! [rejected]',
       );
@@ -66,9 +61,7 @@ void main() {
     });
 
     test('is part of the value', () {
-      // Two failures of the same kind from different causes are different
-      // failures — which is what keeps a state comparison honest. Built
-      // through a function so nothing is canonicalised into passing.
+      // Built through a function so nothing is canonicalised into passing.
       GitOperationFailed failedBecause(String what) =>
           GitOperationFailed(cause: UnexpectedFailure(what));
 
@@ -127,7 +120,6 @@ void main() {
   });
 
   group('the variants that carry nothing but a cause', () {
-    // They still compare by value, which is what a view state relies on.
     GitTimedOut timedOutFrom(String what) =>
         GitTimedOut(cause: UnexpectedFailure(what));
 

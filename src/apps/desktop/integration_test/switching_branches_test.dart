@@ -42,9 +42,6 @@ void main() {
         await robot.seesTheShell();
       }),
       Step('both bars say which branch it is on', (TomRobot robot) async {
-        // The status bar carries it from the moment a space is open, and the
-        // control says the same thing — one reading, drawn twice
-        // (`docs/product/git-workflow/branch-switch/doc.md`).
         await robot.seesTheBranch('main');
         await robot.seesTheBranchControl('main');
       }),
@@ -71,8 +68,8 @@ void main() {
       Step('and the open document is re-read, not left behind', (
         TomRobot robot,
       ) async {
-        // The rule that costs the most to get right: the buffer is the one
-        // thing that would still be showing the branch that was left.
+        // The buffer is the one thing that could still show the branch that
+        // was left.
         await robot.seesInThePreview('as the feature branch rewrote it');
       }),
       Step('switching back undoes all of it', (TomRobot robot) async {
@@ -154,8 +151,7 @@ void main() {
       Step('which git confirms, from the branch it was started on', (
         TomRobot robot,
       ) async {
-        // Started at the current HEAD, so it carries the feature branch's
-        // document rather than main's.
+        // Started at `HEAD`, so it carries the feature branch's document.
         expect(checkedOut(), 'feat/from-the-app');
         expect(
           File('${withBranches.root}/rendered-diff.md').existsSync(),

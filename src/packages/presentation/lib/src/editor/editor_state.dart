@@ -9,8 +9,7 @@ part 'editor_state.freezed.dart';
 
 /// The states the editor can be in, and there are only these.
 ///
-/// [EditorEmpty] is not a stalled load: it is a space with no document
-/// chosen, which is how every space opens.
+/// [EditorEmpty] is a space with no document chosen, not a stalled load.
 @freezed
 sealed class EditorState with _$EditorState {
   /// No document is open.
@@ -21,11 +20,8 @@ sealed class EditorState with _$EditorState {
 
   /// The document is open, and this is the buffer over it.
   const factory EditorState.ready({
-    /// The document as the disk last agreed it was.
-    ///
-    /// What the buffer is compared against, and what a save replaces. **The
-    /// file is the truth**, so this is the app's record of that truth and
-    /// never a second one.
+    /// The document as the disk last agreed it was — what the buffer is
+    /// compared against, and what a save replaces.
     required DocumentEntity saved,
 
     /// The text being edited, which is the file's content until it is not.
@@ -36,8 +32,8 @@ sealed class EditorState with _$EditorState {
 
     /// Why the last save did not land, or null when it did.
     ///
-    /// A save that fails silently is the one thing a text editor may never
-    /// do: the buffer still holds work and the file does not.
+    /// Said rather than swallowed, because the buffer still holds work and
+    /// the file does not.
     AppFailure? saveFailure,
   }) = EditorReady;
 
@@ -49,8 +45,7 @@ sealed class EditorState with _$EditorState {
   /// Whether the buffer and the file on disk have drifted apart.
   ///
   /// Compared rather than flagged, so typing a character and taking it back
-  /// leaves the document clean — a flag would call that unsaved for the rest
-  /// of the session.
+  /// leaves the document clean.
   bool get isDirty => switch (this) {
     EditorReady(:final DocumentEntity saved, :final String source) =>
       saved.content != source,

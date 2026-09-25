@@ -45,9 +45,8 @@ void main() {
       Step('open a space so there is one to forget', (TomRobot robot) async {
         await robot.launchWindowed(pickFolder: docsInRepo.root);
         await robot.chooseFolder();
-        // Remembering is part of opening, so the space is on the list only
-        // once the shell is up — restarting before that would forget it
-        // for the wrong reason.
+        // Remembering is part of opening: a restart before the shell is up
+        // would forget the space for the wrong reason.
         await robot.seesTheShell();
       }),
       Step('start the app again', (TomRobot robot) async {

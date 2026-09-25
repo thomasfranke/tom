@@ -8,12 +8,9 @@ part 'file_tree_providers.g.dart';
 
 /// Reads everything a space holds.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and cannot see what satisfies it, because it
-/// does not depend on `tom_data` or `tom_infra`.
-///
-/// Throwing rather than defaulting is deliberate — a default here would be a
-/// second place where the app decides what fulfils a contract.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package: it names what it needs and cannot see
+/// what satisfies it.
 @riverpod
 ListSpaceEntriesUseCase listSpaceEntries(Ref ref) => throw StateError(
   'listSpaceEntriesProvider has no default. The composition root overrides '

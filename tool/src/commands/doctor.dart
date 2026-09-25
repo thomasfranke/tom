@@ -1,11 +1,4 @@
 // `tom doctor` — whether this machine can build the repository.
-//
-// It answers for the repository's own needs and stops there: the Dart the
-// pubspecs ask for, the Flutter `src/.fvmrc` pins, the git the infra layer
-// shells out to, the lcov `tom coverage` reports through. The platform
-// toolchains — Xcode, Visual Studio, the Linux build packages — are left to
-// `flutter doctor`, which already asks them properly; a second implementation
-// of that check would start drifting from the first the week it was written.
 library;
 
 import 'dart:io';
@@ -14,14 +7,12 @@ import '../theme/theme.dart';
 import 'process.dart';
 import 'toolchain.dart';
 
-/// Reports the toolchain, and fails if anything the repository requires is
-/// missing or too old.
+/// Reports the toolchain, and fails only if something the repository requires
+/// is missing or too old.
 ///
-/// A difference that does not stop a build does not stop the command either:
-/// a Flutter that is not the pinned one, an lcov that was never installed,
-/// a workspace that has not been resolved yet are all reported with the fix
-/// named and none of them touch the exit code. The question is "can this be
-/// built here", not "is this machine identical to CI".
+/// A difference that does not stop a build does not stop the command: the
+/// question is "can this be built here", not "is this machine CI". Platform
+/// toolchains are left to `flutter doctor`, which already asks properly.
 Future<int> runDoctor() async {
   announce('Doctor — what this repository needs');
 
@@ -34,8 +25,7 @@ Future<int> runDoctor() async {
     await _lcov(),
   ];
 
-  // Width from the longest label rather than a constant, so adding a check
-  // cannot quietly break the column.
+  // Width from the longest label, so adding a check cannot break the column.
   final width = checks
       .map((check) => check.label.length)
       .reduce((a, b) => a > b ? a : b);
@@ -113,10 +103,9 @@ _Check _dart() {
 
 /// Flutter, against the pin every other reader of this repository uses.
 ///
-/// A version that is not the pinned one is an annotation, not a failure:
-/// `src/.fvmrc` is what CI builds with, and anything recent enough resolves
-/// the workspace regardless — but the difference is worth seeing before it
-/// explains a green machine and a red pipeline.
+/// Not the pinned one is an annotation, not a failure: anything recent
+/// enough resolves the workspace, but the difference is worth seeing before
+/// it explains a green machine and a red pipeline.
 Future<_Check> _flutter() async {
   final flutter = await installedFlutter();
   if (flutter == null) {
@@ -174,11 +163,8 @@ Future<_Check> _lcov() async => await isInstalled('genhtml')
         'genhtml not installed — only `tom coverage` needs it',
       );
 
-/// What one check found.
-///
-/// Four outcomes rather than a boolean, because "missing and required",
-/// "present but not what was expected" and "absent and nobody asked for it"
-/// are three different things to read and only the first should fail a build.
+/// What one check found: four outcomes rather than a boolean, because only
+/// "missing and required" should fail a build.
 enum _Outcome {
   ok(Status.ok),
   attention(Layout.detailMarker),
@@ -202,9 +188,8 @@ enum _Outcome {
 final class _Check {
   const _Check(this.label, this.outcome, this.detail, {this.required = true});
 
-  /// [required] is the one thing a caller still says out loud: a tool that
-  /// is present tells you nothing about whether the build needed it, and the
-  /// summary counts only what the build needed.
+  /// [required] is the one thing a caller still says: a tool that is present
+  /// says nothing about whether the build needed it.
   const _Check.ok(String label, String detail, {bool required = true})
     : this(label, _Outcome.ok, detail, required: required);
 
@@ -226,9 +211,7 @@ final class _Check {
   /// Whether a failure here means the repository cannot be built at all.
   final bool required;
 
-  /// The status mark and the margin around it.
-  ///
-  /// Five columns, the same as the coverage gate's, so two reports printed by
-  /// the same CLI line their labels up.
+  /// The status mark and the margin around it: five columns, the same as the
+  /// coverage gate's, so two reports line their labels up.
   String get mark => '  ${outcome.color}${outcome.glyph}${Ansi.reset}  ';
 }

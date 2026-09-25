@@ -13,8 +13,6 @@ void main() {
   });
 
   test('an offset can carry the day across midnight', () {
-    // The reason the offset is kept at all: the instant says Sunday, the
-    // author's clock said Saturday night.
     final DateTime local = dateAt(const Duration(hours: -6)).authorLocal;
 
     expect(local.day, 19);

@@ -8,8 +8,8 @@ part 'remote_providers.g.dart';
 
 /// Updates the remote-tracking branches, touching no file on disk.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use cases it needs and cannot see that a process answers them.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 @riverpod
 FetchRemoteUseCase fetchRemote(Ref ref) => throw StateError(
   'fetchRemoteProvider has no default. The composition root overrides it '

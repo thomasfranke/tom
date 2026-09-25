@@ -8,11 +8,8 @@ import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The strip below everything: branch, ahead/behind, counts.
-///
-/// It draws none of those itself — whatever is registered into
-/// [PanelPlacementEnum.statusBar] is what appears, the built-in status line
-/// included.
+/// The strip below everything, drawing whatever is registered into
+/// [PanelPlacementEnum.statusBar] and nothing of its own.
 class ShellStatusBarWidget extends StatelessWidget {
   /// Creates the status bar, reading [registry].
   const ShellStatusBarWidget({required this.registry, super.key});

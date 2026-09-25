@@ -10,40 +10,25 @@ part of 'branches_notifier.dart';
 // ignore_for_file: type=lint, type=warning
 /// Switches branches, starts them, and refuses to lose work doing either.
 ///
-/// **A switch rewrites the working tree**, which is what makes this more
-/// than a git call: git has to be asked where it now stands, the explorer
-/// has to walk the folder again, and every open document has to be read
-/// again. All three happen here, after the switch, in that order.
-///
-/// It reads no git status of its own — [ChangesNotifier] does that, so what
-/// the window believes about the repository keeps one source
-/// (`docs/product/git-workflow/push-pull/doc.md`).
+/// A switch rewrites the working tree, so it ends by re-reading the status,
+/// the folder and the open buffer, in that order. It reads no git status of
+/// its own — [ChangesNotifier] does, so the window keeps one source.
 
 @ProviderFor(BranchesNotifier)
 final branchesProvider = BranchesNotifierProvider._();
 
 /// Switches branches, starts them, and refuses to lose work doing either.
 ///
-/// **A switch rewrites the working tree**, which is what makes this more
-/// than a git call: git has to be asked where it now stands, the explorer
-/// has to walk the folder again, and every open document has to be read
-/// again. All three happen here, after the switch, in that order.
-///
-/// It reads no git status of its own — [ChangesNotifier] does that, so what
-/// the window believes about the repository keeps one source
-/// (`docs/product/git-workflow/push-pull/doc.md`).
+/// A switch rewrites the working tree, so it ends by re-reading the status,
+/// the folder and the open buffer, in that order. It reads no git status of
+/// its own — [ChangesNotifier] does, so the window keeps one source.
 final class BranchesNotifierProvider
     extends $NotifierProvider<BranchesNotifier, BranchesState> {
   /// Switches branches, starts them, and refuses to lose work doing either.
   ///
-  /// **A switch rewrites the working tree**, which is what makes this more
-  /// than a git call: git has to be asked where it now stands, the explorer
-  /// has to walk the folder again, and every open document has to be read
-  /// again. All three happen here, after the switch, in that order.
-  ///
-  /// It reads no git status of its own — [ChangesNotifier] does that, so what
-  /// the window believes about the repository keeps one source
-  /// (`docs/product/git-workflow/push-pull/doc.md`).
+  /// A switch rewrites the working tree, so it ends by re-reading the status,
+  /// the folder and the open buffer, in that order. It reads no git status of
+  /// its own — [ChangesNotifier] does, so the window keeps one source.
   BranchesNotifierProvider._()
     : super(
         from: null,
@@ -75,14 +60,9 @@ String _$branchesNotifierHash() => r'b5cfa7d39cf05e7e21f8edfa7defbddf5aa9c648';
 
 /// Switches branches, starts them, and refuses to lose work doing either.
 ///
-/// **A switch rewrites the working tree**, which is what makes this more
-/// than a git call: git has to be asked where it now stands, the explorer
-/// has to walk the folder again, and every open document has to be read
-/// again. All three happen here, after the switch, in that order.
-///
-/// It reads no git status of its own — [ChangesNotifier] does that, so what
-/// the window believes about the repository keeps one source
-/// (`docs/product/git-workflow/push-pull/doc.md`).
+/// A switch rewrites the working tree, so it ends by re-reading the status,
+/// the folder and the open buffer, in that order. It reads no git status of
+/// its own — [ChangesNotifier] does, so the window keeps one source.
 
 abstract class _$BranchesNotifier extends $Notifier<BranchesState> {
   BranchesState build();

@@ -12,14 +12,10 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// Which branch is checked out, and the popover that changes it.
 ///
-/// **A popover, not a route and not a dialog.** [Decision
-/// 6](../../../../../../docs/technical/decisions/006-no-navigation-package.md)
-/// keeps `Navigator` for dialogs only, and this is the first non-modal
-/// surface in the app: it hangs off the control that opened it, closes on a
-/// click outside or on Escape, and the window behind it stays live.
-///
-/// It draws nothing until git has been read once. A control that cannot say
-/// which branch it would be switching *from* is worse than no control.
+/// A popover anchored to the control, not a route or a dialog
+/// ([Decision 6](../../../../../../docs/technical/decisions/006-no-navigation-package.md)).
+/// It draws nothing until git has been read once, since a control that
+/// cannot say which branch it switches from is worse than none.
 class BranchesControlWidget extends ConsumerStatefulWidget {
   /// Creates the control.
   const BranchesControlWidget({super.key});
@@ -43,10 +39,9 @@ class _BranchesControlWidgetState extends ConsumerState<BranchesControlWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // The surface goes away when the branch actually changed, and on nothing
-    // else — which is exactly right for both the cases that must *not* close
-    // it: a switch git refused, and one waiting on an answer about unsaved
-    // work. Neither moves `HEAD`, so neither gets here.
+    // Closes when the branch actually changed and on nothing else: a refused
+    // switch and a standing question about unsaved work both leave `HEAD`
+    // where it is, and both must keep the surface open.
     ref.listen<BranchNameValueObject?>(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => session?.git?.branch,
@@ -72,8 +67,8 @@ class _BranchesControlWidgetState extends ConsumerState<BranchesControlWidget> {
           child: CompositedTransformFollower(
             link: _link,
             targetAnchor: Alignment.bottomLeft,
-            // From the control's own bottom edge down to under the bar's
-            // rule, which is where the wireframe hangs it.
+            // From the control's bottom edge to under the bar's rule, where
+            // the wireframe hangs it.
             offset: const Offset(
               0,
               (TomMetrics.topBar - BranchesDesign.controlHeight) / 2 +
@@ -141,9 +136,8 @@ class _TriggerWidget extends StatelessWidget {
 
   /// What the control says it is on.
   ///
-  /// A detached `HEAD` is named as that rather than left blank, the same
-  /// words the status bar uses: it is a state somebody has to get out of,
-  /// not a missing value (`docs/product/git-workflow/branch-switch/doc.md`).
+  /// A detached `HEAD` is named, in the status bar's words, because it is a
+  /// state to get out of rather than a missing value.
   String get _name => switch (git) {
     GitStatusValueObject(isDetached: true) => 'detached HEAD',
     GitStatusValueObject(branch: final BranchNameValueObject branch) =>

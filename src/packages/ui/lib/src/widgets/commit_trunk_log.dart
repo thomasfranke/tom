@@ -9,7 +9,7 @@ class TrunkCommit {
   /// Creates an entry.
   const TrunkCommit({required this.sha, required this.subject});
 
-  /// The short hash, which is what a log leads with.
+  /// The short hash.
   final String sha;
 
   /// The subject line, in the Conventional Commit this repository writes.
@@ -23,17 +23,12 @@ class TrunkCommit {
   int get hashCode => Object.hash(sha, subject);
 }
 
-/// TOM's own history, which is the one log this screen can show.
+/// TOM's own history: real commits of this repository, fifty so the ground,
+/// showing three a turn, takes a minute before a line comes back.
 ///
-/// **Real commits of this repository** — `git log`, subjects short enough to
-/// read at a glance — the way a landing page tells its own story rather than
-/// borrowing somebody's. Fifty of them because the ground shows three at a
-/// time and writes them again on every turn of its cycle: a pool this long
-/// is a minute of watching before a line comes back.
-///
-/// It goes stale, and that is fine: it is the ground of a screen, not a
-/// reading of the repository. Refresh it from `git log` when it starts to
-/// read like an old release.
+/// It goes stale and that is fine — it is the ground of a screen, not a
+/// reading of the repository. Refresh it from `git log` when it reads like
+/// an old release.
 abstract final class TrunkLog {
   /// The pool, in the order the log made them.
   static const List<TrunkCommit> tomsOwn = <TrunkCommit>[

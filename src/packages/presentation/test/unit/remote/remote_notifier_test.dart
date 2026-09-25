@@ -106,8 +106,6 @@ void main() {
 
   group('fetch', () {
     test('it asks the remote and re-reads where the branch stands', () async {
-      // Fetch exists so that ahead/behind means something; not re-reading
-      // would leave the counter saying what it said before.
       await open();
       git.reported = statusOf(ahead: 2, behind: 3);
 
@@ -119,7 +117,6 @@ void main() {
     });
 
     test('it changes no file on disk', () async {
-      // The whole reason it is safe to offer as a plain button.
       await open();
 
       await container.read(remoteProvider.notifier).fetch();
@@ -130,8 +127,6 @@ void main() {
 
   group('push', () {
     test('a rejection is its own state, not a failure among others', () async {
-      // The remote moved first: the product answers it with a screen, so it
-      // has to be distinguishable from anything else that can go wrong.
       await open();
       git.answer = const Failure<void, GitFailure>(GitPushRejected());
 
@@ -141,8 +136,6 @@ void main() {
     });
 
     test('and the counts are read again even so', () async {
-      // `git push` can update some refs and refuse others; where the branch
-      // stands afterwards is the thing the user needs.
       await open();
       git
         ..answer = const Failure<void, GitFailure>(GitPushRejected())
@@ -154,7 +147,6 @@ void main() {
     });
 
     test('anything else keeps the action it failed on', () async {
-      // "Push failed" and "pull failed" are different sentences.
       await open();
       git.answer = const Failure<void, GitFailure>(GitAuthenticationFailed());
 
@@ -185,9 +177,6 @@ void main() {
   });
 
   test('one action at a time, and the state says which', () async {
-    // Git serializes per space underneath, so a second press would only
-    // queue — and a screen that let it would be lying about what is
-    // happening.
     await open();
     git.holdUp = true;
 
@@ -204,8 +193,6 @@ void main() {
   });
 
   test('another space starts with nothing said about the last one', () async {
-    // A rejection names a remote; carrying it across would be a sentence
-    // about a repository nobody is looking at.
     await open();
     git.answer = const Failure<void, GitFailure>(GitPushRejected());
     await container.read(remoteProvider.notifier).push();

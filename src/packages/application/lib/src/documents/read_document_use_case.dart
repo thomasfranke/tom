@@ -5,14 +5,11 @@ import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// Reads one document's source.
+/// One document's source, read off the disk every time.
 ///
-/// The disk is read every time. There is no cache to go stale, which is what
-/// makes editing a space beside TOM a supported way to work.
-///
-/// It stops at the text: splitting into blocks is `SplitDocumentUseCase`,
-/// because the editor needs only this half and the preview re-splits a
-/// buffer that never went to disk.
+/// No cache to go stale, so editing a space beside TOM is supported. It
+/// stops at the text; splitting is `SplitDocumentUseCase`, because the
+/// preview re-splits a buffer that never went to disk.
 final class ReadDocumentUseCase with UseCase {
   /// Creates the use case.
   const ReadDocumentUseCase({

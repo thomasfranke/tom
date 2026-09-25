@@ -1,8 +1,4 @@
-/// What the settings store does when the disk refuses.
-///
-/// Unit, with a filesystem that fails on command: a real disk in a temporary
-/// folder does not produce `EIO` or a permission error when asked, and these
-/// are exactly the paths a user hits and nobody tests.
+/// [JsonFileSettingsImpl] over a filesystem that fails on command.
 library;
 
 import 'package:test/test.dart';
@@ -36,8 +32,6 @@ void main() {
     );
 
     test('reading answers this capability\'s own failure', () async {
-      // Never a `FilesystemFailure`: the caller deals in preferences and
-      // should not have to know there is a file involved.
       final AppFailure failure = failureOf(await settings.read('theme'));
 
       expect(failure, isA<SettingsUnavailable>());
@@ -46,8 +40,8 @@ void main() {
 
     test('writing fails too, rather than writing over what it could not '
         'read', () async {
-      // The store rewrites the whole object, so writing without having read
-      // it first would drop every other preference.
+      // The store rewrites the whole object, so writing over what it could
+      // not read would drop every other preference.
       expect(
         failureOf(await settings.write('theme', 'dark')),
         isA<SettingsUnavailable>(),
@@ -66,8 +60,6 @@ void main() {
       final SettingsUnavailable failure =
           failureOf(await settings.read('theme')) as SettingsUnavailable;
 
-      // Verbatim and never parsed — what matters is that the original
-      // reaches a log, not that anything can read it back.
       expect(failure.description, contains('/preferences.json'));
       expect(failure.description, contains('accessDenied'));
     });
@@ -89,7 +81,6 @@ void main() {
     });
 
     test('and reading still works, because the file is intact', () async {
-      // Nothing was written, so nothing was corrupted.
       expect(
         await settings.read('theme'),
         isA<Success<String?, SettingsFailure>>(),
@@ -99,9 +90,6 @@ void main() {
 
   group('bytes that are not text', () {
     test('are this capability\'s failure, not a decoding accident', () async {
-      // `Filesystem` refuses a file it cannot read back losslessly rather
-      // than handing over replacement characters, and that refusal has to
-      // survive the trip up here.
       filesystem.readFailure = const FilesystemNotUtf8('/preferences.json');
 
       expect(

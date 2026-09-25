@@ -100,8 +100,7 @@ void main() {
   testWidgets('every commit git reports is an entry, in its order', (
     WidgetTester tester,
   ) async {
-    // Newest first is git's to decide, and sorting here would be a second
-    // opinion about an order the caller asked for.
+    // The order is git's; sorting here would be a second opinion.
     git.reported = <CommitEntity>[
       commit('aaa1111', 'docs: the second pass'),
       commit('bbb2222', 'docs: the first pass'),
@@ -116,9 +115,7 @@ void main() {
   testWidgets('an entry says who wrote it, when, and which commit it is', (
     WidgetTester tester,
   ) async {
-    // All three are the product's rule; the sha is there because it is the
-    // only one that names the commit anywhere outside this window
-    // (`docs/product/git-workflow/file-history/doc.md`).
+    // The product's three (`docs/product/git-workflow/file-history/doc.md`).
     git.reported = <CommitEntity>[
       commit('aaa1111', 'docs: a change', who: 'Ada Lovelace'),
     ];
@@ -142,8 +139,7 @@ void main() {
   });
 
   testWidgets('a list says what it is scoped to', (WidgetTester tester) async {
-    // The whole difference between this panel and a log, said where
-    // somebody would otherwise wonder why a busy repository has one entry.
+    // Said where somebody would wonder why a busy repository has one entry.
     git.reported = <CommitEntity>[commit('aaa1111', 'docs: a change')];
 
     await pumpPanel(tester, document: writing);

@@ -1,34 +1,9 @@
-// A live codegen dashboard for `make runner`: one fixed line per package,
-// showing which one build_runner is working on right now and what stage
-// it's in — driven by parsing build_runner's own log lines. Seven packages
-// run back to back otherwise with no sense of progress, just silence until
-// each one's full build_runner log dumps out at once.
+// A live codegen dashboard, one line per package, read off build_runner's log.
 //
 //   dart run tool/src/commands/run_codegen.dart [--force] <target>...
 //
-// <target> is a bare package name — a folder under src/packages/ — or
-// "desktop"/"mobile" for the Flutter apps. A target with no build_runner
-// dependency in its pubspec is shown as skipped rather than silently omitted.
-//
-// Only packages with changes against BASE (env var, default "main" — same
-// convention as `make flutter-test-diff BASE=develop`) actually run;
-// everything else is skipped and shown as such. Changes are a 3-way union —
-// committed on the branch, staged/modified, or untracked — same as
-// tool/run_changed_tests.dart, but resolved package-by-package rather than
-// file-by-file: build_runner already processes a whole package in one pass,
-// so any change under a package's own tree reruns that whole package, not
-// just the files that changed. `--force` skips the diff and runs every
-// package regardless — what `make runner-hard` needs after deleting every
-// generated file, since a clean regeneration can't depend on the branch
-// having touched anything.
-//
-// build_runner has no JSON event stream the way package:test does (see
-// tool/run_tests.dart), so progress here is coarser: which package is
-// running and which named stage its log is currently on ("Running build...",
-// "Succeeded after 4.2s with 63 outputs"), not a file-by-file count.
-//
-// No external packages — only dart:* and one sibling file — so it runs with
-// nothing but the SDK already on the machine, from any directory.
+// Only packages changed against BASE (env var, default "main") run, whole,
+// because build_runner has no finer unit; `--force` runs every one of them.
 
 import 'dart:async';
 import 'dart:convert';
@@ -40,10 +15,9 @@ import '../theme/theme.dart';
 import '../tty.dart';
 import 'process.dart';
 
-// Every package, including the ones with no generator — `_hasBuildRunner`
-// skips those. A package missing from this list is an unknown target, and an
-// unknown target fails the run *after* `tom codegen --hard` has deleted the
-// output it was about to rebuild.
+// Every package, the ones with no generator included — `_hasBuildRunner`
+// skips those. An unknown target fails the run *after* `tom codegen --hard`
+// has deleted the output it was about to rebuild.
 const _pkgOrder = [
   'core',
   'domain',
@@ -172,21 +146,14 @@ _Target _resolve(Directory src, String pkg) {
   return _Target(pkg, Directory('${src.path}/packages/$pkg'));
 }
 
-// The repository root is found by marker now (see ../repo.dart): counting
-// levels from this file is what broke when it moved into tool/src/commands/.
-
 bool _hasBuildRunner(_Target target) {
   final pubspec = File('${target.dir.path}/pubspec.yaml');
   return pubspec.existsSync() &&
       pubspec.readAsStringSync().contains('build_runner');
 }
 
-/// Which package labels ("core", …, "desktop", "mobile") own at least one
-/// changed
-/// file against `base`. Same 3-way diff union as
-/// tool/run_changed_tests.dart's `_changedFiles` (committed on the branch,
-/// staged/modified, or untracked), but mapped to a whole package rather than
-/// individual test files — build_runner has no finer unit to run than that.
+/// The package labels that own at least one file changed against [base]: the
+/// same three-way diff as run_changed_tests.dart, mapped to whole packages.
 Future<({Set<String> packages, int fileCount})> _changedPackages(
   Directory root,
   String base,
@@ -268,13 +235,11 @@ final _succeeded = RegExp(
 final _failedLine = RegExp(r'^(Failed after|Build failed)');
 final _failingFile = RegExp(r'\bon\s+(\S+\.dart)\b');
 
-/// Runs one package's `build_runner build`, streaming its log lines into
-/// `row.stage` and letting `dashboard` redraw after every line. Returns
-/// false if the run failed.
+/// Runs one package's `build_runner build`, streaming its log into [row];
+/// false when the run failed.
 Future<bool> _runOne(_Target target, _Row row, _Dashboard dashboard) async {
-  // build_runner 2.15 dropped --delete-conflicting-outputs (it's the default
-  // now) and warns on every run if passed — see the note by _succeeded above
-  // on why its final log line changed shape too.
+  // No --delete-conflicting-outputs: build_runner 2.15 made it the default
+  // and warns on every run if passed.
   final process = await Process.start(dartExecutable, [
     'run',
     'build_runner',

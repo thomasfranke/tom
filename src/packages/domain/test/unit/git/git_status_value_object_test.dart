@@ -35,9 +35,6 @@ void main() {
     });
 
     test('a branch this version cannot name is still not detached', () {
-      // Two different answers used to share one null: a name the parser
-      // could not read reported a detached HEAD, which would put a warning
-      // on a repository sitting on an ordinary branch.
       expect(statusWith().branch, isNull);
       expect(statusWith().isDetached, isFalse);
     });
@@ -69,8 +66,6 @@ void main() {
 
   group('hasStagedChanges', () {
     test('false when the only change is in the working tree', () {
-      // What the commit button reads: a dirty tree with an empty index has
-      // nothing to record (docs/product/git-workflow/commit/doc.md).
       expect(
         statusWith(entries: <StatusEntryValueObject>[entry()]).hasStagedChanges,
         isFalse,

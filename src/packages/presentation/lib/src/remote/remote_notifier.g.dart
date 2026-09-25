@@ -8,39 +8,30 @@ part of 'remote_notifier.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Fetch, pull and push, each started by somebody and never on its own.
+/// Fetch, pull and push, each started by somebody and never on its own
+/// (`docs/product/git-workflow/push-pull/doc.md`).
 ///
-/// **Nothing here runs in the background** — no timer, no retry, no sync
-/// (`docs/product/git-workflow/push-pull/doc.md`). A button is pressed and
-/// one thing happens.
-///
-/// It reads no git of its own: every action ends by asking [ChangesNotifier]
-/// to re-read, so what the window believes about the repository has one
-/// source and one way of becoming stale.
+/// It reads no git of its own: every action ends in [ChangesNotifier]
+/// re-reading, so what the window believes about the repository has one
+/// source.
 
 @ProviderFor(RemoteNotifier)
 final remoteProvider = RemoteNotifierProvider._();
 
-/// Fetch, pull and push, each started by somebody and never on its own.
+/// Fetch, pull and push, each started by somebody and never on its own
+/// (`docs/product/git-workflow/push-pull/doc.md`).
 ///
-/// **Nothing here runs in the background** — no timer, no retry, no sync
-/// (`docs/product/git-workflow/push-pull/doc.md`). A button is pressed and
-/// one thing happens.
-///
-/// It reads no git of its own: every action ends by asking [ChangesNotifier]
-/// to re-read, so what the window believes about the repository has one
-/// source and one way of becoming stale.
+/// It reads no git of its own: every action ends in [ChangesNotifier]
+/// re-reading, so what the window believes about the repository has one
+/// source.
 final class RemoteNotifierProvider
     extends $NotifierProvider<RemoteNotifier, RemoteState> {
-  /// Fetch, pull and push, each started by somebody and never on its own.
+  /// Fetch, pull and push, each started by somebody and never on its own
+  /// (`docs/product/git-workflow/push-pull/doc.md`).
   ///
-  /// **Nothing here runs in the background** — no timer, no retry, no sync
-  /// (`docs/product/git-workflow/push-pull/doc.md`). A button is pressed and
-  /// one thing happens.
-  ///
-  /// It reads no git of its own: every action ends by asking [ChangesNotifier]
-  /// to re-read, so what the window believes about the repository has one
-  /// source and one way of becoming stale.
+  /// It reads no git of its own: every action ends in [ChangesNotifier]
+  /// re-reading, so what the window believes about the repository has one
+  /// source.
   RemoteNotifierProvider._()
     : super(
         from: null,
@@ -70,15 +61,12 @@ final class RemoteNotifierProvider
 
 String _$remoteNotifierHash() => r'56dbe29793cafce7437559d16438c945a50ae481';
 
-/// Fetch, pull and push, each started by somebody and never on its own.
+/// Fetch, pull and push, each started by somebody and never on its own
+/// (`docs/product/git-workflow/push-pull/doc.md`).
 ///
-/// **Nothing here runs in the background** — no timer, no retry, no sync
-/// (`docs/product/git-workflow/push-pull/doc.md`). A button is pressed and
-/// one thing happens.
-///
-/// It reads no git of its own: every action ends by asking [ChangesNotifier]
-/// to re-read, so what the window believes about the repository has one
-/// source and one way of becoming stale.
+/// It reads no git of its own: every action ends in [ChangesNotifier]
+/// re-reading, so what the window believes about the repository has one
+/// source.
 
 abstract class _$RemoteNotifier extends $Notifier<RemoteState> {
   RemoteState build();

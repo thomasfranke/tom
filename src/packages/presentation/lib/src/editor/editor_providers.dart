@@ -8,8 +8,8 @@ part 'editor_providers.g.dart';
 
 /// Reads a document's source off the disk.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and cannot see which disk ends up behind it.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 @riverpod
 ReadDocumentUseCase readDocument(Ref ref) => throw StateError(
   'readDocumentProvider has no default. The composition root overrides it '

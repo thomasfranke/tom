@@ -49,8 +49,6 @@ void main() {
         threshold: 0.5,
       );
 
-      // The block's own source and nothing derived from it: what the
-      // capability compares is what the document says.
       expect(differ.before, <String>['# Title', 'Prose.']);
       expect(differ.after, <String>['# Title', 'More prose.']);
       expect(differ.threshold, 0.5);
@@ -130,8 +128,6 @@ void main() {
               threshold: 0.5,
             );
 
-        // The variant names the document and nothing else; what the algorithm
-        // said stays in the cause.
         final DocumentFailure failure =
             (result as Failure<List<SequenceEditValueObject>, DocumentFailure>)
                 .failure;

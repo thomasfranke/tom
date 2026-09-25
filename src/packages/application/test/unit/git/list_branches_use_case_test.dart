@@ -24,8 +24,6 @@ void main() {
   );
 
   test('it hands back what git reported, in that order', () async {
-    // The order is git's to decide: sorting here would be a second opinion
-    // about a list somebody may have configured.
     git.answer = Success<List<BranchEntity>, GitFailure>(<BranchEntity>[
       BranchEntity(name: BranchNameValueObject('main'), isCurrent: true),
       BranchEntity(name: BranchNameValueObject('feat/one'), isCurrent: false),

@@ -10,17 +10,11 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The bar above everything: what space is open, and the global actions.
+/// The bar above everything: `repository / folder`, the branch control and
+/// the remote actions.
 ///
-/// The design writes it `repository / folder`, because a space is a folder
-/// and three checkouts all have a `docs/`. The folder is the emphasis and
-/// the repository the context, which is what the two weights say.
-///
-/// **The branch control sits beside the name**, and Fetch and Push at the
-/// other end with how far the branch has drifted from its remote. The
-/// status bar still says the branch too: it is the one thing that must be
-/// visible from the moment a space is open, whether or not git has answered
-/// yet (`docs/product/git-workflow/branch-switch/doc.md`).
+/// Repository and folder both, because a space is a folder and three
+/// checkouts all have a `docs/`.
 class ShellTopBarWidget extends ConsumerWidget {
   /// Creates the top bar.
   const ShellTopBarWidget({super.key});
@@ -36,8 +30,8 @@ class ShellTopBarWidget extends ConsumerWidget {
           horizontal: TomMetrics.pad + TomMetrics.chromeInset,
         ),
         child: session == null
-            // Nothing, which is what the design draws with no space open —
-            // and the shell only shows with one anyway.
+            // What the design draws with no space open; the shell only shows
+            // with one anyway.
             ? const SizedBox.shrink()
             : Row(
                 children: <Widget>[

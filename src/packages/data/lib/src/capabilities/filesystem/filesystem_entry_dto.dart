@@ -8,15 +8,9 @@ part 'filesystem_entry_dto.freezed.dart';
 
 /// A path the disk holds, and what lives at it.
 ///
-/// A DTO: it crosses the capability's contract and is not a domain type
-/// ([Decision
-/// 21](../../../../../../docs/technical/decisions/021-dtos-and-daos-when-they-are-real.md)).
-/// `SpaceEntryValueObject` is the domain's word for the same line of a file
-/// tree, and `tom_infra` — which depends only on `tom_core` — may not name
-/// it.
-///
-/// What a listing knows is a path and a kind. Turning the `.md` ones into
-/// documents is `tom_data`'s job.
+/// A DTO because it crosses the capability's contract ([Decision
+/// 21](../../../../../../../docs/technical/decisions/021-dtos-and-daos-when-they-are-real.md));
+/// `SpaceEntryValueObject` is the domain's word, which `tom_infra` cannot name.
 @freezed
 abstract class FilesystemEntryDto with _$FilesystemEntryDto {
   /// Creates an entry.

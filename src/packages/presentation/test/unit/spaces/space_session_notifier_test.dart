@@ -30,10 +30,8 @@ void main() {
   });
 
   test('a space survives with nobody listening', () {
-    // The reason `build` keeps it alive: the session is written by Home, a
-    // screen that is on its way out at exactly that moment. Riverpod
-    // disposes a provider as soon as nothing listens, and a session disposed
-    // between the write and the first panel would leave the window on Home.
+    // Riverpod disposes a provider nobody listens to, and the session is
+    // written by Home — the screen on its way out.
     session().open(docs);
 
     expect(container.read(spaceSessionProvider)?.space, docs);
@@ -60,8 +58,6 @@ void main() {
   });
 
   test('another space does not inherit the open document', () {
-    // A path is only meaningful inside the space it is relative to: carrying
-    // it across would point the editor at a file the new space may not hold.
     session().open(docs);
     session().show(SpaceRelativePathValueObject('index.md'));
 

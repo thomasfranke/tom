@@ -45,8 +45,6 @@ void main() {
   });
 
   test('a rejection arrives as itself, not as a general failure', () async {
-    // The remote moving first is the one outcome the product shows as its
-    // own screen, so it has to survive the trip up intact.
     git.answer = const Failure<void, GitFailure>(GitPushRejected());
 
     final Result<void, AppFailure> result = await pushing().push(docs);
@@ -73,8 +71,8 @@ void main() {
 
 /// Git, answering `push` and refusing every other question.
 ///
-/// The unasked methods are left to `noSuchMethod`, which throws: a use case
-/// that called one would fail loudly rather than pass quietly.
+/// The rest is left to `noSuchMethod`, which throws, so a use case that
+/// called one fails loudly rather than passing quietly.
 final class _Git implements GitRepository {
   Result<void, GitFailure>? answer;
   bool throws = false;

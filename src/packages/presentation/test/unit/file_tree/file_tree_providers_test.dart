@@ -1,9 +1,4 @@
 /// What the file tree's providers do when nobody wired them.
-///
-/// The same claim `home_providers_test.dart` makes, for the panel that
-/// arrived after it: declaring a use case here with no default is what makes
-/// forgetting the composition root fail loudly and at once, instead of
-/// producing a tree that quietly shows nothing.
 library;
 
 import 'package:riverpod/misc.dart';
@@ -19,10 +14,8 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  /// What reading [provider] threw, unwrapped.
-  ///
-  /// Riverpod wraps whatever a provider's body throws in a
-  /// [ProviderException], so the thing worth asserting on is one level in.
+  /// What reading [provider] threw, unwrapped: Riverpod wraps whatever a
+  /// provider's body throws in a [ProviderException].
   Object causeOfReading(ProviderListenable<Object?> provider) {
     try {
       container.read(provider);

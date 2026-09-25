@@ -3,17 +3,11 @@ library;
 
 /// The regions of the shell a panel can be registered into.
 ///
-/// A closed set, on purpose. A module contributes a panel to a region the
-/// layout already has; it does not invent regions, because a module that
-/// could would be changing the app rather than adding to it — and **modules
-/// add, they never change or degrade what the app already does**
-/// ([flows](../../../../../docs/technical/flows.md#panels-are-registered-never-hardcoded)).
-///
-/// The regions come from the wireframe, not from this file
-/// (`docs/product/workspace/mocks/shell.excalidraw`).
+/// A closed set: a module adds to a region the wireframe already has and
+/// never invents one, because modules add and never change the app
+/// ([composition](../../../../../docs/technical/runtime/composition.md)).
 enum PanelPlacementEnum {
-  /// The fixed-width column on the left: the file tree, and whatever else
-  /// navigates the space.
+  /// The fixed-width column on the left, where the space is navigated.
   explorer,
 
   /// The middle, where the document is read and edited.
@@ -25,8 +19,6 @@ enum PanelPlacementEnum {
   /// The fixed-width column on the right: git, and later search results.
   aside,
 
-  /// The strip along the bottom: branch, ahead/behind, counts.
-  ///
-  /// Status only. A panel here is read, never worked in.
+  /// The strip along the bottom, read and never worked in.
   statusBar,
 }

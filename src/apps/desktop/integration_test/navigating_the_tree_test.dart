@@ -26,8 +26,6 @@ void main() {
       Step('the top bar says which repository the folder is in', (
         TomRobot robot,
       ) async {
-        // A space is a folder, not a repository, and this is where the
-        // difference is on screen.
         robot.seesTheSpaceIsIn('docs-in-repo');
       }),
       Step('the tree shows the folder, one level in', (TomRobot robot) async {
@@ -52,15 +50,12 @@ void main() {
       Step('including the files the editor cannot open', (
         TomRobot robot,
       ) async {
-        // Drawn, not hidden: a tree that left out the image a document links
-        // to would be describing a folder the user does not have.
         await robot.seesInTheTree(<String>['logo.svg']);
       }),
       Step('closing a folder hides what is inside it', (TomRobot robot) async {
         await robot.clickInTheTree('guides');
 
         robot.seesNotInTheTree('writing.md');
-        // And nothing else moved: the sibling folders are still there.
         await robot.seesInTheTree(<String>['commands.md']);
       }),
       Step('opening it again brings them back', (TomRobot robot) async {
@@ -76,8 +71,6 @@ void main() {
         await robot.seesTheOpenDocument('guides/writing.md');
       }),
       Step('and the preview renders what is in it', (TomRobot robot) async {
-        // The whole graph, end to end: a click reaches the disk, the text
-        // is parsed into blocks and the blocks are drawn.
         await robot.seesInThePreview('Writing');
       }),
       Step('and nothing is broken', (TomRobot robot) async {
@@ -107,8 +100,8 @@ void main() {
       Step('and nothing of git at all', (TomRobot robot) async {
         robot
           ..seesNotInTheTree('.git')
-          // Named from inside `.git/`: HEAD is there in every repository, so
-          // finding it would mean the walk went in.
+          // `HEAD` is inside every `.git/`, so finding it means the walk
+          // went in.
           ..seesNotInTheTree('HEAD')
           ..seesNothingBroken();
       }),

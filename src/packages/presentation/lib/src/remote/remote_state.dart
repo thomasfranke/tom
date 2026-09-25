@@ -7,29 +7,21 @@ import 'package:tom_presentation/src/remote/remote_action_enum.dart';
 
 part 'remote_state.freezed.dart';
 
-/// The states fetch, pull and push can leave behind.
-///
-/// **What git said is not here** — that is `SpaceSessionState.git`, which
-/// every one of these re-reads. This is only what the buttons need: whether
-/// one is running, and what the last one answered.
+/// The states fetch, pull and push can leave behind: whether one is
+/// running, and what the last one answered. What git said is
+/// `SpaceSessionState.git`, which every one of these re-reads.
 @freezed
 sealed class RemoteState with _$RemoteState {
   /// Nothing is running, and the last action said nothing worth keeping.
   const factory RemoteState.idle() = RemoteIdle;
 
-  /// [action] is in flight.
-  ///
-  /// Which one, not just *something*: the button that is working says so,
-  /// and the other two are disabled rather than all three going grey with
-  /// no explanation.
+  /// [action] is in flight — which one, so the working button can say so.
   const factory RemoteState.working(RemoteActionEnum action) = RemoteWorking;
 
   /// The push was refused because the remote moved first.
   ///
-  /// Its own state and not a failure among others, because it is the one
-  /// the product answers with a screen: somebody pushed first, nothing
-  /// local was lost, and the remedy is a pull
-  /// (`docs/product/git-workflow/push-pull/doc.md`).
+  /// Its own state, not a failure among others, because the product answers
+  /// it with a screen (`docs/product/git-workflow/push-pull/doc.md`).
   const factory RemoteState.rejected() = RemoteRejected;
 
   /// [action] did not finish, for a reason worth showing.

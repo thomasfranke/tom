@@ -9,12 +9,11 @@ part 'document_diff_value_object.freezed.dart';
 
 /// What changed between two versions of one document, block by block.
 ///
-/// Both parsed versions travel with the blocks because a removed block is
-/// rendered from the *old* document's scope — its link reference definitions
-/// are the ones that resolve its `[text][ref]`.
+/// Both parsed versions travel because a removed block is rendered from the
+/// *old* version's scope: its link reference definitions resolve its links.
 @freezed
 abstract class DocumentDiffValueObject with _$DocumentDiffValueObject {
-  /// Creates a diff.
+  /// A diff.
   const factory DocumentDiffValueObject({
     /// The version compared against: `HEAD`, a branch, a commit.
     required ParsedDocumentValueObject before,
@@ -31,11 +30,8 @@ abstract class DocumentDiffValueObject with _$DocumentDiffValueObject {
 
   const DocumentDiffValueObject._();
 
-  /// Whether the two versions say the same thing.
-  ///
-  /// What the preview asks before decorating anything: an unmodified
-  /// document shows no diff at all
-  /// (`docs/product/diff/rendered-diff/doc.md`).
+  /// Whether the two versions say the same thing; an unchanged document is
+  /// drawn with no diff at all (`docs/product/diff/rendered-diff/doc.md`).
   bool get isUnchanged =>
       blocks.every((DiffBlockValueObject block) => !block.isChange);
 }

@@ -135,9 +135,8 @@ void main() {
     test(
       'punctuation and case do not decide whether two entries pair',
       () async {
-        // A sentence gaining a clause is that sentence rewritten. Counting the
-        // full stop as part of the word made these two share nothing at all,
-        // and the preview drew a removal beside an addition.
+        // With the full stop counted as part of the word, these two share
+        // nothing.
         final List<TextEditDto> edits = await alignOf(
           <String>['Prose.'],
           <String>['Prose, rewritten.'],
@@ -148,9 +147,8 @@ void main() {
     );
 
     test('sharing exactly the threshold is enough to pair', () async {
-      // Two words each, one of them shared: 2 × 1 / (2 + 2) = 0.5, which is
-      // the default. The boundary is inclusive, and a short block is where
-      // it decides anything.
+      // Two words each, one shared: 2 × 1 / (2 + 2) = 0.5, the default
+      // threshold exactly.
       final List<TextEditDto> edits = await alignOf(
         <String>['gone one'],
         <String>['new one'],
@@ -175,8 +173,6 @@ void main() {
         <String>['keep', 'something else entirely', 'tail'],
       );
 
-      // Not `added` first: a reader follows a rewrite as the old text and
-      // then the new one, whichever order the algorithm reports them in.
       expect(spelled(edits), <String>[
         'equal 0->0',
         'removed 1->null',
@@ -187,9 +183,7 @@ void main() {
     });
 
     test('entries sharing no word are not paired, however short', () async {
-      // A thematic break respelled is a removal and an addition. Word
-      // overlap is the measure and `---` shares nothing with `***`: for a
-      // rule that is the whole of it, and pairing them would be a guess.
+      // `---` shares no word with `***`, so pairing them would be a guess.
       final List<TextEditDto> edits = await alignOf(
         <String>['keep', '---'],
         <String>['keep', '***'],

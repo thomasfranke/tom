@@ -17,9 +17,6 @@ mixin _$BlockValueObject {
 /// The first line of the block, zero-based and inclusive.
  int get startLine;/// The last line of the block, zero-based and inclusive.
  int get endLine;/// The document's own lines for that span, newline-joined.
-///
-/// A slice of the document rather than a second copy of it: raw text and
-/// structure without duplicated state.
  String get source;/// What kind of block it is.
  BlockKindEnum get kind;
 /// Create a copy of BlockValueObject
@@ -224,9 +221,6 @@ class _BlockValueObject extends BlockValueObject {
 /// The last line of the block, zero-based and inclusive.
 @override final  int endLine;
 /// The document's own lines for that span, newline-joined.
-///
-/// A slice of the document rather than a second copy of it: raw text and
-/// structure without duplicated state.
 @override final  String source;
 /// What kind of block it is.
 @override final  BlockKindEnum kind;

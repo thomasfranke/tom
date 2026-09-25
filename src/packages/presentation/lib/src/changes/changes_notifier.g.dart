@@ -8,33 +8,27 @@ part of 'changes_notifier.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Stages, unstages and commits — and writes what git says into the session.
+/// Stages, unstages and commits, and writes what git says into the session.
 ///
-/// **It re-reads rather than patches.** Every operation here changes what
-/// git would say, and nothing can predict the new answer: staging a deleted
-/// file, an editor saving underneath, a rebase in another terminal. So the
-/// status is read again after each one and written to the session, where the
-/// panel and the status bar both find it.
+/// It re-reads rather than patches: nothing can predict what git will say
+/// after an operation (a deleted file staged, an editor saving underneath,
+/// a rebase in another terminal), so every one ends in `status()` again.
 
 @ProviderFor(ChangesNotifier)
 final changesProvider = ChangesNotifierProvider._();
 
-/// Stages, unstages and commits — and writes what git says into the session.
+/// Stages, unstages and commits, and writes what git says into the session.
 ///
-/// **It re-reads rather than patches.** Every operation here changes what
-/// git would say, and nothing can predict the new answer: staging a deleted
-/// file, an editor saving underneath, a rebase in another terminal. So the
-/// status is read again after each one and written to the session, where the
-/// panel and the status bar both find it.
+/// It re-reads rather than patches: nothing can predict what git will say
+/// after an operation (a deleted file staged, an editor saving underneath,
+/// a rebase in another terminal), so every one ends in `status()` again.
 final class ChangesNotifierProvider
     extends $NotifierProvider<ChangesNotifier, ChangesState> {
-  /// Stages, unstages and commits — and writes what git says into the session.
+  /// Stages, unstages and commits, and writes what git says into the session.
   ///
-  /// **It re-reads rather than patches.** Every operation here changes what
-  /// git would say, and nothing can predict the new answer: staging a deleted
-  /// file, an editor saving underneath, a rebase in another terminal. So the
-  /// status is read again after each one and written to the session, where the
-  /// panel and the status bar both find it.
+  /// It re-reads rather than patches: nothing can predict what git will say
+  /// after an operation (a deleted file staged, an editor saving underneath,
+  /// a rebase in another terminal), so every one ends in `status()` again.
   ChangesNotifierProvider._()
     : super(
         from: null,
@@ -64,13 +58,11 @@ final class ChangesNotifierProvider
 
 String _$changesNotifierHash() => r'539fc399395843ad86cbe927267f18734e4ffa49';
 
-/// Stages, unstages and commits — and writes what git says into the session.
+/// Stages, unstages and commits, and writes what git says into the session.
 ///
-/// **It re-reads rather than patches.** Every operation here changes what
-/// git would say, and nothing can predict the new answer: staging a deleted
-/// file, an editor saving underneath, a rebase in another terminal. So the
-/// status is read again after each one and written to the session, where the
-/// panel and the status bar both find it.
+/// It re-reads rather than patches: nothing can predict what git will say
+/// after an operation (a deleted file staged, an editor saving underneath,
+/// a rebase in another terminal), so every one ends in `status()` again.
 
 abstract class _$ChangesNotifier extends $Notifier<ChangesState> {
   ChangesState build();

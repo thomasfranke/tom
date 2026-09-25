@@ -11,23 +11,16 @@ import 'process.dart';
 import 'rules.dart';
 import 'tests.dart';
 
-/// Formats every Dart file, failing if anything was not already formatted.
-///
-/// `--set-exit-if-changed` rather than a plain format: in a gate, "I fixed it
-/// for you" and "it was wrong" are the same event, and only the second one
-/// can fail a build.
+/// Formats every Dart file, failing if anything was not already formatted:
+/// in a gate, "I fixed it for you" is the wrong answer.
 Future<int> runFormat() async {
   announce('Format');
   return dart(['format', '--set-exit-if-changed', 'src', 'tool']);
 }
 
-/// Static analysis over the workspace and over the CLI itself.
-///
-/// Two passes, because they are two analysis contexts. `flutter analyze`
-/// resolves the workspace in `src/`; `tool/` is not in it and has no package
-/// of its own, so it is analysed on its own terms with its own
-/// `analysis_options.yaml` — which is why this file existed for a while
-/// formatted by the gate but never analysed by it.
+/// Static analysis over the workspace and over the CLI itself — two passes,
+/// because `tool/` is not in the workspace and is analysed on its own
+/// `analysis_options.yaml`.
 Future<int> runAnalyze() async {
   announce('Analyze — workspace');
   final workspace = await flutter(['analyze'], workingDirectory: srcDirectory);
@@ -39,12 +32,8 @@ Future<int> runAnalyze() async {
   return dart(['analyze', '--fatal-infos', 'tool']);
 }
 
-/// Everything the PR gate checks, in the order that fails cheapest first.
-///
-/// Formatting and analysis take seconds and catch the most common mistakes;
-/// the codegen gate and the suite take minutes. Stopping at the first failure
-/// is the point — a run that reports five failures caused by one of them
-/// wastes the time it spent finding the other four.
+/// Everything the PR gate checks, in the order that fails cheapest first;
+/// stopping at the first failure is the point.
 Future<int> runVerify() async {
   final steps = <String, Future<int> Function()>{
     'format': runFormat,
@@ -73,11 +62,8 @@ Future<int> runVerify() async {
 }
 
 /// Regenerates everything from scratch and fails if the result differs from
-/// what is committed.
-///
-/// Generated files are committed rather than gitignored, so drift here means
-/// what is checked in is not what the annotations actually produce — someone
-/// hand-edited a generated file, or changed a source and did not regenerate.
+/// what is committed: generated files are committed, so drift means someone
+/// hand-edited one or did not regenerate.
 Future<int> runCodegenGate() async {
   announce('Codegen gate');
 

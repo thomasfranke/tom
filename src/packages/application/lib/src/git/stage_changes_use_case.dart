@@ -5,14 +5,10 @@ import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// Moves whole files in and out of the index.
-///
-/// Both directions in one use case because they are one decision made twice:
-/// a row's checkbox stages or unstages the same path, and splitting them
-/// would put the same wiring in two files.
-///
-/// **Whole files only** — there is no hunk-level staging
+/// Whole files moved in and out of the index; there is no hunk-level staging
 /// (`docs/product/git-workflow/commit/doc.md`).
+///
+/// Both directions in one use case because a row's checkbox is one control.
 final class StageChangesUseCase with UseCase {
   /// Creates the use case.
   const StageChangesUseCase({
@@ -26,16 +22,13 @@ final class StageChangesUseCase with UseCase {
   @override
   final Observability observability;
 
-  /// Adds [paths] to [space]'s index.
-  ///
-  /// An empty list succeeds and does nothing: "stage the selection" with
-  /// nothing selected is not an error.
+  /// [paths] added to [space]'s index; an empty list succeeds and does nothing.
   Future<Result<void, AppFailure>> stage(
     SpaceEntity space,
     List<RepoRelativePathValueObject> paths,
   ) => guard(() => gitFor(space).stage(paths));
 
-  /// Takes [paths] back out, leaving the working tree alone.
+  /// [paths] taken back out of the index, the working tree left alone.
   Future<Result<void, AppFailure>> unstage(
     SpaceEntity space,
     List<RepoRelativePathValueObject> paths,

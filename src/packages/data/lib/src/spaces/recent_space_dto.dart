@@ -9,10 +9,7 @@ part 'recent_space_dto.freezed.dart';
 ///
 /// A real DTO by [Decision
 /// 21](../../../../../../docs/technical/decisions/021-dtos-and-daos-when-they-are-real.md)'s
-/// test: the store keeps strings, so a row is JSON, and JSON has no
-/// `DateTime` — `lastOpened` is text here and an instant on
-/// `RecentSpaceEntity`. It is not the entity with a different name; it is
-/// the shape the store forced.
+/// test: JSON has no `DateTime`, so `lastOpened` is text here.
 @freezed
 abstract class RecentSpaceDto with _$RecentSpaceDto {
   /// Creates a row.
@@ -31,8 +28,7 @@ abstract class RecentSpaceDto with _$RecentSpaceDto {
 
   /// [row] as a DTO, or null when it is not one.
   ///
-  /// Total on purpose: one malformed row must not cost the user the other
-  /// nine. A row missing a field or of the wrong shape entirely is dropped.
+  /// Total, so one malformed row does not cost the user the other nine.
   static RecentSpaceDto? fromRow(Object? row) {
     if (row is! Map<String, Object?>) {
       return null;

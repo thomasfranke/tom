@@ -1,29 +1,17 @@
 // How long a comment is allowed to be, and the ratchet that gets us there.
-//
-// The rule is two or three lines (`layers.md#inside-a-package`), and it is
-// not checkable — an exception that earns itself is a judgement. What is
-// checkable is runaway, and how much of it is left.
 library;
 
 import 'dart:io';
 
 import '../rule.dart';
 
-/// How many comment blocks are still over the ceiling.
-///
-/// A ratchet, not a target. The rewrite to "two or three lines" was done for
-/// the files each change touched and never for the rest of the repository,
-/// so a check that failed on all of them on day one would have been turned
-/// off on day one. This can only go down: every trim lowers it in a line
-/// that shows up in the diff, and nothing new is allowed in.
-const commentBudget = 48;
+/// How many comment blocks are still over the ceiling — a ratchet, not a
+/// target: it can only go down, every trim lowers it in the diff, and
+/// nothing new gets in.
+const commentBudget = 0;
 
-/// Past twelve lines, the paragraph belongs in `docs/technical/`.
-///
-/// The ceiling is the exception's ceiling, not the rule's: the two cases
-/// that earn extra lines are a rule with no other home and a trap worth an
-/// afternoon, and neither of them takes a page
-/// (`.ai/skills/tom-comments/SKILL.md`).
+/// Past twelve lines, the paragraph belongs in `docs/technical/`: the ceiling
+/// is the exception's, not the rule's (`.ai/skills/tom-comments/SKILL.md`).
 Iterable<Offence> commentsHaveACeiling(Directory root) sync* {
   const ceiling = 12;
   final comment = RegExp(r'^\s*//');

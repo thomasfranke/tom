@@ -48,7 +48,6 @@ void main() {
   });
 
   test('a refusal is passed through, not reported', () async {
-    // A commit that git refused is news for the panel, not a bug to report.
     git.answer = const Failure<void, GitFailure>(GitOperationFailed());
 
     final Result<void, AppFailure> result = await committing().commit(

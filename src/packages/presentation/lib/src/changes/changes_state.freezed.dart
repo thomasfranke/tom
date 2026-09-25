@@ -254,21 +254,14 @@ class ChangesReady implements ChangesState {
   const ChangesReady({this.message = '', this.isBusy = false, this.failure});
   
 
-/// The commit message being written.
-///
-/// Panel-local on purpose: an unsent message is a draft, and nothing
-/// outside this panel has an opinion about it.
+/// The commit message being written — a draft, so panel-local.
 @JsonKey() final  String message;
 /// Whether a stage, an unstage or a commit is in flight.
 ///
 /// One flag for all three: git is serialized per space underneath, so a
-/// second operation would queue behind the first anyway, and a panel
-/// that let one be started twice would just be lying about it.
+/// second operation would only queue behind the first.
 @JsonKey() final  bool isBusy;
 /// Why the last operation did not land, or null when it did.
-///
-/// A commit that failed silently is as bad as a save that did: the work
-/// is still only in the working tree.
  final  AppFailure? failure;
 
 /// Create a copy of ChangesState

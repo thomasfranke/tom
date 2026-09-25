@@ -1,5 +1,5 @@
-// The escape sequences themselves. Not a theme: these mean the same thing
-// under every palette, and a theme is what decides which of them to use.
+// The escape sequences themselves, which mean the same thing under every
+// palette.
 library;
 
 /// ANSI SGR sequences, and the cursor moves the screens redraw with.
@@ -22,9 +22,8 @@ abstract final class Ansi {
   static const grey = '\x1B[90m';
   static const darkGrey = '\x1B[37m';
 
-  /// Erase from the cursor to the end of the line. Every rendered row ends
-  /// with the previous frame's leftovers cleared, which is what allows a
-  /// shorter row to overwrite a longer one.
+  /// Erase from the cursor to the end of the line, so a shorter row can
+  /// overwrite a longer one.
   static const clearLine = '\x1B[K';
 
   static const hideCursor = '\x1B[?25l';
@@ -34,17 +33,12 @@ abstract final class Ansi {
   static const clearScreen = '\x1B[2J';
   static const home = '\x1B[H';
 
-  /// The alternate screen buffer: a second, empty screen the terminal swaps
-  /// in, and swaps back out untouched on exit.
-  ///
-  /// It is what makes a screen full screen and leaves no trace in the
-  /// scrollback afterwards — which is also why anything worth keeping, such
-  /// as a test run's output, has to be printed with the buffer switched off.
+  /// The alternate screen buffer, swapped back out untouched on exit — so
+  /// anything worth keeping has to be printed with it switched off.
   static const enterFullScreen = '\x1B[?1049h';
   static const leaveFullScreen = '\x1B[?1049l';
 
-  /// Move the cursor up [n] rows, to rewind to the top of the rendered block
-  /// so the next frame overwrites it instead of appending.
+  /// Move the cursor up [n] rows, to rewind over the rendered block.
   static String up(int n) => n > 0 ? '\x1B[${n}A' : '';
 
   /// Move the cursor down [n] rows.

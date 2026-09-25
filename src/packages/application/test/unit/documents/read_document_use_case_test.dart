@@ -38,8 +38,6 @@ void main() {
   });
 
   test('the repository is built for the space it was asked about', () async {
-    // A repository is per space, and handing the wrong one a relative path
-    // would read a file from another folder.
     final List<SpaceEntity> asked = <SpaceEntity>[];
 
     await ReadDocumentUseCase(

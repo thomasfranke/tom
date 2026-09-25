@@ -7,9 +7,8 @@ import 'package:tom_ui/src/theme/tom_colors.dart';
 
 /// A 30×20 outline saying which milestone something arrives in.
 ///
-/// The design hangs one beside every control that is drawn before it works —
-/// *Clone from URL* on Home, the search field in the explorer — because a
-/// control that appears later moves everything under it.
+/// Hung beside every control drawn before it works, because a control that
+/// appears later moves everything under it.
 class MilestoneChipWidget extends StatelessWidget {
   /// Creates a chip reading [label].
   const MilestoneChipWidget({required this.label, super.key});

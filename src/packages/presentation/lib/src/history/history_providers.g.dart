@@ -10,16 +10,16 @@ part of 'history_providers.dart';
 // ignore_for_file: type=lint, type=warning
 /// Reads the commits that touched one document.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use cases it needs and cannot see that a process answers them.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 @ProviderFor(readFileHistory)
 final readFileHistoryProvider = ReadFileHistoryProvider._();
 
 /// Reads the commits that touched one document.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use cases it needs and cannot see that a process answers them.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 final class ReadFileHistoryProvider
     extends
@@ -31,8 +31,8 @@ final class ReadFileHistoryProvider
     with $Provider<ReadFileHistoryUseCase> {
   /// Reads the commits that touched one document.
   ///
-  /// Declared here and **overridden by the composition root**: this package
-  /// names the use cases it needs and cannot see that a process answers them.
+  /// Declared here and overridden by the composition root, which is how every
+  /// use case reaches this package.
   ReadFileHistoryProvider._()
     : super(
         from: null,

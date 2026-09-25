@@ -38,8 +38,6 @@ void main() {
   setUp(() {
     spaces = _Spaces();
     container = ProviderContainer(
-      // Exactly what the composition root does, which is what makes this a
-      // test of the notifier rather than of the wiring.
       overrides: <Override>[
         listSpaceEntriesProvider.overrideWithValue(
           ListSpaceEntriesUseCase(
@@ -52,11 +50,8 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  /// Starts the tree, and answers its first state.
-  ///
-  /// Listening is what starts it: a provider nobody listens to is disposed
-  /// as soon as it is read, and the first thing this notifier does happens
-  /// in a microtask after that.
+  /// Starts the tree, and answers its first state; listening is what starts
+  /// it, since a provider nobody listens to is disposed as soon as it is read.
   FileTreeState start() {
     container.listen<FileTreeState>(fileTreeProvider, (_, _) {});
     return container.read(fileTreeProvider);
@@ -84,8 +79,6 @@ void main() {
 
   group('with no space open', () {
     test('there is nothing to list, and nothing is asked', () async {
-      // Not a stalled load: the shell can be built with no space open, and
-      // the panel says so by showing nothing rather than by spinning.
       expect(await settled(), isA<FileTreeInitial>());
       expect(spaces.listings, isEmpty);
     });
@@ -124,8 +117,6 @@ void main() {
     test(
       'a folder that cannot be read is a failure, not an empty tree',
       () async {
-        // An empty tree would say the space holds nothing, which is a
-        // different claim from "the folder could not be read".
         spaces.answer =
             const Failure<List<SpaceEntryValueObject>, SpaceFailure>(
               SpaceFolderMissing('/code/app/docs'),
@@ -152,8 +143,6 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(spaces.listings, <SpaceEntity>[docs, other]);
-      // The closed folder went with the space it belonged to: a set of paths
-      // from another space would hide folders that happen to share a name.
       expect(
         (container.read(fileTreeProvider) as FileTreeReady).collapsed,
         isEmpty,
@@ -185,8 +174,6 @@ void main() {
     });
 
     test('closing a folder does not re-read the space', () {
-      // The tree watches the space, not the session: a folder read again on
-      // every click would put the disk in the way of a chevron.
       notifier().activate(entry('guides', SpaceEntryTypeEnum.directory));
 
       expect(spaces.listings, <SpaceEntity>[docs]);
@@ -202,8 +189,6 @@ void main() {
     });
 
     test('showing a document does not re-read the space', () {
-      // The reason the notifier watches `session.space` and not the session:
-      // opening a document must not send the tree back to the disk.
       notifier().activate(entry('index.md', SpaceEntryTypeEnum.file));
 
       expect(spaces.listings, <SpaceEntity>[docs]);
@@ -211,16 +196,12 @@ void main() {
     });
 
     test('a file the editor cannot open does nothing', () {
-      // The tree shows every file the space holds; the editor opens only
-      // markdown (docs/product/navigation/file-tree/doc.md).
       notifier().activate(entry('logo.svg', SpaceEntryTypeEnum.file));
 
       expect(container.read(spaceSessionProvider)?.openDocument, isNull);
     });
 
     test('a link does nothing, whatever it is named', () {
-      // The listing did not follow it, so nothing knows what is on the
-      // other side — or whether there is one.
       notifier().activate(entry('elsewhere', SpaceEntryTypeEnum.link));
 
       expect(container.read(spaceSessionProvider)?.openDocument, isNull);
@@ -228,8 +209,6 @@ void main() {
   });
 
   test('a folder cannot be closed before the space has been read', () {
-    // Nothing to toggle, and no set of closed folders to invent: the state
-    // stays exactly what it was.
     final FileTreeState before = start();
 
     notifier().activate(entry('guides', SpaceEntryTypeEnum.directory));

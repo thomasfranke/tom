@@ -13,8 +13,8 @@ void main() {
   const String unit = GitClient.unitSeparator;
   const String record = GitClient.recordSeparator;
 
-  /// What git actually writes: a record separator, then a newline. The
-  /// second field is `*` for the checked-out branch and a space for the rest.
+  /// A record as git writes it: the separator, then a newline; `*` or a space
+  /// in the second field.
   String branches(List<String> records) =>
       records.map((String r) => '$r$record').join('\n');
 

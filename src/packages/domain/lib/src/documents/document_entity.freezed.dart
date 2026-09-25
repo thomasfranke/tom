@@ -14,13 +14,11 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DocumentEntity {
 
-/// Where the file is, relative to the space root; the identity of the
-/// document.
+/// Where the file is, relative to the space root; the document's identity.
  SpaceRelativePathValueObject get path;/// The raw markdown source, exactly as it was read.
 ///
-/// Never normalized on the way in: a document written back with its line
-/// endings or its trailing newline changed produces a diff the user did
-/// not make, which is the one thing this product cannot do.
+/// Never normalized: a line ending or trailing newline changed on the way
+/// through is a diff the user did not make.
  String get content;
 /// Create a copy of DocumentEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -217,14 +215,12 @@ class _DocumentEntity extends DocumentEntity {
   const _DocumentEntity({required this.path, required this.content}): super._();
   
 
-/// Where the file is, relative to the space root; the identity of the
-/// document.
+/// Where the file is, relative to the space root; the document's identity.
 @override final  SpaceRelativePathValueObject path;
 /// The raw markdown source, exactly as it was read.
 ///
-/// Never normalized on the way in: a document written back with its line
-/// endings or its trailing newline changed produces a diff the user did
-/// not make, which is the one thing this product cannot do.
+/// Never normalized: a line ending or trailing newline changed on the way
+/// through is a diff the user did not make.
 @override final  String content;
 
 /// Create a copy of DocumentEntity

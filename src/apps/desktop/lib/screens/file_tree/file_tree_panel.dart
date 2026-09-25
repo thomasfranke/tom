@@ -11,17 +11,10 @@ import 'package:tom_presentation/tom_presentation.dart';
 
 /// The file tree, and the search field that will sit above it in M2.
 ///
-/// Registered by `CoreModuleImpl` through the same `PanelDescriptor` a
-/// stranger's module would use, and it draws its own caption because the
-/// shell draws no panel chrome.
-///
-/// **It shows everything the space holds** and opens only markdown
-/// (`docs/product/navigation/file-tree/doc.md`). Hiding `.git/` is not this
-/// widget's doing — the walk never descends into it, so there is nothing
-/// here to filter.
-///
-/// A humble widget: what a click means and which document is open live in
-/// [FileTreeNotifier] and the session, so everything here is layout.
+/// Shows everything the space holds and opens only markdown
+/// (`docs/product/navigation/file-tree/doc.md`); `.git/` is absent because
+/// the walk never descends into it, not because anything here filters.
+/// Layout only — what a click means lives in [FileTreeNotifier].
 class FileTreePanel extends ConsumerWidget {
   /// Creates the panel.
   const FileTreePanel({super.key});
@@ -32,9 +25,8 @@ class FileTreePanel extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        // Each gap is written as the subtraction of two of the design's own
-        // numbers: arithmetic on screen cannot drift from the drawing
-        // quietly, and a result typed by hand can.
+        // Each gap is a subtraction of the design's own numbers, so it cannot
+        // drift from the drawing the way a hand-typed result can.
         const SizedBox(height: FileTreeDesign.captionTop),
         const FileTreeCaptionWidget(),
         const SizedBox(

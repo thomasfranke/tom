@@ -51,10 +51,6 @@ void main() {
   });
 
   group('an expected failure stays expected', () {
-    // The distinction the whole use case turns on: a repository that
-    // *reports* has not thrown, so nothing here may relabel it. Home shows
-    // "that folder is not inside a Git repository"; it must never show "an
-    // unexpected error occurred".
     test('a folder outside any repository is passed through', () async {
       final Result<SpaceEntity, AppFailure> result = await openingWith(
         const Failure<SpaceEntity, AppFailure>(GitNotARepository('/loose')),
@@ -78,8 +74,6 @@ void main() {
     });
 
     test('and nothing is reported to observability', () async {
-      // Reporting an expected failure would fill the log with the product
-      // working correctly, and hide the one entry that mattered.
       await openingWith(
         const Failure<SpaceEntity, AppFailure>(GitNotARepository('/loose')),
       ).open('/loose');
@@ -116,8 +110,6 @@ void main() {
 
   group('when the list cannot be written', () {
     test('the space still opens', () async {
-      // A preferences file that cannot be written is not a reason to refuse
-      // a session. Everything the recent list holds is a convenience.
       recents.breaks = true;
 
       final Result<SpaceEntity, AppFailure> result = await openingWith(
@@ -128,9 +120,6 @@ void main() {
     });
 
     test('and nothing is reported as unexpected', () async {
-      // The repository reports rather than throws, so the try/catch must
-      // never see it — an entry in the log here would be the product
-      // working correctly.
       recents.breaks = true;
 
       await openingWith(
@@ -222,10 +211,8 @@ final class _ThrowingSpaces implements SpaceRepository {
 final class _Recents implements RecentSpacesRepository {
   final List<SpaceEntity> remembered = <SpaceEntity>[];
 
-  /// Whether the store underneath is broken.
-  ///
-  /// It still reports success, because that is what the contract says: a
-  /// broken store costs the list, not the session.
+  /// Whether the store underneath is broken; it still reports success, as
+  /// the contract says.
   bool breaks = false;
 
   @override

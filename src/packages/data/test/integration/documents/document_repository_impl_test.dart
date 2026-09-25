@@ -1,9 +1,5 @@
-/// The document and space repositories against real disk.
-///
-/// The unit tests beside these prove the translation with doubles. This
-/// proves the stack agrees with a real filesystem: what `dart:io` does with
-/// a folder that does not exist, with bytes that are not text, and with a
-/// space that is a folder inside a repository rather than the repository.
+/// The document and space repositories against a real disk, which is the only
+/// thing that says what `dart:io` does with a missing folder or non-text bytes.
 library;
 
 import 'dart:convert';
@@ -45,10 +41,9 @@ void main() {
 
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('tom_documents_');
-    // Resolved, because the macOS system temporary directory is a symlink
-    // and a space must compare equal to the paths a listing reports.
+    // Resolved, because the macOS temporary directory is a symlink and a
+    // space must compare equal to the paths a listing reports.
     repositoryRoot = tempDir.resolveSymbolicLinksSync();
-    // The normal case: the user opened `docs/` inside a repository.
     root = '$repositoryRoot/docs';
     Directory(root).createSync();
     space = SpaceEntity(
@@ -98,10 +93,8 @@ void main() {
     });
 
     test('and the whole chain reaches the diagnostics', () async {
-      // Two links, one per vocabulary crossed: what the product says and
-      // what the capability said. The operating system's own words are not a
-      // third link — an adapter keeps nothing of its own. The path the user
-      // sees is space-relative; the absolute one is further down.
+      // Two links, one per vocabulary crossed; an adapter keeps nothing of
+      // its own.
       final AppFailure failure = failureOf(
         await documents.read(SpaceRelativePathValueObject('missing.md')),
       );
@@ -112,8 +105,7 @@ void main() {
     });
 
     test('a file that is not text is refused rather than decoded', () async {
-      // Latin-1 bytes that are not valid UTF-8. Opening this with
-      // replacement characters would destroy the file on the next save.
+      // Latin-1 bytes that are not valid UTF-8.
       File('$root/binary.md').writeAsBytesSync(<int>[0xff, 0xfe, 0x00]);
 
       expect(
@@ -129,7 +121,6 @@ void main() {
     });
 
     test('a path outside the space cannot be spelled', () async {
-      // The type is the guard: there is no way to ask for `../secrets.md`.
       expect(
         () => SpaceRelativePathValueObject('../secrets.md'),
         throwsArgumentError,
@@ -152,7 +143,6 @@ void main() {
     });
 
     test('creates the folders on the way', () async {
-      // Saving into a folder the user just named is a create.
       valueOf(
         await documents.write(
           DocumentEntity(

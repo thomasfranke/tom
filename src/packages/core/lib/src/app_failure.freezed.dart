@@ -14,8 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UnexpectedFailure {
 
-/// What was caught, as text. For diagnostics — never parsed, never
-/// matched.
+/// What was caught, as text; never parsed, never matched.
  String get description;/// Nothing, in practice: what threw was not a failure to begin with.
  AppFailure? get cause;
 /// Create a copy of UnexpectedFailure
@@ -213,8 +212,7 @@ class _UnexpectedFailure implements UnexpectedFailure {
   const _UnexpectedFailure(this.description, {this.cause});
   
 
-/// What was caught, as text. For diagnostics — never parsed, never
-/// matched.
+/// What was caught, as text; never parsed, never matched.
 @override final  String description;
 /// Nothing, in practice: what threw was not a failure to begin with.
 @override final  AppFailure? cause;

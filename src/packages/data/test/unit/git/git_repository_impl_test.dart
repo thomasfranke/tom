@@ -1,10 +1,5 @@
-/// [GitRepositoryImpl] against a recorded [GitClient].
-///
-/// Unit, not integration: what this class does is translate — arguments one
-/// way, text and failures the other. A real repository would exercise git,
-/// which `tom_infra` already covers, and would make it hard to ask what
-/// happens when git reports a failure mode this machine cannot produce on
-/// demand.
+/// [GitRepositoryImpl] against a recorded [GitClient], because a real git
+/// cannot produce every failure mode on demand.
 library;
 
 import 'package:test/test.dart';
@@ -160,8 +155,6 @@ void main() {
     });
 
     test('contentAt hands the file back byte for byte', () async {
-      // Not parsed: a document rewritten on the way through would diff
-      // against itself, which is the one thing this product cannot do.
       client.text = '# Title\r\n\r\nBody\n\n';
 
       expect(
@@ -258,9 +251,6 @@ void main() {
 
     test('the machine\'s words travel as the cause, never in the '
         'variant', () async {
-      // The whole shape of the rule: a domain failure is what the product
-      // says, and the command line, the exit code and the stderr stay in the
-      // capability's failure underneath it.
       const GitClientCommandFailed reported = GitClientCommandFailed(
         'git commit',
         1,
@@ -272,8 +262,8 @@ void main() {
       expect(failure.cause, same(reported));
       expect(failure.chain, hasLength(2));
       expect(failure.diagnostics, contains('nothing to commit'));
-      // And the variant holds nothing *but* the cause: equality against one
-      // built from the cause alone fails the moment a field is added back.
+      // Equality against one built from the cause alone fails the moment a
+      // field is added back.
       expect(failure, const GitOperationFailed(cause: reported));
     });
 
@@ -284,9 +274,6 @@ void main() {
     });
 
     test('a failure from infrastructure never reaches the caller', () async {
-      // The point of the translation: no `GitClientFailure` may cross this
-      // boundary, or the UI would be switching over a package it is not
-      // supposed to know.
       expect(
         await translationOf(const GitClientExecutableNotFound()),
         isNot(isA<GitClientFailure>()),

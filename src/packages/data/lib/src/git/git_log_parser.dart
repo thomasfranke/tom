@@ -4,26 +4,19 @@ library;
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_infra/tom_infra.dart';
 
-/// Reads what `GitClient.log` returned.
+/// The reader of what [GitClient.log] returned, in that format and with its
+/// separators.
 ///
-/// The separators come from [GitClient] rather than being spelled again
-/// here: the format is that contract's promise, and two copies of it drift
-/// the day someone changes one.
-///
-/// **Total, and deliberately so.** A record whose sha or date it cannot read
-/// is skipped — a history panel missing one entry is a smaller failure than
-/// a history panel that will not open.
+/// Total: a record whose sha or date it cannot read is skipped, because a
+/// history missing one entry is smaller than one that will not open.
 final class GitLogParser {
-  /// Creates a parser.
-  ///
-  /// Stateless, so one instance serves the whole app
-  /// (`docs/technical/flows.md#wiring-three-lifetimes`).
+  /// A stateless parser, so one instance serves the whole app.
   const GitLogParser();
 
-  /// How many fields `GitClient.log` promises per commit.
+  /// How many fields [GitClient.log] promises per commit.
   static const int _fieldCount = 6;
 
-  /// Reads [log] into commits, most recent first, as git ordered them.
+  /// [log] as commits, most recent first, as git ordered them.
   List<CommitEntity> parse(String log) => <CommitEntity>[
     for (final String record in log.split(GitClient.recordSeparator))
       if (_parseRecord(record) case final CommitEntity commit) commit,
@@ -31,13 +24,10 @@ final class GitLogParser {
 
   /// One record: sha, author name, author email, ISO date, subject, body.
   ///
-  /// The record is trimmed on the left because git writes a newline after
-  /// each one, which lands at the head of the next; the sha that follows it
-  /// is hexadecimal, so nothing of the record is lost.
-  ///
-  /// The body is trimmed on the right only: `%b` ends with a newline git
-  /// puts there rather than one the author typed. Why the left side is never
-  /// touched is the type's own rule, on [CommitEntity.body].
+  /// Trimmed on the left because git writes a newline after each record that
+  /// lands at the head of the next. The body is trimmed on the right only:
+  /// `%b` ends with git's newline, and the left side is [CommitEntity.body]'s
+  /// rule.
   CommitEntity? _parseRecord(String record) {
     final List<String> fields = record.trimLeft().split(
       GitClient.unitSeparator,
@@ -59,13 +49,10 @@ final class GitLogParser {
     );
   }
 
-  /// `%aI` — a strict ISO 8601 instant — into an instant *and* its offset.
+  /// `%aI`, a strict ISO 8601 instant, as an instant and its offset.
   ///
-  /// `DateTime.tryParse` alone would not do: it reads the offset, applies it,
-  /// and throws it away, so `2026-09-20T01:44:01-03:00` comes back as
-  /// `04:44:01Z` and the author's Saturday night becomes the reader's Sunday
-  /// morning. The offset is read off the tail of the text instead, which is
-  /// the only place it still exists.
+  /// The offset is read off the tail of the text because `DateTime.tryParse`
+  /// applies it and throws it away.
   CommitDateValueObject? _parseDate(String value) {
     final DateTime? utc = DateTime.tryParse(value);
     if (utc == null) {

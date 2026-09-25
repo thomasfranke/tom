@@ -28,8 +28,6 @@ void main() {
     recents = _Recents();
     const _Observability observability = _Observability();
     container = ProviderContainer(
-      // Exactly what the composition root does, which is what makes this a
-      // test of the notifier rather than of the wiring.
       overrides: <Override>[
         openSpaceProvider.overrideWithValue(
           OpenSpaceUseCase(
@@ -55,12 +53,9 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  /// Starts Home, and answers its first state.
-  ///
-  /// Listening is what starts it, and it is done here rather than in
-  /// `setUp` so a test can arrange what the repositories hold first: a
-  /// provider nobody listens to is disposed as soon as it is read, and the
-  /// first thing this notifier does happens in a microtask after that.
+  /// Starts Home, and answers its first state; listening is what starts it,
+  /// and it is done here rather than in `setUp` so a test can arrange the
+  /// repositories first.
   HomeState start() {
     container.listen<HomeState>(homeProvider, (_, _) {});
     return container.read(homeProvider);
@@ -77,9 +72,6 @@ void main() {
 
   group('arriving', () {
     test('it starts by reading the list, not by waiting to be asked', () {
-      // Home *is* the list; a screen offering to load its own content would
-      // be asking the user to do the app's work. So the very first state is
-      // already "reading it", before anyone has pressed anything.
       expect(start(), isA<HomeLoading>());
     });
 
@@ -92,16 +84,12 @@ void main() {
     });
 
     test('an empty list is a state, not an error', () async {
-      // The first run.
       expect((await settled() as HomeReady).recents, isEmpty);
     });
   });
 
   group('opening a folder', () {
     test('a space that opened is written to the session', () async {
-      // Not to Home's own state: which space is open is what the whole
-      // window is built on, so it lives in one place (Decision 9). Home
-      // stays on `loading` and goes away with it.
       await settled();
       spaces.answer = Success<SpaceEntity, AppFailure>(opened);
 
@@ -112,7 +100,6 @@ void main() {
     });
 
     test('and no document is showing yet', () async {
-      // The file tree is on screen and nothing has been clicked.
       await settled();
       spaces.answer = Success<SpaceEntity, AppFailure>(opened);
 
@@ -122,9 +109,6 @@ void main() {
     });
 
     test('a folder outside a repository keeps the failure itself', () async {
-      // Not a message: Home shows this one as its own screen with its own
-      // explanation, and a string would have thrown away which failure it
-      // was (docs/product/home/doc.md).
       await settled();
       spaces.answer = const Failure<SpaceEntity, AppFailure>(
         GitNotARepository('/loose'),
@@ -137,8 +121,6 @@ void main() {
     });
 
     test('and the recent list is still offered beside it', () async {
-      // Whatever went wrong with one folder, the others are still there to
-      // click.
       recents.stored = <RecentSpaceEntity>[remembered];
       await settled();
       spaces.answer = const Failure<SpaceEntity, AppFailure>(

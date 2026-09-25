@@ -17,12 +17,9 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// Choose a branch, start one, or answer for the unsaved buffer first.
 ///
-/// **Three faces, one surface.** Which one is drawn is the state's to say,
-/// not this widget's to remember — a popover holding its own idea of what it
-/// is showing is how it comes to disagree with what the notifier is doing.
-///
-/// A click outside and Escape both close it, and closing is *cancel*: no
-/// half-typed name is kept and no question is left standing.
+/// Three faces, one surface, and which is drawn is the state's to say rather
+/// than this widget's to remember. Closing is cancel: no half-typed name is
+/// kept and no question is left standing.
 class BranchesPopoverWidget extends ConsumerWidget {
   /// Creates the surface, calling [onDismissed] when it should go away.
   const BranchesPopoverWidget({required this.onDismissed, super.key});
@@ -121,9 +118,8 @@ class _ListWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
     final List<BranchEntity> visible = state.visible;
-    // The height the wireframe fixes belongs to *this* face: a repository
-    // with forty branches scrolls, and the other two faces are as tall as
-    // what they have to say.
+    // The height the wireframe fixes belongs to this face alone; the other
+    // two are as tall as what they say.
     return ConstrainedBox(
       constraints: const BoxConstraints(
         maxHeight: BranchesDesign.popoverMaxHeight,
@@ -193,9 +189,7 @@ class _CreateWidget extends ConsumerWidget {
           const BranchesFieldWidget(hint: 'New branch name'),
           const SizedBox(height: 8),
           Text(
-            // What it branches from, said before rather than discovered
-            // after: a branch starts at the current HEAD and the app moves
-            // onto it immediately
+            // What it branches from, said before rather than discovered after
             // (`docs/product/git-workflow/branch-switch/doc.md`).
             state.rejected ?? 'Starts from $from, and switches to it.',
             style: TextStyle(

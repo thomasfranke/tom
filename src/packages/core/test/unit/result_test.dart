@@ -1,8 +1,8 @@
 import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 
-/// A failure vocabulary of its own, so the tests can prove the *failure* side
-/// of a switch is exhaustive too — which is the whole reason `F` exists.
+/// A sealed vocabulary of its own, so the failure side of a switch is
+/// exhaustive too.
 sealed class TestFailure implements AppFailure {}
 
 final class Broke implements TestFailure {
@@ -29,16 +29,13 @@ final class Louder implements AppFailure {
 
 void main() {
   group('Result', () {
-    // The property the whole error model rests on: this function compiles
-    // without a default branch. If Result stopped being sealed, it would not.
+    // Compiles without a default branch only while Result is sealed.
     String describe(Result<int, TestFailure> result) => switch (result) {
       Success<int, TestFailure>(value: final int value) => 'ok $value',
       Failure<int, TestFailure>() => 'failed',
     };
 
-    // And this one: the failure is typed, so the inner switch needs no
-    // catch-all either. Before `F`, every translation carried one it
-    // documented as unreachable.
+    // The failure is typed, so the inner switch needs no catch-all either.
     String why(Result<int, TestFailure> result) => switch (result) {
       Success<int, TestFailure>() => 'none',
       Failure<int, TestFailure>(failure: final TestFailure failure) =>
@@ -60,7 +57,6 @@ void main() {
     });
 
     test('a narrow failure widens to AppFailure with no conversion', () {
-      // Covariance in F, which is what lets a use case widen for free.
       const Result<int, TestFailure> narrow = Failure<int, TestFailure>(
         Broke(),
       );
@@ -242,10 +238,8 @@ void main() {
     });
 
     test('diagnostics prints each link once, however deep the chain', () {
-      // A generated `toString` prints the cause inside its own text, so a
-      // chain joined naively would repeat the bottom failure once per
-      // ancestor. `UnexpectedFailure` is the one Freezed failure this
-      // package holds, which makes it the real thing rather than a stand-in.
+      // `UnexpectedFailure` is the one Freezed failure this package holds, so
+      // its generated `toString` is the real thing rather than a stand-in.
       const UnexpectedFailure failure = UnexpectedFailure(
         'top',
         cause: UnexpectedFailure('middle', cause: UnexpectedFailure('bottom')),
@@ -276,8 +270,6 @@ void main() {
     });
 
     test('is the bottom of a chain', () {
-      // It is what the guard produces from an exception, and an exception was
-      // not a failure that anything translated.
       expect(describing('boom').cause, isNull);
     });
   });

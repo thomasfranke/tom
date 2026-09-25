@@ -11,18 +11,12 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// Save, discard, or stay — asked before the switch, never after.
+/// Save, discard, or stay — asked before the switch, never after
+/// (`docs/product/git-workflow/branch-switch/doc.md`).
 ///
-/// **Switching is blocked while this is on screen** rather than the edit
-/// being lost and reported
-/// (`docs/product/git-workflow/branch-switch/doc.md`). It is drawn in the
-/// popover that was being used rather than as a dialog over the window: the
-/// question belongs to the control that raised it, and [Decision
-/// 6](../../../../../../../docs/technical/decisions/006-no-navigation-package.md)
-/// keeps `Navigator` for the cases that genuinely stop everything.
-///
-/// *Cancel* is also what closing the popover means, so there is no way to
-/// leave the question standing behind a surface nobody can see.
+/// Drawn in the popover that raised it, not a dialog
+/// ([Decision 6](../../../../../../../docs/technical/decisions/006-no-navigation-package.md));
+/// closing it is *stay*, so no question stands behind a surface nobody sees.
 class BranchesUnsavedWidget extends ConsumerWidget {
   /// Creates the question about moving to [target].
   const BranchesUnsavedWidget({required this.target, super.key});
@@ -57,9 +51,8 @@ class BranchesUnsavedWidget extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Text(
-          // Named, not "the open document": the one thing a text editor may
-          // never do is lose work quietly, and half of not doing it is
-          // saying which file is at stake.
+          // Named, because half of not losing work quietly is saying which
+          // file is at stake.
           '${document?.value ?? 'The open document'} has unsaved changes.',
           style: TextStyle(
             fontSize: BranchesDesign.label,

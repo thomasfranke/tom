@@ -67,7 +67,7 @@ void main() {
   testWidgets('it offers the three modes and no fourth', (
     WidgetTester tester,
   ) async {
-    // There is no WYSIWYG, now or later (Decision 3).
+    // No WYSIWYG (Decision 3).
     await pumpBar(tester);
 
     expect(find.text('Source'), findsOneWidget);
@@ -76,7 +76,6 @@ void main() {
   });
 
   testWidgets('a space opens in split', (WidgetTester tester) async {
-    // The product's own claim: source and preview belong side by side.
     await pumpBar(tester);
 
     expect(container.read(spaceSessionProvider)?.mode, DocumentModeEnum.split);
@@ -85,8 +84,8 @@ void main() {
   testWidgets('choosing a mode writes it to the session', (
     WidgetTester tester,
   ) async {
-    // The bar names no panel: what it writes is the mode, and a descriptor
-    // is what says which panels that mode includes.
+    // The bar names no panel; which panels a mode includes is the
+    // descriptor's answer.
     await pumpBar(tester);
 
     await tester.tap(find.text('Preview'));
@@ -102,7 +101,6 @@ void main() {
     testWidgets('is absent while the buffer and the file agree', (
       WidgetTester tester,
     ) async {
-      // A mark that is always there is a mark nobody reads.
       await pumpBar(tester, document: writing);
 
       expect(find.text('Unsaved'), findsNothing);
@@ -133,8 +131,8 @@ void main() {
     testWidgets('a refused save says so in different words', (
       WidgetTester tester,
     ) async {
-      // A save that fails silently is the one thing a text editor may never
-      // do: the buffer holds work the file does not.
+      // A refused save is different news: the buffer holds work the file
+      // does not.
       documents.refusal = Failure<void, DocumentFailure>(
         DocumentPermissionDenied(writing.value),
       );

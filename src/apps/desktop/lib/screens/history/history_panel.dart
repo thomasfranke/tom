@@ -13,14 +13,9 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// Who changed this document, when, and what they called it.
 ///
-/// **Scoped to the open document, not to the repository**
-/// (`docs/product/git-workflow/file-history/doc.md`) — which is the whole
-/// difference between this panel and a log, and why it says so under the
-/// list rather than leaving somebody to wonder why a busy repository has
-/// four entries.
-///
-/// Clicking an entry shows that version *rendered*; the preview is what
-/// draws it and the bar above the document is what offers the way back.
+/// Scoped to the open document, not the repository, and says so under the
+/// list (`docs/product/git-workflow/file-history/doc.md`). Clicking an
+/// entry renders that version in the preview.
 class HistoryPanel extends ConsumerWidget {
   /// Creates the panel.
   const HistoryPanel({super.key});
@@ -86,7 +81,6 @@ class HistoryPanel extends ConsumerWidget {
           const HistoryNoteWidget('Git has no record of this file yet.'),
         HistoryReady(commits: final List<CommitEntity> commits) =>
           ListView.builder(
-            // The design's pitch, and what lets the list build lazily.
             itemExtent: HistoryDesign.entryPitch,
             itemCount: commits.length,
             itemBuilder: (BuildContext context, int index) =>
@@ -99,8 +93,8 @@ class HistoryPanel extends ConsumerWidget {
 
   /// What to say about a repository that would not answer.
   ///
-  /// A catch-all, because this switches over [AppFailure] itself: whatever
-  /// went wrong, the panel says something rather than staying blank.
+  /// A catch-all, because this switches over [AppFailure] itself and the
+  /// panel must say something whatever went wrong.
   static String _explain(AppFailure failure) => switch (failure) {
     GitNotInstalled() => 'TOM could not find git on this machine.',
     GitNotARepository() => 'That folder is not inside a Git repository.',

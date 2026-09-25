@@ -9,14 +9,12 @@ part 'parsed_document_value_object.freezed.dart';
 
 /// The blocks of a document, and the document scope they need to render.
 ///
-/// A block is rendered on its own so the app owns the container around it,
-/// which is what the rendered diff needs
-/// ([flows](../../../../../../docs/technical/flows.md#the-preview-is-assembled-block-by-block)).
-/// Rendering alone costs exactly one thing: link reference definitions are
-/// declared at document scope, so they travel here.
+/// A block is rendered on its own
+/// ([runtime](../../../../../../docs/technical/runtime/documents.md)),
+/// and the one thing that costs is the document-scoped link definitions.
 @freezed
 abstract class ParsedDocumentValueObject with _$ParsedDocumentValueObject {
-  /// Creates a parsed document.
+  /// A parsed document.
   const factory ParsedDocumentValueObject({
     /// The document these blocks came from, source and all.
     required DocumentEntity document,
@@ -27,11 +25,9 @@ abstract class ParsedDocumentValueObject with _$ParsedDocumentValueObject {
     /// element-wise and copies nothing.
     required List<BlockValueObject> blocks,
 
-    /// Every link reference definition in the document, as its own lines.
-    ///
-    /// What makes `[text][ref]` resolve in a block that does not hold the
-    /// definition. **Footnotes do not survive the same way** and are M2's
-    /// problem, with a failing case waiting in Decision 19.
+    /// Every link reference definition in the document, as its own lines, so
+    /// `[text][ref]` resolves in a block that does not hold the definition.
+    /// Footnotes do not survive the same way (Decision 19).
     required String linkDefinitions,
   }) = _ParsedDocumentValueObject;
 }

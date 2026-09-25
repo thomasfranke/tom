@@ -35,8 +35,6 @@ void main() {
   });
 
   test('the repository is built for the space it was asked about', () async {
-    // A repository is per space: git runs in that space's repository, and
-    // the wrong one would report another checkout entirely.
     final List<SpaceEntity> asked = <SpaceEntity>[];
 
     await ReadGitStatusUseCase(
@@ -83,10 +81,8 @@ void main() {
   });
 }
 
-/// Git, answering what it was told to and throwing for everything else.
-///
-/// Throwing rather than returning is the point for the unasked methods: a
-/// use case that called one would fail loudly instead of quietly passing.
+/// Git, answering what it was told to and throwing for everything else, so
+/// a use case that called an unasked method fails loudly.
 final class _Git implements GitRepository {
   const _Git({this.answer});
 

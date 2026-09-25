@@ -34,8 +34,6 @@ void main() {
   });
 
   test('the repository is built for the space it was asked about', () async {
-    // A repository is per space, and the path on the document is relative
-    // to that space — writing through the wrong one lands in another folder.
     final List<SpaceEntity> asked = <SpaceEntity>[];
 
     await SaveDocumentUseCase(

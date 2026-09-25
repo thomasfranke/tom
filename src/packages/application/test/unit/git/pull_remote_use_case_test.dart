@@ -45,8 +45,6 @@ void main() {
   });
 
   test('a merge conflict is passed through, not reported', () async {
-    // Both sides changed the same lines: a state to resolve, not a fault to
-    // send anywhere.
     git.answer = const Failure<void, GitFailure>(
       GitMergeConflict(<String>['docs/index.md']),
     );
@@ -75,8 +73,8 @@ void main() {
 
 /// Git, answering `pull` and refusing every other question.
 ///
-/// The unasked methods are left to `noSuchMethod`, which throws: a use case
-/// that called one would fail loudly rather than pass quietly.
+/// The rest is left to `noSuchMethod`, which throws, so a use case that
+/// called one fails loudly rather than passing quietly.
 final class _Git implements GitRepository {
   Result<void, GitFailure>? answer;
   bool throws = false;

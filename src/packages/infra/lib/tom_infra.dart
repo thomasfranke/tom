@@ -1,21 +1,11 @@
-/// The capabilities: one folder each, holding the contract, its failures,
-/// and one subfolder per implementation.
-///
-/// A capability is a thing the app needs from outside itself — the disk,
-/// git, a markdown parser, a preference store. Each folder under `lib/src/`
-/// is one, and holds its contract, the sealed failure hierarchy that
-/// contract answers with, and a subfolder named after the dependency that
-/// does the work ([Decision
+/// The capabilities: one folder each, holding the contract, its failures and
+/// one subfolder per implementation ([Decision
 /// 24](../../../../docs/technical/decisions/024-a-capability-is-a-folder.md)).
 ///
 /// **This package depends on `tom_core` and on `tom_data`'s DTOs, and on
-/// nothing else** — no domain type can be named here, because the package
-/// that holds them is not on the list.
-///
-/// Nothing outside `lib/src/` is importable from another package, so this
-/// file is the whole public surface, and every file under `lib/src/` is on
-/// it. A capability that exported less than it declares would be a contract
-/// nobody can fulfil from outside.
+/// nothing else** — no domain type can be named here. Every file under
+/// `lib/src/` is exported, because a contract nobody can import from outside
+/// is one nobody can fulfil.
 library;
 
 export 'src/filesystem/dart_io/dart_io_filesystem_impl.dart';

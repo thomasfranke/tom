@@ -14,22 +14,19 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$GitStatusValueObject {
 
-/// The branch `HEAD` points at.
-///
-/// Null when `HEAD` is detached, and also when git named a branch this
-/// version cannot parse — [isDetached] is what tells the two apart.
+/// The branch `HEAD` points at; null when detached, and also when the
+/// name could not be parsed, which [isDetached] tells apart.
  BranchNameValueObject? get branch;/// The branch it tracks, or null when it tracks nothing.
  BranchNameValueObject? get upstream;/// Commits this branch has that [upstream] does not.
  int get ahead;/// Commits [upstream] has that this branch does not.
  int get behind;/// Every path that differs, in the order git reported it.
 ///
-/// Handed over, not copied: Freezed generates element-wise equality but
-/// does not copy the collection, so a caller that kept its own reference
-/// could change what this status says — and change its `hashCode` while
-/// it sits in a set or drives a rebuild. Every producer therefore passes
-/// a list nothing else holds; `GitStatusParser` passes an unmodifiable
-/// one. Making that structural needs an immutable-collection package,
-/// which is a dependency decision and not this file's to take.
+/// Handed over, not copied: Freezed compares element-wise but copies
+/// nothing, so a caller keeping its own reference could change this
+/// status and its `hashCode` under a set or a rebuild. Every producer
+/// passes a list nothing else holds (`GitStatusParser` an unmodifiable
+/// one); making that structural needs an immutable-collection package,
+/// a dependency decision not this file's to take.
  List<StatusEntryValueObject> get entries;/// Whether `HEAD` points at a commit rather than a branch.
  bool get isDetached;
 /// Create a copy of GitStatusValueObject
@@ -231,10 +228,8 @@ class _GitStatusValueObject extends GitStatusValueObject {
   const _GitStatusValueObject({required this.branch, required this.upstream, required this.ahead, required this.behind, required final  List<StatusEntryValueObject> entries, required this.isDetached}): assert(!isDetached || branch == null),_entries = entries,super._();
   
 
-/// The branch `HEAD` points at.
-///
-/// Null when `HEAD` is detached, and also when git named a branch this
-/// version cannot parse — [isDetached] is what tells the two apart.
+/// The branch `HEAD` points at; null when detached, and also when the
+/// name could not be parsed, which [isDetached] tells apart.
 @override final  BranchNameValueObject? branch;
 /// The branch it tracks, or null when it tracks nothing.
 @override final  BranchNameValueObject? upstream;
@@ -244,23 +239,21 @@ class _GitStatusValueObject extends GitStatusValueObject {
 @override final  int behind;
 /// Every path that differs, in the order git reported it.
 ///
-/// Handed over, not copied: Freezed generates element-wise equality but
-/// does not copy the collection, so a caller that kept its own reference
-/// could change what this status says — and change its `hashCode` while
-/// it sits in a set or drives a rebuild. Every producer therefore passes
-/// a list nothing else holds; `GitStatusParser` passes an unmodifiable
-/// one. Making that structural needs an immutable-collection package,
-/// which is a dependency decision and not this file's to take.
+/// Handed over, not copied: Freezed compares element-wise but copies
+/// nothing, so a caller keeping its own reference could change this
+/// status and its `hashCode` under a set or a rebuild. Every producer
+/// passes a list nothing else holds (`GitStatusParser` an unmodifiable
+/// one); making that structural needs an immutable-collection package,
+/// a dependency decision not this file's to take.
  final  List<StatusEntryValueObject> _entries;
 /// Every path that differs, in the order git reported it.
 ///
-/// Handed over, not copied: Freezed generates element-wise equality but
-/// does not copy the collection, so a caller that kept its own reference
-/// could change what this status says — and change its `hashCode` while
-/// it sits in a set or drives a rebuild. Every producer therefore passes
-/// a list nothing else holds; `GitStatusParser` passes an unmodifiable
-/// one. Making that structural needs an immutable-collection package,
-/// which is a dependency decision and not this file's to take.
+/// Handed over, not copied: Freezed compares element-wise but copies
+/// nothing, so a caller keeping its own reference could change this
+/// status and its `hashCode` under a set or a rebuild. Every producer
+/// passes a list nothing else holds (`GitStatusParser` an unmodifiable
+/// one); making that structural needs an immutable-collection package,
+/// a dependency decision not this file's to take.
 @override List<StatusEntryValueObject> get entries {
   if (_entries is EqualUnmodifiableListView) return _entries;
   // ignore: implicit_dynamic_type

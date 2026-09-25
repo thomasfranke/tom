@@ -15,16 +15,14 @@ part 'home_notifier.g.dart';
 
 /// Drives the first screen: open a folder, go back to one, forget one.
 ///
-/// **No business logic here** — it calls a use case and turns [Result] into
-/// state. Pure Dart like the rest of this package, so `dart test` runs it
-/// with no Flutter binding and a phone could drive the same notifier.
+/// No business logic here — it calls a use case and turns [Result] into
+/// state.
 @riverpod
 class HomeNotifier extends _$HomeNotifier {
   /// Turns a folder into a space, and remembers it.
   ///
-  /// Read from the scope rather than taken in a constructor, because
-  /// Riverpod builds a notifier with no arguments; what is *in* the scope is
-  /// the composition root's decision.
+  /// Read from the scope rather than a constructor, because Riverpod builds
+  /// a notifier with no arguments.
   OpenSpaceUseCase get openSpace => ref.read(openSpaceProvider);
 
   /// Reads the list of spaces to offer going back to.
@@ -37,9 +35,7 @@ class HomeNotifier extends _$HomeNotifier {
 
   @override
   HomeState build() {
-    // The list is read on the way in rather than on a button: Home *is* the
-    // list, and a screen offering to load its own content would be asking
-    // the user to do the app's work.
+    // Home *is* the list, so it is read on the way in rather than on a button.
     unawaited(Future<void>.microtask(load));
     return const HomeState.loading();
   }
@@ -56,33 +52,27 @@ class HomeNotifier extends _$HomeNotifier {
 
   /// Opens [folder], and takes Home out of the way if it worked.
   ///
-  /// A space that opened goes to the session, which is what the window is
-  /// built on: Home does not navigate anywhere and there is no route to push
+  /// A space that opened goes to the session; there is no route to push
   /// ([Decision
   /// 9](../../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).
-  ///
-  /// The recent list is kept across a failure: whatever went wrong with one
-  /// folder, the others are still there to click.
+  /// The recents are kept across a failure: the other rows still click.
   Future<void> open(String folder) async {
     state = const HomeState.loading();
     final Result<SpaceEntity, AppFailure> opened = await openSpace.open(folder);
-    // Opening runs git in another process, and the window can be gone by
-    // the time it answers — closed, or restarted by a scenario. A notifier
-    // nobody holds any more has nothing to say and no `Ref` to say it with.
+    // The window can be gone by the time git answers, and a disposed
+    // notifier has no `Ref` to write with.
     if (!ref.mounted) {
       return;
     }
     if (opened case Success<SpaceEntity, AppFailure>(
       value: final SpaceEntity space,
     )) {
-      // Home stays on `loading`, the honest state for a screen being
-      // replaced: re-reading the recent list here would write to a notifier
-      // the window has already disposed.
+      // Home stays on `loading`: re-reading the recents here would write to
+      // a notifier the window has already disposed.
       ref.read(spaceSessionProvider.notifier).open(space);
       return;
     }
-    // The list is re-read rather than remembered: opening may have changed
-    // it, and the screen the user lands on should show what is there.
+    // Re-read rather than remembered, because opening may have changed it.
     final Result<List<RecentSpaceEntity>, AppFailure> listed =
         await listRecentSpaces.list();
     if (!ref.mounted) {
@@ -105,9 +95,8 @@ class HomeNotifier extends _$HomeNotifier {
 
   /// What [listed] holds, or nothing.
   ///
-  /// A list that cannot be read is an empty list and never an error screen:
-  /// Home's job with no recents is to offer the folder picker, which it does
-  /// anyway.
+  /// A list that cannot be read is an empty list, never an error screen: the
+  /// folder picker is offered anyway.
   static List<RecentSpaceEntity> _recentsOf(
     Result<List<RecentSpaceEntity>, AppFailure> listed,
   ) => listed.valueOrNull ?? const <RecentSpaceEntity>[];

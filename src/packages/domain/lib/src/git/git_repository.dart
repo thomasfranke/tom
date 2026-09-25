@@ -11,42 +11,25 @@ import 'package:tom_domain/src/paths/repo_relative_path_value_object.dart';
 
 /// Git, in the product's own vocabulary, for one space.
 ///
-/// One instance per space: git runs against the space's repository, and the
-/// commands are serialized per space by the infrastructure underneath
-/// ([Decision
-/// 9](../../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).
-///
-/// Entities in, entities out — never process output. What runs git is a
-/// capability in `tom_infra` that returns text, and `tom_data` is where the
-/// text becomes a [GitStatusValueObject] and a `GitClientFailure` becomes a
-/// `GitFailure`; the package graph makes that translation mandatory rather
-/// than customary
-/// ([layers](../../../../../../docs/technical/layers.md#errors-across-boundaries)).
-///
-/// **Every path here is relative to the repository root**, in both
-/// directions — which is not the same thing as relative to the space, and is
-/// why [RepoRelativePathValueObject] is a type. A space opened at `docs/` inside a code
-/// repository gets a status naming source files it does not contain;
-/// converting, and deciding what to do with what falls outside, belongs to
-/// the caller that holds the `SpaceEntity`.
+/// One instance per space, entities in and entities out: `tom_data` turns
+/// the capability's text into these and its failures into [GitFailure]
+/// ([errors](../../../../../../docs/technical/conventions/errors.md)).
+/// **Every path is relative to the repository root, in both directions**,
+/// which is why [RepoRelativePathValueObject] is a type; a status may name
+/// files outside the space, and converting belongs to whoever holds the
+/// `SpaceEntity`.
 abstract interface class GitRepository {
   /// Where the repository stands: branch, distance from the remote, and
   /// everything that differs.
   ///
-  /// A reading, not a subscription — it is stale as soon as anything writes
-  /// to disk, and keeping it current is the watcher's job.
+  /// A reading, not a subscription; stale as soon as anything writes to disk.
   Future<Result<GitStatusValueObject, GitFailure>> status();
 
   /// The commits reachable from `HEAD`, newest first.
   ///
-  /// [path] narrows the history to one file — including across renames, the
-  /// way file history is expected to work
-  /// (`docs/product/git-workflow/file-history/doc.md`). [limit] caps how many
-  /// are returned; null asks for all of them, which on a large repository is
-  /// a decision the caller has to make on purpose.
-  ///
-  /// A repository with no commits yet answers with an empty list: a fresh
-  /// `git init` is a normal state for a space, not a failure to report.
+  /// [path] narrows the history to one file, across renames
+  /// (`docs/product/git-workflow/file-history/doc.md`); a null [limit] asks
+  /// for all of them. A repository with no commits yet answers an empty list.
   Future<Result<List<CommitEntity>, GitFailure>> history({
     RepoRelativePathValueObject? path,
     int? limit,
@@ -55,22 +38,17 @@ abstract interface class GitRepository {
   /// Every local branch, with which one is current and what each tracks.
   Future<Result<List<BranchEntity>, GitFailure>> branches();
 
-  /// The content of [path] as of [revision].
-  ///
-  /// What the rendered diff reads to build its "before" side. [revision] is
-  /// anything git resolves — a sha, a branch name, `HEAD` — because that is
-  /// what the diff screens offer to compare against.
+  /// The content of [path] as of [revision], anything git resolves: a sha, a
+  /// branch name, `HEAD`.
   Future<Result<String, GitFailure>> contentAt({
     required String revision,
     required RepoRelativePathValueObject path,
   });
 
-  /// Adds [paths] to the index.
+  /// Adds [paths] to the index, whole files only
+  /// (`docs/product/git-workflow/commit/doc.md`).
   ///
-  /// Whole files: there is no hunk-level staging
-  /// (`docs/product/git-workflow/commit/doc.md`). An empty list stages
-  /// nothing and succeeds — "stage the selection" with nothing selected is
-  /// not an error.
+  /// An empty list stages nothing and succeeds.
   Future<Result<void, GitFailure>> stage(
     List<RepoRelativePathValueObject> paths,
   );
@@ -87,34 +65,27 @@ abstract interface class GitRepository {
 
   /// Starts [name] at the current `HEAD` and switches to it.
   ///
-  /// One action, not two: the product creates a branch by moving onto it
-  /// ("the app switches to it immediately",
-  /// `docs/product/git-workflow/branch-switch/doc.md`), so a caller never
-  /// has to remember to follow this with [switchBranch].
+  /// One action, not two, so a caller never has to remember to follow this
+  /// with [switchBranch] (`docs/product/git-workflow/branch-switch/doc.md`).
   Future<Result<void, GitFailure>> createBranch(BranchNameValueObject name);
 
   /// Moves `HEAD` to [name].
   ///
-  /// Refused by git when uncommitted changes would be overwritten; the
-  /// product offers the choice before asking
+  /// Refused by git when uncommitted changes would be overwritten
   /// (`docs/product/git-workflow/branch-switch/doc.md`).
   Future<Result<void, GitFailure>> switchBranch(BranchNameValueObject name);
 
   /// Updates the remote-tracking branches without touching the working tree.
-  ///
-  /// What makes ahead/behind in [status] mean anything.
   Future<Result<void, GitFailure>> fetch();
 
   /// Brings the tracked remote's commits into the current branch.
   ///
-  /// Stops with `GitMergeConflict` when the two sides changed the same
-  /// lines, which is a state to resolve rather than an error to report.
+  /// Stops with `GitMergeConflict` when both sides changed the same lines.
   Future<Result<void, GitFailure>> pull();
 
   /// Publishes the current branch to its remote.
   ///
-  /// Answers `GitPushRejected` when the remote moved first — the one outcome
-  /// the product shows as its own
+  /// Answers `GitPushRejected` when the remote moved first
   /// (`docs/product/git-workflow/push-pull/doc.md`).
   Future<Result<void, GitFailure>> push();
 }

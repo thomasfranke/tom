@@ -1,11 +1,5 @@
-/// [GitRepositoryImpl] over a real [DartIoGitClientImpl] and a real repository.
-///
-/// The unit test beside this one proves the translation in isolation, with a
-/// client that answers whatever it is told to. This one proves the stack
-/// agrees with git itself: the text a real `git status` writes, read by the
-/// real parser, into the entity the application will switch over. A mismatch
-/// between what the capability promises and what the parser expects can only
-/// show up here.
+/// [GitRepositoryImpl] over a real [DartIoGitClientImpl] and a real repository,
+/// the only place the capability's promise and the parser's expectation meet.
 library;
 
 import 'dart:io';
@@ -53,8 +47,8 @@ void main() {
     repoPath = '${tempDir.path}/repo';
     Directory(repoPath).createSync(recursive: true);
     git(<String>['init', '--quiet', '.']);
-    // `symbolic-ref` rather than `init --initial-branch`: the latter needs
-    // git 2.28, and the tests should not be stricter than the client is.
+    // `symbolic-ref` rather than `init --initial-branch`, which needs git
+    // 2.28; the tests should not be stricter than the client.
     git(<String>['symbolic-ref', 'HEAD', 'refs/heads/main']);
     for (final List<String> setting in const <List<String>>[
       <String>['user.name', 'Test'],
@@ -74,7 +68,6 @@ void main() {
 
   group('a repository with nothing in it yet', () {
     test('has an empty history rather than a failure', () async {
-      // A space opened on a fresh `git init` is a normal state.
       expect(valueOf(await repository.history()), isEmpty);
     });
 
@@ -163,8 +156,6 @@ void main() {
     });
 
     test('the author date keeps the offset git recorded', () async {
-      // The reason `CommitDateValueObject` exists: a `DateTime` would have
-      // applied the offset and thrown it away.
       final CommitDateValueObject date = valueOf(
         await repository.history(),
       ).single.date;
@@ -323,8 +314,6 @@ void main() {
     test(
       'pushing with no remote fails as a command, not a rejection',
       () async {
-        // The distinction matters: "the remote moved first" sends the user to
-        // pull, and there is no remote to pull from here.
         expect(failureOf(await repository.push()), isA<GitOperationFailed>());
       },
     );

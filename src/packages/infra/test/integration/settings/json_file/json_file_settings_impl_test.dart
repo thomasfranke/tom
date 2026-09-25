@@ -1,8 +1,4 @@
 /// [JsonFileSettingsImpl] against a real file.
-///
-/// Integration, not unit: what this capability does is survive a restart,
-/// and a fake filesystem would only prove that the fake remembers what it
-/// was told.
 library;
 
 import 'dart:io';
@@ -39,7 +35,6 @@ void main() {
 
   group('the first run', () {
     test('reads null rather than failing', () async {
-      // Nothing is stored under any key, which is a state and not an error.
       expect(valueOf(await settings.read('recent')), isNull);
     });
 
@@ -50,7 +45,6 @@ void main() {
     });
 
     test('removing what was never there succeeds', () async {
-      // The caller wanted it gone, and it is.
       expect(
         await settings.remove('recent'),
         isA<Success<void, SettingsFailure>>(),
@@ -60,8 +54,6 @@ void main() {
 
   group('storing and reading back', () {
     test('a value survives a new store over the same file', () async {
-      // Which is the whole capability: a restart is a new object reading the
-      // same path.
       valueOf(await settings.write('theme', 'dark'));
 
       final JsonFileSettingsImpl reopened = JsonFileSettingsImpl(
@@ -105,7 +97,6 @@ void main() {
     });
 
     test('what is written is a readable JSON object', () async {
-      // Someone will open this file. It should not punish them for it.
       valueOf(await settings.write('theme', 'dark'));
 
       expect(File(path).readAsStringSync(), contains('"theme": "dark"'));
@@ -114,8 +105,6 @@ void main() {
 
   group('a file someone else wrote', () {
     test('nonsense is treated as empty, not as a reason to stop', () async {
-      // Refusing to start because a preferences file was hand-edited would
-      // trade the whole app for a convenience.
       File(path)
         ..parent.createSync(recursive: true)
         ..writeAsStringSync('this is not json');
@@ -142,10 +131,8 @@ void main() {
     });
 
     test('a value that is not a string reads as nothing stored', () async {
-      // Valid JSON, wrong shape: a number, or the list someone typed in
-      // place of the encoded string the store writes. Neither may throw
-      // out of a contract whose whole promise is that losing it is never
-      // fatal.
+      // Valid JSON, wrong shape — a number, or a list typed in place of the
+      // encoded string; neither may throw.
       File(path)
         ..parent.createSync(recursive: true)
         ..writeAsStringSync('{"theme": 1, "spaces.recent": ["/a", "/b"]}');

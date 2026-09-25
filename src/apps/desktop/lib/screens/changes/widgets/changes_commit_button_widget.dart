@@ -10,12 +10,10 @@ import 'package:tom_desktop/screens/changes/changes_design.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// *Commit*, disabled until there is something to record and something to
-/// call it.
+/// *Commit*, disabled until something is staged and described.
 ///
-/// **Disabled, not absent, and not a message after the fact**: a commit
-/// requires a message, and committing with nothing staged is refused before
-/// it is attempted (`docs/product/git-workflow/commit/doc.md`).
+/// Disabled rather than refused after the attempt
+/// (`docs/product/git-workflow/commit/doc.md`).
 class ChangesCommitButtonWidget extends ConsumerWidget {
   /// Creates the button, enabled when [canCommit].
   const ChangesCommitButtonWidget({required this.canCommit, super.key});

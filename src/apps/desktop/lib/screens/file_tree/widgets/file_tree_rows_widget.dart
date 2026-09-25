@@ -10,10 +10,8 @@ import 'package:tom_desktop/screens/file_tree/widgets/file_tree_row_widget.dart'
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 
-/// Every visible row, scrolling as one.
-///
-/// Which rows are visible is the state's answer, not this widget's: a closed
-/// folder is filtered out before it ever gets here.
+/// Every visible row, scrolling as one; which rows are visible is the
+/// state's answer, not this widget's.
 class FileTreeRowsWidget extends ConsumerWidget {
   /// Creates the list of [rows].
   const FileTreeRowsWidget({required this.rows, super.key});
@@ -37,14 +35,12 @@ class FileTreeRowsWidget extends ConsumerWidget {
         (SpaceSessionState? session) => session?.openDocument,
       ),
     );
-    // The dot belongs to the open document and to no other row, so it is
-    // read once here rather than in every row.
+    // The dot belongs to the open document alone, so it is read once here
+    // rather than in every row.
     final bool isDirty = ref.watch(
       editorProvider.select((EditorState state) => state.isDirty),
     );
     return ListView.builder(
-      // The design's pitch, and what lets the list build lazily: a space
-      // with a thousand documents lays out the dozen rows on screen.
       itemExtent: FileTreeDesign.rowPitch,
       itemCount: rows.length,
       itemBuilder: (BuildContext context, int index) => FileTreeRowWidget(

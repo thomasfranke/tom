@@ -8,33 +8,24 @@ part 'git_client_failure.freezed.dart';
 
 /// A git operation that did not complete, as the capability sees it.
 ///
-/// Technical, not product vocabulary: `tom_infra` depends only on `tom_core`,
-/// so it cannot name a `GitFailure` — `tom_data` does that translation
-/// (`docs/technical/layers.md#errors-across-boundaries`). What reaches here
-/// is an exit code, a stderr and a timeout; what the product calls it is
-/// somebody else's decision.
-///
-/// No `dart:io` type crosses out of `git_client/dart_io/`: a
-/// `ProcessException` dies there and leaves as [GitClientExecutableNotFound].
-///
-/// `sealed`, so a `switch` over it is exhaustive.
+/// Technical vocabulary — an exit code, a stderr, a timeout; `tom_data`
+/// translates it to a `GitFailure`
+/// (`docs/technical/conventions/errors.md`). No `dart:io` type
+/// crosses out of `git_client/dart_io/`. `sealed`, so a `switch` is exhaustive.
 @freezed
 sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
   /// No `git` executable was found on the PATH.
   ///
-  /// TOM drives the system binary ([Decision
-  /// 2](../../../../../../docs/technical/decisions/002-git-via-system-binary.md)),
-  /// so there is nothing to fall back to until a `libgit2/` sibling of
-  /// `dart_io/` exists.
+  /// Nothing to fall back to until a `libgit2/` sibling of `dart_io/` exists
+  /// ([Decision
+  /// 2](../../../../../../docs/technical/decisions/002-git-via-system-binary.md)).
   const factory GitClientFailure.executableNotFound({AppFailure? cause}) =
       GitClientExecutableNotFound;
 
-  /// The path the client was pointed at is not inside a git repository.
+  /// The path the client was pointed at is inside no git repository.
   ///
-  /// A space is a folder, not a repository, and the search runs upwards — so
-  /// this means no repository encloses the folder at all. Home names it and
-  /// stops there: TOM never runs `git init` for the user, and never opens
-  /// the folder in a quieter mode instead (`docs/product/home/doc.md`).
+  /// The search runs upwards, so nothing encloses the folder at all; TOM never
+  /// runs `git init` for the user (`docs/product/home/doc.md`).
   const factory GitClientFailure.notARepository(
     /// The absolute path that was searched for an enclosing repository.
     String path, {
@@ -48,11 +39,10 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
     AppFailure? cause,
   }) = GitClientMergeConflict;
 
-  /// The remote asked for credentials TOM cannot supply.
+  /// The remote asked for credentials the user's own git could not supply.
   ///
-  /// Authentication is the user's own git — credentials, SSH and config come
-  /// from their machine — so this means their setup did not answer, not that
-  /// TOM failed to log in.
+  /// Authentication is the user's setup, so this means it did not answer,
+  /// not that TOM failed to log in.
   const factory GitClientFailure.authenticationFailed(
     /// What git wrote to stderr, verbatim. For diagnostics — never parsed.
     String stderr, {
@@ -61,8 +51,7 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
 
   /// The remote refused a push because it had moved on first.
   ///
-  /// Named rather than folded into [GitClientCommandFailed] because the
-  /// product requires it to be shown as its own outcome
+  /// Its own variant because the product shows it as its own outcome
   /// (`docs/product/git-workflow/push-pull/doc.md`).
   const factory GitClientFailure.pushRejected(
     /// What git wrote to stderr, verbatim. For diagnostics — never parsed.
@@ -70,10 +59,9 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
     AppFailure? cause,
   }) = GitClientPushRejected;
 
-  /// A command ran past the time it was allowed.
+  /// A command ran past the time it was allowed and was killed.
   ///
-  /// The process is killed before this is returned: the queue is serialized,
-  /// so one command left hanging would stop the space rather than one action.
+  /// The queue is serialized, so one hung command would stop the space.
   const factory GitClientFailure.timedOut(
     /// The command as it was run, for the "details" disclosure in the UI.
     String command,
@@ -85,10 +73,9 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
 
   /// The revision holds no such path.
   ///
-  /// Not an error for the caller that asked "what did this file look like
-  /// before": a document that is new, renamed or in a repository with no
-  /// commits yet has no earlier version, and a repository whose `HEAD` is
-  /// unborn lands here too — neither the revision nor the file is there.
+  /// An answer rather than an error for "what did this file look like
+  /// before": a new or renamed document, or an unborn `HEAD`, has no earlier
+  /// version.
   const factory GitClientFailure.pathNotInRevision(
     /// The revision as it was asked for — a sha, a branch, `HEAD`.
     String revision,
@@ -100,9 +87,8 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
 
   /// A git command failed in a way the contract has no name for.
   ///
-  /// The typed fallback: unexpected, but still a [GitClientFailure] rather
-  /// than an exception. A variant promoted out of here is one an adapter can
-  /// recognise *and* a translator answers differently.
+  /// The typed fallback; a variant is promoted out of it only when an adapter
+  /// can recognise it *and* a translator answers differently.
   const factory GitClientFailure.commandFailed(
     /// The command as it was run, for the "details" disclosure in the UI.
     String command,

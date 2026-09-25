@@ -3,8 +3,7 @@ library;
 
 import 'dart:async';
 
-// `select` is an extension on `ProviderListenable` and lives in the runtime
-// package; `riverpod_annotation` carries the annotations and not much else.
+// `select` lives in the runtime package, not in `riverpod_annotation`.
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_application/tom_application.dart';
@@ -17,17 +16,12 @@ import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
 
 part 'editor_notifier.g.dart';
 
-/// Holds the buffer for whatever document the session says is open.
+/// The one buffer in the app, over whatever document the session says is
+/// open; the preview renders it rather than the file
+/// (`docs/product/editor/source-mode/doc.md`).
 ///
-/// **The one buffer in the app.** The preview renders it rather than the
-/// file, which is what makes an edit appear on the other side with no
-/// refresh step (`docs/product/editor/source-mode/doc.md`).
-///
-/// Everything else here guards it. It watches the space and the open
-/// document one at a time rather than the session whole, and it is kept
-/// alive rather than disposed the moment nothing listens: changing the mode
-/// takes the source panel off screen, and an unsaved buffer must not go
-/// with it.
+/// Kept alive because changing the mode takes the source panel off screen,
+/// and an unsaved buffer must not go with it.
 @Riverpod(keepAlive: true)
 class EditorNotifier extends _$EditorNotifier {
   /// Reads a document's source off the disk.
@@ -38,6 +32,8 @@ class EditorNotifier extends _$EditorNotifier {
 
   @override
   EditorState build() {
+    // The space and the document separately, never the session whole: a
+    // mode change would rebuild this and throw an unsaved buffer away.
     final SpaceEntity? space = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => session?.space,
@@ -51,16 +47,12 @@ class EditorNotifier extends _$EditorNotifier {
     if (space == null || path == null) {
       return const EditorState.empty();
     }
-    // Scheduled, not awaited: `build` answers synchronously, and the first
-    // answer is "reading it".
+    // Scheduled, not awaited: `build` answers synchronously.
     unawaited(Future<void>.microtask(() => _load(space, path)));
     return const EditorState.loading();
   }
 
-  /// Replaces the buffer with [source].
-  ///
-  /// Called on every keystroke, so it does nothing but hold text: a save is
-  /// [save] and nothing here writes to a disk.
+  /// Replaces the buffer with [source]; nothing here writes to a disk.
   void edit(String source) {
     if (state case final EditorReady ready) {
       state = ready.copyWith(source: source, saveFailure: null);
@@ -69,9 +61,8 @@ class EditorNotifier extends _$EditorNotifier {
 
   /// Writes the buffer where the document came from.
   ///
-  /// Saving a document that has not changed is allowed and does nothing —
-  /// pressing the shortcut twice is not an error, and a write nobody needs
-  /// would touch the file's timestamp for git to notice.
+  /// A clean document is not written: a write nobody needs would touch the
+  /// file's timestamp for git to notice.
   Future<void> save() async {
     if (state case final EditorReady ready) {
       final SpaceEntity? space = ref.read(spaceSessionProvider)?.space;
@@ -86,7 +77,7 @@ class EditorNotifier extends _$EditorNotifier {
         space,
         written,
       );
-      // The disk is real, and the panel can be gone by the time it answers.
+      // The panel can be gone by the time the disk answers.
       if (!ref.mounted) {
         return;
       }
@@ -96,12 +87,9 @@ class EditorNotifier extends _$EditorNotifier {
 
   /// Reads the open document off the disk again, dropping the buffer.
   ///
-  /// **What a branch switch leaves behind.** Every open document shows the
-  /// version on the new branch
-  /// (`docs/product/git-workflow/branch-switch/doc.md`), and the buffer is
-  /// the one thing that would still be showing the old one. It is also how
-  /// *discard* is spelled: what was typed is thrown away by reading the file
-  /// that is there now.
+  /// What a branch switch leaves behind
+  /// (`docs/product/git-workflow/branch-switch/doc.md`), and how *discard*
+  /// is spelled.
   Future<void> reload() async {
     final SpaceSessionState? session = ref.read(spaceSessionProvider);
     if (session?.openDocument case final SpaceRelativePathValueObject path) {
@@ -111,9 +99,8 @@ class EditorNotifier extends _$EditorNotifier {
 
   /// Records what the write did, over whatever the buffer holds now.
   ///
-  /// [written] is what actually reached the disk, which is not necessarily
-  /// what is on screen: typing during a save is ordinary, and the document
-  /// is then saved *and* dirty again, which is the honest answer.
+  /// [written] is what reached the disk, not necessarily what is on screen:
+  /// typing during a save leaves the document saved *and* dirty again.
   void _settle(DocumentEntity written, Result<void, AppFailure> saved) {
     if (state case final EditorReady now) {
       state = switch (saved) {
@@ -136,9 +123,7 @@ class EditorNotifier extends _$EditorNotifier {
       space,
       path,
     );
-    // The read is real disk, and the session can have moved on by the time
-    // it answers — the notifier is rebuilt for the next document, and this
-    // instance has nobody left to tell.
+    // The session can have moved on by the time the disk answers.
     if (!ref.mounted) {
       return;
     }

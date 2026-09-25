@@ -7,11 +7,8 @@ import '../theme/theme.dart';
 import 'process.dart';
 import 'tests.dart';
 
-/// Fails if any implemented package is under the line-coverage threshold.
-///
-/// A package with nothing under `lib/src` yet, or with code but no tests yet,
-/// is skipped rather than counted against — the gate is about code that has
-/// tests falling behind, not about code that has not been written.
+/// Fails if any gated package is under the line-coverage threshold; which
+/// packages are gated is coverage_gate.dart's to say.
 Future<int> runCoverageGate({int? threshold}) async {
   announce('Coverage gate');
   return dart([
@@ -23,16 +20,9 @@ Future<int> runCoverageGate({int? threshold}) async {
 
 /// Measures [targets], builds one HTML report out of all of them, opens it.
 ///
-/// Unit and integration tests both feed it: coverage is a property of a
-/// package's `lib/`, and which folder exercised a line does not change
-/// whether it was exercised.
-///
-/// The measuring is [runTests]'s, not this command's. It already runs each
-/// package's suite with coverage on and writes the lcov beside it — that is
-/// where the `◔` on every test row comes from — so measuring again here was
-/// a second implementation of one thing, and the one without a progress bar:
-/// this command used to print raw test output for minutes with nothing on
-/// screen saying how far along it was.
+/// The measuring is [runTests]'s: it already writes each package's lcov
+/// beside it, and a second measurement here would be the one without a
+/// progress bar.
 Future<int> runCoverageReport({List<String> targets = allTargets}) async {
   final unknown = targets.where((t) => !directoryFor(t).existsSync()).toList();
   if (unknown.isNotEmpty) {
@@ -61,17 +51,13 @@ Future<int> runCoverageReport({List<String> targets = allTargets}) async {
     return 66;
   }
 
-  // One report for the whole run, at the workspace root, rather than one per
-  // package: genhtml takes every lcov at once and breaks the result down by
-  // directory anyway, so a single report is both the combined number and the
-  // per-package one — and there is one place to look for it.
+  // One report at the workspace root: genhtml takes every lcov at once and
+  // breaks it down by directory, so one report is also the per-package one.
   final html = Directory('${srcDirectory.path}/coverage/html');
 
-  // Emptied first, because one directory now holds the report for whatever
-  // was last measured. Without this a run over one package leaves the other
-  // seven's pages sitting beside it, and a run that fails halfway leaves the
-  // half it wrote — both of which read as part of the current report. The
-  // measurement is elsewhere; this only ever holds a rendering of it.
+  // Emptied first: the directory holds the report of whatever was last
+  // measured, and a run over one package would leave the other seven's pages
+  // beside it.
   if (html.existsSync()) html.deleteSync(recursive: true);
 
   announce('Coverage report — ${lcov.length} package(s)');
@@ -92,22 +78,14 @@ Future<int> runCoverageReport({List<String> targets = allTargets}) async {
 }
 
 /// Where the rewritten copies go, emptied at the start of every report for
-/// the same reason the HTML is: a copy left by a previous, wider run is not
-/// part of this one.
+/// the same reason the HTML is.
 Directory get _rewrittenLcov => Directory('${srcDirectory.path}/coverage/lcov');
 
 /// Measures only what was touched recently, and reports on those files alone.
 ///
-/// The point of it is the suite it does not run. [runCoverageReport] measures
-/// every package to answer for one, which is minutes; the question after an
-/// edit is about the file that was edited, and the tests it maps to are
-/// seconds. [count] defaults to one, because "the file I just changed" is
-/// what the command is for — pass more to widen it.
-///
-/// The report is the run's own, printed as it finishes: coverage per file,
-/// least covered first. Nothing is rendered and no browser opens. A page
-/// would say the same thing one context switch away, and the answer here is
-/// three lines long.
+/// [runCoverageReport] measures every package to answer for one, which is
+/// minutes; the tests an edited file maps to are seconds. [count] defaults to
+/// one, and nothing is rendered: the answer is three lines long.
 Future<int> runLastCoverage({int? count}) => runLastTests(count: count ?? 1);
 
 /// The same, over everything this branch changed rather than what was edited
@@ -117,33 +95,20 @@ Future<int> runDiffCoverage({String? base}) =>
 
 /// Whether [target]'s lcov was written by the run that started at [since].
 ///
-/// Freshness rather than existence, because a leftover file is worse than no
-/// file. The mobile app has no tests, so nothing ever rewrites its
-/// `coverage/lcov.info` and it still holds whatever the last run that did
-/// produce one left behind — genhtml refuses it outright, since the data
-/// points at line 116 of a `main.dart` that now has 51. A layer with no tests
-/// yet is the same case seen from the other side: it writes no lcov, and a
-/// report should not fail over a package nobody expected to be measured.
+/// Freshness rather than existence: a package with no tests never rewrites
+/// its lcov, and genhtml refuses a stale one whose line numbers no longer
+/// exist.
 bool _measuredSince(String target, DateTime since) {
   final lcov = File('${directoryFor(target).path}/coverage/lcov.info');
   return lcov.existsSync() && !lcov.lastModifiedSync().isBefore(since);
 }
 
-/// Rewrites one package's lcov with every source path made absolute, and
-/// answers where the rewritten copy is.
+/// One package's lcov with every source path made absolute, at a new path.
 ///
-/// The two measuring tools disagree about how to spell a path.
-/// `coverage:format_coverage`, which measures the pure Dart packages, writes
-/// absolute ones; `flutter test --coverage`, which measures the apps, writes
-/// them relative to the package it ran in — `SF:lib/main.dart`. Either alone
-/// is fine. Together they are not: genhtml resolves relative paths against
-/// its own single working directory, so combining an app and a package fails
-/// on the app's first file, which is what `tom coverage all` hit the moment
-/// it was fixed enough to get that far.
-///
-/// Rewritten into a copy rather than in place: the original belongs to the
-/// tool that wrote it, and the coverage gate reads it expecting exactly what
-/// that tool produced.
+/// `format_coverage` writes absolute paths and `flutter test --coverage`
+/// package-relative ones, which genhtml resolves against its own working
+/// directory; a copy rather than in place, since the gate reads the original
+/// as its tool wrote it.
 String _absolutePaths(String target) {
   final directory = directoryFor(target);
   final source = File('${directory.path}/coverage/lcov.info');
@@ -168,10 +133,7 @@ String _absolutePaths(String target) {
 bool _isAbsolute(String path) =>
     path.startsWith('/') || RegExp(r'^[A-Za-z]:').hasMatch(path);
 
-/// Opens [path] in whatever the platform uses for that.
-///
-/// The Makefile hardcoded `open`, which is macOS only — the same POSIX
-/// assumption that made `runner-hard` fail on Windows.
+/// Opens [path] in whatever the platform uses for that; `open` is macOS only.
 Future<int> _open(String path) async {
   final (executable, arguments) = switch (Platform.operatingSystem) {
     'macos' => ('open', [path]),

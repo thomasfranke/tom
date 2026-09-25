@@ -3,12 +3,8 @@ library;
 
 import 'theme.dart';
 
-/// For a dark terminal background.
-///
-/// Rows are white — the same white as `← Quit` — so the list reads as one
-/// even block and the cursor is what says where you are. Grey is kept for the
-/// things around the rows (title suffix, section, prompt, rules, metadata),
-/// which is what puts the rows in front of their own chrome.
+/// For a dark terminal background: rows white, so the list reads as one block
+/// and the cursor says where you are; grey for the chrome around them.
 const dark = Palette(
   title: '${Ansi.bold}${Ansi.white}',
   titleSuffix: Ansi.grey,

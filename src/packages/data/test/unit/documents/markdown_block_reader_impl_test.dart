@@ -95,8 +95,6 @@ void main() {
     });
 
     test('the definitions travel with the document, not a block', () async {
-      // A block rendered alone needs them; putting a copy on every block
-      // would be the same string as many times as there are blocks.
       final MarkdownBlockReaderImpl reader = readerOf(
         const Success<MarkdownOutlineDto, MarkdownParserFailure>(
           MarkdownOutlineDto(
@@ -176,8 +174,6 @@ void main() {
 
   group('a failure crosses in the product vocabulary', () {
     test('a parser that broke names the document, not the text', () async {
-      // The capability says "the parser threw"; what the user has is a
-      // document that would not open.
       const MarkdownParserFailed reported = MarkdownParserFailed(
         'stack overflow',
       );
@@ -188,8 +184,6 @@ void main() {
       final Result<ParsedDocumentValueObject, DocumentFailure> result =
           await reader.read(documentOf('anything'));
 
-      // The variant names the document and nothing else; "stack overflow" is
-      // the parser's word and stays in the cause.
       final DocumentFailure failure =
           (result as Failure<ParsedDocumentValueObject, DocumentFailure>)
               .failure;

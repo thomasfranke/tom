@@ -1,11 +1,9 @@
 /// Which way commits are being moved.
 library;
 
-/// Fetch, pull or push — the three, and there is no fourth.
-///
-/// **No "sync".** Each is a single, explicit action and none of them runs by
-/// itself (`docs/product/git-workflow/push-pull/doc.md`); a combined button
-/// would be one name for three different risks.
+/// Fetch, pull or push — the three, and no combined "sync", which would be
+/// one name for three different risks
+/// (`docs/product/git-workflow/push-pull/doc.md`).
 enum RemoteActionEnum {
   /// Ask the remote what it has, and change no file on disk.
   fetch,

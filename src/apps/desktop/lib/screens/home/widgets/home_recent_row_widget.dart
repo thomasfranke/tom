@@ -62,10 +62,8 @@ class HomeRecentRowWidget extends ConsumerWidget {
                 ],
               ),
             ),
-            // Where the design puts the branch this space is on. It is not
-            // drawn yet and the row says why: a `RecentSpaceEntity` is what
-            // can be remembered *without asking git*, and a branch for every
-            // row is a disk read per row of a list the user may not click.
+            // Where the design puts the space's branch, not drawn: a
+            // `RecentSpaceEntity` is what is remembered without asking git.
             IconButton(
               tooltip: 'Forget this space',
               onPressed: () =>

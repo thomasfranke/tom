@@ -67,8 +67,6 @@ void main() {
 
       expect(rows.first.isFolder, isTrue);
       expect(rows.first.isExpanded, isTrue);
-      // A file has nothing to expand: the chevron is absent, not pointing
-      // somewhere.
       expect(rows.last.isFolder, isFalse);
       expect(rows.last.isExpanded, isFalse);
     });

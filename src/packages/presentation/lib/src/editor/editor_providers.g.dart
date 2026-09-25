@@ -10,16 +10,16 @@ part of 'editor_providers.dart';
 // ignore_for_file: type=lint, type=warning
 /// Reads a document's source off the disk.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and cannot see which disk ends up behind it.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 @ProviderFor(readDocument)
 final readDocumentProvider = ReadDocumentProvider._();
 
 /// Reads a document's source off the disk.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and cannot see which disk ends up behind it.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 final class ReadDocumentProvider
     extends
@@ -31,8 +31,8 @@ final class ReadDocumentProvider
     with $Provider<ReadDocumentUseCase> {
   /// Reads a document's source off the disk.
   ///
-  /// Declared here and **overridden by the composition root**: this package
-  /// names the use case it needs and cannot see which disk ends up behind it.
+  /// Declared here and overridden by the composition root, which is how every
+  /// use case reaches this package.
   ReadDocumentProvider._()
     : super(
         from: null,

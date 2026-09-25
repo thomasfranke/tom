@@ -60,8 +60,7 @@ void main() {
   testWidgets('with nothing open it says so, in Home\'s own words', (
     WidgetTester tester,
   ) async {
-    // The two bars are one piece of chrome: describing the same situation
-    // two ways would read as two products.
+    // The two bars are one piece of chrome, so one wording.
     await pumpStatus(tester);
 
     expect(find.text('no space open'), findsOneWidget);
@@ -86,8 +85,7 @@ void main() {
   testWidgets('a space under the home folder is written with a tilde', (
     WidgetTester tester,
   ) async {
-    // The status bar is the one place the whole path is on screen, and an
-    // absolute path under a home folder is mostly the home folder.
+    // An absolute path under a home folder is mostly the home folder.
     final String home =
         Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
@@ -125,8 +123,7 @@ void main() {
   testWidgets('the open document is named by its path in the space', (
     WidgetTester tester,
   ) async {
-    // Its path inside the space, not its name: two `index.md` in two folders
-    // are a real thing, and the bar is where the whole answer fits.
+    // The path, not the name: two `index.md` in two folders are a real thing.
     await pumpStatus(
       tester,
       space: SpaceEntity(
@@ -143,8 +140,8 @@ void main() {
   testWidgets('an unsaved document says so, and how to fix it', (
     WidgetTester tester,
   ) async {
-    // The one thing a text editor may never do is lose work quietly, so the
-    // bar says it in words and the mode bar says it with a dot.
+    // Said in words here, with a dot on the mode bar: work is never lost
+    // quietly.
     await pumpStatus(
       tester,
       space: SpaceEntity(
@@ -194,8 +191,7 @@ void main() {
     testWidgets('a clean tree counts nothing, and says nothing', (
       WidgetTester tester,
     ) async {
-      // A counter with nothing to count is chrome that has to be read twice
-      // to be ignored.
+      // A counter with nothing to count is chrome read twice to be ignored.
       await pumpWith(tester, _status(branch: 'main'));
 
       expect(find.textContaining('change'), findsNothing);
@@ -225,8 +221,7 @@ void main() {
     testWidgets('a detached HEAD is named, not left blank', (
       WidgetTester tester,
     ) async {
-      // "No branch" is a state somebody has to get out of, not a missing
-      // value.
+      // A state to get out of, not a missing value.
       await pumpWith(tester, _status(isDetached: true));
 
       expect(find.text('detached HEAD'), findsOneWidget);

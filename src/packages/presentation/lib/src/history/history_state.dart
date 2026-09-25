@@ -7,17 +7,14 @@ import 'package:tom_domain/tom_domain.dart';
 
 part 'history_state.freezed.dart';
 
-/// The commits that touched the open document.
+/// The commits that touched the open document, and nothing else.
 ///
-/// **Which one is being read is not here** — that is
-/// `SpaceSessionState.readingVersion`, because the preview and the bar above
-/// the document need it too. This is the list and nothing else.
+/// Which one is being read is `SpaceSessionState.readingVersion`, because
+/// the preview and the bar above the document need it too.
 @freezed
 sealed class HistoryState with _$HistoryState {
-  /// No document is open, so there is no history to ask about.
-  ///
-  /// Its own state rather than an empty list: "this file has never been
-  /// committed" and "you have not opened a file" are different sentences.
+  /// No document is open — its own state, because "never committed" and
+  /// "no file open" are different sentences.
   const factory HistoryState.idle() = HistoryIdle;
 
   /// Git is being asked what touched it.

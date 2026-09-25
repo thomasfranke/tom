@@ -32,13 +32,10 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
   /// Where a failure nobody handles is recorded.
   final Observability observability;
 
-  /// How many entries are kept.
+  /// How many entries are kept, enforced on write.
   ///
-  /// Not a product rule — `docs/product/home/doc.md` says only that recent
-  /// spaces are offered — so this is a default, chosen to be more than a
-  /// screen shows and far less than a list anyone would scroll. It is
-  /// enforced on write, so a file that somehow holds more is trimmed the
-  /// next time a space is opened rather than being rejected.
+  /// A default, not a product rule: `docs/product/home/doc.md` says only that
+  /// recent spaces are offered.
   static const int _limit = 10;
 
   @override
@@ -54,8 +51,7 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
         name: space.name,
         lastOpened: DateTime.now().toUtc(),
       ),
-      // A space is identified by its folder, so opening one that is already
-      // remembered moves it to the front rather than adding a second row.
+      // A space already remembered moves to the front rather than repeating.
       ...kept.where((RecentSpaceEntity recent) => recent.root != space.root),
     ];
     return _store(updated.take(_limit).toList());
@@ -69,10 +65,8 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
     );
   }
 
-  /// What is stored now, newest first, or nothing if it cannot be read.
-  ///
-  /// A store nobody can read is an empty list, and Home still offers to open
-  /// a folder — but the reason it was empty is recorded on the way past.
+  /// What is stored now, newest first, or nothing if it cannot be read, with
+  /// the reason recorded.
   Future<List<RecentSpaceEntity>> _current() async {
     final Result<List<RecentSpaceDto>, SettingsFailure> stored = await recents
         .read();
@@ -92,18 +86,17 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
     );
   }
 
-  /// Hands [failure] to [Observability], which is where it ends.
+  /// [failure] handed to [Observability], where it ends.
   ///
-  /// `StackTrace.current` because nothing threw — the trace is here to name
-  /// the call site that gave up on the store.
+  /// `StackTrace.current` because nothing threw; the trace names the call
+  /// site that gave up on the store.
   Future<void> _record(SettingsFailure failure) =>
       observability.capture(failure, StackTrace.current, layer: 'data');
 
   /// [row] in the domain's vocabulary, or null when its date is not one.
   ///
-  /// The store keeps text; only here does it have to be an instant. A row
-  /// carrying a date nobody can parse is dropped rather than defaulted,
-  /// because a made-up date would reorder the user's list.
+  /// Dropped rather than defaulted, because a made-up date would reorder the
+  /// user's list.
   static RecentSpaceEntity? _asEntity(RecentSpaceDto row) {
     final DateTime? lastOpened = DateTime.tryParse(row.lastOpened);
     return lastOpened == null
@@ -115,10 +108,8 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
           );
   }
 
-  /// Writes [entities], reporting success whatever the store did.
-  ///
-  /// The write's answer is read rather than discarded — that silence is what
-  /// would cost the user their list on every restart.
+  /// [entities] written, reporting success whatever the store did and
+  /// recording what it did.
   Future<Result<void, Never>> _store(List<RecentSpaceEntity> entities) async {
     final Result<void, SettingsFailure> written = await recents
         .write(<RecentSpaceDto>[

@@ -5,13 +5,9 @@ import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// Drops one space from the list Home offers.
+/// One space dropped from the list Home offers.
 ///
-/// What the user reaches for when a row points at a folder that is gone, and
-/// the only way anything leaves the list other than falling off the end.
-///
-/// Forgetting does not touch the folder: a space TOM forgets is a space the
-/// user can still open by picking it again.
+/// Forgetting does not touch the folder; the space can be picked again.
 final class ForgetRecentSpaceUseCase with UseCase {
   /// Creates the use case.
   const ForgetRecentSpaceUseCase({

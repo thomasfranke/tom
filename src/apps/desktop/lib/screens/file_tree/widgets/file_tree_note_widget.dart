@@ -6,11 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_design.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// One muted line, standing in for the tree.
-///
-/// Every state the explorer can be in that is not a list of rows — still
-/// reading, failed, a folder that holds nothing — says so with this rather
-/// than leaving the panel blank.
+/// One muted line standing in for the tree, so no state leaves the panel
+/// blank.
 class FileTreeNoteWidget extends StatelessWidget {
   /// Creates a note saying [text].
   const FileTreeNoteWidget(this.text, {super.key});

@@ -3,9 +3,8 @@ library;
 
 /// The four things that can happen to an entry of a sequence.
 ///
-/// The aligner's vocabulary, not the product's: it speaks of entries and
-/// positions, and `DiffBlockValueObject` is what the same four verdicts
-/// become once they are about blocks.
+/// The aligner's vocabulary, not the product's; `DiffBlockValueObject` is
+/// the same four verdicts once they are about blocks.
 enum SequenceEditKindEnum {
   /// Both sides hold it, letter for letter.
   equal,

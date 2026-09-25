@@ -25,8 +25,7 @@ class FileTreeBodyWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => switch (state) {
-    // Nothing at all with no space open: the shell only shows with one, so
-    // an explanation here would be for a state nobody reaches.
+    // The shell only shows with a space open, so nobody reaches this state.
     FileTreeInitial() => const SizedBox.shrink(),
     FileTreeLoading() => const FileTreeNoteWidget('Reading the folder…'),
     FileTreeFailed(failure: final AppFailure failure) => FileTreeNoteWidget(
@@ -35,11 +34,10 @@ class FileTreeBodyWidget extends StatelessWidget {
     final FileTreeReady ready => FileTreeRowsWidget(rows: ready.rows),
   };
 
-  /// What to say about a folder that could not be read.
+  /// What to say about a space folder that could not be read; an unreadable
+  /// folder inside it costs that folder, not the tree.
   ///
-  /// Only the space's own folder gets here; one unreadable folder inside it
-  /// costs that folder, not the tree. The catch-all is because this switches
-  /// over [AppFailure] itself, and silence would be worse than a vague line.
+  /// A catch-all, because this switches over [AppFailure] itself.
   static String _explain(AppFailure failure) => switch (failure) {
     SpaceFolderMissing() => 'This folder is no longer there.',
     SpaceAccessDenied() => 'TOM is not allowed to read this folder.',

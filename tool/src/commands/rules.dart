@@ -1,9 +1,4 @@
 // `tom rules` — the catalogue of rule files, and the run that checks them.
-//
-// The rules themselves live one theme per file in `src/rules/`, which holds
-// nothing else: a row on the menu is a file there, so a break names what to
-// open. This is the list both faces read, and the record of what each one
-// last said.
 library;
 
 import 'dart:convert';
@@ -84,11 +79,9 @@ RuleFile? ruleFileNamed(String name) {
   return null;
 }
 
-/// Runs the rules of [only], or every file's when it is null.
-///
-/// Everything runs in full rather than stopping at the first break: these
-/// are cheap and independent, and a list of every rename to do beats five
-/// runs that each report one.
+/// Runs the rules of [only], or every file's when it is null — in full rather
+/// than stopping at the first break, since a list of every rename to do
+/// beats five runs that each report one.
 Future<int> runRules([String? only]) async {
   final chosen = only == null ? catalogue : <RuleFile>[?ruleFileNamed(only)];
   if (chosen.isEmpty) {
@@ -150,14 +143,9 @@ Future<int> runRules([String? only]) async {
 
 /// Where a run of every rule file has got to, repainted where it stands.
 ///
-/// The end-to-end suite's block, in miniature and for the same reason: a run
-/// reads as one thing rather than a stack of unrelated ones, and the
-/// question someone actually has — *is this going well?* — is answered
-/// without scrolling. One bar, never one line per file, because four
-/// finished names say nothing the summary will not say better.
-///
-/// In a log there is no cursor to rewind, so it draws nothing: what carries
-/// the run there is the breaks, which are printed either way.
+/// One bar rather than one line per file, because four finished names say
+/// nothing the summary will not say better; in a log it draws nothing, and
+/// the breaks carry the run.
 final class _Progress {
   _Progress(this.total) : _started = DateTime.now();
 
@@ -255,11 +243,8 @@ typedef RuleResult = ({
   Duration elapsed,
 });
 
-/// Where the record of what ran is kept.
-///
-/// Beside the results of the end-to-end scenarios and for the same reason:
-/// the list is read to answer *has this been checked since?*, and a record
-/// that anything rebuilds cannot answer it.
+/// Where the record of what ran is kept — beside the end-to-end results and
+/// for the same reason: the list answers *has this been checked since?*.
 const ruleResultsFile = '.rules-results.json';
 
 /// What each rule file said the last time it ran, by name.

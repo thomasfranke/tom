@@ -12,10 +12,9 @@ import 'package:tom_infra/tom_infra.dart';
 
 /// [BlockReaderPort] over [MarkdownDataSource].
 ///
-/// Two translations and nothing else. Spans into blocks: the source reports
-/// where each construct is and this slices the document's own lines for it,
-/// so a block's text stays a view of the document rather than a second
-/// copy. Failures into the product's vocabulary.
+/// Two translations: spans into blocks, sliced from the document's own lines
+/// so a block's text is a view rather than a copy, and failures into the
+/// product's vocabulary.
 final class MarkdownBlockReaderImpl implements BlockReaderPort {
   /// Creates a reader over [markdown].
   const MarkdownBlockReaderImpl({required this.markdown});
@@ -57,9 +56,8 @@ final class MarkdownBlockReaderImpl implements BlockReaderPort {
 
   /// The same kind, in the product's vocabulary.
   ///
-  /// One to one today, and still written out: the two enums answer to
-  /// different owners, and the day a parser reports something the product
-  /// has no word for, this is where the compiler says so.
+  /// Written out although one to one, so a parser reporting something the
+  /// product has no word for breaks here.
   static BlockKindEnum _asBlockKindEnum(MarkdownSpanKindEnum kind) =>
       switch (kind) {
         MarkdownSpanKindEnum.paragraph => BlockKindEnum.paragraph,
@@ -74,9 +72,8 @@ final class MarkdownBlockReaderImpl implements BlockReaderPort {
 
   /// What the capability reported, about the document the user asked for.
   ///
-  /// Exhaustive over [MarkdownParserFailure] with no default branch. A
-  /// broken parser is not something the product has words for, so it lands
-  /// on the fallback rather than being dressed up as a file problem.
+  /// Exhaustive over [MarkdownParserFailure] with no default branch; a broken
+  /// parser lands on the fallback because the product has no word for it.
   static DocumentFailure _asDocumentFailure(
     MarkdownParserFailure failure,
     SpaceRelativePathValueObject path,

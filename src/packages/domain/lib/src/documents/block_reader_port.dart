@@ -8,21 +8,16 @@ import 'package:tom_domain/src/documents/parsed_document_value_object.dart';
 
 /// Turns a document into its blocks.
 ///
-/// A port rather than a domain service: splitting markdown is the domain's
-/// vocabulary but a parser's work, and a parser is infrastructure ([Decision
+/// A port rather than a domain service, because splitting markdown is a
+/// parser's work ([Decision
 /// 7](../../../../../../docs/technical/decisions/007-external-dependencies-behind-contracts.md)).
-/// `BlockDiffer` is the domain service; this is the seam under it.
-///
-/// Asynchronous like every other contract here, though the work is pure
-/// CPU — it leaves room for an isolate the day a document is large enough to
-/// drop a frame, and costs a keyword until then.
+/// Asynchronous though the work is pure CPU, to leave room for an isolate.
 abstract interface class BlockReaderPort {
   /// The blocks of [document], in order.
   ///
-  /// Total by contract: a construct the parser cannot place is left out
-  /// rather than guessed at, and a document that holds nothing readable is
-  /// an empty list. Only something genuinely broken fails, as
-  /// `DocumentOperationFailed`.
+  /// Total: a construct the parser cannot place is left out, a document with
+  /// nothing readable is an empty list, and only something genuinely broken
+  /// fails, as `DocumentOperationFailed`.
   Future<Result<ParsedDocumentValueObject, DocumentFailure>> read(
     DocumentEntity document,
   );

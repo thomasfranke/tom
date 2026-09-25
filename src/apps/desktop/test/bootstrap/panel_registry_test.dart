@@ -34,8 +34,7 @@ void main() {
     });
 
     test('a module with no panels is still a module', () {
-      // Overriding a provider and contributing nothing to the screen is a
-      // perfectly ordinary thing for a module to do.
+      // A module may override a provider and add nothing to the screen.
       final PanelRegistry registry = PanelRegistry(const <TomModule>[
         _Module('a', <PanelDescriptor>[]),
       ]);
@@ -95,8 +94,8 @@ void main() {
     });
 
     test('a tie keeps registration order, which is module order', () {
-      // The reason the sort has to be stable: `runTom(modules: [a, b])` is
-      // predictable without anyone having to number everything.
+      // The sort is stable so `runTom(modules: [a, b])` is predictable
+      // without numbering everything.
       final PanelRegistry registry = PanelRegistry(<TomModule>[
         _Module('a', <PanelDescriptor>[panel('first'), panel('second')]),
         _Module('b', <PanelDescriptor>[panel('third')]),
@@ -124,8 +123,7 @@ void main() {
 
   group('the document modes', () {
     test('a panel with no modes named is in all of them', () {
-      // Modules add; one written before the mode bar existed must not
-      // disappear because a mode arrived.
+      // A module written before the mode bar existed must not vanish.
       final PanelRegistry registry = PanelRegistry(<TomModule>[
         _Module('m', <PanelDescriptor>[panel('anywhere')]),
       ]);

@@ -1,18 +1,9 @@
-// Fails the build if line coverage on any package that has both `lib/src`
-// code and tests falls under the threshold.
+// Fails the build if any gated package's line coverage is under the threshold.
 //
 //   dart run tool/src/commands/coverage_gate.dart [--threshold=95]
 //
-// A package whose `lib/src` has no `.dart` files yet (application, data,
-// presentation, as of Phase 0), or that has code but no tests yet, is
-// skipped rather than counted as 0% — the gate is about code that has tests
-// falling short, not about punishing a layer for not being built or tested
-// yet. It starts being measured the moment it gains its first test, with no
-// change needed here.
-//
-// No external packages beyond `coverage` (already resolvable in the
-// workspace through `test`'s own dependency on it) — see
-// docs/technical/layers.md#testing.
+// A package with no code under `lib/src` yet, or no tests yet, is skipped
+// rather than counted as 0%: it joins the gate with its first test.
 
 import 'dart:io';
 
@@ -21,18 +12,15 @@ import '../repo.dart';
 import '../theme/theme.dart';
 import 'process.dart';
 
-// Freezed's generated toString/copyWith/props are never exercised directly —
-// the tests hit the hand-written factories, not the generated methods by
-// name — so counting them would cap every package with a union type well
-// under any realistic threshold. Excluded by pattern rather than a per-file
-// pragma: the files are regenerated on every `make runner` run, so a
-// comment inside them would not survive.
+// Generated Freezed methods are never called by name from a test, so counting
+// them would cap every package with a union type under any realistic
+// threshold. By pattern rather than a pragma, because the files are rewritten
+// on every codegen run.
 const String generatedFileGlobs = '**.freezed.dart,**.g.dart';
 
-// The pure Dart layers, which is what the gate is for. `ui` is not here for
-// the same reason the two applications are not: what it holds is drawn, and a
-// widget's line count says very little about whether the drawing is right —
-// `tom_ui` is covered by widget tests of its own (Decision 26).
+// The pure Dart layers. `ui` is left out with the two applications: what it
+// holds is drawn, and a widget's line count says little about the drawing
+// (Decision 26).
 const List<String> _pkgOrder = <String>[
   'core',
   'domain',
@@ -59,8 +47,7 @@ void main(List<String> args) async {
   );
   stdout.writeln();
 
-  // Same label column as the flutter-test dashboard (tool/run_tests.dart):
-  // bare package name, padded to the longest one, so the numbers line up.
+  // The same label column as run_tests.dart, so the numbers line up.
   final int labelWidth = _pkgOrder
       .map((String p) => p.length)
       .reduce((int a, int b) => a > b ? a : b);
@@ -145,20 +132,12 @@ class _Coverage {
   double get percentage => linesFound == 0 ? 100 : 100 * linesHit / linesFound;
 }
 
-/// Runs a package's tests with coverage, converts to lcov, and sums it.
+/// A package's line coverage, measured by running its tests; null when it
+/// has no `_test.dart` at all, since that is not a measurement.
 ///
-/// Reuses `coverage/lcov.info` if it already exists rather than deleting and
-/// regenerating it: `verify`/CI always run `flutter-test` (which produces
-/// this same file per package under `COVERAGE=1`, the default) immediately
-/// before `coverage-gate`, and a failing test run there halts the chain
-/// before this ever executes — so a file found here is trustworthy, and
-/// reusing it saves rerunning every package's suite a second time just to
-/// gate it. `make coverage-gate` invoked on its own, with no such file
-/// present, still runs the suite itself.
-///
-/// Returns `null` if the package has no `_test.dart` files — coverage over
-/// zero tests is not a measurement, it is a package waiting for its first
-/// test, and the two must not look the same in the report.
+/// An existing `coverage/lcov.info` is reused rather than regenerated:
+/// `verify` and CI run the suite immediately before this gate and halt on a
+/// failure, so a file found here is trustworthy and saves a second full run.
 Future<_Coverage?> _measure(Directory dir) async {
   final Directory testDir = Directory('${dir.path}/test');
   final bool hasTests =
@@ -229,6 +208,3 @@ Iterable<File> _dartFilesUnder(Directory dir) {
       .whereType<File>()
       .where((File f) => f.path.endsWith('.dart'));
 }
-
-// The repository root is found by marker now (see ../repo.dart): counting
-// levels from this file is what broke when it moved into tool/src/commands/.

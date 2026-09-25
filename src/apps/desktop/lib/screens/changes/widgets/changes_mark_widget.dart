@@ -6,15 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The diff mark: a letter on a tinted square.
-///
-/// **A letter as well as a colour** — roughly one in twelve men cannot
-/// separate the red from the green, so the state is never the tint alone
+/// A file's state as a letter on a tinted square, never the tint alone
 /// (`docs/technical/design/visual-language.md`).
 ///
-/// The letters are the *domain's* alphabet, not git's: git's `U` means
-/// unmerged, so an untracked file cannot borrow it, and `?` is not a word.
-/// The tooltip carries the whole word for whoever has not learnt them.
+/// The letters are the domain's alphabet, not git's: git's `U` means
+/// unmerged, so an untracked file is `N`.
 class ChangesMarkWidget extends StatelessWidget {
   /// Creates the mark for [state].
   const ChangesMarkWidget({required this.state, super.key});
@@ -42,17 +38,15 @@ class ChangesMarkWidget extends StatelessWidget {
 
   /// The pair of roles this state is drawn in.
   ///
-  /// Three roles for six states: what the diff palette names is *appeared*,
-  /// *went* and *changed*, and a rename or an untracked file is one of those
-  /// with a different letter on it.
+  /// Three roles for six states: the palette names appeared, went and
+  /// changed, and the letter tells the rest apart.
   (Color, Color) _rolesOf(TomColors colors) => switch (state) {
     FileStateEnum.added ||
     FileStateEnum.untracked => (colors.added, colors.addedSoft),
     FileStateEnum.deleted => (colors.removed, colors.removedSoft),
     FileStateEnum.modified ||
     FileStateEnum.renamed => (colors.modified, colors.modifiedSoft),
-    // A conflict is not a kind of change, it is a question — and the one
-    // thing on this list that cannot be committed as it stands.
+    // A conflict is the one thing here that cannot be committed as it stands.
     FileStateEnum.conflicted => (colors.removed, colors.removedSoft),
   };
 

@@ -11,13 +11,11 @@ import 'package:tom_desktop/screens/preview/widgets/preview_note_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 
-/// The open document, one container per block.
+/// The open document, one container per block
+/// ([runtime](../../../../../../docs/technical/runtime/documents.md)).
 ///
-/// **Assembled block by block, never as one widget tree**
-/// ([flows](../../../../../../docs/technical/flows.md#the-preview-is-assembled-block-by-block)):
-/// the container around each block is ours, and it is what will carry the
-/// diff decoration in M2. Inline markdown inside a block is delegated, which
-/// is where CommonMark's real complexity lives.
+/// The container is the app's and carries the diff decoration; what is
+/// inside it is delegated.
 class PreviewPanel extends ConsumerWidget {
   /// Creates the panel.
   const PreviewPanel({super.key});
@@ -25,8 +23,7 @@ class PreviewPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final PreviewState state = ref.watch(previewProvider);
-    // Preview-only is the mode the generous measure belongs to: nothing is
-    // sharing the pane, and this is how a reader sees the document.
+    // Preview-only is the mode the wider measure belongs to.
     final bool isReading =
         ref.watch(
           spaceSessionProvider.select(
@@ -72,8 +69,8 @@ class PreviewPanel extends ConsumerWidget {
 
   /// What to say about a document that did not open.
   ///
-  /// A catch-all, because this switches over [AppFailure] itself: whatever
-  /// went wrong, the panel says something rather than staying blank.
+  /// A catch-all, because this switches over [AppFailure] itself and the
+  /// panel must say something whatever went wrong.
   static String _explain(AppFailure failure) => switch (failure) {
     DocumentNotFound() => 'That document is no longer there.',
     DocumentPermissionDenied() => 'TOM is not allowed to read that document.',

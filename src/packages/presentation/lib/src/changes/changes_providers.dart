@@ -8,9 +8,8 @@ part 'changes_providers.g.dart';
 
 /// Reads where the repository stands.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and cannot see that a process is what answers
-/// it.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 @riverpod
 ReadGitStatusUseCase readGitStatus(Ref ref) => throw StateError(
   'readGitStatusProvider has no default. The composition root overrides it '

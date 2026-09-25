@@ -16,14 +16,9 @@ import 'package:tom_presentation/tom_presentation.dart';
 
 /// The built-in panels.
 ///
-/// **The whole point of this file is that it is not special** ([Decision
-/// 12](../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)):
-/// the app's own panels go through the same [PanelDescriptor] a third party
-/// would use, so the mechanism cannot rot from disuse.
-///
-/// It has been paid for six times already — the file tree, the status bar,
-/// the preview, the editor, the changes column and now history each arrived
-/// through this list, and none of them touched the shell.
+/// Not special on purpose: the app's own panels go through the same
+/// [PanelDescriptor] a third party would use, so the mechanism cannot rot
+/// ([Decision 12](../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
 class CoreModuleImpl implements TomModule {
   /// Creates the module.
   const CoreModuleImpl();
@@ -46,8 +41,8 @@ class CoreModuleImpl implements TomModule {
       id: 'tom.editor',
       title: 'Source',
       placement: PanelPlacementEnum.document,
-      // Which modes a panel belongs to is the panel's own answer, which is
-      // how the mode bar hides one without the shell knowing what it is.
+      // Which modes a panel belongs to is the panel's own answer; the shell
+      // only filters.
       modes: const <DocumentModeEnum>[
         DocumentModeEnum.source,
         DocumentModeEnum.split,

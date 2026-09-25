@@ -28,7 +28,6 @@ void main() {
     });
 
     test('is false for a folder, whatever it is called', () {
-      // A folder named `notes.md` is legal and is not a document.
       expect(
         entryAt('notes.md', SpaceEntryTypeEnum.directory).isDocument,
         isFalse,
@@ -36,8 +35,6 @@ void main() {
     });
 
     test('is false for a link, which was never followed', () {
-      // It may point outside the space, or at nothing at all; the listing
-      // did not look.
       expect(entryAt('shared.md', SpaceEntryTypeEnum.link).isDocument, isFalse);
     });
   });

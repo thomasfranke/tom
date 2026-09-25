@@ -10,17 +10,12 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// A commit: what it was called, who wrote it, and how long ago.
+/// A commit: its subject, then the sha, the author and the age
+/// (`docs/product/git-workflow/file-history/doc.md`).
 ///
-/// All three because the product asks for all three
-/// (`docs/product/git-workflow/file-history/doc.md`), on the wireframe's two
-/// lines: the subject, then the sha, the author and the age. The sha is
-/// there because it is the only one of the four that names the commit
-/// anywhere else — in a terminal, in a review, in a bug report.
-///
-/// Clicking it opens that version, which is [SpaceSessionState]'s to record:
-/// the preview renders it and the bar above the document says so, and one
-/// answer is what stops those two disagreeing.
+/// The sha is the one fact that names the commit anywhere else. Clicking
+/// opens that version, which is [SpaceSessionState]'s to record so the
+/// preview and the bar above it cannot disagree.
 class HistoryEntryWidget extends ConsumerWidget {
   /// Creates the entry for [commit], marked when [isOpen].
   const HistoryEntryWidget({
@@ -67,9 +62,8 @@ class HistoryEntryWidget extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        // An empty subject is possible — `git commit -m ''`
-                        // is refused, but an amended one can get there — and
-                        // a blank row would be unclickable-looking.
+                        // An amended commit can have an empty subject, and a
+                        // blank row does not look clickable.
                         commit.subject.isEmpty
                             ? '(no message)'
                             : commit.subject,

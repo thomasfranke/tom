@@ -8,8 +8,8 @@ part 'branches_providers.g.dart';
 
 /// Lists the repository's local branches.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use cases it needs and cannot see that a process answers them.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 @riverpod
 ListBranchesUseCase listBranches(Ref ref) => throw StateError(
   'listBranchesProvider has no default. The composition root overrides it '

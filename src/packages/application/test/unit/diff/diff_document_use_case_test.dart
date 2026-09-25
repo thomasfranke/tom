@@ -54,8 +54,6 @@ void main() {
     await diffing().diff(space: docs, after: documentOf(<String>['buffer']));
 
     expect(git.revision, 'HEAD');
-    // Repository-relative, because that is the only spelling git answers to
-    // — and a space is a folder inside a repository, not the repository.
     expect(git.path?.value, 'docs/guides/writing.md');
   });
 
@@ -65,8 +63,6 @@ void main() {
     await diffing().diff(space: docs, after: documentOf(<String>['buffer']));
 
     expect(blocks.documents.single.content, 'committed');
-    // Only the old side is parsed here: the new one arrived split, because
-    // the preview had just drawn it.
     expect(blocks.documents, hasLength(1));
   });
 
@@ -78,8 +74,6 @@ void main() {
     final Result<DocumentDiffValueObject, AppFailure> result = await diffing()
         .diff(space: docs, after: documentOf(<String>['one', 'two']));
 
-    // The before side is an empty document, so the aligner is handed nothing
-    // to pair against — and the reader is shown a new file, not an error.
     expect(blocks.documents.single.content, '');
     expect(
       (result as Success<DocumentDiffValueObject, AppFailure>).value.blocks,
@@ -120,7 +114,6 @@ void main() {
       revision: 'main',
     );
 
-    // What the branch and commit diff will pass; HEAD is only the default.
     expect(git.revision, 'main');
   });
 

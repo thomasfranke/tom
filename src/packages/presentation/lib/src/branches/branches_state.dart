@@ -9,10 +9,8 @@ part 'branches_state.freezed.dart';
 
 /// The switcher's own state: the branches, the box, and the question.
 ///
-/// **Which branch is checked out is not here** — that is
-/// `SpaceSessionState.git`, read the same way the status bar reads it. What
-/// lives here is the surface: the list to choose from, the text being typed
-/// and whether a switch is waiting on an answer about unsaved work.
+/// Which branch is checked out is `SpaceSessionState.git`, read the way the
+/// status bar reads it.
 @freezed
 sealed class BranchesState with _$BranchesState {
   /// No space is open, so there is nothing to list.
@@ -26,13 +24,12 @@ sealed class BranchesState with _$BranchesState {
     /// Every local branch, in the order git reported them.
     required List<BranchEntity> branches,
 
-    /// What is in the one text box, which means two things.
+    /// What is in the one text box: a filter while listing, the name of the
+    /// branch about to be started while creating.
     ///
-    /// While listing it filters; while creating it is the name of the
-    /// branch about to be started. One box on screen is one string here —
-    /// two fields for one control is how they come to disagree, and
-    /// carrying the text across is the useful behaviour anyway: filtering
-    /// for a branch that turns out not to exist leaves its name typed.
+    /// One box on screen is one string here, and the text carrying across
+    /// is the useful behaviour: a branch filtered for and not found is one
+    /// to create.
     @Default('') String draft,
 
     /// Whether the surface is naming a new branch rather than choosing one.
@@ -41,21 +38,17 @@ sealed class BranchesState with _$BranchesState {
     /// Git is working, so nothing else may be started.
     @Default(false) bool isBusy,
 
-    /// The branch a switch is waiting to move to, or null when none is.
-    ///
-    /// Set when switching would silently discard an unsaved buffer: the
-    /// product asks before, not after
-    /// (`docs/product/git-workflow/branch-switch/doc.md`), and this is the
-    /// question standing open.
+    /// The branch a switch is waiting to move to, or null when none is — the
+    /// question about an unsaved buffer, standing open
+    /// (`docs/product/git-workflow/branch-switch/doc.md`).
     BranchNameValueObject? pending,
 
     /// Why the last operation did not happen, or null when it did.
     AppFailure? failure,
 
-    /// What is wrong with the draft as a branch name, or null when nothing is.
-    ///
-    /// Said while typing rather than after pressing: a name git would refuse
-    /// is knowable without asking git.
+    /// What is wrong with the draft as a branch name, or null when nothing
+    /// is; said while typing, because a name git would refuse is knowable
+    /// without asking git.
     String? rejected,
   }) = BranchesReady;
 
@@ -64,11 +57,8 @@ sealed class BranchesState with _$BranchesState {
 
   const BranchesState._();
 
-  /// The branches to draw, the checked-out one first and the filter applied.
-  ///
-  /// Current first because that is what the mock shows and what the reader
-  /// is orienting from; the rest keep git's own order rather than being
-  /// sorted into a second opinion about them.
+  /// The branches to draw, the checked-out one first and the filter applied;
+  /// the rest keep git's own order.
   List<BranchEntity> get visible => switch (this) {
     BranchesReady(:final List<BranchEntity> branches, :final String draft) =>
       <BranchEntity>[

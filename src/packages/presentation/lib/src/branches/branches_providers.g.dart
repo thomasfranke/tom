@@ -10,16 +10,16 @@ part of 'branches_providers.dart';
 // ignore_for_file: type=lint, type=warning
 /// Lists the repository's local branches.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use cases it needs and cannot see that a process answers them.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 @ProviderFor(listBranches)
 final listBranchesProvider = ListBranchesProvider._();
 
 /// Lists the repository's local branches.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use cases it needs and cannot see that a process answers them.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 final class ListBranchesProvider
     extends
@@ -31,8 +31,8 @@ final class ListBranchesProvider
     with $Provider<ListBranchesUseCase> {
   /// Lists the repository's local branches.
   ///
-  /// Declared here and **overridden by the composition root**: this package
-  /// names the use cases it needs and cannot see that a process answers them.
+  /// Declared here and overridden by the composition root, which is how every
+  /// use case reaches this package.
   ListBranchesProvider._()
     : super(
         from: null,

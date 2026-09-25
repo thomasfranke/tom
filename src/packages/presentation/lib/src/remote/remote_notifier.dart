@@ -1,8 +1,7 @@
 /// Drives fetch, pull and push — one explicit action at a time.
 library;
 
-// `select` is an extension on `ProviderListenable` and lives in the runtime
-// package; `riverpod_annotation` carries the annotations and not much else.
+// `select` lives in the runtime package, not in `riverpod_annotation`.
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_application/tom_application.dart';
@@ -18,15 +17,12 @@ import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
 
 part 'remote_notifier.g.dart';
 
-/// Fetch, pull and push, each started by somebody and never on its own.
+/// Fetch, pull and push, each started by somebody and never on its own
+/// (`docs/product/git-workflow/push-pull/doc.md`).
 ///
-/// **Nothing here runs in the background** — no timer, no retry, no sync
-/// (`docs/product/git-workflow/push-pull/doc.md`). A button is pressed and
-/// one thing happens.
-///
-/// It reads no git of its own: every action ends by asking [ChangesNotifier]
-/// to re-read, so what the window believes about the repository has one
-/// source and one way of becoming stale.
+/// It reads no git of its own: every action ends in [ChangesNotifier]
+/// re-reading, so what the window believes about the repository has one
+/// source.
 @riverpod
 class RemoteNotifier extends _$RemoteNotifier {
   /// Updates the remote-tracking branches.
@@ -40,9 +36,8 @@ class RemoteNotifier extends _$RemoteNotifier {
 
   @override
   RemoteState build() {
-    // The space only: another folder is another remote, and a rejection
-    // from the last one would be a sentence about a repository nobody is
-    // looking at any more.
+    // The space only: a rejection from the last folder is about a repository
+    // nobody is looking at any more.
     ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => session?.space,
@@ -80,27 +75,24 @@ class RemoteNotifier extends _$RemoteNotifier {
     }
     state = RemoteState.working(action);
     final Result<void, AppFailure> done = await operation(space);
-    // Git is another process, and the window can be gone by the time it
-    // answers.
+    // The window can be gone by the time git answers.
     if (!ref.mounted) {
       return;
     }
     state = switch (done) {
       Success<void, AppFailure>() => const RemoteState.idle(),
-      // The remote moving first is not a fault, it is a situation — and the
-      // only one here with a screen of its own.
+      // The remote moving first is a situation, not a fault — the one with
+      // a screen of its own.
       Failure<void, AppFailure>(failure: GitPushRejected()) =>
         const RemoteState.rejected(),
       Failure<void, AppFailure>(failure: final AppFailure failure) =>
         RemoteState.failed(action: action, failure: failure),
     };
-    // Even a rejected push: `git push` can update some refs and refuse
-    // others, and ahead/behind is what tells the user where they stand.
+    // Even after a rejected push: `git push` can update some refs and
+    // refuse others.
     await ref.read(changesProvider.notifier).refresh();
-    // A pull is the one of the three that writes to the working tree, and
-    // TOM knows it did — so the tree is walked again rather than left
-    // describing a folder the user no longer has. No watcher needed for a
-    // change the app made itself.
+    // A pull writes to the working tree, and TOM knows it did, so the tree
+    // is walked again rather than left describing a folder that is gone.
     if (action == RemoteActionEnum.pull) {
       await ref.read(fileTreeProvider.notifier).refresh();
     }

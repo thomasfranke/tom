@@ -56,9 +56,8 @@ void main() {
         ],
         child: MaterialApp(
           theme: tomTheme(Brightness.light),
-          // The trunk behind the empty state never stops moving, and a frame
-          // is never the last one while it does — so these tests ask for the
-          // still screen. What the motion does is `commit_trunk_test.dart`.
+          // The trunk never stops moving, so `pumpAndSettle` never would;
+          // the motion is `commit_trunk_test.dart`'s.
           home: const MediaQuery(
             data: MediaQueryData(disableAnimations: true),
             child: HomeScreen(),
@@ -75,9 +74,7 @@ void main() {
     ) async {
       await pumpHome(tester);
 
-      // The wordmark, not the name set in type: the O is the commit on the
-      // trunk, and a `Text('TOM')` here would pass while the screen showed
-      // the wrong mark (`docs/technical/design/brand.md`, rule 1).
+      // The wordmark, never the name set in type (brand.md, rule 1).
       expect(find.byType(TomWordmarkWidget), findsOneWidget);
       expect(
         find.text('A Git client built for documentation, not code.'),
@@ -90,8 +87,8 @@ void main() {
     testWidgets('cloning is shown, and disabled until M3', (
       WidgetTester tester,
     ) async {
-      // Shown rather than hidden: the wireframe puts it here, and a button
-      // that appears later moves everything under it.
+      // Shown rather than hidden: a button that appears later moves
+      // everything under it.
       await pumpHome(tester);
 
       final OutlinedButton clone = tester.widget<OutlinedButton>(
@@ -158,9 +155,8 @@ void main() {
     testWidgets('the refusal screen says what it says', (
       WidgetTester tester,
     ) async {
-      // Driven through the notifier rather than the picker: a native file
-      // dialog cannot be opened in a widget test, and what is being tested
-      // is the screen, not the plugin.
+      // Through the notifier, since a native file dialog cannot be opened in
+      // a widget test.
       spaces.answer = const Failure<SpaceEntity, AppFailure>(
         GitNotARepository('/Users/me/notes'),
       );
@@ -204,11 +200,8 @@ void main() {
     testWidgets('and the recent list is not offered underneath it', (
       WidgetTester tester,
     ) async {
-      // Both mocks draw this screen with the retry and the one line about
-      // repositories, and nothing else
-      // (`docs/product/home/mocks/not-a-repository.excalidraw`). It is a
-      // state to move on from in one click, and a second list of choices
-      // under the button would make the button look optional.
+      // A second list of choices under the button would make the button
+      // look optional (`docs/product/home/mocks/not-a-repository.excalidraw`).
       recents.stored = <RecentSpaceEntity>[remembered];
       spaces.answer = const Failure<SpaceEntity, AppFailure>(
         GitNotARepository('/loose'),

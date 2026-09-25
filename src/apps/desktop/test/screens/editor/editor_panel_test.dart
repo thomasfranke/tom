@@ -85,8 +85,7 @@ void main() {
   testWidgets('an open document is put in an editor, source and all', (
     WidgetTester tester,
   ) async {
-    // The file's own markdown, not a rendering of it: there is no WYSIWYG
-    // mode, now or later (Decision 3).
+    // The file's own markdown: there is no WYSIWYG (Decision 3).
     documents.content = '# Title\n\nProse.\n';
 
     await pumpEditor(tester, document: writing);
@@ -113,9 +112,8 @@ void main() {
 
   /// Types [source] into the editor on screen.
   ///
-  /// The long pump is not padding: showing a cursor schedules a delayed
-  /// blink the package never cancels, and a widget test fails on a timer
-  /// that outlives the tree.
+  /// The long pump is not padding: a shown cursor schedules a blink the
+  /// package never cancels, and a timer outliving the tree fails the test.
   Future<void> type(WidgetTester tester, String source) async {
     tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text =
         source;
@@ -137,14 +135,10 @@ void main() {
   testWidgets('the save shortcut is answered, not left to do nothing', (
     WidgetTester tester,
   ) async {
-    // The binding is the package's — it already maps ⌘S on a Mac and Ctrl+S
-    // elsewhere, and dispatches an intent that by default does nothing; the
-    // answer to it is what was missing. **The key press itself is not
-    // driveable here**: the package installs no shortcuts at all on the
-    // platform a widget test reports, and decides that once in a lazy
-    // top-level final, so pressing ⌘S in this file would prove nothing. The
-    // keystroke is the end-to-end scenario's, on a real runner; this is what
-    // it reaches, and `editor_notifier_test.dart` is what saving does.
+    // The key press is not driveable here: the package installs no
+    // shortcuts on the platform a widget test reports, decided once in a
+    // lazy top-level final, so ⌘S would prove nothing. The keystroke is the
+    // end-to-end scenario's; this checks what it reaches.
     documents.content = '# Title\n';
     await pumpEditor(tester, document: writing);
 
@@ -181,9 +175,8 @@ void main() {
   testWidgets('the same document read again reaches the pane', (
     WidgetTester tester,
   ) async {
-    // What a branch switch leaves behind, and what discarding an edit is:
-    // the path did not change, so the key cannot catch it, and the pane
-    // would go on showing text from the branch that was left behind
+    // A branch switch re-reads the same path, so the controller's key
+    // cannot catch it and the pane would keep the old branch's text
     // (`docs/product/git-workflow/branch-switch/doc.md`).
     documents.content = '# On main\n';
     await pumpEditor(tester, document: writing);
@@ -203,8 +196,8 @@ void main() {
   testWidgets('and typing is never overwritten by one', (
     WidgetTester tester,
   ) async {
-    // The other side of it: a buffer that differs from the disk is the
-    // user's, and nothing may re-seed the controller under their cursor.
+    // A buffer that differs from the disk is the user's; nothing re-seeds
+    // the controller under their cursor.
     documents.content = '# On main\n';
     await pumpEditor(tester, document: writing);
 

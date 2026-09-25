@@ -5,11 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/home/widgets/home_bar_widget.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The bar above everything.
+/// The bar above everything, empty and drawn anyway.
 ///
-/// Empty here, and drawn anyway: the design gives Home the same chrome as
-/// every other screen, so opening a space changes what is *in* the window
-/// and not the shape of it.
+/// Home has the same chrome as every screen, so opening a space changes
+/// what is in the window and not its shape.
 class HomeTopStripWidget extends StatelessWidget {
   /// Creates the strip.
   const HomeTopStripWidget({super.key});

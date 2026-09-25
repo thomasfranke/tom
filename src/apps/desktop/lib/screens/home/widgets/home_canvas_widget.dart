@@ -7,11 +7,9 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// The body between the two bars, with the content where the design put it.
 ///
-/// [above] and [below] are the design's own empty space in pixels; only
-/// their ratio is used, so the block sits a third of the way down whatever
-/// window it is given rather than at a fixed offset that centres wrongly on
-/// every other size. It scrolls when the window is shorter than the content,
-/// which the minimum window height allows.
+/// Only the ratio of [above] to [below] is used, so the block sits at the
+/// same proportion of any window; it scrolls when the window is shorter
+/// than the content, which the minimum window height allows.
 class HomeCanvasWidget extends StatelessWidget {
   /// Places [child] between [above] and [below].
   const HomeCanvasWidget({

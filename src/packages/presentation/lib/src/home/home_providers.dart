@@ -8,13 +8,10 @@ part 'home_providers.g.dart';
 
 /// Turns a folder into a space, and remembers it.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and has no idea which repository, which git
-/// client or which disk ends up behind it — it cannot even find out
-/// ([layers](../../../../../../docs/technical/layers.md)).
-///
-/// Throwing rather than defaulting is deliberate: a default would be a
-/// second place where the app decides what satisfies a contract.
+/// Declared here and overridden by the composition root: this package names
+/// the use case it needs and cannot see what satisfies it
+/// ([architecture](../../../../../../docs/technical/architecture.md)). Throwing rather
+/// than defaulting keeps that decision in one place.
 @riverpod
 OpenSpaceUseCase openSpace(Ref ref) =>
     throw StateError(_notWired('openSpaceProvider'));

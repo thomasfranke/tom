@@ -1,9 +1,5 @@
 // The visual language, split in two: what never varies, and what a palette
 // decides.
-//
-// Layout is shared — a label column that moved between themes would make the
-// cursor jump when someone switched. Colors are the part that varies, and
-// they live one file per palette beside this one.
 library;
 
 import 'dark.dart';
@@ -12,12 +8,9 @@ export 'ansi.dart';
 export 'dark.dart';
 export 'light.dart';
 
-/// The palette in force.
-///
-/// Dark by default because that is what a terminal usually is, and because
-/// the bright white this palette uses for an emphasized row is unreadable on
-/// a light background — the wrong default is not merely off-key, it hides a
-/// row. Reassign at startup to switch.
+/// The palette in force — dark by default, because the bright white this
+/// palette uses for an emphasized row is unreadable on a light background.
+/// Reassign at startup to switch.
 Palette palette = dark;
 
 /// Glyphs, columns and labels: the part of the look no palette changes.
@@ -45,11 +38,8 @@ abstract final class Layout {
   static const backLabel = '← Back';
   static const quitLabel = '← Quit';
 
-  /// How many lines the footer reserves for the selected row's description.
-  ///
-  /// Fixed, and reserved whether or not there is anything to put in them: a
-  /// footer that changed height would move the list under the cursor every
-  /// time the selection changed.
+  /// How many lines the footer reserves, whether or not there is anything to
+  /// put in them: a footer that changed height would move the list.
   static const footerLines = 3;
 
   static const checked = '◉';
@@ -61,13 +51,9 @@ abstract final class Layout {
   /// The em dash between a title and its subtitle: `TOM — dev`.
   static const titleSeparator = '—';
 
-  /// What every screen is headed with.
-  ///
-  /// Here rather than in `tom.dart` because a screen is drawn wherever the
-  /// work is, and a command that paints its own frame — the end-to-end
-  /// runner clears the terminal between scenarios — has to be able to put
-  /// the same header back. A header that appears on most screens reads as a
-  /// bug on the one it is missing from.
+  /// What every screen is headed with. Here rather than in `tom.dart` because
+  /// a command that paints its own frame — the end-to-end runner — has to put
+  /// the same header back.
   static const appTitle = 'TOM';
   static const appSubtitle = 'dev';
 
@@ -123,13 +109,9 @@ final class Palette {
   final String detailIcon;
   final String back;
 
-  /// The four states a dashboard row can be in.
-  ///
-  /// Status used to be carried by the emoji itself — 🟢 is green whatever the
-  /// terminal thinks. That made it the one part of the output no palette
-  /// could reach, and it cost two columns per row, since an emoji is double
-  /// width and inconsistently so between terminals. The glyphs are one column
-  /// now and the color comes from here.
+  /// The four states a dashboard row can be in, coloured here rather than by
+  /// an emoji: an emoji is the one thing no palette can reach, and double
+  /// width besides.
   final String ok;
   final String fail;
   final String running;
@@ -137,18 +119,12 @@ final class Palette {
   final String skipped;
 }
 
-/// The glyphs a dashboard row is marked with, one column each.
-///
-/// A check and a cross for the two outcomes, because those are read without
-/// being learned; the quieter states get quieter marks — a pointer for what
-/// is moving, a dot for what is waiting, an empty circle for what was passed
-/// over. Nothing here is double width, and nothing needs a font installed.
+/// The glyphs a dashboard row is marked with, one column each: a check and a
+/// cross for the outcomes, quieter marks for the quieter states.
 abstract final class Status {
   static const ok = '✓';
 
-  /// The heavy cross, not the light one: a failure should be the thing the
-  /// eye lands on first when scanning a column of results, and `✗` next to
-  /// `✓` reads as the same weight rather than as an alarm.
+  /// The heavy cross, so a failure is what the eye lands on first.
   static const fail = '✘';
   static const running = '▸';
   static const queued = '·';

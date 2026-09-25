@@ -5,9 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The panel's caption.
-///
-/// Drawn by the panel itself, because the shell draws no panel chrome.
+/// The panel's caption, drawn by the panel because the shell draws no chrome.
 class PreviewCaptionWidget extends StatelessWidget {
   /// Creates the caption.
   const PreviewCaptionWidget({super.key});

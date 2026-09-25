@@ -98,7 +98,6 @@ void main() {
   testWidgets('nothing is offered before git has been asked', (
     WidgetTester tester,
   ) async {
-    // A button that cannot say what it would do is worse than no button.
     await pumpActions(tester);
 
     expect(find.text('Fetch'), findsNothing);
@@ -108,8 +107,7 @@ void main() {
   testWidgets('it offers Fetch and Push, and never a combined Sync', (
     WidgetTester tester,
   ) async {
-    // One name for three different risks is how a tool stops being
-    // predictable (docs/product/git-workflow/push-pull/doc.md).
+    // Three risks, three names (docs/product/git-workflow/push-pull/doc.md).
     await pumpActions(tester, reading: statusOf(ahead: 1));
 
     expect(find.text('Fetch'), findsOneWidget);
@@ -150,7 +148,6 @@ void main() {
     testWidgets('is unavailable with nothing to publish', (
       WidgetTester tester,
     ) async {
-      // Said by the button rather than reported after the attempt.
       await pumpActions(tester, reading: statusOf(behind: 3));
 
       expect(isEnabled(tester, 'Push'), isFalse);
@@ -172,8 +169,8 @@ void main() {
   testWidgets('the one that is working says so, and the other waits', (
     WidgetTester tester,
   ) async {
-    // Git serializes per space underneath, so a second press would only
-    // queue — and all three going grey with no explanation would be worse.
+    // Git serializes per space, so a second press would only queue; the
+    // others wait with a reason on screen.
     await pumpActions(tester, reading: statusOf(ahead: 2));
     git.holdUp = true;
 

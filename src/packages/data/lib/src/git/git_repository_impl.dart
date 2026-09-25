@@ -12,27 +12,13 @@ import 'package:tom_infra/tom_infra.dart';
 
 /// [GitRepository] over [GitDataSource].
 ///
-/// The seam the layer graph exists for. The source runs git and returns text
-/// and [GitClientFailure]; the domain knows [CommitEntity],
-/// [GitStatusValueObject] and [GitFailure] and nothing about processes. This
-/// class is the only place the two meet: it hands the text to a parser and
-/// the
-/// failure to [_asGitFailure].
-///
-/// Neither half can skip the other. `tom_infra` depends only on `tom_core`,
-/// so it cannot name a [GitFailure] even by accident; `tom_domain` names no
-/// capability, so it cannot reach a process
-/// ([layers](../../../../../../docs/technical/layers.md#errors-across-boundaries)).
-///
-/// One instance per space, holding that space's client — the client
-/// serializes its own commands, so nothing here has to.
+/// The one place the source's text and [GitClientFailure] meet the domain's
+/// entities and [GitFailure], one instance per space
+/// ([errors](../../../../../../docs/technical/conventions/errors.md)).
 final class GitRepositoryImpl implements GitRepository {
   /// Creates a repository over [git].
   ///
-  /// The parsers are stateless and default to their shared instances; they
-  /// are parameters so a test can substitute one, and so the composition
-  /// root keeps deciding what is wired to what
-  /// (`docs/technical/flows.md#wiring-three-lifetimes`).
+  /// The parsers are parameters so a test can substitute one.
   const GitRepositoryImpl({
     required this.git,
     this.statusParser = const GitStatusParser(),
@@ -115,19 +101,10 @@ final class GitRepositoryImpl implements GitRepository {
 
   /// What infrastructure reported, in the product's vocabulary.
   ///
-  /// Exhaustive over [GitClientFailure] with no default branch: a failure
-  /// mode discovered later breaks this switch, which is the whole reason the
-  /// hierarchy is sealed.
-  ///
-  /// **The command line and the stderr do not come up with it.** They are the
-  /// machine's words, so they stay in the capability's failure and travel as
-  /// the cause — which is where the UI's "details" disclosure reads them,
-  /// without a [GitFailure] variant ever carrying one.
-  ///
-  /// [GitDetachedHead] is deliberately not produced here: git does not fail
-  /// on a detached `HEAD`, it commits happily. It is a state `status()`
-  /// reports and a use case refuses to act on, not an error a command
-  /// returns.
+  /// Exhaustive with no default branch, so a new failure mode breaks this.
+  /// The command line and the stderr travel as the cause, never on a
+  /// [GitFailure]. [GitDetachedHead] is produced by nothing here: git commits
+  /// happily on a detached `HEAD`, so refusing is a use case's policy.
   static GitFailure _asGitFailure(GitClientFailure failure) =>
       switch (failure) {
         GitClientExecutableNotFound() => GitNotInstalled(cause: failure),

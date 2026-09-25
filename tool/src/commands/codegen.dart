@@ -14,15 +14,10 @@ const _generatedSuffixes = ['.freezed.dart', '.g.dart'];
 
 /// Runs build_runner over [targets].
 ///
-/// [hard] deletes the generated files first, then regenerates all of them
-/// rather than only what this branch changed. It is the mode that answers "is
-/// what is committed actually what the annotations produce", which is why the
-/// gate sits behind it.
-///
-/// The delete happens here rather than by shelling out to
-/// `find -name ... -delete`, because `find` does not exist on Windows. It is
-/// also scoped to [targets]: regenerating one package should not wipe the
-/// other seven's output and leave the tree half generated.
+/// [hard] deletes the generated files first and regenerates all of them, which
+/// is what answers "is what is committed what the annotations produce". The
+/// delete is done here because `find` does not exist on Windows, and scoped
+/// to [targets] so one package's run does not leave the tree half generated.
 Future<int> runCodegen({
   required bool hard,
   List<String> targets = allTargets,
@@ -32,13 +27,9 @@ Future<int> runCodegen({
     for (final target in targets) {
       final directory = directoryFor(target);
       deleted += _deleteGenerated(directory);
-      // The cache goes with them, and this is the half that was missing:
-      // `--force` only skips the diff of which packages changed, while
-      // build_runner's own asset graph still records every output as
-      // written. Deleting the files without it leaves a package that
-      // rebuilds nothing and reports success — the tree half generated, the
-      // analyzer full of undefined types, and the gate the only thing that
-      // notices.
+      // The cache goes with them: build_runner's asset graph still records
+      // every output as written, and without this the package rebuilds
+      // nothing and reports success.
       _deleteBuildCache(directory);
     }
     stdout.writeln(

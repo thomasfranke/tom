@@ -3,10 +3,9 @@ library;
 
 /// What a `MarkdownSpanDto` turned out to be.
 ///
-/// The capability's own vocabulary, one value per construct a caller can do
-/// something with. It is deliberately the same shape as the domain's
-/// `BlockKind` and deliberately a different type: the day a second parser
-/// reports something extra, `tom_data` is where the compiler asks about it.
+/// The same shape as the domain's `BlockKindEnum` and deliberately a different
+/// type, so a parser reporting something extra breaks `tom_data`, not the
+/// domain.
 enum MarkdownSpanKindEnum {
   /// Prose.
   paragraph,

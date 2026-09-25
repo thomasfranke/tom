@@ -16,8 +16,6 @@ void main() {
       ForgetRecentSpaceUseCase(recents: recents, observability: observability);
 
   test('it names the folder, and touches nothing else', () async {
-    // Forgetting is about the list. A space TOM forgets is a space the user
-    // can still open by picking it again.
     await forgetting().forget('/a');
 
     expect(recents.forgotten, <String>['/a']);
@@ -56,10 +54,8 @@ final class _Recents implements RecentSpacesRepository {
   }
 }
 
-/// A repository that breaks its contract by throwing.
-///
-/// [Never] says it cannot *return* a failure, which is exactly why throwing is
-/// the only way left to break it — and what the use case's guard is for.
+/// A repository that breaks its contract by throwing, the only way left when
+/// [Never] says it cannot return a failure.
 final class _ThrowingRecents implements RecentSpacesRepository {
   @override
   Future<Result<List<RecentSpaceEntity>, Never>> list() async =>

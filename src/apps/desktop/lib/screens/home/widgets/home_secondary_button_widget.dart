@@ -6,10 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/home/home_design.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// A way forward that is not open yet.
-///
-/// Always disabled: what it offers arrives in a later milestone, and the
-/// chip beside it is what says which.
+/// A way forward that is not open yet; always disabled, the chip beside it
+/// says when.
 class HomeSecondaryButtonWidget extends StatelessWidget {
   /// Creates a disabled button saying [label].
   const HomeSecondaryButtonWidget({required this.label, super.key});

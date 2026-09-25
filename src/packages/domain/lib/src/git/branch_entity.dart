@@ -8,12 +8,11 @@ part 'branch_entity.freezed.dart';
 
 /// A local branch, and whether it is the one checked out.
 ///
-/// Local only: the branch switcher moves between branches that exist on this
-/// machine (`docs/product/git-workflow/branch-switch/doc.md`), and a remote
+/// Local only (`docs/product/git-workflow/branch-switch/doc.md`); a remote
 /// branch appears here only as some local branch's [upstream].
 @freezed
 abstract class BranchEntity with _$BranchEntity {
-  /// Creates a branch.
+  /// A branch.
   const factory BranchEntity({
     /// What it is called, which is its identity.
     required BranchNameValueObject name,

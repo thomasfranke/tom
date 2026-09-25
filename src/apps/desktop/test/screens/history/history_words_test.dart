@@ -18,8 +18,7 @@ void main() {
   });
 
   test('a clock ahead of the commit still reads forwards', () {
-    // A machine whose time is off, or a commit made a moment ago while the
-    // seconds tick — "in -1 minutes" is not a thing to show anybody.
+    // A clock that is off must not produce "in -1 minutes".
     expect(words(const Duration(seconds: -30)), 'just now');
   });
 
@@ -40,9 +39,8 @@ void main() {
   });
 
   test('the author\'s offset changes nothing about how old it is', () {
-    // The offset is what the date is *displayed* in; age is measured on the
-    // instant, or two commits from two timezones would be ordered by where
-    // their authors were sitting.
+    // Age is measured on the instant, or two timezones would order commits
+    // by where their authors sat.
     expect(
       words(const Duration(days: 3), offset: const Duration(hours: -3)),
       words(const Duration(days: 3), offset: const Duration(hours: 9)),

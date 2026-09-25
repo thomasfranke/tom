@@ -6,15 +6,10 @@ import 'package:tom_infra/tom_infra.dart';
 
 /// Where a document's text comes from, and where it goes.
 ///
-/// Absolute paths, because that is what the disk answers in. Turning a
-/// space-relative path into one is the repository's job — it is the half
-/// that knows what a space is ([Decision
+/// Absolute paths, because the disk answers in them; the space-relative half
+/// is the repository's ([Decision
 /// 25](../../../../../../docs/technical/decisions/025-a-repository-reads-through-a-data-source.md)).
-///
-/// The disk is read on every call. There is no cache here to go stale,
-/// which is the whole reason editing a space alongside VS Code is a
-/// supported way to work rather than a race
-/// ([flows](../../../../../../docs/technical/flows.md)).
+/// The disk is read on every call, so there is no cache to go stale.
 final class DocumentDataSource {
   /// Creates a source over [filesystem].
   const DocumentDataSource({required this.filesystem});

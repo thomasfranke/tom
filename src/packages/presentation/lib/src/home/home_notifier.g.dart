@@ -10,25 +10,22 @@ part of 'home_notifier.dart';
 // ignore_for_file: type=lint, type=warning
 /// Drives the first screen: open a folder, go back to one, forget one.
 ///
-/// **No business logic here** — it calls a use case and turns [Result] into
-/// state. Pure Dart like the rest of this package, so `dart test` runs it
-/// with no Flutter binding and a phone could drive the same notifier.
+/// No business logic here — it calls a use case and turns [Result] into
+/// state.
 
 @ProviderFor(HomeNotifier)
 final homeProvider = HomeNotifierProvider._();
 
 /// Drives the first screen: open a folder, go back to one, forget one.
 ///
-/// **No business logic here** — it calls a use case and turns [Result] into
-/// state. Pure Dart like the rest of this package, so `dart test` runs it
-/// with no Flutter binding and a phone could drive the same notifier.
+/// No business logic here — it calls a use case and turns [Result] into
+/// state.
 final class HomeNotifierProvider
     extends $NotifierProvider<HomeNotifier, HomeState> {
   /// Drives the first screen: open a folder, go back to one, forget one.
   ///
-  /// **No business logic here** — it calls a use case and turns [Result] into
-  /// state. Pure Dart like the rest of this package, so `dart test` runs it
-  /// with no Flutter binding and a phone could drive the same notifier.
+  /// No business logic here — it calls a use case and turns [Result] into
+  /// state.
   HomeNotifierProvider._()
     : super(
         from: null,
@@ -60,9 +57,8 @@ String _$homeNotifierHash() => r'c38884940e09c3f65ca1341657f3b2200255944b';
 
 /// Drives the first screen: open a folder, go back to one, forget one.
 ///
-/// **No business logic here** — it calls a use case and turns [Result] into
-/// state. Pure Dart like the rest of this package, so `dart test` runs it
-/// with no Flutter binding and a phone could drive the same notifier.
+/// No business logic here — it calls a use case and turns [Result] into
+/// state.
 
 abstract class _$HomeNotifier extends $Notifier<HomeState> {
   HomeState build();

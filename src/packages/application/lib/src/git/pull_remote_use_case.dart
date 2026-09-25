@@ -5,14 +5,11 @@ import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// Merges what the tracked remote has into the current branch.
+/// The tracked remote's commits merged into the current branch.
 ///
-/// The one action here that **does** change files on disk, which is why it
-/// is never the thing a button does by accident
-/// (`docs/product/git-workflow/push-pull/doc.md`).
-///
-/// `GitMergeConflict` is not an error to report but a state to resolve: both
-/// sides changed the same lines, and the product asks rather than picking.
+/// The one remote action that changes files on disk, so it is never a
+/// button's accident (`docs/product/git-workflow/push-pull/doc.md`); a
+/// `GitMergeConflict` is a state to resolve, not an error to report.
 final class PullRemoteUseCase with UseCase {
   /// Creates the use case.
   const PullRemoteUseCase({required this.gitFor, required this.observability});

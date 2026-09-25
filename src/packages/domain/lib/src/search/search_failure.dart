@@ -12,10 +12,7 @@ part 'search_failure.freezed.dart';
 /// variant here has a recovery that ends in rebuilding it from disk.
 @freezed
 sealed class SearchFailure with _$SearchFailure implements AppFailure {
-  /// The index cannot be read and has to be rebuilt.
-  ///
-  /// Not data loss: nothing lives in the index that is not already in the
-  /// files.
+  /// The index cannot be read and has to be rebuilt; not data loss.
   const factory SearchFailure.indexCorrupted({AppFailure? cause}) =
       SearchIndexCorrupted;
 }

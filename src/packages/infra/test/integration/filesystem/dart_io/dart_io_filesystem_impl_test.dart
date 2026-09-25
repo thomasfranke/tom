@@ -1,8 +1,4 @@
 /// [DartIoFilesystemImpl] against a real temporary directory.
-///
-/// Integration, not unit: the contract's whole job is talking to the actual
-/// filesystem, so a fake would test nothing `dart:io` itself doesn't already
-/// guarantee.
 library;
 
 import 'dart:io';
@@ -28,16 +24,13 @@ void main() {
   /// [path] with forward slashes, whatever the platform reported.
   ///
   /// `dart:io` hands back a Windows path with backslashes, so an assertion
-  /// written with `/` would pass on two of the three platforms TOM ships on
-  /// and fail on the third. Normalising in the test keeps the assertion
-  /// readable without pretending the difference is not there.
+  /// written with `/` would fail on one of the three platforms.
   String slashed(String path) => path.replaceAll(r'\', '/');
 
   /// A failure of variant [T] naming [path].
   ///
-  /// Asserted by variant and path rather than by equality, because the
-  /// `operationFailed` variant carries the operating system's own words —
-  /// pinning those would make the test an assertion about macOS.
+  /// By variant and path rather than equality, because `operationFailed`
+  /// carries the operating system's own words.
   Matcher named<T extends FilesystemFailure>(String path) =>
       isA<T>().having((T failure) => (failure as dynamic).path, 'path', path);
 
@@ -85,9 +78,8 @@ void main() {
   );
 
   test('a failure is the contract\'s vocabulary and nothing under it', () {
-    // `cause` links two vocabularies — it is what a repository attaches when
-    // it turns this failure into a domain one. An adapter has no second
-    // vocabulary to link to, so the chain ends here.
+    // `cause` links two vocabularies, and an adapter has no second one to
+    // link to, so the chain ends here.
     expect(
       filesystem.readFile('${tempDir.path}/missing.md'),
       completion(
@@ -113,8 +105,8 @@ void main() {
   });
 
   test('writeFile leaves nothing beside the file it wrote', () async {
-    // The write goes through a temporary sibling and a rename — that is what
-    // makes it atomic — and the temporary is not the caller's business.
+    // The temporary sibling the write goes through is not the caller's
+    // business.
     await filesystem.writeFile('${tempDir.path}/note.md', '# Hello');
 
     expect(
@@ -126,8 +118,8 @@ void main() {
   });
 
   test('a write that cannot land leaves no temporary behind', () async {
-    // A directory cannot be replaced by a file: the rename is what fails,
-    // which is precisely the moment a temporary would be orphaned.
+    // A directory cannot be replaced by a file, so the rename is what fails —
+    // the moment a temporary would be orphaned.
     final String path = '${tempDir.path}/folder';
     Directory(path).createSync();
 
@@ -263,8 +255,7 @@ void main() {
               .map((FilesystemEntryDto e) => slashed(e.path))
               .toList();
 
-      // `.git/` is hidden by the tree, not by the capability — the caller's
-      // policy, so it has to arrive here.
+      // `.git/` is hidden by the tree, not by the capability.
       final String root = slashed(tempDir.path);
       expect(paths, contains('$root/.git/config'));
       expect(paths, contains('$root/.ai/skills/notes.md'));
@@ -340,8 +331,8 @@ void main() {
                 .value
                 .map((FilesystemEntryDto e) => slashed(e.path))
                 .toList();
-        // Everything readable is still there, and the folder itself is
-        // reported — it exists, it just would not open.
+        // The folder itself is still reported: it exists, it just would not
+        // open.
         expect(paths, contains('${slashed(tempDir.path)}/docs/deep/nested.md'));
         expect(paths, contains('${slashed(tempDir.path)}/locked'));
         expect(paths.where((String p) => p.contains('/locked/')), isEmpty);
@@ -407,9 +398,8 @@ void main() {
     test(
       'fails when the parent directory cannot be read',
       () async {
-        // Not false: `existsSync` throws here rather than answering, and the
-        // difference matters — "the folder is gone" and "this machine will
-        // not say" are different things to tell someone about a space.
+        // Not false: "the folder is gone" and "this machine will not say" are
+        // different answers.
         final String parent = '${tempDir.path}/locked';
         Directory('$parent/space').createSync(recursive: true);
         Process.runSync('chmod', <String>['000', parent]);

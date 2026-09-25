@@ -22,7 +22,7 @@ void main() {
     String body = '',
   }) => <String>[sha, name, email, date, subject, body].join(unit);
 
-  /// What git actually writes: a record separator, then a newline.
+  /// A record as git writes it: the separator, then a newline.
   String log(List<String> records) =>
       records.map((String r) => '$r$record').join('\n');
 
@@ -60,9 +60,6 @@ void main() {
         ?.date;
 
     test('survives, because DateTime alone would discard it', () {
-      // `DateTime.parse` applies the offset and throws it away. That turns
-      // the author's Saturday night into the reader's Sunday morning, which
-      // is the wrong answer to "when was this written".
       final CommitDateValueObject date = dateOf('2026-09-20T01:44:01-03:00')!;
 
       expect(date.utc, DateTime.utc(2026, 9, 20, 4, 44, 1));
@@ -88,7 +85,6 @@ void main() {
     });
 
     test('the instant is what two commits compare by', () {
-      // Same moment, two authors, two clocks.
       final CommitDateValueObject rio = dateOf('2026-09-20T01:44:01-03:00')!;
       final CommitDateValueObject berlin = dateOf('2026-09-20T06:44:01+02:00')!;
 
@@ -129,16 +125,11 @@ void main() {
       ]),
     );
 
-    // The body is the last field precisely so that its newlines cannot be
-    // mistaken for the end of the record.
     expect(commits.single.subject, 'Add B');
     expect(commits.single.body, 'Why: because.\nAnd a second line.');
   });
 
   test('a body keeps the indentation it was written with', () {
-    // The left of the body is content: in a markdown tool an indented code
-    // block or a nested list is the first thing an author writes under a
-    // subject, and trimming it changes what the commit said.
     final List<CommitEntity> commits = parser.parse(
       log(<String>[
         commitRecord(body: '    make coverage\n\nRuns the gate.\n'),

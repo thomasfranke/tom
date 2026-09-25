@@ -7,15 +7,13 @@ import 'package:tom_domain/src/spaces/space_entry_type_enum.dart';
 
 part 'space_entry_value_object.freezed.dart';
 
-/// A path the space holds, and what lives at it.
+/// A path the space holds, and what lives at it; the file tree's line.
 ///
-/// What the file tree is built from. Deliberately not a `DocumentEntity`: a
-/// listing knows where things are, not what is in them, and reading every
-/// file of a space to draw its tree is the kind of work a documentation
-/// repository cannot afford.
+/// Not a `DocumentEntity`: a listing knows where things are, not what is in
+/// them, and reading every file to draw a tree is unaffordable.
 @freezed
 abstract class SpaceEntryValueObject with _$SpaceEntryValueObject {
-  /// Creates an entry.
+  /// An entry.
   const factory SpaceEntryValueObject({
     /// Where it is, relative to the space root.
     required SpaceRelativePathValueObject path,
@@ -26,13 +24,11 @@ abstract class SpaceEntryValueObject with _$SpaceEntryValueObject {
 
   const SpaceEntryValueObject._();
 
-  /// What the tree shows for this entry — the last segment.
+  /// The last segment, which is what the tree shows.
   String get name => path.name;
 
   /// Whether this is a file the editor can open.
   ///
-  /// A link is never one, however it is named: it may point outside the
-  /// space, or at nothing at all, and the listing did not follow it to find
-  /// out.
+  /// Never a link, however it is named: the listing did not follow it.
   bool get isDocument => type == SpaceEntryTypeEnum.file && path.isMarkdown;
 }

@@ -90,11 +90,8 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  /// Mounts the control in a bar, with [status] already read from git.
-  ///
-  /// Written straight onto the session rather than through the changes
-  /// panel: what the control draws from is the session, and standing a
-  /// second panel up to put it there would be testing that panel.
+  /// Mounts the control in a bar, with [status] written straight onto the
+  /// session — going through the changes panel would test that panel.
   Future<void> pumpControl(
     WidgetTester tester, {
     GitStatusValueObject? status,
@@ -140,8 +137,6 @@ void main() {
   testWidgets('nothing is drawn before git has answered', (
     WidgetTester tester,
   ) async {
-    // A control that cannot say which branch it would be switching *from*
-    // is worse than no control.
     await pumpControl(tester);
 
     expect(find.byType(OutlinedButton), findsNothing);
@@ -158,8 +153,8 @@ void main() {
   testWidgets('a detached HEAD is named as that, not left blank', (
     WidgetTester tester,
   ) async {
-    // "No branch" is a state somebody has to get out of, not a missing
-    // value (`docs/product/git-workflow/branch-switch/doc.md`).
+    // A state to get out of, not a missing value
+    // (`docs/product/git-workflow/branch-switch/doc.md`).
     await pumpControl(tester, status: statusOf(isDetached: true));
 
     expect(find.text('detached HEAD'), findsOneWidget);
@@ -260,8 +255,8 @@ void main() {
       status: statusOf(branch: 'main'),
       withDocument: true,
     );
-    // Nothing on screen is the editor, so the buffer has to be listened to
-    // before it will read anything — and typed into only once it has.
+    // Nothing on screen is the editor, so the buffer needs a listener before
+    // it reads anything, and is typed into only once it has.
     container.listen<EditorState>(editorProvider, (_, _) {});
     await tester.pumpAndSettle();
     container.read(editorProvider.notifier).edit('changed');

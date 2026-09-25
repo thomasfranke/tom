@@ -45,8 +45,6 @@ void main() {
   });
 
   test('a remote that refused is passed through, not reported', () async {
-    // A machine with no network, or no key, is news for the screen — not a
-    // bug to send anywhere.
     git.answer = const Failure<void, GitFailure>(GitAuthenticationFailed());
 
     final Result<void, AppFailure> result = await fetching().fetch(docs);
@@ -73,9 +71,8 @@ void main() {
 
 /// Git, answering `fetch` and refusing every other question.
 ///
-/// The unasked methods are left to `noSuchMethod`, which throws: a use case
-/// that called one would fail loudly rather than pass quietly, and saying it
-/// once beats eleven bodies that all say `UnimplementedError`.
+/// The rest is left to `noSuchMethod`, which throws, so a use case that
+/// called one fails loudly rather than passing quietly.
 final class _Git implements GitRepository {
   Result<void, GitFailure>? answer;
   bool throws = false;

@@ -1,20 +1,13 @@
 // What a name has to say, in the class and in the file.
-//
-// Every rule here has the same shape of consequence: the reader cannot tell
-// what a thing is without opening it, and two things that should not collide
-// do.
 library;
 
 import 'dart:io';
 
 import '../rule.dart';
 
-/// Decision 24 — a class fulfilling a contract says so, twice.
-///
-/// `DartIo` says which implementation, so the second is a sibling rather than
-/// a rename; `Impl` says it fulfils a contract declared elsewhere, which the
-/// position of the file cannot say. A failure hierarchy implements
-/// `AppFailure` and is neither — a marker classifying data is not a seam.
+/// Decision 24 — a class fulfilling a contract says so, twice: `DartIo` says
+/// which implementation, `Impl` says it fulfils a contract declared
+/// elsewhere. A failure hierarchy implements `AppFailure` and is neither.
 Iterable<Offence> implementationsSaySo(Directory root) sync* {
   final fulfils = RegExp(
     r'^(?:final |abstract )?class (\w+)[^{]*? implements (\w+)',
@@ -36,15 +29,12 @@ Iterable<Offence> implementationsSaySo(Directory root) sync* {
   }
 }
 
-/// Every variant of a failure hierarchy carries the hierarchy's prefix.
-///
-/// `DocumentPermissionDenied`, not `PermissionDenied`: the variants are
-/// top-level classes Freezed generates, so two hierarchies naming the same
-/// concept would collide, and the one that reads first wins silently.
+/// Every variant of a failure hierarchy carries the hierarchy's prefix: the
+/// variants are top-level classes Freezed generates, so two hierarchies
+/// naming the same concept would collide.
 Iterable<Offence> failuresCarryTheirPrefix(Directory root) sync* {
-  // `\s+` rather than a space: dartfmt wraps a long declaration onto the
-  // next line, and a hierarchy the rule silently skipped was one where a
-  // variant could drop its prefix and keep the check green.
+  // `\s+` rather than a space: dartfmt wraps a long declaration onto the next
+  // line, and a hierarchy the rule skipped could drop its prefix unnoticed.
   final hierarchy = RegExp(r'sealed class (\w+)Failure\s+with');
   final variant = RegExp(r'\)\s*=\s*(\w+);');
 
@@ -69,12 +59,9 @@ Iterable<Offence> failuresCarryTheirPrefix(Directory root) sync* {
 }
 
 /// Decision 23 — a domain type says whether it is an entity or a value
-/// object.
-///
-/// They are not the same thing and the difference decides how the code may
-/// treat them: an entity has an identity that outlives its values, a value
-/// object is wholly what it carries. Failures, contracts, ports, enums,
-/// services and syntax rules say what they are already.
+/// object, since the difference decides how the code may treat it. Failures,
+/// contracts, ports, enums, services and syntax rules say what they are
+/// already.
 Iterable<Offence> domainTypesSayWhichKind(Directory root) sync* {
   final declared = RegExp(
     r'^(?:final |abstract |sealed )?class (\w+)',

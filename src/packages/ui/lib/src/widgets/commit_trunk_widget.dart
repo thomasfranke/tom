@@ -11,29 +11,14 @@ import 'package:tom_ui/src/theme/tom_colors.dart';
 import 'package:tom_ui/src/widgets/commit_trunk_log.dart';
 import 'package:tom_ui/src/widgets/tom_wordmark_widget.dart';
 
-/// Home's ground: the commit line the wordmark's O sits on.
+/// Home's ground: the wordmark's trunk carried to both edges of the screen,
+/// with one cycle over it — a commit climbs writing the log ([commits]),
+/// lands on the O, and rings leave the window; lanes come and go beside it
+/// ([brand.md](../../../../../../docs/technical/design/brand.md), [TomMark]).
 ///
-/// The O *is* a commit on a trunk ([TomMark]) and the letterform stops that
-/// trunk at its own edge. This carries it to both edges of the screen and
-/// runs one cycle over it — a commit rises from below, lands on the node,
-/// the node answers with rings that leave the window, and the change carries
-/// on upward. History runs the way a trunk grows: older below, newer above.
-///
-/// The log is *written by that commit on its way up*: a line appears as the
-/// ray reaches it and its node answers as it passes, so one climb draws the
-/// whole history and the end of the cycle takes it back off ([commits]).
-///
-/// Lanes come and go beside it — a branch shows up, one commit runs past,
-/// and it is gone again somewhere else next time — so the screen reads as a
-/// graph. The trunk is the one line that stays and carries the letter's
-/// weight.
-///
-/// **Nothing is assumed about where the mark is.** The wordmark under a
-/// trunk carries [anchorOf]'s key, and the geometry is read off what was
-/// actually laid out, *in the paint that uses it* — so a different cap
-/// height, or a window being resized, moves the ground with it and never a
-/// frame later. Without that key it paints nothing, which is how a screen
-/// keeps using [TomWordmarkWidget] with no trunk above it.
+/// The geometry is read at paint time off the [TomWordmarkWidget] carrying
+/// [anchorOf]'s key, so a resize moves the ground in the same frame; with no
+/// key nothing is painted, which is how a screen draws the mark alone.
 class CommitTrunkWidget extends StatefulWidget {
   /// Puts the trunk behind [child], carrying [commits] down the line.
   const CommitTrunkWidget({
@@ -45,20 +30,14 @@ class CommitTrunkWidget extends StatefulWidget {
   /// The screen this is the ground for.
   final Widget child;
 
-  /// The pool the lines are drawn from, not the three that are up.
-  ///
-  /// Every turn of the cycle takes the next screenful, so a line is a new
-  /// message each time it appears — which is why this is fifty long
-  /// ([TrunkLog.tomsOwn]) and not three. The log is the ground's own, not a
-  /// reading of anybody's repository: what the user opened is on the card in
-  /// front of it, and saying that twice is what makes a screen busy.
+  /// The pool the lines are drawn from — fifty ([TrunkLog.tomsOwn]), not the
+  /// three on screen, because every turn of the cycle takes the next
+  /// screenful. It is the ground's own, never a reading of the user's
+  /// repository, which is already on the card in front of it.
   final List<TrunkCommit> commits;
 
-  /// The key the wordmark under a [CommitTrunkWidget] must carry.
-  ///
-  /// Null when there is no trunk above it — `TomWordmarkWidget(key:
-  /// anchorOf(...))`
-  /// is then an ordinary wordmark with no key, and nothing else changes.
+  /// The key the wordmark under a [CommitTrunkWidget] must carry; null with
+  /// no trunk above, when the wordmark is an ordinary one.
   static GlobalKey? anchorOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_TrunkScope>()?.anchor;
 
@@ -74,11 +53,8 @@ class CommitTrunkWidget extends StatefulWidget {
 
 class _CommitTrunkWidgetState extends State<CommitTrunkWidget>
     with SingleTickerProviderStateMixin {
-  /// One cycle: rise, land, answer, carry on.
-  ///
-  /// Slower than the same figure on the website. A visitor watches a landing
-  /// page for twenty seconds; this is the screen someone opens the app into,
-  /// and a fast loop behind a decision is a distraction.
+  /// One cycle: rise, land, answer, carry on. Slower than the website's,
+  /// because a fast loop behind a decision is a distraction.
   static const Duration _cycle = Duration(milliseconds: 13600);
 
   final GlobalKey _anchor = GlobalKey();
@@ -88,11 +64,10 @@ class _CommitTrunkWidgetState extends State<CommitTrunkWidget>
     duration: _cycle,
   );
 
-  /// Which turn of the cycle this is, and where the last one had got to.
+  /// Which turn of the cycle this is, which moves the lanes.
   ///
-  /// The lanes stand somewhere else on every turn, and a controller that
-  /// repeats says nothing about how many times it has: the value going
-  /// backwards is the only announcement there is.
+  /// A repeating controller announces a new turn only by its value going
+  /// backwards, so the last value is kept to notice it.
   int _turn = 0;
   double _wasAt = 0;
 
@@ -112,15 +87,14 @@ class _CommitTrunkWidgetState extends State<CommitTrunkWidget>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // The platform's own answer to "no animations, please" — the still frame
-    // is the design, not a fallback, so it keeps the line and the commits.
+    // The platform's no-animations setting: the still frame is the design,
+    // not a fallback, so it keeps the line and the commits.
     if (MediaQuery.disableAnimationsOf(context)) {
       _clock
         ..stop()
         ..value = 0;
     } else if (!_clock.isAnimating) {
-      // The ticker's future completes only when something stops it, which is
-      // dispose — there is nothing here to await.
+      // The ticker's future completes only on dispose; nothing to await.
       unawaited(_clock.repeat());
     }
   }
@@ -131,13 +105,11 @@ class _CommitTrunkWidgetState extends State<CommitTrunkWidget>
     super.dispose();
   }
 
-  /// The mark's box in this widget's own coordinates, as laid out.
+  /// The mark's box in this widget's own coordinates, read at paint time.
   ///
-  /// Read by the painter during the paint rather than remembered from the
-  /// last frame: resizing the window moves the mark without rebuilding
-  /// anything here — the only `MediaQuery` this widget depends on is
-  /// `disableAnimations` — so a remembered box would leave the line where
-  /// the previous width had put it until something else forced a build.
+  /// A resize moves the mark without rebuilding this widget — its only media
+  /// query is `disableAnimations` — so a box remembered from the last frame
+  /// would leave the line where the previous width put it.
   Rect? _markBox() {
     final RenderObject? mark = _anchor.currentContext?.findRenderObject();
     final RenderObject? self = context.findRenderObject();
@@ -165,8 +137,8 @@ class _CommitTrunkWidgetState extends State<CommitTrunkWidget>
                   markBox: _markBox,
                   turn: () => _turn,
                   colors: TomColors.of(context),
-                  // Sage over cream reads stronger than sage over ink, so the
-                  // ground is quieter in light mode to weigh the same.
+                  // Sage over cream reads stronger than over ink, so light
+                  // mode is quieter to weigh the same.
                   ink: theme.brightness == Brightness.dark ? 0.34 : 0.24,
                   commits: widget.commits,
                   moving: !MediaQuery.disableAnimationsOf(context),
@@ -182,9 +154,6 @@ class _CommitTrunkWidgetState extends State<CommitTrunkWidget>
 }
 
 /// A slot for a branch beside the trunk: where it may stand, and when.
-///
-/// A lane writes its own log as its ray goes up, in smaller type and out of
-/// focus: near enough to see that work is going on, too far to read.
 @immutable
 class _Lane {
   const _Lane({
@@ -194,21 +163,21 @@ class _Lane {
     required this.to,
   });
 
-  /// The stretch it stands in, as a fraction of the trunk's own distance to
-  /// that edge — negative to the left, and one slot per side of the mark.
+  /// The near end of the stretch it stands in, as a fraction of the trunk's
+  /// distance to that edge, negative to the left.
   ///
-  /// Proportional rather than a number of pixels: a lane then clears the
-  /// wordmark on a wide window and still has room on a narrow one. A slot
-  /// keeps its side, so two of them never land on the same line.
+  /// Proportional rather than pixels, so a lane clears the wordmark on a
+  /// wide window and still fits a narrow one; a slot keeps its side, so two
+  /// never share a line.
   final double near;
 
   /// The far end of that stretch.
   final double far;
 
-  /// The stretch of the cycle it is alive for, from
+  /// Where in the cycle it appears.
   final double from;
 
-  /// to.
+  /// Where in the cycle it is gone.
   final double to;
 }
 
@@ -252,27 +221,22 @@ class _TrunkPainter extends CustomPainter {
   final List<TrunkCommit> commits;
   final bool moving;
 
-  /// How far the letterform's own weight reaches past the mark before it
-  /// thins into the line — long enough to read as the same stroke.
+  /// How far the letterform's weight reaches past the mark before it thins
+  /// into the line — long enough to read as the same stroke.
   static const double _stub = 150;
 
   /// The pulse, head to tail.
   static const double _pulse = 130;
 
-  /// The stretch under the mark the words take up — the expansion, the
-  /// tagline and the two ways in. The line is washed out across it.
+  /// The stretch under the mark the words take up; the line is washed out
+  /// across it.
   static const double _words = 340;
 
-  /// How wide that wash is: the column the words are set to, and then some
-  /// on each side for it to fade out over.
+  /// How wide that wash is: the words' column plus room to fade on each side.
   static const double _clearing = 1240;
 
-  /// The branches beside the trunk — `git log --graph` from across the room.
-  ///
-  /// Four slots, each with a stretch of the screen it may stand in and a
-  /// stretch of the cycle it is alive for: it fades in, one commit runs up
-  /// it, and it is gone. Their stretches overlap two or three at a time, so
-  /// four is the most that can ever be on screen at once.
+  /// The branches beside the trunk: four slots, each with where it may stand
+  /// and when it is alive, overlapping two or three at a time.
   static const List<_Lane> _lanes = <_Lane>[
     _Lane(near: -0.92, far: -0.58, from: 0.02, to: 0.44),
     _Lane(near: -0.54, far: -0.30, from: 0.30, to: 0.76),
@@ -280,36 +244,26 @@ class _TrunkPainter extends CustomPainter {
     _Lane(near: 0.78, far: 0.94, from: 0.56, to: 0.98),
   ];
 
-  /// Mark to the first entry over it, and one entry to the next.
-  ///
-  /// The gap is short because the room over the mark is: the block sits a
-  /// third of the way down, so a taller gap would mean no entry up there at
-  /// all on the window the design was drawn for.
+  /// Mark to the first entry over it, and entry to entry — short, because
+  /// the room over the mark is.
   static const double _logGap = 52;
   static const double _logStep = 88;
 
-  /// How many lines the trunk writes, and how many are on screen with the
-  /// lanes' as well.
-  ///
-  /// Three, because the trunk's log is the thing being read and a fourth
-  /// line turns a ground into a list. The lanes' two apiece are what make it
-  /// a graph rather than a list of three.
+  /// Lines on the trunk, and on screen with the lanes' two apiece. Three,
+  /// because a fourth turns a ground into a list.
   static const int _shown = 3;
   static const int _onScreen = _shown + 8;
 
-  /// How long a written line holds before it starts to go, and how far the
-  /// ray travels while it does — both in pixels past it.
+  /// How far past a written line the ray goes before it starts to fade, and
+  /// how far again until it is gone.
   static const double _holds = 240;
   static const double _forgets = 460;
 
   /// How much of a lane's life is its arriving, and the same again leaving.
   static const double _laneFade = 0.16;
 
-  /// The cycle, in three marks: the commit reaches the node, leaves it, and
-  /// is off the top of the window.
-  ///
-  /// Nearly half of it is the climb, because the climb is what writes the
-  /// log — everything after it is the answer.
+  /// The cycle's three marks: the commit reaches the node, leaves it, is off
+  /// the top. Nearly half is the climb, because the climb writes the log.
   static const double _lands = 0.46;
   static const double _leaves = 0.48;
   static const double _gone = 0.80;
@@ -329,9 +283,8 @@ class _TrunkPainter extends CustomPainter {
     final double weight = TomMark.trunkStroke * scale;
     final Color accent = colors.accent;
 
-    // The line, above and below the letterform's own reach. It fades into the
-    // top bar rather than butting against it; below it runs to the edge,
-    // because that is where the next commit comes from.
+    // Above the mark the line fades into the top bar; below, it runs to the
+    // edge the next commit comes from.
     canvas
       ..drawLine(
         Offset(ox, 0),
@@ -374,11 +327,10 @@ class _TrunkPainter extends CustomPainter {
     final double t = clock.value;
     final int round = turn();
 
-    // The lanes. Drawn before the trunk's log, so its subjects stay readable
-    // where one passes behind them — and each only while it is alive.
+    // Lanes go before the trunk's log, so its subjects stay readable where
+    // one passes behind them.
     for (final (int slot, _Lane lane) in _lanes.indexed) {
-      // Still is a design, not a fallback: with nothing moving, every lane
-      // stands there at full weight rather than the screen losing its graph.
+      // Still is a design, not a fallback: every lane stands at full weight.
       final double life = moving ? _span(t, lane.from, lane.to) : 0.5;
       if (life <= 0 || life >= 1) {
         continue;
@@ -392,9 +344,8 @@ class _TrunkPainter extends CustomPainter {
         Offset(lx, 0),
         Offset(lx, size.height),
         Paint()
-          // Thinner than the trunk, and its nodes and type are smaller too:
-          // the only thing saying these branches are further off is how
-          // little of them there is to see.
+          // Thinner, with smaller nodes and type: distance is said only by
+          // how little there is to see.
           ..strokeWidth = 1
           ..shader = ui.Gradient.linear(
             Offset(lx, 0),
@@ -412,8 +363,7 @@ class _TrunkPainter extends CustomPainter {
       final double laneHead = moving
           ? _lerp(size.height + _pulse, -_pulse, ray)
           : -_pulse;
-      // A lane writes its own log the same way the trunk does, only too far
-      // away to read: the text is out of focus, and it is meant to be.
+      // A lane's log is written the trunk's way, out of focus on purpose.
       final bool behind = lx > ox;
       final double room = math.min(
         170,
@@ -445,8 +395,7 @@ class _TrunkPainter extends CustomPainter {
           lx,
           laneHead,
           accent,
-          // Far quieter than the trunk's own: a lane is what you see out of
-          // the corner of your eye, and only one commit on this screen lands.
+          // Quieter than the trunk's: only one commit on this screen lands.
           width: 1.4,
           reach: 58,
           dot: 2.2,
@@ -455,10 +404,8 @@ class _TrunkPainter extends CustomPainter {
       }
     }
 
-    // Where the trunk's commit is right now: climbing to the node, held there
-    // while it lands, then carrying on off the top. The log is read against
-    // it — **a line is written when the ray reaches it**, and fades once the
-    // ray is well past, so one climb draws the whole history.
+    // Where the trunk's commit is now. The log is read against it: a line is
+    // written when the ray reaches it, so one climb draws the whole history.
     final double head = !moving
         ? -_pulse
         : switch (t) {
@@ -471,9 +418,8 @@ class _TrunkPainter extends CustomPainter {
             _ => _lerp(oy - gap, -_pulse, _span(t, _leaves, _gone)),
           };
 
-    // The log, newest first: the top of it over the mark where the window is
-    // tall enough, the rest down the line under the words, so it reads as one
-    // history through the whole screen the way a trunk grows.
+    // The log, newest first: over the mark where the window is tall enough,
+    // the rest under the words, so it reads as one history down the screen.
     final double under = math.max(
       size.height * 0.715,
       box.bottom + _words + 60,
@@ -494,8 +440,7 @@ class _TrunkPainter extends CustomPainter {
       if (told <= 0) {
         continue;
       }
-      // The node answers as the ray goes by, the way the O does when it
-      // lands: brightest at the moment of passing, then back to the others.
+      // The node answers as the ray goes by, brightest at the passing.
       if (lit > 0) {
         canvas.drawCircle(
           Offset(ox, y),
@@ -521,19 +466,16 @@ class _TrunkPainter extends CustomPainter {
       );
     }
 
-    // The commit itself, rising. Drawn before the wash so it dims behind the
-    // words and comes back out at the mark, and drawn *at* the head the log
-    // is read against, so the two can never disagree.
+    // The commit rising: before the wash, so it dims behind the words, and at
+    // the head the log is read against, so the two never disagree.
     if (moving && t < _lands) {
       _bolt(canvas, ox, head, accent);
     }
 
-    // A clearing of the page colour over the stretch the words occupy, so the
-    // line passes behind the block instead of through it. An oval and not a
-    // band across the window: a band clears the words and cuts every lane in
-    // half on its way out. It is not a glow around the mark either — the
-    // letterform's own stroke has to stay at full weight where it leaves the
-    // word, or the continuation is lost.
+    // A clearing of the page colour behind the words. An oval, because a
+    // band would cut every lane in half; not a glow around the mark, because
+    // the letterform's stroke must stay at full weight where it leaves the
+    // word or the continuation is lost.
     final Offset heart = Offset(ox, box.bottom + 24 + _words / 2);
     const double squash = _words / _clearing;
     canvas
@@ -573,24 +515,18 @@ class _TrunkPainter extends CustomPainter {
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, gap * 1.3),
       );
     }
-    // Four rings, each leaving the screen rather than dying inside it: the
-    // landing is the loudest thing this screen does, and where it ends is
-    // the window's far corner, not a number of pixels. They take the rest of
-    // the cycle to get there — a ring that crosses the window in a second is
-    // a flash, and this one is meant to be watched.
+    // Four rings, each leaving by the window's far corner over the rest of
+    // the cycle: a ring that crosses the window in a second is a flash.
     final double start = gap * 1.12;
     final double reach = _corner(Offset(ox, oy), size);
     for (int i = 0; i < 4; i++) {
-      // Every ring is out of the window before the cycle turns over, and each
-      // holds its weight until it nearly is: fading it by the square of the
-      // distance put it out at half the reach, which is the wordmark and
-      // nothing else — the ring was gone long before the screen had seen it.
+      // Weight held until the ring is nearly out: fading by the square of
+      // the distance put it out at the wordmark, before the screen saw it.
       final double ring = _span(t, _lands + i * 0.05, 0.88 + i * 0.04);
       if (ring <= 0 || ring >= 1) {
         continue;
       }
-      // Leaving from just outside the ring the letterform draws, so the first
-      // one does not sit on top of it.
+      // From just outside the letterform's own ring, not on top of it.
       canvas.drawCircle(
         Offset(ox, oy),
         start + ring * (reach - start),
@@ -629,12 +565,11 @@ class _TrunkPainter extends CustomPainter {
       );
   }
 
-  /// How far along a line is in being written, [px] past the ray's head: how
-  /// strongly it shows, and how brightly its node is answering.
+  /// How far a line [px] past the ray's head is written, and how brightly
+  /// its node is answering.
   ///
   /// Distance rather than time, so a line appears exactly as the ray reaches
-  /// it and dims as the ray leaves it behind — which is what makes one climb
-  /// read as the log being written rather than revealed.
+  /// it — written, not revealed.
   (double, double) _written(double px) {
     if (!moving) {
       return (1, 0);
@@ -646,19 +581,13 @@ class _TrunkPainter extends CustomPainter {
     );
   }
 
-  /// The line this slot shows on turn [round].
-  ///
-  /// The pool is walked a screenful at a time, so every appearance is a new
-  /// message and no two lines on screen are the same one.
+  /// The line slot [i] shows on turn [round], walking the pool a screenful
+  /// at a time so no two lines on screen are the same one.
   TrunkCommit _from(int i, int round) =>
       commits[(round * _onScreen + i) % commits.length];
 
-  /// One line of the log beside its node: the sha, then the subject.
-  ///
-  /// Laid out as one line and centred on the node, the way a log reads, and
-  /// cut at [room] rather than run off the window. The figures are tabular
-  /// so the hashes line up under each other, which is the only thing a log
-  /// asks of its type.
+  /// One line of the log beside its node — the sha, then the subject — cut
+  /// at [room]. Tabular figures, so the hashes line up under each other.
   void _label(
     Canvas canvas,
     Offset at,
@@ -672,9 +601,8 @@ class _TrunkPainter extends CustomPainter {
     if (room < 30 || alpha <= 0) {
       return;
     }
-    // A lane's log is blurred rather than only faint: out of focus is the
-    // one cue that says *further away* instead of *less important*, and a
-    // mask filter does it on the glyphs without a layer to composite.
+    // Blurred rather than only faint: out of focus says *further away*
+    // where faint alone says *less important*.
     final MaskFilter? haze = blur > 0
         ? MaskFilter.blur(BlurStyle.normal, blur)
         : null;
@@ -717,27 +645,20 @@ class _TrunkPainter extends CustomPainter {
     );
   }
 
-  /// How many entries the space over the mark has room for.
-  ///
-  /// Two at most, and none at all on a window too short to keep them clear
-  /// of the top bar — a short screen is then the line it always was.
+  /// How many entries fit over the mark: two at most, none on a window too
+  /// short to keep them clear of the top bar.
   int _roomOver(double top) =>
       (((top - _logGap - 26) / _logStep).floor() + 1).clamp(0, 2);
 
-  /// A repeatable number in [0, 1) for [a] on turn [b].
-  ///
-  /// The same place for as long as a lane is standing there, a new one the
-  /// next time that slot comes round; and it is arithmetic, so a repaint
-  /// mid-life never moves what is already on screen.
+  /// A repeatable number in [0, 1) for [a] on turn [b] — arithmetic, so a
+  /// repaint mid-life never moves what is already on screen.
   double _noise(int a, int b) {
     final double s = math.sin(a * 12.9898 + b * 78.233) * 43758.5453;
     return s - s.floorToDouble();
   }
 
-  /// The travelling commit: a bright head with its tail trailing below, so a
-  /// single frame still says which way it is going.
-  ///
-  /// The defaults are the trunk's own; a lane passes smaller and dimmer ones.
+  /// The travelling commit: a bright head with its tail below, so a single
+  /// frame says which way it is going. The defaults are the trunk's own.
   void _bolt(
     Canvas canvas,
     double x,
@@ -778,8 +699,7 @@ class _TrunkPainter extends CustomPainter {
       );
   }
 
-  /// How far the farthest corner of [size] is from [at] — how far a ring has
-  /// to grow before the whole window has seen it.
+  /// The distance from [at] to the farthest corner of [size].
   double _corner(Offset at, Size size) => Offset(
     math.max(at.dx, size.width - at.dx),
     math.max(at.dy, size.height - at.dy),
@@ -789,12 +709,8 @@ class _TrunkPainter extends CustomPainter {
   double _span(double t, double from, double to) =>
       ((t - from) / (to - from)).clamp(0, 1);
 
-  /// The shape of the climb: slow out of the bottom, gathering speed.
-  ///
-  /// The log is written in the lowest fifth of the window, so an even climb
-  /// crosses all three lines in under a second and they light up together.
-  /// This spends half the climb down there, a line at a time, and arrives at
-  /// the node with the speed the landing wants.
+  /// The shape of the climb: slow out of the bottom, where the log is
+  /// written, so the lines light one at a time rather than together.
   double _climb(double r) => r * r;
 
   double _lerp(double a, double b, double f) => a + (b - a) * f;

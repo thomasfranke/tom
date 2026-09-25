@@ -35,8 +35,6 @@ void main() {
   });
 
   test('the constructor throws, because reaching it with junk is a bug', () {
-    // The invariant is checked once, here. A parser reading git output uses
-    // tryParse; anything else is the code's own mistake.
     expect(() => CommitShaValueObject('nope'), throwsArgumentError);
   });
 }

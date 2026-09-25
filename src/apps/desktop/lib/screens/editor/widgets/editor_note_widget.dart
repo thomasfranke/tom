@@ -5,10 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// One muted line, standing in for the source.
-///
-/// Every state the editor can be in that is not a buffer — nothing chosen,
-/// still reading, failed — says so with this rather than leaving the pane
+/// One muted line standing in for the source, so no state leaves the pane
 /// blank.
 class EditorNoteWidget extends StatelessWidget {
   /// Creates a note saying [text].

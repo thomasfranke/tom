@@ -257,13 +257,13 @@ class FileTreeReady implements FileTreeState {
 /// Everything the space holds, in the order a tree shows it.
 ///
 /// The whole space rather than one level, so expanding a folder is a
-/// filter over a list. Handed over unmodifiable, never copied — Freezed
+/// filter over a list. Handed over unmodifiable, never copied: Freezed
 /// compares collections element-wise and copies nothing.
  final  List<SpaceEntryValueObject> _entries;
 /// Everything the space holds, in the order a tree shows it.
 ///
 /// The whole space rather than one level, so expanding a folder is a
-/// filter over a list. Handed over unmodifiable, never copied — Freezed
+/// filter over a list. Handed over unmodifiable, never copied: Freezed
 /// compares collections element-wise and copies nothing.
  List<SpaceEntryValueObject> get entries {
   if (_entries is EqualUnmodifiableListView) return _entries;
@@ -271,15 +271,11 @@ class FileTreeReady implements FileTreeState {
   return EqualUnmodifiableListView(_entries);
 }
 
-/// The folders the user has closed.
-///
-/// Closed rather than open, so a space opens showing what it holds and
-/// an empty set is the ordinary first state.
+/// The folders the user has closed — closed rather than open, so a
+/// space opens showing what it holds.
  final  Set<SpaceRelativePathValueObject> _collapsed;
-/// The folders the user has closed.
-///
-/// Closed rather than open, so a space opens showing what it holds and
-/// an empty set is the ordinary first state.
+/// The folders the user has closed — closed rather than open, so a
+/// space opens showing what it holds.
  Set<SpaceRelativePathValueObject> get collapsed {
   if (_collapsed is EqualUnmodifiableSetView) return _collapsed;
   // ignore: implicit_dynamic_type

@@ -13,21 +13,16 @@ import 'package:tom_presentation/tom_presentation.dart';
 
 /// Everything the panel draws from, which is everything but the buffer.
 ///
-/// A record so the whole thing is one `select`: the buffer changes on every
-/// keystroke and nothing here does, so the panel is built once per document
-/// rather than once per character.
+/// One record, one `select`: the buffer changes on every keystroke and
+/// nothing here does, so the panel is built per document, not per character.
 typedef EditorStage = ({
   SpaceRelativePathValueObject? open,
   AppFailure? failure,
   bool isLoading,
 });
 
-/// The open document's source, editable.
-///
-/// **Deliberately not a rich-text editor** ([Decision
-/// 3](../../../../../../docs/technical/decisions/003-editor-is-source-plus-preview.md)):
-/// what is on screen is the file's own markdown, and the preview beside it
-/// is where the formatting shows.
+/// The open document's source, editable and never rich text
+/// ([Decision 3](../../../../../../docs/technical/decisions/003-editor-is-source-plus-preview.md)).
 class EditorPanel extends ConsumerWidget {
   /// Creates the panel.
   const EditorPanel({super.key});
@@ -54,8 +49,8 @@ class EditorPanel extends ConsumerWidget {
   /// What sits under the caption.
   static Widget _body(EditorStage stage) {
     if (stage.open case final SpaceRelativePathValueObject open) {
-      // Keyed by the document's own path: another file is another buffer,
-      // and a controller carried across would carry its undo history too.
+      // Keyed by the document's path: another file is another controller,
+      // and one carried across would carry its undo history too.
       return EditorSourceWidget(key: ValueKey<String>(open.value));
     }
     if (stage.failure case final AppFailure failure) {
@@ -77,8 +72,8 @@ class EditorPanel extends ConsumerWidget {
 
   /// What to say about a document that did not open.
   ///
-  /// A catch-all, because this switches over [AppFailure] itself: whatever
-  /// went wrong, the panel says something rather than staying blank.
+  /// A catch-all, because this switches over [AppFailure] itself and the
+  /// panel must say something whatever went wrong.
   static String _explain(AppFailure failure) => switch (failure) {
     DocumentNotFound() => 'That document is no longer there.',
     DocumentPermissionDenied() => 'TOM is not allowed to read that document.',

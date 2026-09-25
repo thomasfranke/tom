@@ -11,9 +11,7 @@ enum SpaceEntryTypeEnum {
 
   /// A symbolic link, reported as itself because listings never follow one.
   ///
-  /// Kept rather than collapsed into [file]: a link into another checkout is
-  /// a real way to assemble documentation, and the tree has to be able to
-  /// say that is what it is instead of opening something that may not be
-  /// there.
+  /// Not collapsed into [file]: the tree has to say what it is rather than
+  /// open something that may not be there.
   link,
 }

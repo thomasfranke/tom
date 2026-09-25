@@ -5,12 +5,10 @@ import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// Reads the branch, the distance from the remote and everything that
-/// differs.
+/// One reading of the branch, the distance from the remote and what differs.
 ///
-/// A reading, not a subscription: it is stale the moment an editor saves,
-/// so every operation that changes the tree asks again rather than patching
-/// what it has.
+/// A reading, not a subscription: it is stale the moment an editor saves, so
+/// every operation that changes the tree asks again rather than patching.
 final class ReadGitStatusUseCase with UseCase {
   /// Creates the use case.
   const ReadGitStatusUseCase({

@@ -1,8 +1,5 @@
-/// [RecentSpacesRepositoryImpl] against a settings store in memory.
-///
-/// Unit, not integration: what this class does is decide a shape and survive
-/// what it finds. The capability's own tests already prove a file survives a
-/// restart; these prove a list survives a text someone else wrote.
+/// [RecentSpacesRepositoryImpl] against a settings store in memory, proving a
+/// list survives a text someone else wrote.
 library;
 
 import 'dart:convert';
@@ -75,7 +72,6 @@ void main() {
     });
 
     test('opening one again moves it, and does not duplicate it', () async {
-      // A space is identified by its folder.
       await repository.remember(spaceAt('/a'));
       await repository.remember(spaceAt('/b'));
       await repository.remember(spaceAt('/a'));
@@ -90,7 +86,6 @@ void main() {
     });
 
     test('the list stops growing', () async {
-      // Not a product rule; a default, and it is enforced on write.
       for (int i = 0; i < 15; i++) {
         await repository.remember(spaceAt('/space$i'));
       }
@@ -133,7 +128,6 @@ void main() {
     });
 
     test('one bad row does not cost the good ones', () async {
-      // Total, like every other parser in this package.
       settings.values['spaces.recent'] = jsonEncode(<Object?>[
         <String, Object?>{
           'root': '/a',
@@ -174,14 +168,10 @@ void main() {
     setUp(() => settings.broken = true);
 
     test('reading answers an empty list rather than a failure', () async {
-      // What a broken store costs is the list, not the session.
       expect(valueOf(await repository.list()), isEmpty);
     });
 
     test('and the failure is recorded rather than lost', () async {
-      // Not handed to the caller is not the same as dropped: a preferences
-      // folder nobody can write would otherwise forget the user's spaces on
-      // every restart with nothing behind the bug report.
       await repository.remember(spaceAt('/code/app'));
 
       expect(observability.captured, everyElement(isA<SettingsFailure>()));

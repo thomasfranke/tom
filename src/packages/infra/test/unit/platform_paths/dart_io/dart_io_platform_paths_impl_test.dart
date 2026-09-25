@@ -1,8 +1,5 @@
-/// Where each platform keeps an application's files.
-///
-/// Unit, and with the platform passed in: two of the three branches are
-/// unreachable on whatever machine runs the suite, which is the most common
-/// way a path bug ships — it works for whoever wrote it and nobody else.
+/// [DartIoPlatformPathsImpl] with the platform passed in, so every branch
+/// runs on whatever machine runs the suite.
 library;
 
 import 'package:test/test.dart';
@@ -133,8 +130,6 @@ void main() {
 
   group('a machine with no home directory', () {
     test('is a failure and not an exception', () {
-      // The composition root turns it into a refusal to start; what a
-      // capability owes its caller is a value, never a throw.
       expect(
         resultOn('linux', environment: const <String, String>{}),
         isA<Failure<String, PlatformPathsFailure>>(),

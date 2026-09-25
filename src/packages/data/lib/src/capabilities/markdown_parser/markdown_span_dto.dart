@@ -8,13 +8,9 @@ part 'markdown_span_dto.freezed.dart';
 
 /// Where a block-level construct sits in the text, and what it is.
 ///
-/// A DTO because it exists to cross the contract and is not a domain type
-/// ([Decision
-/// 21](../../../../../../docs/technical/decisions/021-dtos-and-daos-when-they-are-real.md)):
-/// the domain's word is `BlockValueObject`, and this package may not name one.
-///
-/// Positions and a kind, never a parse tree — that is what lets a second
-/// implementation owe the same answer.
+/// A DTO because it crosses the contract ([Decision
+/// 21](../../../../../../../docs/technical/decisions/021-dtos-and-daos-when-they-are-real.md)),
+/// and positions rather than a parse tree so a second parser owes the same.
 @freezed
 abstract class MarkdownSpanDto with _$MarkdownSpanDto {
   /// Creates a span.

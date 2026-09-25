@@ -13,24 +13,12 @@ import 'package:tom_desktop/screens/editor/editor_design.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The source of the open document, editable.
+/// The source of the open document, editable, over `re_editor`
+/// ([Decision 18](../../../../../../../docs/technical/decisions/018-source-mode-uses-re-editor.md)).
 ///
-/// `re_editor` rather than a `TextField`, decided by measurement ([Decision
-/// 18](../../../../../../../docs/technical/decisions/018-source-mode-uses-re-editor.md)):
-/// the field lays the whole document out as one paragraph on every
-/// keystroke and misses 96% of its frames at 2853 lines.
-///
-/// **The controller is the buffer while this is on screen** — seeded once
-/// from the state and pushing every edit up from there. Read rather than
-/// watched, and mounted under a key that is the document's path: another
-/// file is another controller, and nothing re-seeds this one underneath
-/// somebody's cursor.
-///
-/// The one thing that does re-seed it is the *same* document being read off
-/// the disk again — what a branch switch leaves behind, and what discarding
-/// an edit is. The key cannot catch that, because the path did not change;
-/// the state can, because a buffer that matches the disk and not what is
-/// typed here is one this pane did not produce.
+/// The controller is seeded once with `ref.read`, under a key that is the
+/// document's path, so nothing re-seeds it under a cursor; the one thing
+/// that does is the same document read off the disk again (see `build`).
 class EditorSourceWidget extends ConsumerStatefulWidget {
   /// Creates the editor over whatever buffer is open.
   const EditorSourceWidget({super.key});
@@ -59,10 +47,10 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // A clean buffer that is not what is on screen was read off the disk by
-    // something else — a branch switch, a discarded edit — so the pane
-    // follows it. Typing cannot land here: it leaves the buffer dirty, and a
-    // save leaves it equal to what is already shown.
+    // A clean buffer that differs from what is on screen was read off the
+    // disk by something else (a branch switch, a discarded edit), so the
+    // pane follows it. Typing leaves the buffer dirty and a save leaves it
+    // equal, so neither lands here.
     ref.listen<EditorState>(editorProvider, (
       EditorState? previous,
       EditorState next,
@@ -77,10 +65,10 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
     return CodeEditor(
       controller: _controller,
       scrollController: _scroll,
-      // The package already binds ⌘S / Ctrl+S per platform and dispatches
-      // an intent nothing answers; what was missing was the answer. A
-      // `Shortcuts` wrapper of our own would lose the race — the editor has
-      // the focus, so it sees the key first.
+      // The package binds ⌘S / Ctrl+S itself and dispatches an intent nothing
+      // answers; a `Shortcuts` wrapper of ours would lose the race, since the
+      // editor has the focus. It installs no shortcuts at all on the platform
+      // a widget test reports, so the keystroke is proved end to end.
       shortcutOverrideActions: <Type, Action<Intent>>{
         CodeShortcutSaveIntent: CallbackAction<CodeShortcutSaveIntent>(
           onInvoke: (CodeShortcutSaveIntent intent) {
@@ -89,11 +77,9 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
           },
         ),
       },
-      // Prose, not code: a paragraph that ran off the right edge would have
-      // to be scrolled to be read.
+      // Prose, not code: a paragraph off the right edge cannot be read.
       wordWrap: true,
-      // The same gutter the caption above it and the preview beside it sit
-      // in: the two panes are one rhythm.
+      // The caption's and the preview's gutter: the two panes are one rhythm.
       padding: const EdgeInsets.symmetric(horizontal: TomMetrics.pad),
       onChanged: (CodeLineEditingValue value) =>
           ref.read(editorProvider.notifier).edit(_controller.text),

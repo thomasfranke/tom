@@ -4,17 +4,12 @@ library;
 import 'package:flutter/material.dart';
 import 'package:tom_ui/src/theme/tom_colors.dart';
 
-/// The app's theme for [brightness].
-///
-/// **Both modes ship together**: a colour added in one without its
-/// counterpart is a bug, not a follow-up ([visual
-/// language](../../../../../docs/technical/design/visual-language.md)). They
-/// are built by one function from one palette type for exactly that reason —
-/// there is no way to add a role to one and forget the other.
-///
-/// Material is the substrate, not the look: what the app draws comes from
-/// [TomColors], and `ThemeData` is filled in from the same roles so that a
-/// stray Material widget cannot appear in Material's own default blue.
+/// The app's theme for [brightness], built by one function from one palette
+/// type so a role cannot be added to one mode and forgotten in the other
+/// ([visual
+/// language](../../../../../../docs/technical/design/visual-language.md)).
+/// `ThemeData` is filled from the same roles, so a stray Material widget
+/// never shows Material's default blue.
 ThemeData tomTheme(Brightness brightness) {
   final TomColors colors = brightness == Brightness.dark
       ? TomColors.dark

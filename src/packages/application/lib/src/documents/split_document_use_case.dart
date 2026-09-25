@@ -5,11 +5,10 @@ import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// Turns a document's source into its blocks.
+/// A document's source split into its blocks.
 ///
-/// Separate from `ReadDocumentUseCase` because the source does not have to
-/// come from the disk: what the preview renders while someone is typing is
-/// the editor's buffer, which no file holds yet.
+/// Separate from `ReadDocumentUseCase` because the source is usually the
+/// editor's buffer, which no file holds yet.
 final class SplitDocumentUseCase with UseCase {
   /// Creates the use case.
   const SplitDocumentUseCase({

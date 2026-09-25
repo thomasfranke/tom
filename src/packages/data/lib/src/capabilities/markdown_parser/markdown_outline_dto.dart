@@ -8,25 +8,18 @@ part 'markdown_outline_dto.freezed.dart';
 
 /// The block-level constructs of a text, and the scope they were parsed in.
 ///
-/// A DTO for the reason [MarkdownSpanDto] is one: it crosses the contract
-/// and names nothing the domain knows.
-///
-/// [linkDefinitions] is why this is not just a list — a link reference is
-/// declared once and used anywhere, so a caller rendering one construct
-/// alone needs the definitions with it.
+/// A DTO for the reason [MarkdownSpanDto] is one. It is not just a list
+/// because a caller rendering one construct alone needs [linkDefinitions].
 @freezed
 abstract class MarkdownOutlineDto with _$MarkdownOutlineDto {
   /// Creates an outline.
   const factory MarkdownOutlineDto({
-    /// The spans, in the order they appear, never overlapping.
-    ///
-    /// Handed over unmodifiable, never copied.
+    /// The spans in order, never overlapping, handed over unmodifiable.
     required List<MarkdownSpanDto> spans,
 
-    /// Every link reference definition, as its own lines, newline-joined.
-    ///
-    /// Empty when the text declares none. The lines are the text's own, so
-    /// appending them to any fragment of it parses the same way.
+    /// Every link reference definition as the text's own lines, newline-joined
+    /// and empty when there are none, so appending them to any fragment of the
+    /// text parses the same way.
     required String linkDefinitions,
   }) = _MarkdownOutlineDto;
 }

@@ -8,10 +8,8 @@ part 'changes_state.freezed.dart';
 
 /// The states the changes panel can be in, and there are only these.
 ///
-/// **What the repository reports is not here** — that is
-/// `SpaceSessionState.git`, because the status bar reads it too. This is
-/// the half nobody else wants: the message being typed, whether git is busy,
-/// and what the last operation refused to do.
+/// What the repository reports is `SpaceSessionState.git`, because the
+/// status bar reads it too; this is the half nobody else wants.
 @freezed
 sealed class ChangesState with _$ChangesState {
   /// No space is open, so there is no repository to report on.
@@ -22,23 +20,16 @@ sealed class ChangesState with _$ChangesState {
 
   /// Git answered, and this is what the panel is holding on top of it.
   const factory ChangesState.ready({
-    /// The commit message being written.
-    ///
-    /// Panel-local on purpose: an unsent message is a draft, and nothing
-    /// outside this panel has an opinion about it.
+    /// The commit message being written — a draft, so panel-local.
     @Default('') String message,
 
     /// Whether a stage, an unstage or a commit is in flight.
     ///
     /// One flag for all three: git is serialized per space underneath, so a
-    /// second operation would queue behind the first anyway, and a panel
-    /// that let one be started twice would just be lying about it.
+    /// second operation would only queue behind the first.
     @Default(false) bool isBusy,
 
     /// Why the last operation did not land, or null when it did.
-    ///
-    /// A commit that failed silently is as bad as a save that did: the work
-    /// is still only in the working tree.
     AppFailure? failure,
   }) = ChangesReady;
 

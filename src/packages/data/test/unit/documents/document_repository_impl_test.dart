@@ -1,8 +1,5 @@
-/// [DocumentRepositoryImpl] against a filesystem that answers on command.
-///
-/// Unit, not integration: what this class does is resolve a path and
-/// translate a failure. A real disk cannot be asked for `EIO` on demand, and
-/// the integration test beside this one covers what a real disk *can* say.
+/// [DocumentRepositoryImpl] against a filesystem that answers on command,
+/// because a real disk cannot be asked for `EIO` on demand.
 library;
 
 import 'package:test/test.dart';
@@ -15,8 +12,7 @@ void main() {
   late _ScriptedFilesystem filesystem;
   late DocumentRepositoryImpl repository;
 
-  // A space that is a folder *inside* a repository — the normal case, and
-  // the one a path bug shows up in.
+  // A folder inside a repository, because that is where a path bug shows.
   final SpaceEntity space = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
@@ -45,11 +41,8 @@ void main() {
     Failure<T, F>(failure: final F failure) => failure,
   };
 
-  /// A failure of variant [T] naming [path].
-  ///
-  /// By variant and path rather than by equality: every translation also
-  /// attaches the capability's failure as its cause, and the tests below are
-  /// about which word the product uses, not about what is underneath it.
+  /// A failure of variant [T] naming [path], matched without the cause every
+  /// translation attaches.
   Matcher named<T extends DocumentFailure>(String path) =>
       isA<T>().having((T failure) => (failure as dynamic).path, 'path', path);
 
@@ -74,7 +67,6 @@ void main() {
     });
 
     test('keeps the bytes exactly as they were read', () async {
-      // Normalizing here would produce a diff the user did not make.
       filesystem.content = '# Title\r\n\r\nBody\n\n';
 
       expect(
@@ -128,8 +120,6 @@ void main() {
     }
 
     test('a missing file names the document, not the disk', () async {
-      // The user asked for `adr/001.md`; telling them
-      // `/code/app/docs/adr/001.md` is gone names a place they did not name.
       expect(
         await translationOf(
           const FilesystemEntryNotFound('/code/app/docs/adr/001.md'),
@@ -164,8 +154,6 @@ void main() {
 
       final AppFailure failure = await translationOf(reported);
 
-      // The variant names the path the user opened and nothing else: what the
-      // machine said, and the absolute path it said it about, are the cause.
       expect(
         failure,
         const DocumentOperationFailed('adr/001.md', cause: reported),

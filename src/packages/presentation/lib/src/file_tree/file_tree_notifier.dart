@@ -3,8 +3,7 @@ library;
 
 import 'dart:async';
 
-// `select` is an extension on `ProviderListenable` and lives in the runtime
-// package; `riverpod_annotation` carries the annotations and not much else.
+// `select` lives in the runtime package, not in `riverpod_annotation`.
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_application/tom_application.dart';
@@ -17,23 +16,22 @@ import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
 
 part 'file_tree_notifier.g.dart';
 
-/// Drives the explorer: list the space, open and close its folders, and say
-/// which document the window should show. **No business logic** — it calls a
-/// use case and turns [Result] into state.
+/// Drives the explorer: list the space, open and close its folders, say
+/// which document the window should show. No business logic — a use case is
+/// called and its [Result] becomes state.
 ///
-/// Which folders are closed lives here because no other panel cares. Which
-/// *document* is open is the opposite, so it goes to the session.
+/// Which folders are closed lives here because no other panel cares; which
+/// document is open goes to the session, because every panel does.
 @riverpod
 class FileTreeNotifier extends _$FileTreeNotifier {
-  /// Reads what the space holds, from the scope the composition root filled.
+  /// Reads what the space holds.
   ListSpaceEntriesUseCase get listSpaceEntries =>
       ref.read(listSpaceEntriesProvider);
 
   @override
   FileTreeState build() {
-    // The space only, not the session: showing another document must not
-    // re-read the folder, and watching the whole session would do that on
-    // every click.
+    // The space only, not the session: watching it whole would re-read the
+    // folder on every click of a document.
     final SpaceEntity? space = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => session?.space,
@@ -42,20 +40,16 @@ class FileTreeNotifier extends _$FileTreeNotifier {
     if (space == null) {
       return const FileTreeState.initial();
     }
-    // Scheduled, not awaited: `build` answers synchronously, and the first
-    // answer is "reading it".
+    // Scheduled, not awaited: `build` answers synchronously.
     unawaited(Future<void>.microtask(() => _load(space)));
     return const FileTreeState.loading();
   }
 
-  /// Walks the space again, because something changed it.
+  /// Walks the space again, for when TOM itself wrote to the disk.
   ///
-  /// For when **TOM itself** wrote to the disk and therefore knows: a pull
-  /// brings files in, and a tree that still showed the old list would be
-  /// describing a folder the user does not have. Changes made *outside* the
-  /// app are the watcher's to notice ([Decision
+  /// Changes made outside the app are the watcher's to notice ([Decision
   /// 10](../../../../../../docs/technical/decisions/010-watcher-and-git-cooperate-by-protocol.md)),
-  /// which is a different problem and not this method's.
+  /// not this method's.
   Future<void> refresh() async {
     final SpaceEntity? space = ref.read(spaceSessionProvider)?.space;
     if (space != null) {
@@ -65,10 +59,8 @@ class FileTreeNotifier extends _$FileTreeNotifier {
 
   /// Opens or closes [entry] — whichever clicking its row means.
   ///
-  /// A folder toggles, a markdown file becomes the open document, and
-  /// anything else does nothing: the tree shows every file and the editor
-  /// opens only what it can read
-  /// (`docs/product/navigation/file-tree/doc.md`).
+  /// A folder toggles, a markdown file becomes the open document, anything
+  /// else does nothing (`docs/product/navigation/file-tree/doc.md`).
   void activate(SpaceEntryValueObject entry) {
     if (entry.type == SpaceEntryTypeEnum.directory) {
       _toggle(entry.path);
@@ -83,8 +75,7 @@ class FileTreeNotifier extends _$FileTreeNotifier {
   Future<void> _load(SpaceEntity space) async {
     final Result<List<SpaceEntryValueObject>, AppFailure> listed =
         await listSpaceEntries.list(space);
-    // The walk is real disk, and the panel can be gone by the time it
-    // answers — a window closed, a space switched. Nothing to show then.
+    // The panel can be gone by the time the walk answers.
     if (!ref.mounted) {
       return;
     }
@@ -103,10 +94,8 @@ class FileTreeNotifier extends _$FileTreeNotifier {
     };
   }
 
-  /// Closes [folder] if it is open, opens it if it is closed.
-  ///
-  /// Does nothing before the space has been read: there is no folder to
-  /// toggle, and a set kept across a load would describe a tree that is gone.
+  /// Closes [folder] if it is open, opens it if it is closed; nothing before
+  /// the space has been read.
   void _toggle(SpaceRelativePathValueObject folder) {
     if (state case FileTreeReady(
       entries: final List<SpaceEntryValueObject> entries,

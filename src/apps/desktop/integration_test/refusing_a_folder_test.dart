@@ -50,9 +50,8 @@ void main() {
       Step('see the refusal', (TomRobot robot) async {
         await robot.seesNotARepository(loose.root);
       }),
-      // The picker is answered once per launch, so a second choice needs the
-      // app started again pointed somewhere else. That is a limit of the
-      // harness, and it is stated here rather than hidden in the robot.
+      // The picker is answered once per launch, so a second choice is a
+      // relaunch — a limit of the harness, not of the product.
       Step('start again, pointed at a real space', (TomRobot robot) async {
         await robot.launchWindowed(pickFolder: docsInRepo.root);
       }),

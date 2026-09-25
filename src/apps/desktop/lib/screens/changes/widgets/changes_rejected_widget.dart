@@ -11,11 +11,8 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// The remote moved first — said in words, with Pull underneath it.
 ///
-/// **The wording is the product** (`docs/product/git-workflow/push-pull/doc.md`):
-/// somebody who does not live in a terminal has to be able to read this and
-/// know what to do, so it says who got there first, what to do about it, and
-/// — the part that actually worries people — that nothing they committed has
-/// been lost.
+/// The wording is the product's (`docs/product/git-workflow/push-pull/doc.md`):
+/// who got there first, what to do, and that nothing committed is lost.
 class ChangesRejectedWidget extends ConsumerWidget {
   /// Creates the banner.
   const ChangesRejectedWidget({super.key});
@@ -51,8 +48,7 @@ class ChangesRejectedWidget extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Text(
-                // Counted when the count is known, and said plainly when it
-                // is not: a fetch may not have happened yet.
+                // Counted only when known: a fetch may not have happened yet.
                 behind > 0
                     ? 'Someone pushed $behind commit${behind == 1 ? '' : 's'} '
                           'first.'

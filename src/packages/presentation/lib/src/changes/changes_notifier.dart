@@ -3,8 +3,7 @@ library;
 
 import 'dart:async';
 
-// `select` is an extension on `ProviderListenable` and lives in the runtime
-// package; `riverpod_annotation` carries the annotations and not much else.
+// `select` lives in the runtime package, not in `riverpod_annotation`.
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_application/tom_application.dart';
@@ -17,13 +16,11 @@ import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
 
 part 'changes_notifier.g.dart';
 
-/// Stages, unstages and commits — and writes what git says into the session.
+/// Stages, unstages and commits, and writes what git says into the session.
 ///
-/// **It re-reads rather than patches.** Every operation here changes what
-/// git would say, and nothing can predict the new answer: staging a deleted
-/// file, an editor saving underneath, a rebase in another terminal. So the
-/// status is read again after each one and written to the session, where the
-/// panel and the status bar both find it.
+/// It re-reads rather than patches: nothing can predict what git will say
+/// after an operation (a deleted file staged, an editor saving underneath,
+/// a rebase in another terminal), so every one ends in `status()` again.
 @riverpod
 class ChangesNotifier extends _$ChangesNotifier {
   /// Reads where the repository stands.
@@ -45,17 +42,16 @@ class ChangesNotifier extends _$ChangesNotifier {
     if (space == null) {
       return const ChangesState.initial();
     }
-    // Scheduled, not awaited: `build` answers synchronously, and the first
-    // answer is "asking git".
+    // Scheduled, not awaited: `build` answers synchronously.
     unawaited(Future<void>.microtask(() => _reload(space)));
     return const ChangesState.loading();
   }
 
   /// Asks git where it stands again, from outside this panel.
   ///
-  /// **The one reader of git in the app**, so there is one way for what the
-  /// session holds to become stale and one way to mend it: fetch, pull and
-  /// push all end here rather than each re-reading for itself.
+  /// The one reader of git in the app: fetch, pull and push all end here
+  /// rather than each re-reading for itself, so what the session holds has
+  /// one way to go stale and one way to mend.
   Future<void> refresh() async {
     final SpaceEntity? space = ref.read(spaceSessionProvider)?.space;
     if (space != null) {
@@ -85,12 +81,11 @@ class ChangesNotifier extends _$ChangesNotifier {
         : stageChanges.unstage(space, <RepoRelativePathValueObject>[path]),
   );
 
-  /// Stages everything git reports, or unstages all of it.
+  /// Stages everything git reports, or unstages all of it
+  /// (`docs/product/git-workflow/commit/doc.md`).
   ///
-  /// The other half of "everything at once, or one file at a time"
-  /// (`docs/product/git-workflow/commit/doc.md`). Built from the status
-  /// rather than from `git add -A`, so what it acts on is exactly the list
-  /// that was on screen.
+  /// Built from the status rather than `git add -A`, so what it acts on is
+  /// exactly the list that was on screen.
   Future<void> setAllStaged({required bool staged}) {
     final GitStatusValueObject? status = ref.read(spaceSessionProvider)?.git;
     if (status == null) {
@@ -138,8 +133,7 @@ class ChangesNotifier extends _$ChangesNotifier {
     }
     state = before.copyWith(isBusy: true, failure: null);
     final Result<void, AppFailure> done = await operation(space);
-    // Git is another process, and the panel can be gone by the time it
-    // answers.
+    // The panel can be gone by the time git answers.
     if (!ref.mounted) {
       return;
     }
@@ -152,11 +146,9 @@ class ChangesNotifier extends _$ChangesNotifier {
 
   /// Asks git where it stands and tells the session.
   ///
-  /// [keepDraft] carries the message and nothing else across, because a
-  /// reload after staging must not empty a box somebody is typing into.
-  /// Read *after* the await, not before: git is another process, and a
-  /// sentence typed while it was running would otherwise be thrown away by
-  /// the answer.
+  /// [keepDraft] carries the message across, because a reload after staging
+  /// must not empty a box being typed into; it is read *after* the await,
+  /// or a sentence typed while git ran would be thrown away.
   Future<void> _reload(SpaceEntity space, {bool keepDraft = false}) async {
     final Result<GitStatusValueObject, AppFailure> read = await readGitStatus
         .read(space);

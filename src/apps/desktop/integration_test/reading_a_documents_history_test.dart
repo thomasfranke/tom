@@ -28,8 +28,6 @@ void main() {
       Step('with nothing open there is nothing to ask about', (
         TomRobot robot,
       ) async {
-        // "This file has never been committed" and "you have not opened a
-        // file" are different sentences, so they are different states.
         await robot.seesInTheHistory(<String>[
           'Open a document to see what changed it.',
         ]);
@@ -48,8 +46,8 @@ void main() {
       Step('and not the two that touched something else', (
         TomRobot robot,
       ) async {
-        // The assertion the whole fixture exists for: the repository has
-        // five commits and this document has three.
+        // What the fixture exists for: five commits in the repository, three
+        // on this document.
         robot
           ..seesNotInTheHistory('docs: add a writing guide')
           ..seesNotInTheHistory('docs: the first pass')
@@ -99,8 +97,8 @@ void main() {
         await robot.seesReadingAVersion();
       }),
       Step('the oldest version is the oldest text', (TomRobot robot) async {
-        // Each version says which one it is, so a pane that quietly re-read
-        // the working copy could not pass this.
+        // Each version's text names itself, so a pane that re-read the
+        // working copy could not pass.
         await robot.opensTheVersion('docs: write the index');
 
         await robot.seesInThePreview('as the first commit wrote it');
@@ -114,9 +112,6 @@ void main() {
         await robot.seesInThePreview('as the working copy has it');
       }),
       Step('and it can be opened again afterwards', (TomRobot robot) async {
-        // Going back must leave nothing behind that would stop the next
-        // one: the way back is the only thing that clears the version, so
-        // it has to clear it completely.
         await robot.opensTheVersion('docs: expand the index');
 
         await robot.seesInThePreview('as the second commit left it');

@@ -4,22 +4,12 @@ library;
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_infra/tom_infra.dart';
 
-/// Where git's answers come from.
+/// Where git's answers come from, as text in the format [GitClient] documents
+/// per method and never as an entity.
 ///
-/// **Text out, never an entity.** Git's own output in the format
-/// [GitClient] documents per method is this capability's DTO — the parsers
-/// that turn it into the domain's vocabulary belong to the repository
-/// above, which is the half allowed to name a `CommitEntity` ([Decision
+/// The parsers belong to the repository above ([Decision
 /// 25](../../../../../../docs/technical/decisions/025-a-repository-reads-through-a-data-source.md)).
-///
-/// Thin, method for method, and that is the shape of an adapter over a
-/// command-line tool: every question is one command. What it buys is that
-/// nothing above holds a [GitClient], and that a question needing *two*
-/// commands — how far ahead of its upstream a branch is, which M1 asks
-/// beside the status — is composed here rather than in the repository.
-///
-/// One instance per space, holding that space's client — the client
-/// serializes its own commands, so nothing here has to.
+/// One instance per space, holding a client that serializes its own commands.
 final class GitDataSource {
   /// Creates a source over [client].
   const GitDataSource({required this.client});

@@ -33,11 +33,7 @@ class ShellRegionWidget extends StatelessWidget {
   final double? width;
 
   /// Which document mode to draw, or null for a region the bar does not
-  /// govern.
-  ///
-  /// Passed through to the registry rather than read here: what a mode
-  /// includes is the descriptor's answer, and a region that read it would
-  /// be a region that knows what a panel is for.
+  /// govern; passed through to the registry, never read here.
   final DocumentModeEnum? mode;
 
   @override
@@ -54,16 +50,13 @@ class ShellRegionWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<PanelDescriptor> panels = registry.at(placement, mode: mode);
     if (panels.isEmpty) {
-      // Nothing registered: the region takes no space at all rather than
-      // reserving an empty column. A fixed-width gap nobody put anything in
-      // reads as a bug in the layout.
+      // Nothing registered takes no space: an empty fixed column reads as a
+      // bug in the layout.
       return const SizedBox.shrink();
     }
     final TomColors colors = TomColors.of(context);
-    // **A fixed column stacks; the document area splits.** Source beside
-    // preview is the point of split mode, and two 140-point columns in the
-    // aside would be two lists nobody can read — so which way a region
-    // divides follows from how wide it is, not from what is in it.
+    // A fixed column stacks and the document area splits: two 140-point
+    // columns in the aside would be two lists nobody can read.
     final bool stacks = placement == PanelPlacementEnum.aside;
     final List<Widget> children = <Widget>[
       for (int i = 0; i < panels.length; i++) ...<Widget>[
@@ -78,8 +71,7 @@ class ShellRegionWidget extends StatelessWidget {
             children: children,
           );
     // The divider belongs to the fixed column, on the side facing the
-    // document area — so the explorer's own width stays exactly what the
-    // wireframe says and the rule sits beside it.
+    // document area, so the column's width stays the wireframe's.
     final Widget bordered = switch (placement) {
       PanelPlacementEnum.explorer => Row(
         children: <Widget>[
@@ -104,16 +96,9 @@ class ShellRegionWidget extends StatelessWidget {
 
 /// Panels one under another, scrolling rather than squeezing.
 ///
-/// A fixed column divides the height it has between whatever was registered
-/// into it — but **a share is not always a panel**. The changes column alone
-/// carries some two hundred points of caption, message box and button before
-/// its list starts, so a third panel in a short window would push all of it
-/// off the bottom.
-///
-/// So each gets its share or [TomMetrics.minimumStackedPanel], whichever is
-/// larger, and the column scrolls when the sum no longer fits. Scrolling is
-/// the one answer that costs nothing when it is not needed: with two panels
-/// in a normal window the geometry is exactly what it was.
+/// Each gets its share of the height or [TomMetrics.minimumStackedPanel],
+/// whichever is larger, because a share is not always a panel: the changes
+/// column carries some two hundred points before its list starts.
 class _StackedWidget extends StatelessWidget {
   const _StackedWidget({required this.panels, required this.colour});
 
@@ -131,8 +116,8 @@ class _StackedWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (BuildContext context, BoxConstraints constraints) {
-      // The dividers come out of the height before it is divided, or the
-      // last panel is short by one point per rule above it.
+      // The dividers come out of the height before it is divided, or the last
+      // panel is short by one point per rule.
       final double rules = panels.length - 1;
       final double share = (constraints.maxHeight - rules) / panels.length;
       final double each = share > TomMetrics.minimumStackedPanel

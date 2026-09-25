@@ -7,10 +7,8 @@ import 'package:tom_infra/tom_infra.dart';
 
 /// Where a document's outline comes from.
 ///
-/// Thin today, and deliberately declared anyway: the reader above must not
-/// reach a capability, and the day the outline is cached per document —
-/// the preview parses on every keystroke — the cache belongs here, where
-/// "how the data is obtained" lives ([Decision
+/// Thin, and declared anyway: a cache per document would belong here
+/// ([Decision
 /// 25](../../../../../../docs/technical/decisions/025-a-repository-reads-through-a-data-source.md)).
 final class MarkdownDataSource {
   /// Creates a source over [parser].

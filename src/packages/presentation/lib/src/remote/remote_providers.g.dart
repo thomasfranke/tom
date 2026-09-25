@@ -10,16 +10,16 @@ part of 'remote_providers.dart';
 // ignore_for_file: type=lint, type=warning
 /// Updates the remote-tracking branches, touching no file on disk.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use cases it needs and cannot see that a process answers them.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 @ProviderFor(fetchRemote)
 final fetchRemoteProvider = FetchRemoteProvider._();
 
 /// Updates the remote-tracking branches, touching no file on disk.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use cases it needs and cannot see that a process answers them.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 final class FetchRemoteProvider
     extends
@@ -31,8 +31,8 @@ final class FetchRemoteProvider
     with $Provider<FetchRemoteUseCase> {
   /// Updates the remote-tracking branches, touching no file on disk.
   ///
-  /// Declared here and **overridden by the composition root**: this package
-  /// names the use cases it needs and cannot see that a process answers them.
+  /// Declared here and overridden by the composition root, which is how every
+  /// use case reaches this package.
   FetchRemoteProvider._()
     : super(
         from: null,

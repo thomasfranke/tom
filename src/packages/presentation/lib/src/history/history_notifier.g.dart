@@ -10,40 +10,25 @@ part of 'history_notifier.dart';
 // ignore_for_file: type=lint, type=warning
 /// Lists what touched the open document, and opens one of those versions.
 ///
-/// **It follows the document, not the repository**
-/// (`docs/product/git-workflow/file-history/doc.md`): the list is rebuilt
-/// when another file is opened and says so when none is.
-///
-/// Opening a version writes to the session rather than being kept here,
-/// because the preview and the bar above the document both have to know —
-/// and two copies of "which version is on screen" is the disagreement that
-/// state exists to prevent.
+/// It follows the document, not the repository
+/// (`docs/product/git-workflow/file-history/doc.md`). Which version is open
+/// is written to the session, because the preview and the bar read it too.
 
 @ProviderFor(HistoryNotifier)
 final historyProvider = HistoryNotifierProvider._();
 
 /// Lists what touched the open document, and opens one of those versions.
 ///
-/// **It follows the document, not the repository**
-/// (`docs/product/git-workflow/file-history/doc.md`): the list is rebuilt
-/// when another file is opened and says so when none is.
-///
-/// Opening a version writes to the session rather than being kept here,
-/// because the preview and the bar above the document both have to know —
-/// and two copies of "which version is on screen" is the disagreement that
-/// state exists to prevent.
+/// It follows the document, not the repository
+/// (`docs/product/git-workflow/file-history/doc.md`). Which version is open
+/// is written to the session, because the preview and the bar read it too.
 final class HistoryNotifierProvider
     extends $NotifierProvider<HistoryNotifier, HistoryState> {
   /// Lists what touched the open document, and opens one of those versions.
   ///
-  /// **It follows the document, not the repository**
-  /// (`docs/product/git-workflow/file-history/doc.md`): the list is rebuilt
-  /// when another file is opened and says so when none is.
-  ///
-  /// Opening a version writes to the session rather than being kept here,
-  /// because the preview and the bar above the document both have to know —
-  /// and two copies of "which version is on screen" is the disagreement that
-  /// state exists to prevent.
+  /// It follows the document, not the repository
+  /// (`docs/product/git-workflow/file-history/doc.md`). Which version is open
+  /// is written to the session, because the preview and the bar read it too.
   HistoryNotifierProvider._()
     : super(
         from: null,
@@ -75,14 +60,9 @@ String _$historyNotifierHash() => r'eeca63687c31107263fe6c246f1679e7e0fde5d2';
 
 /// Lists what touched the open document, and opens one of those versions.
 ///
-/// **It follows the document, not the repository**
-/// (`docs/product/git-workflow/file-history/doc.md`): the list is rebuilt
-/// when another file is opened and says so when none is.
-///
-/// Opening a version writes to the session rather than being kept here,
-/// because the preview and the bar above the document both have to know —
-/// and two copies of "which version is on screen" is the disagreement that
-/// state exists to prevent.
+/// It follows the document, not the repository
+/// (`docs/product/git-workflow/file-history/doc.md`). Which version is open
+/// is written to the session, because the preview and the bar read it too.
 
 abstract class _$HistoryNotifier extends $Notifier<HistoryState> {
   HistoryState build();

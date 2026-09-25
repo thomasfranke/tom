@@ -8,16 +8,12 @@ part 'block_value_object.freezed.dart';
 
 /// Where it is, what it says, and what kind of thing it is.
 ///
-/// Never a parser's node: the package type could not cross into the domain
-/// anyway, and structure is cheap to re-derive from [source] when something
-/// needs to render it ([Spike
+/// Never a parser's node, and **no identity**: heading paths repeat, so
+/// `BlockDifferService` aligns by position and similarity ([Spike
 /// B](../../../../../../docs/technical/decisions/019-blocks-come-from-the-markdown-package.md)).
-///
-/// **There is no identity here.** Heading paths repeat, so `BlockDiffer`
-/// aligns by position and similarity — which is why this carries no id.
 @freezed
 abstract class BlockValueObject with _$BlockValueObject {
-  /// Creates a block.
+  /// A block.
   const factory BlockValueObject({
     /// The first line of the block, zero-based and inclusive.
     required int startLine,
@@ -26,9 +22,6 @@ abstract class BlockValueObject with _$BlockValueObject {
     required int endLine,
 
     /// The document's own lines for that span, newline-joined.
-    ///
-    /// A slice of the document rather than a second copy of it: raw text and
-    /// structure without duplicated state.
     required String source,
 
     /// What kind of block it is.

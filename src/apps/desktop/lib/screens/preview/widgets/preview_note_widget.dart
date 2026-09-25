@@ -5,11 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// One muted line, standing in for the document.
-///
-/// Every state the preview can be in that is not a document — nothing
-/// chosen, still reading, failed, empty — says so with this rather than
-/// leaving the pane blank.
+/// One muted line standing in for the document, so no state leaves the pane
+/// blank.
 class PreviewNoteWidget extends StatelessWidget {
   /// Creates a note saying [text].
   const PreviewNoteWidget(this.text, {super.key});

@@ -1,33 +1,9 @@
-// A live test dashboard: one fixed line per package, each with its own
-// progress bar, driven by package:test's `--reporter=json` protocol.
+// A live test dashboard, one line per package with its own progress bar,
+// driven by package:test's `--reporter=json` protocol.
 //
 //   dart run tool/src/commands/run_tests.dart [--coverage] <target>...
 //
-// <target> is either a bare package name — a folder under src/packages/,
-// "desktop" or "mobile" for the Flutter apps, or "arch" for the architecture
-// graph test
-// (src/test/integrity/) — in which case its whole test/ tree runs, or
-// `pkg=file1,file2` to run only those test files (paths relative to the
-// package's own directory). tool/run_changed_tests.dart is what emits the
-// latter form. Pass `--coverage` to also instrument each package's run and
-// report its line coverage percentage once it finishes — skipped for any
-// target with no lib/ (namely "arch", which has no package of its own to
-// instrument).
-//
-// Why a JSON consumer rather than piping `-r expanded` straight through:
-// the default reporter tells you about one test at a time, in one package at
-// a time, with no sense of how many files or packages remain. This one reads
-// the same event stream `dart test` already emits and redraws a fixed block —
-// one row per package, each carrying its own "3/9 files" progress bar — in
-// place, with every failure printed above the block the instant it happens
-// rather than scrolled past waiting for the run to end.
-//
-// Status is one circled glyph per row (see Status in the theme), coloured by
-// the palette rather than by the character — read at a glance down the
-// column, and one terminal cell wide, which an emoji is not.
-//
-// No external packages — only dart:io and dart:convert — so it runs with
-// nothing but the SDK already on the machine, from any directory.
+// What a target can be is `_resolve`'s to say.
 
 import 'dart:async';
 import 'dart:convert';
@@ -57,9 +33,7 @@ const _drawnPackages = ['ui'];
 
 void main(List<String> rawArgs) async {
   final coverage = rawArgs.contains('--coverage');
-  // Set by tool/run_changed_tests.dart, which shows its own banner before
-  // doing the (slower, on a big diff) work of mapping changed files to
-  // tests — showing this one too would just repeat it after the fact.
+  // Set by run_changed_tests.dart, which has already shown its own banner.
   final noBanner = rawArgs.contains('--no-banner');
   final args = rawArgs
       .where((a) => a != '--coverage' && a != '--no-banner')
@@ -155,19 +129,17 @@ class _Target {
   final String command; // "dart" or "flutter"
   final List<String> extraArgs;
 
-  /// The program to actually spawn for [command].
+  /// The program to spawn for [command].
   ///
-  /// The field stays the plain name because the rest of this script branches
-  /// on it — coverage is collected one way under `dart` and another under
-  /// `flutter` — while what gets executed resolves to the SDK running this
-  /// script. See [dartExecutable] for why the two are not the same thing.
+  /// The field stays the plain name because coverage is collected one way
+  /// under `dart` and another under `flutter`; what runs is [dartExecutable].
   String get executable => command == 'dart' ? dartExecutable : command;
 }
 
-/// Parses one CLI arg: either a bare package name (the whole test/ tree runs)
-/// or `pkg=file1,file2` — comma-separated test file paths, relative to that
-/// package's own directory, to run instead of the whole tree. The latter is
-/// how tool/run_changed_tests.dart hands off exactly the tests a diff maps to.
+/// One argument as a target: a bare name — a package, `desktop`, `mobile`,
+/// `arch` or `cli` — runs the whole `test/` tree, and `pkg=file1,file2` runs
+/// only those paths, relative to the package, which is the form
+/// run_changed_tests.dart hands off.
 _Target _resolve(Directory src, String spec) {
   final eq = spec.indexOf('=');
   final pkg = eq < 0 ? spec : spec.substring(0, eq);
@@ -183,9 +155,8 @@ _Target _resolve(Directory src, String spec) {
         'dart',
         files.isNotEmpty ? files : ['test/integrity/architecture_test.dart'],
       );
-    // Like `arch`, a folder under src/test/ rather than a package: the CLI
-    // lives in tool/, outside the workspace, so its tests cannot live beside
-    // it. See src/test/cli/cli_test.dart for why.
+    // Like `arch`, a folder under src/test/ rather than a package: tool/ has
+    // no pubspec, so its tests cannot live beside it (`runCliTests`).
     case 'cli':
       return _Target(
         'cli',
@@ -218,16 +189,8 @@ _Target _resolve(Directory src, String spec) {
   }
 }
 
-// The repository root used to be counted in levels from this file. It is
-// found by marker now (see ../repo.dart), because counting is what broke when
-// this script moved into tool/src/commands/.
-
-/// How many `_test.dart` files [target] will run.
-///
-/// The same three cases [_hasTests] already distinguishes, counted rather
-/// than merely detected: an explicit list of files is its own length, a
-/// narrowed kind is a folder to walk, and an unnarrowed target is its whole
-/// `test/` tree.
+/// How many `_test.dart` files [target] will run: a listed file is one, a
+/// listed folder is walked, an unnarrowed target is its whole `test/`.
 int _testFileCount(_Target target) {
   final roots = target.extraArgs.isEmpty ? const ['test'] : target.extraArgs;
 
@@ -251,10 +214,8 @@ int _testFileCount(_Target target) {
 
 bool _hasTests(_Target target) {
   if (target.extraArgs.isNotEmpty) {
-    // A directory counts as much as a file: `pkg=test/unit` is how a run
-    // narrowed to one kind of test is expressed, and a package that has no
-    // such folder is reported as skipped rather than failing the run — "no
-    // e2e tests here yet" is information, not an error.
+    // A directory counts as much as a file: `pkg=test/unit` narrows a run to
+    // one kind, and a package with no such folder is skipped, not failed.
     return target.extraArgs.every(
       (f) =>
           File('${target.dir.path}/$f').existsSync() ||
@@ -269,17 +230,13 @@ bool _hasTests(_Target target) {
           .any((f) => f.path.endsWith('_test.dart'));
 }
 
-/// A brief banner shown before the dashboard takes over, covering setup
-/// (target resolution, the test/ scans `_hasTests` does) with a live
-/// "compiling" ticker instead of a silent terminal. The floor delay keeps it
-/// visible for a beat even when that setup is instant — otherwise it would
-/// flash and vanish, which reads as nothing having happened at all.
+/// A live "compiling" ticker over the setup, so the terminal is not silent.
+///
+/// The floor delay keeps it on screen for a beat when setup is instant.
 Future<void> _showCompiling() async {
   stdout.writeln('• Running build hooks...');
 
-  // The banner exists to fill a silence someone is watching. Nobody watches a
-  // log, so in plain mode the line above is the whole banner — no clock, and
-  // no floor delay to make it linger.
+  // Nobody watches a log, so in plain mode the line above is the whole banner.
   if (isPlain) return;
 
   stdout.writeln();
@@ -301,45 +258,34 @@ Future<void> _showCompiling() async {
 enum _RowState { queued, skipped, running, done }
 
 /// One line of the fixed dashboard, mutated in place as its package's test
-/// run progresses. `suiteTotal` arrives from the `allSuites` event, so it
-/// stays 0 — an indeterminate bar — until package:test has parsed the suite.
+/// run progresses.
 class _Row {
   _Row(this.label, {required this.hasTests, required this.fileTotal});
   final String label;
   final bool hasTests;
 
-  /// How many test files this package will run, counted from disk before
-  /// the first one loads.
+  /// How many test files this package will run, counted from disk.
   ///
-  /// From the filesystem rather than from package:test's events, because
-  /// it parses suites lazily: a total taken from the protocol arrives in
-  /// instalments while the bar is already moving, and a bar whose
-  /// denominator grows walks backwards. A `_test.dart` file is a suite, and
-  /// counting them is something this side can do up front.
+  /// Not from package:test's events: it parses suites lazily, so a total
+  /// taken from the protocol arrives in instalments and the bar walks
+  /// backwards.
   final int fileTotal;
 
   _RowState state = _RowState.queued;
   DateTime? startedAt;
   Duration? elapsed;
 
-  /// Test files finished — every test in them accounted for.
+  /// Test files finished, every test in them accounted for.
   ///
-  /// Exact, not a guess. The protocol's root group says how many tests a file
-  /// holds, so a file is done when that many have come back. The heuristic
-  /// this replaced completed a file as soon as every test it had *started*
-  /// had finished, which is true between any two tests of a sequential file —
-  /// so a file was done after its first test, and the bar sat at `4/4` for
-  /// the rest of the run.
+  /// Exact, from the root group's test count: "every test started has
+  /// finished" is true between any two tests of a sequential file.
   int filesDone = 0;
 
   int passed = 0;
   int failed = 0;
 
-  /// Set while the tests are over and `format_coverage` is still running.
-  ///
-  /// Without it the row sits at a full bar, marked running, for as long as
-  /// that takes — which reads as a run that finished and hung rather than as
-  /// the measuring step it is.
+  /// Set while the tests are over and `format_coverage` is still running,
+  /// so the row does not read as a run that finished and hung.
   bool measuringCoverage = false;
 
   int? coverageHit;
@@ -349,10 +295,9 @@ class _Row {
       : null;
 }
 
-/// Runs one package's tests, streaming its `--reporter=json` output into
-/// `row` and letting `dashboard` redraw after every event. Returns false if
-/// the suite failed. With `coverage: true`, and only for targets that have a
-/// lib/ to instrument, also collects `row.coverage` once the run succeeds.
+/// Runs one package's tests, streaming its `--reporter=json` events into
+/// [row]; false when the suite failed. Coverage is collected only for a
+/// target with a lib/ to instrument.
 Future<bool> _runOne(
   _Target target,
   _Row row,
@@ -392,12 +337,9 @@ Future<bool> _runOne(
       .forEach((line) {
         if (line.trim().isEmpty) return;
 
-        // A line that is not an event is skipped rather than fatal: the
-        // runner occasionally prints something that is not JSON, and a
-        // dashboard that died over it would lose a passing suite. Typed
-        // rather than a bare catch, because there are exactly two ways this
-        // fails — the text is not JSON, or the JSON is not an object — and a
-        // bare catch would also swallow a bug in the handling below.
+        // A line that is not an event is skipped rather than fatal: the runner
+        // occasionally prints something that is not JSON. Typed rather than a
+        // bare catch, so a bug in the handling below is not swallowed too.
         final Object? decoded;
         try {
           decoded = jsonDecode(line);
@@ -409,9 +351,8 @@ Future<bool> _runOne(
 
         switch (event['type']) {
           case 'group':
-            // The root group of a file — the one with no parent — counts every
-            // test in it. Nested groups count their own share of the same
-            // tests, so reading those too would multiply the total.
+            // Only the root group counts every test in the file; nested groups
+            // count their share of the same tests and would multiply the total.
             final group = event['group'] as Map<String, dynamic>;
             if (group['parentID'] == null) {
               suiteTests[group['suiteID'] as int] =
@@ -440,9 +381,8 @@ Future<bool> _runOne(
             final skipped = event['skipped'] as bool? ?? false;
             final suiteId = testSuite[id];
 
-            // Hidden tests — the one package:test emits for loading a file —
-            // are not in the root group's count, so counting them here would
-            // finish a file one test early.
+            // The hidden test package:test emits for loading a file is not in
+            // the root group's count.
             if (suiteId != null && !hidden) {
               suiteFinished[suiteId] = (suiteFinished[suiteId] ?? 0) + 1;
               final total = suiteTests[suiteId];
@@ -486,16 +426,10 @@ Future<bool> _runOne(
   return exitCode == 0;
 }
 
-/// `flutter test --coverage` writes lcov directly; `dart test
-/// --coverage=coverage` only dumps raw per-isolate JSON, so it still needs
-/// `package:coverage`'s formatter to turn that into the same lcov.info —
-/// that package rides in transitively via `test`, so nothing extra to
-/// declare (see src/pubspec.yaml's shared lockfile).
-///
-/// `--ignore-files` drops `*.freezed.dart`/`*.g.dart`: their generated
-/// toString/copyWith/props are never called by name from a test, so counting
-/// them would cap every package with a union type well under any realistic
-/// threshold — see the same constant in `tool/coverage_gate.dart`.
+/// The lcov for [target], parsed: `flutter test --coverage` writes it, while
+/// `dart test --coverage` dumps raw JSON that `format_coverage` still has to
+/// turn into one. Generated files are ignored for the reason
+/// coverage_gate.dart gives on `generatedFileGlobs`.
 Future<({int hit, int total})?> _collectCoverage(_Target target) async {
   if (target.command == 'dart') {
     final result = await Process.run(dartExecutable, [
@@ -545,23 +479,18 @@ class _Dashboard extends Dashboard<_Row> {
   /// Tests passed over tests run.
   String _testCounts(_Row row) => '${row.passed}/${row.passed + row.failed}';
 
-  /// How wide the files column will ever need to be.
+  /// How wide the files column will ever need to be, known before anything
+  /// runs.
   ///
-  /// Known before anything runs, because both halves are: a row's widest
-  /// spelling is the one where every file is done. That matters in a log,
-  /// where each row is printed once as it settles and never repainted — a
-  /// width measured only over the rows finished so far leaves the first ones
-  /// narrow and the column ragged for good.
+  /// In a log each row is printed once as it settles, so a width measured
+  /// over the rows finished so far would leave the column ragged for good.
   late final int _filesWidth = rows
       .map((row) => '${row.fileTotal}/${row.fileTotal}'.length)
       .fold(0, (a, b) => a > b ? a : b);
 
-  /// How wide the tests column has to be for the rows that have settled.
-  ///
-  /// Measured as they arrive, unlike the files column, because nothing says
-  /// up front how many tests a file holds. Re-measured on every paint, so an
-  /// interactive run stays aligned; a log cannot, and that is the cost of
-  /// printing a row before the next one exists.
+  /// How wide the tests column has to be for the rows that have settled,
+  /// re-measured on every paint because nothing says up front how many tests
+  /// a file holds.
   int get _testsWidth => rows
       .where((row) => row.state == _RowState.done)
       .map((row) => _testCounts(row).length)
@@ -591,10 +520,8 @@ class _Dashboard extends Dashboard<_Row> {
       return '• Running tests — $doneCount/${rows.length} packages:';
     }
 
-    // ETA rather than elapsed: extrapolated from the average of packages that
-    // have actually finished, minus how far the one running now already is
-    // into that average — a package sitting at "no tests yet" is instant and
-    // would otherwise drag the average down for no reason, so it is excluded.
+    // ETA rather than elapsed, extrapolated from the packages that finished;
+    // a package at "no tests yet" is instant and would drag the average down.
     final timed = doneRows.where(
       (r) => r.state == _RowState.done && r.elapsed != null,
     );
@@ -646,11 +573,8 @@ class _Dashboard extends Dashboard<_Row> {
             '•  ⏱ $elapsed';
       case _RowState.done:
         final elapsed = formatDuration(row.elapsed ?? Duration.zero);
-        // Both counts, in the same order and the same unit as while it ran:
-        // the files the bar measured, then the tests inside them. One turning
-        // into the other at the finish line read as the number changing its
-        // mind — and a file short of its total is how a suite that failed to
-        // load shows up at all.
+        // Both counts, in the order and unit shown while it ran; a file short
+        // of its total is how a suite that failed to load shows up at all.
         final files = _fileCounts(row).padRight(_filesWidth);
         final tests = _testCounts(row).padRight(_testsWidth);
         final mark = row.failed == 0

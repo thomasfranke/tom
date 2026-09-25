@@ -1,10 +1,5 @@
 // Terminal ownership: raw mode, the key stream, and putting the terminal back
 // the way it was found.
-//
-// The last part is not a detail. A process that exits with `echoMode` still
-// false leaves the user's shell silently swallowing every keystroke they type
-// afterwards, and nothing on screen explains why — so every path out of raw
-// mode, including SIGINT and an uncaught error, goes through `restore`.
 library;
 
 import 'dart:async';
@@ -27,11 +22,9 @@ final class Terminal {
   final Stream<List<int>>? _keys;
   final StreamSubscription<ProcessSignal>? _signals;
 
-  /// The one real subscription to `stdin`, behind the broadcast stream.
-  ///
-  /// Held because pausing it is not enough to let the process end: a live
-  /// subscription keeps the event loop alive, so leaving it paused turns
-  /// every clean exit into a hang. [restore] cancels it.
+  /// The one real subscription to `stdin`, behind the broadcast stream; held
+  /// because a paused subscription still keeps the event loop alive, so
+  /// [restore] has to cancel it.
   StreamSubscription<List<int>>? _source;
 
   var _fullScreen = false;
@@ -54,12 +47,9 @@ final class Terminal {
 
     late final Terminal terminal;
 
-    // A single broadcast stream, kept alive across screens: listening to
-    // `stdin` a second time throws, and every screen subscribes in turn.
-    // Pausing instead of cancelling on the last listener is what keeps the
-    // underlying subscription usable for the next one — and why `restore`
-    // has to cancel it, since a paused subscription still holds the process
-    // open.
+    // One broadcast stream kept alive across screens: listening to `stdin` a
+    // second time throws, and every screen subscribes in turn. Paused rather
+    // than cancelled on the last listener, so the next screen can subscribe.
     final keys = stdin.asBroadcastStream(
       onListen: (s) {
         terminal._source = s;
@@ -68,9 +58,8 @@ final class Terminal {
       onCancel: (s) => s.pause(),
     );
 
-    // Raw mode delivers Ctrl-C as byte 3 rather than a signal, but the process
-    // can still be killed from elsewhere — a `kill`, a parent shell going
-    // down. Restoring here covers that.
+    // Raw mode delivers Ctrl-C as byte 3, but a `kill` or a parent shell
+    // going down still arrives as a signal.
     // ignore: cancel_subscriptions, held in _signals and cancelled in restore
     final signals = ProcessSignal.sigint.watch().listen((_) {
       terminal.restore();
@@ -92,23 +81,20 @@ final class Terminal {
 
   /// Swaps in the alternate screen buffer, cleared, cursor at the top left.
   ///
-  /// Paired with [leaveFullScreen] around navigation only. A command's output
-  /// must be printed outside the buffer or the terminal discards it on the
-  /// way out, which would make `tom test` scroll past and leave nothing
-  /// behind. Idempotent, and a no-op when not [interactive].
+  /// Paired with [leaveFullScreen] around navigation only: output printed
+  /// inside the buffer is discarded on the way out, so `tom test` would leave
+  /// nothing behind. Idempotent, and a no-op when not [interactive].
   void enterFullScreen() {
     if (!_interactive || _fullScreen) return;
     _fullScreen = true;
     stdout.write('${Ansi.enterFullScreen}${Ansi.clearScreen}${Ansi.home}');
   }
 
-  /// Hands the terminal back to a child process, and takes it again with
-  /// [resume].
+  /// Hands the terminal back to a child process, until [resume].
   ///
-  /// Not cosmetic: raw mode turns off the driver's signal handling, so a
-  /// Ctrl-C typed during a long `build_runner` would arrive as a stray byte
-  /// nobody is reading instead of killing it. Cooked mode for the duration of
-  /// the work is what keeps a command interruptible.
+  /// Raw mode turns off the driver's signal handling, so a Ctrl-C typed
+  /// during a long `build_runner` would arrive as a stray byte instead of
+  /// killing it.
   void suspend() {
     if (!_interactive || _suspended) return;
     _suspended = true;
@@ -124,13 +110,9 @@ final class Terminal {
     stdout.write(Ansi.hideCursor);
   }
 
-  /// Readies the terminal for a screen about to be drawn from scratch.
-  ///
-  /// Full screen, that means wiping what the previous screen left and parking
-  /// at the top left: the buffer persists across screens, so without this a
-  /// second screen renders below the first instead of replacing it. Outside
-  /// full screen it does nothing, and screens stack in the scrollback the way
-  /// ordinary command output does.
+  /// Readies the terminal for a screen drawn from scratch: in full screen,
+  /// wipes what the previous one left, since the buffer persists across
+  /// screens; outside it, nothing, and screens stack in the scrollback.
   void beginScreen() {
     if (!_interactive || !_fullScreen) return;
     stdout.write('${Ansi.clearScreen}${Ansi.home}');
@@ -161,18 +143,16 @@ final class Terminal {
   }
 
   /// Puts echo, line mode and the cursor back, and releases everything that
-  /// would otherwise hold the process open.
+  /// would hold the process open.
   ///
-  /// Idempotent: the `finally` that calls it and the signal handler that calls
-  /// it may both run.
+  /// Idempotent, and on every path out of raw mode — SIGINT and an uncaught
+  /// error included — because a process that exits with `echoMode` false
+  /// leaves the shell silently swallowing every keystroke typed afterwards.
   void restore() {
     if (_restored || !_interactive) return;
     _restored = true;
-    // Both of these keep the event loop alive on their own. Cancelling them
-    // is what allows `main` to return instead of the process hanging with a
-    // restored terminal and nothing left to do.
-    // Neither cancellation is awaited: this is the teardown, and there is
-    // nothing after it that could care whether it finished.
+    // Both keep the event loop alive on their own, and neither cancellation
+    // is awaited: this is the teardown, and nothing after it could care.
     // ignore: discarded_futures
     _signals?.cancel();
     // Same for this one, and for the same reason.
@@ -187,8 +167,7 @@ final class Terminal {
   }
 
   /// Guarded: stdin may already be gone when a shell tears the process down,
-  /// and failing to set a terminal mode must never be what surfaces as the
-  /// error.
+  /// and a failed mode change must never be the error that surfaces.
   static void _setRawMode(bool raw) {
     try {
       stdin.echoMode = !raw;

@@ -5,10 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/home/widgets/home_bar_widget.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// Home's status bar.
-///
-/// Both mocks draw it, and both say the same thing — which is the honest
-/// amount of status there is with nothing open.
+/// Home's status bar, saying the one thing there is to say with nothing
+/// open.
 class HomeStatusStripWidget extends StatelessWidget {
   /// Creates the strip.
   const HomeStatusStripWidget({super.key});

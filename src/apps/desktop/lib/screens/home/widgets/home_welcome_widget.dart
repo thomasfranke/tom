@@ -32,8 +32,8 @@ class HomeWelcomeWidget extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        // The key is what the trunk behind this measures itself against; it
-        // is null on any screen without one, and the mark does not care.
+        // The key is what the trunk behind this measures itself against; null
+        // on a screen without one.
         TomWordmarkWidget(
           key: CommitTrunkWidget.anchorOf(context),
           letters: colors.textPrimary,
@@ -60,10 +60,9 @@ class HomeWelcomeWidget extends ConsumerWidget {
           onPressed: () => chooseFolder(ref),
         ),
         const SizedBox(height: HomeDesign.chooseToClone),
-        // M3, and shown disabled rather than hidden: the design puts it
-        // here, and a control that appears later moves everything under it.
-        // The chip beside it is what says *later* — the row is as wide as
-        // the column plus the chip, so the column itself stays centred.
+        // M3, shown disabled rather than hidden: a control that appears later
+        // moves everything under it. The row is the column plus the chip, so
+        // the column itself stays centred.
         const Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[

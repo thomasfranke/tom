@@ -3,8 +3,7 @@ library;
 
 import 'dart:async';
 
-// `select` is an extension on `ProviderListenable` and lives in the runtime
-// package; `riverpod_annotation` carries the annotations and not much else.
+// `select` lives in the runtime package, not in `riverpod_annotation`.
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_application/tom_application.dart';
@@ -22,14 +21,9 @@ part 'branches_notifier.g.dart';
 
 /// Switches branches, starts them, and refuses to lose work doing either.
 ///
-/// **A switch rewrites the working tree**, which is what makes this more
-/// than a git call: git has to be asked where it now stands, the explorer
-/// has to walk the folder again, and every open document has to be read
-/// again. All three happen here, after the switch, in that order.
-///
-/// It reads no git status of its own — [ChangesNotifier] does that, so what
-/// the window believes about the repository keeps one source
-/// (`docs/product/git-workflow/push-pull/doc.md`).
+/// A switch rewrites the working tree, so it ends by re-reading the status,
+/// the folder and the open buffer, in that order. It reads no git status of
+/// its own — [ChangesNotifier] does, so the window keeps one source.
 @riverpod
 class BranchesNotifier extends _$BranchesNotifier {
   /// Reads the repository's local branches.
@@ -48,16 +42,13 @@ class BranchesNotifier extends _$BranchesNotifier {
     if (space == null) {
       return const BranchesState.initial();
     }
-    // Scheduled, not awaited: `build` answers synchronously, and the first
-    // answer is "asking git".
+    // Scheduled, not awaited: `build` answers synchronously.
     unawaited(Future<void>.microtask(() => _list(space)));
     return const BranchesState.loading();
   }
 
-  /// Types [draft] into the one box the surface has.
-  ///
-  /// Filters the list, or names the branch about to be started — and while
-  /// it is the latter, says what is wrong with it as it is typed.
+  /// Types [draft] into the one box: a filter while listing, the new name
+  /// while creating — and what is wrong with that name, as it is typed.
   void type(String draft) {
     if (state case final BranchesReady ready) {
       state = ready.copyWith(
@@ -68,10 +59,8 @@ class BranchesNotifier extends _$BranchesNotifier {
     }
   }
 
-  /// Turns the surface into the one that names a new branch.
-  ///
-  /// The draft carries across on purpose: filtering for a branch that turns
-  /// out not to exist leaves its name already typed.
+  /// Turns the surface into the one that names a new branch, with the draft
+  /// carried across: a branch filtered for and not found is one to create.
   void startCreating() {
     if (state case final BranchesReady ready) {
       state = ready.copyWith(
@@ -89,10 +78,8 @@ class BranchesNotifier extends _$BranchesNotifier {
     }
   }
 
-  /// Moves onto [name], asking first if that would lose unsaved work.
-  ///
-  /// Switching to the branch already checked out does nothing: it is not an
-  /// error, it is a click on the row that says where you are.
+  /// Moves onto [name], asking first if that would lose unsaved work; the
+  /// branch already checked out is a click on where you are, not an error.
   Future<void> choose(BranchNameValueObject name) async {
     if (state case final BranchesReady ready) {
       if (ready.isBusy ||
@@ -105,10 +92,9 @@ class BranchesNotifier extends _$BranchesNotifier {
     }
   }
 
-  /// Writes the buffer to disk, then switches.
-  ///
-  /// A save that failed leaves the question standing rather than switching
-  /// anyway: the whole point of asking was not to lose it.
+  /// Writes the buffer to disk, then switches — or leaves the question
+  /// standing when the save failed, since the point of asking was not to
+  /// lose it.
   Future<void> saveAndSwitch() async {
     if (state case BranchesReady(pending: final BranchNameValueObject name)) {
       await ref.read(editorProvider.notifier).save();
@@ -122,22 +108,17 @@ class BranchesNotifier extends _$BranchesNotifier {
     }
   }
 
-  /// Switches, letting the buffer go.
-  ///
-  /// Nothing is thrown away here as such — the switch is followed by every
-  /// open document being read off the disk again, which is what discarding
-  /// an edit amounts to.
+  /// Switches, letting the buffer go: the re-read that follows is what
+  /// discarding amounts to.
   Future<void> discardAndSwitch() async {
     if (state case BranchesReady(pending: final BranchNameValueObject name)) {
       await _switchTo(name);
     }
   }
 
-  /// Puts the surface away.
-  ///
-  /// Closing it answers every question it was asking: nothing half-typed is
-  /// kept, and a switch waiting on unsaved work is cancelled rather than
-  /// left standing behind a popover nobody can see.
+  /// Puts the surface away, answering every question it was asking: a
+  /// switch waiting on unsaved work is cancelled, not left standing behind
+  /// a popover nobody can see.
   void dismiss() {
     if (state case final BranchesReady ready) {
       state = ready.copyWith(
@@ -170,15 +151,12 @@ class BranchesNotifier extends _$BranchesNotifier {
     }
   }
 
-  /// Heads for [name], asking first when the buffer would be lost.
-  ///
-  /// The one door both a chosen branch and a typed one go through, so the
-  /// question about unsaved work is asked once and cannot be forgotten by
-  /// one of the two.
+  /// Heads for [name], asking first when the buffer would be lost — the one
+  /// door for a chosen branch and a typed one, so the question is asked once.
   Future<void> _move(BranchNameValueObject name) async {
     if (state case final BranchesReady ready) {
-      // The buffer is the only thing this could throw away without asking —
-      // git refuses on its own when the *tree* would be overwritten
+      // Only the buffer needs asking about: git refuses on its own when the
+      // *tree* would be overwritten
       // (`docs/product/git-workflow/branch-switch/doc.md`).
       if (ref.read(editorProvider).isDirty) {
         state = ready.copyWith(pending: name, failure: null);
@@ -188,11 +166,8 @@ class BranchesNotifier extends _$BranchesNotifier {
     }
   }
 
-  /// Checks [name] out and puts the window back together around it.
-  ///
-  /// Starts the branch when there is none by that name: creating one checks
-  /// it out, so the two are one move and the caller — a row, a typed name, a
-  /// question just answered — does not have to know which it made.
+  /// Checks [name] out, starting it when no branch has that name, and puts
+  /// the window back together around it.
   Future<void> _switchTo(BranchNameValueObject name) {
     final bool exists = switch (state) {
       BranchesReady(:final List<BranchEntity> branches) => branches.any(
@@ -211,8 +186,8 @@ class BranchesNotifier extends _$BranchesNotifier {
 
   /// Runs [operation], then re-reads everything the switch invalidated.
   ///
-  /// [onDone] tidies the surface, and only on success: a switch that was
-  /// refused must leave the question and the typed name where they were.
+  /// [onDone] tidies the surface only on success: a refused switch leaves
+  /// the question and the typed name where they were.
   Future<void> _run(
     Future<Result<void, AppFailure>> Function(SpaceEntity space) operation, {
     required BranchesReady Function(BranchesReady now) onDone,
@@ -223,8 +198,7 @@ class BranchesNotifier extends _$BranchesNotifier {
     }
     state = (state as BranchesReady).copyWith(isBusy: true, failure: null);
     final Result<void, AppFailure> done = await operation(space);
-    // Git is another process, and the popover can be gone by the time it
-    // answers.
+    // The popover can be gone by the time git answers.
     if (!ref.mounted) {
       return;
     }
@@ -232,9 +206,8 @@ class BranchesNotifier extends _$BranchesNotifier {
       state = (state as BranchesReady).copyWith(isBusy: false, failure: why);
       return;
     }
-    // Where git stands first, because the branch on the status bar is the
-    // thing that just changed; then the folder, which the checkout rewrote;
-    // then the buffer, which is still showing the old branch's text.
+    // The status first (the branch just changed), then the folder the
+    // checkout rewrote, then the buffer still showing the old branch's text.
     await ref.read(changesProvider.notifier).refresh();
     await ref.read(fileTreeProvider.notifier).refresh();
     await ref.read(editorProvider.notifier).reload();
@@ -255,8 +228,8 @@ class BranchesNotifier extends _$BranchesNotifier {
     if (!ref.mounted) {
       return;
     }
-    // Everything the surface was in the middle of survives the reading: a
-    // list arriving is not a reason to empty a box or drop a question.
+    // What the surface was in the middle of survives: a list arriving is no
+    // reason to empty a box or drop a question.
     final BranchesReady? before = state is BranchesReady
         ? state as BranchesReady
         : null;

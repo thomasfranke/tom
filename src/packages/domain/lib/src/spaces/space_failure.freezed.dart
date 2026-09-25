@@ -284,10 +284,8 @@ class SpaceAccessDenied implements SpaceFailure {
   const SpaceAccessDenied(this.path, {this.cause});
   
 
-/// The absolute path that could not be read.
-///
-/// The folder that actually failed, which inside a recursive walk is
-/// rarely the space root.
+/// The absolute path that actually failed, which inside a recursive walk
+/// is rarely the space root.
  final  String path;
 @override final  AppFailure? cause;
 

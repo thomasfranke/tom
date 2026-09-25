@@ -34,8 +34,6 @@ void main() {
   );
 
   test('it hands back what the space holds, in the order given', () async {
-    // In order, because the order *is* the tree: a folder immediately
-    // followed by what is inside it.
     final Result<List<SpaceEntryValueObject>, AppFailure> result =
         await listingWith(
           Success<List<SpaceEntryValueObject>, SpaceFailure>(held),
@@ -62,9 +60,6 @@ void main() {
 
   group('an expected failure stays expected', () {
     test('a folder that is gone is passed through', () async {
-      // The file tree shows this as its own line, and relabelling it would
-      // put "an unexpected error occurred" on a screen where the product has
-      // something specific to say.
       final Result<List<SpaceEntryValueObject>, AppFailure> result =
           await listingWith(
             const Failure<List<SpaceEntryValueObject>, SpaceFailure>(

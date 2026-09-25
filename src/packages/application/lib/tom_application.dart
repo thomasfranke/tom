@@ -1,11 +1,5 @@
-/// Use cases: orchestration between the domain and its repositories.
-///
-/// One per operation, named for the operation with the role last, and the
-/// file named after the class — the shape the Flutter team's own
-/// architecture sample uses (`BookingCreateUseCase`).
-///
-/// Nothing outside `lib/src/` is importable from another package, so this
-/// file is the whole public surface.
+/// The use cases, one per operation, that orchestrate the domain and its
+/// repositories.
 library;
 
 export 'src/diff/diff_document_use_case.dart';

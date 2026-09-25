@@ -8,12 +8,11 @@ part 'sequence_edit_value_object.freezed.dart';
 
 /// A verdict and the positions it is about.
 ///
-/// Positions rather than the entries themselves: the aligner is handed text
-/// and hands back where that text went, so the caller keeps the only copy of
+/// Positions rather than entries, so the caller keeps the only copy of
 /// whatever the strings came from.
 @freezed
 abstract class SequenceEditValueObject with _$SequenceEditValueObject {
-  /// Creates an edit.
+  /// An edit.
   const factory SequenceEditValueObject({
     /// What happened to the entry.
     required SequenceEditKindEnum kind,

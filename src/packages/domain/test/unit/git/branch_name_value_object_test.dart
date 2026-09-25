@@ -76,8 +76,6 @@ void main() {
   });
 
   test('a dot inside a component is ordinary', () {
-    // Version-shaped branches are common; only the edges of a component and
-    // the `..` of a range are refused.
     expect(BranchNameValueObject.tryParse('release/v1.2.3'), isNotNull);
   });
 

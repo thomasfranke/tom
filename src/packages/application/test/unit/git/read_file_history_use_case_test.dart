@@ -27,18 +27,12 @@ void main() {
   );
 
   test('it asks about the file, in the repository\'s own spelling', () async {
-    // The app navigates in space-relative paths and git speaks
-    // repository-relative ones; a space opened at `docs/` inside a code
-    // repository is the normal case, and asking for `guides/writing.md`
-    // there would answer about a file that does not exist.
     await reading().read(docs, writing);
 
     expect(git.asked?.value, 'docs/guides/writing.md');
   });
 
   test('it is scoped to the file and never to the repository', () async {
-    // A repository-wide log is a different and much longer answer
-    // (`docs/product/git-workflow/file-history/doc.md`).
     await reading().read(docs, writing);
 
     expect(git.asked, isNotNull, reason: 'it asked for the whole repository');
@@ -51,7 +45,6 @@ void main() {
   });
 
   test('a file git has never seen is an empty list, not a failure', () async {
-    // A document that was just created is the ordinary case, not an error.
     git.answer = const Success<List<CommitEntity>, GitFailure>(
       <CommitEntity>[],
     );

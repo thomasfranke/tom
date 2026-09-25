@@ -5,11 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_design.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The search field, on screen and disabled.
+/// The search field, on screen and disabled until M2.
 ///
-/// Shown rather than absent, the way Home draws cloning: the design puts it
-/// here, and a control that appears later moves everything under it. The
-/// chip beside it is what says *later*.
+/// Shown rather than absent, the way Home draws cloning: a control that
+/// appears later moves everything under it.
 class FileTreeSearchWidget extends StatelessWidget {
   /// Creates the search field.
   const FileTreeSearchWidget({super.key});
@@ -49,8 +48,7 @@ class FileTreeSearchWidget extends StatelessWidget {
                 TomMetrics.padTight -
                 FileTreeDesign.searchWidth,
           ),
-          // Centred on the field rather than put at the design's own y,
-          // which is a pixel off centre anyway.
+          // Centred on the field; the design's own y is a pixel off centre.
           const MilestoneChipWidget(label: 'M2'),
         ],
       ),

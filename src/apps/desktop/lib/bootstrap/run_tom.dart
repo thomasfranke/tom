@@ -16,41 +16,21 @@ import 'package:window_manager/window_manager.dart';
 
 /// Starts TOM with [modules] added to the app's own.
 ///
-/// The composition root, and the one place that knows both a contract and
-/// what satisfies it. It **only instantiates and wires** — any logic that
+/// The composition root: it only instantiates and wires, and any logic that
 /// appears here belongs in a use case
-/// ([flows](../../../../../docs/technical/flows.md#wiring-three-lifetimes)).
-///
-/// `runTom(modules: [])` is the whole public story: clone the repository,
-/// build it, it works. A module is added to that list and nothing else
-/// changes — the app never imports one
-/// ([Decision 12](../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
-///
-/// [CoreModuleImpl] is first, so a module's provider override wins over the
-/// app's default: `ProviderScope` takes the last override for a provider,
-/// and a module that could not replace a default would not be an extension
-/// point.
+/// ([composition](../../../../../docs/technical/runtime/composition.md),
+/// [Decision 12](../../../../../docs/technical/decisions/012-shell-is-extensible-via-compile-time-modules.md)).
 Future<void> runTom({List<TomModule> modules = const <TomModule>[]}) async {
   WidgetsFlutterBinding.ensureInitialized();
   await _prepareWindow();
   runApp(tomApp(modules: modules));
 }
 
-/// The whole app as a widget, wired from [modules].
+/// The whole app as a widget, wired from [modules] and leaving out only the
+/// window.
 ///
-/// Separate from [runTom] so that something can *mount* the app rather than
-/// start the process: an end-to-end scenario restarts it to prove the recent
-/// list survived, and `runApp` called a second time does not replace a tree
-/// that is already there.
-///
-/// What it leaves out is the window — a title and a minimum size, which has
-/// no screen to assert about — and nothing else. The object graph, the
-/// modules and the overrides are the ones the product runs with.
-///
-/// [CoreModuleImpl] is first, so a module's provider override wins over the
-/// app's default: `ProviderScope` takes the last override for a provider,
-/// and a module that could not replace a default would not be an extension
-/// point.
+/// Separate from [runTom] so an end-to-end scenario can mount the app a
+/// second time, which `runApp` would not do into a tree already there.
 Widget tomApp({List<TomModule> modules = const <TomModule>[]}) {
   final List<TomModule> all = <TomModule>[const CoreModuleImpl(), ...modules];
   return ProviderScope(
@@ -67,18 +47,14 @@ Widget tomApp({List<TomModule> modules = const <TomModule>[]}) {
 
 /// Whether the window has already been given its title and its size.
 ///
-/// `runTom` is called more than once in a process by exactly one caller:
-/// an end-to-end scenario that restarts the app to prove something survived
-/// — the recent list, for instance. Preparing the window a second time
-/// leaves the app waiting on a handshake that already happened, and what a
-/// scenario sees is the previous screen never going away.
+/// An end-to-end scenario calls `runTom` twice in one process, and preparing
+/// the window again waits on a handshake that already happened.
 bool _windowPrepared = false;
 
-/// Gives the window a title and a size the layout holds together in.
+/// Gives the window a title and a minimum size.
 ///
-/// Skipped where there is no window — a widget test runs the app with no
-/// platform channels, and `window_manager` would throw into a test that is
-/// about panels — and skipped the second time, for the reason above.
+/// Skipped where there is no window, because `window_manager` throws with
+/// no platform channels, and skipped the second time ([_windowPrepared]).
 Future<void> _prepareWindow() async {
   if (!_hasWindow || _windowPrepared) {
     return;
@@ -106,10 +82,7 @@ bool get _hasWindow =>
     WidgetsBinding.instance.runtimeType.toString() !=
         'AutomatedTestWidgetsFlutterBinding';
 
-/// The application widget.
-///
-/// Separate from [runTom] so a test can mount it without starting a window,
-/// and so the composition root has exactly one job.
+/// The application widget, mountable by a test without a window.
 class TomApp extends StatelessWidget {
   /// Creates the application.
   const TomApp({super.key});
@@ -126,13 +99,10 @@ class TomApp extends StatelessWidget {
 
 /// Home, or the shell, depending on whether a space is open.
 ///
-/// **Not navigation.** There is no route and no stack: with a space open the
-/// window *is* the shell, and without one it is Home ([Decision
-/// 6](../../../../../docs/technical/decisions/006-no-navigation-package.md)).
-///
-/// The question goes to the session and not to Home, which is a screen and
-/// has no business knowing what replaced it ([Decision
-/// 9](../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).
+/// Not navigation — no route, no stack
+/// ([Decision 6](../../../../../docs/technical/decisions/006-no-navigation-package.md));
+/// the question goes to the session, not to Home
+/// ([Decision 9](../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).
 class _WindowContents extends ConsumerWidget {
   const _WindowContents();
 

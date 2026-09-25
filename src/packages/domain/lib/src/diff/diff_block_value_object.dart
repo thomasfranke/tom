@@ -8,9 +8,8 @@ part 'diff_block_value_object.freezed.dart';
 
 /// A block paired with what the diff decided about it.
 ///
-/// Sealed rather than a block carrying a flag: only [DiffBlockModified] has
-/// two sides, and a `switch` over these is what the preview draws
-/// (`docs/product/diff/rendered-diff/doc.md`).
+/// Sealed rather than a flag on the block: only [DiffBlockModified] has two
+/// sides, and the preview draws by an exhaustive `switch`.
 @freezed
 sealed class DiffBlockValueObject with _$DiffBlockValueObject {
   /// In both versions, letter for letter.
@@ -27,8 +26,7 @@ sealed class DiffBlockValueObject with _$DiffBlockValueObject {
 
   /// The same block, written differently.
   ///
-  /// Both sides travel, which is what a word-level diff inside the block
-  /// will need (v2) and what lets the UI render either one today.
+  /// Both sides travel, for the word-level diff of v2.
   const factory DiffBlockValueObject.modified({
     required BlockValueObject before,
     required BlockValueObject after,
@@ -44,6 +42,6 @@ sealed class DiffBlockValueObject with _$DiffBlockValueObject {
     DiffBlockModified(after: final BlockValueObject after) => after,
   };
 
-  /// Whether this block is one the reader has to be shown a mark against.
+  /// Whether this block gets a mark.
   bool get isChange => this is! DiffBlockUnchanged;
 }

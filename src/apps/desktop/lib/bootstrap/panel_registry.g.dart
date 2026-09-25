@@ -8,29 +8,26 @@ part of 'panel_registry.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The registry in scope.
+/// The registry in scope, overridden by `runTom` at the root of the app.
 ///
-/// Overridden by `runTom` at the root of the app. It has no default: a shell
-/// built without one is a wiring mistake, and failing loudly at startup is
-/// better than drawing an empty window.
+/// No default: a shell built without one is a wiring mistake, and failing
+/// at startup beats drawing an empty window.
 
 @ProviderFor(panelRegistry)
 final panelRegistryProvider = PanelRegistryProvider._();
 
-/// The registry in scope.
+/// The registry in scope, overridden by `runTom` at the root of the app.
 ///
-/// Overridden by `runTom` at the root of the app. It has no default: a shell
-/// built without one is a wiring mistake, and failing loudly at startup is
-/// better than drawing an empty window.
+/// No default: a shell built without one is a wiring mistake, and failing
+/// at startup beats drawing an empty window.
 
 final class PanelRegistryProvider
     extends $FunctionalProvider<PanelRegistry, PanelRegistry, PanelRegistry>
     with $Provider<PanelRegistry> {
-  /// The registry in scope.
+  /// The registry in scope, overridden by `runTom` at the root of the app.
   ///
-  /// Overridden by `runTom` at the root of the app. It has no default: a shell
-  /// built without one is a wiring mistake, and failing loudly at startup is
-  /// better than drawing an empty window.
+  /// No default: a shell built without one is a wiring mistake, and failing
+  /// at startup beats drawing an empty window.
   PanelRegistryProvider._()
     : super(
         from: null,

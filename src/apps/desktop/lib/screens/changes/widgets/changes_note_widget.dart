@@ -5,11 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// One muted line, standing in for the list of changes.
-///
-/// Every state the panel can be in that is not a list — no space, still
-/// asking git, a tree with nothing in it, a repository that would not answer
-/// — says so with this rather than leaving the column blank.
+/// One muted line standing in for the list, so no state leaves the column
+/// blank.
 class ChangesNoteWidget extends StatelessWidget {
   /// Creates a note saying [text].
   const ChangesNoteWidget(this.text, {super.key});

@@ -7,9 +7,8 @@ import 'package:tom_infra/tom_infra.dart';
 
 /// Where an alignment comes from.
 ///
-/// Thin today, and deliberately declared anyway: the aligner above must not
-/// reach a capability, and the day a diff is cached per pair of versions —
-/// the preview diffs on every keystroke — the cache belongs here ([Decision
+/// Thin, and declared anyway: a cache per pair of versions would belong here
+/// ([Decision
 /// 25](../../../../../../docs/technical/decisions/025-a-repository-reads-through-a-data-source.md)).
 final class TextDifferDataSource {
   /// Creates a source over [differ].

@@ -48,8 +48,6 @@ void main() {
     DocumentExternalChangeConflict conflictAt(String path) =>
         DocumentExternalChangeConflict(path);
     DocumentNotUtf8 notUtf8At(String path) => DocumentNotUtf8(path);
-    // The technical detail it used to carry is a cause now, and the cause is
-    // part of the value.
     DocumentOperationFailed failedAt(String path, String because) =>
         DocumentOperationFailed(path, cause: UnexpectedFailure(because));
 

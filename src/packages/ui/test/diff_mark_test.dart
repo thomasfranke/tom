@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 void main() {
-  /// Mounts [mark] on its own.
+  /// [mark] on its own, under the theme.
   Widget app(Widget mark) => MaterialApp(
     theme: tomTheme(Brightness.light),
     home: Scaffold(body: Center(child: mark)),
@@ -30,8 +30,6 @@ void main() {
   testWidgets('the letter is drawn in the ink and the square in the fill', (
     WidgetTester tester,
   ) async {
-    // **Colour is never the only signal**, and it is still a signal: the
-    // two roles are what say added apart from removed at a glance.
     await tester.pumpWidget(
       app(
         const DiffMarkWidget(

@@ -1,13 +1,5 @@
-/// The repository implementations, the parsers, and the DTOs that cross a
-/// capability's contract.
-///
-/// What fulfils the domain's contracts over `tom_infra`'s capabilities, plus
-/// the shapes those capabilities answer with — a DTO is declared in the data
-/// layer ([Decision 21](../../../docs/technical/decisions/021-dtos-and-daos-when-they-are-real.md)),
-/// beside the conversion that turns it into a domain type.
-///
-/// Nothing outside `lib/src/` is importable from another package, so this
-/// file is the whole public surface.
+/// The repository implementations, the parsers and the DTOs that cross a
+/// capability's contract ([Decision 21](../../../../docs/technical/decisions/021-dtos-and-daos-when-they-are-real.md)).
 library;
 
 export 'src/capabilities/filesystem/filesystem_entry_dto.dart';

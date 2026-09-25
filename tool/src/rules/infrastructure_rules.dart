@@ -1,9 +1,4 @@
 // The shape of `tom_infra` — Decision 24, checked against the folder.
-//
-// A capability is a folder holding its contract, its failures and one
-// subfolder per way of doing it, and the barrel is that folder's whole
-// contents. Both rules exist so a question about the package is answered by
-// listing it rather than by reading it.
 library;
 
 import 'dart:io';

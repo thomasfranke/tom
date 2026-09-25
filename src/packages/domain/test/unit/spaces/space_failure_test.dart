@@ -32,8 +32,6 @@ void main() {
     // Built at runtime rather than const: const instances are canonicalised,
     // which would make these pass even with no `==` at all.
     SpaceFolderMissing missingAt(String root) => SpaceFolderMissing(root);
-    // The technical detail it used to carry is a cause now, and the cause is
-    // part of the value.
     SpaceOperationFailed failedAt(String path, String because) =>
         SpaceOperationFailed(path, cause: UnexpectedFailure(because));
 

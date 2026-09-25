@@ -1,9 +1,4 @@
 // What a rule is, and the file walking every rule shares.
-//
-// One rule per file in this folder, named after the function it holds. The
-// rules answer **how things are named and shaped**; who may depend on whom
-// is `src/test/integrity/architecture_test.dart`, and the split is by
-// subject rather than by mechanism — both read files.
 library;
 
 import 'dart:io';
@@ -11,14 +6,13 @@ import 'dart:io';
 /// One broken rule, in the file that broke it.
 typedef Offence = ({String rule, String where, String detail});
 
-/// What every rule is: the tree in, what it found out.
+/// What every rule is: the tree in, what it found out. A rule answers how
+/// things are named and shaped; who may depend on whom is
+/// `src/test/integrity/architecture_test.dart`.
 typedef Rule = Iterable<Offence> Function(Directory root);
 
-/// One file of rules, as the menu and the subcommand both see it.
-///
-/// The same record serves both faces, which is what keeps a row and an
-/// argument from drifting apart: `tom rules <name>` runs exactly what the
-/// row named after the file runs, so a break names what to open.
+/// One file of rules, as the menu and the subcommand both see it, so `tom
+/// rules <name>` runs exactly what the row named after the file runs.
 typedef RuleFile = ({
   String name,
   String label,
@@ -44,11 +38,9 @@ Iterable<File> sourcesUnder(Directory root) sync* {
   yield* dartFilesUnder(Directory('${root.path}/src/test'));
 }
 
-/// The published half of [sourcesUnder] — what other packages can see.
-///
-/// A test double implements a contract as a matter of course and is not an
-/// implementation in the sense Decision 24 means: nothing is wired to it,
-/// and naming it `Impl` would say it was.
+/// The published half of [sourcesUnder] — what other packages can see. A test
+/// double implements a contract as a matter of course and is not an
+/// implementation in Decision 24's sense.
 Iterable<File> libraryFilesUnder(Directory root) =>
     sourcesUnder(root).where((file) => slashed(file.path).contains('/lib/'));
 
@@ -71,9 +63,7 @@ String relative(Directory root, File file) =>
 /// The last segment of [entity]'s path — its own name.
 String nameOf(FileSystemEntity entity) => slashed(entity.path).split('/').last;
 
-/// [path] with `/` separators, whatever the platform listed.
-///
-/// Every rule matches on paths, and `dart:io` spells them with `\` on
-/// Windows — one of the three platforms the tool runs on. A rule that
-/// looked for `/lib/` there would find nothing and report a clean tree.
+/// [path] with `/` separators, whatever the platform listed: `dart:io` spells
+/// them with `\` on Windows, and a rule looking for `/lib/` there would
+/// report a clean tree.
 String slashed(String path) => path.replaceAll(r'\', '/');

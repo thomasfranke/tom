@@ -3,8 +3,7 @@ library;
 
 import 'dart:async';
 
-// `select` is an extension on `ProviderListenable` and lives in the runtime
-// package; `riverpod_annotation` carries the annotations and not much else.
+// `select` lives in the runtime package, not in `riverpod_annotation`.
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_application/tom_application.dart';
@@ -19,20 +18,13 @@ part 'history_notifier.g.dart';
 
 /// Lists what touched the open document, and opens one of those versions.
 ///
-/// **It follows the document, not the repository**
-/// (`docs/product/git-workflow/file-history/doc.md`): the list is rebuilt
-/// when another file is opened and says so when none is.
-///
-/// Opening a version writes to the session rather than being kept here,
-/// because the preview and the bar above the document both have to know —
-/// and two copies of "which version is on screen" is the disagreement that
-/// state exists to prevent.
+/// It follows the document, not the repository
+/// (`docs/product/git-workflow/file-history/doc.md`). Which version is open
+/// is written to the session, because the preview and the bar read it too.
 @riverpod
 class HistoryNotifier extends _$HistoryNotifier {
-  /// How many commits the panel asks for.
-  ///
-  /// A document with a thousand of them is a list nobody scrolls, and the
-  /// panel would rather draw a hundred quickly than all of them eventually.
+  /// How many commits the panel asks for: a hundred drawn quickly rather
+  /// than all of them eventually.
   static const int limit = 100;
 
   /// Reads the commits that touched a document.
@@ -54,8 +46,7 @@ class HistoryNotifier extends _$HistoryNotifier {
     if (space == null || path == null) {
       return const HistoryState.idle();
     }
-    // Scheduled, not awaited: `build` answers synchronously, and the first
-    // answer is "asking git".
+    // Scheduled, not awaited: `build` answers synchronously.
     unawaited(Future<void>.microtask(() => _load(space, path)));
     return const HistoryState.loading();
   }
@@ -68,10 +59,8 @@ class HistoryNotifier extends _$HistoryNotifier {
     }
   }
 
-  /// Shows the document as [commit] left it.
-  ///
-  /// The version is *rendered*, not shown as diff text, so all this does is
-  /// say which one — the preview reads the session and fetches it.
+  /// Shows the document as [commit] left it; the preview reads the session
+  /// and fetches it.
   void open(CommitEntity commit) =>
       ref.read(spaceSessionProvider.notifier).read(commit);
 
@@ -85,8 +74,7 @@ class HistoryNotifier extends _$HistoryNotifier {
   ) async {
     final Result<List<CommitEntity>, AppFailure> read = await readFileHistory
         .read(space, path, limit: limit);
-    // Git is another process, and the panel can be gone by the time it
-    // answers.
+    // The panel can be gone by the time git answers.
     if (!ref.mounted) {
       return;
     }

@@ -5,16 +5,10 @@ import 'package:flutter/material.dart';
 
 /// The app's colours, by role.
 ///
-/// **Roles, never shades** ([visual
-/// language](../../../../../docs/technical/design/visual-language.md)).
-/// Nothing here is called `grey200`: a role survives a palette change and a
-/// shade number does not, and renaming one later means touching every widget
-/// that used it.
-///
-/// A [ThemeExtension] rather than a set of constants, because a widget must
-/// not have to know which mode it is in. `TomColors.of(context).surface` is
-/// the light or the dark value depending on the theme above it, and there is
-/// no `isDark` test anywhere in the widget tree.
+/// Roles rather than shades, so a palette change touches no widget ([visual
+/// language](../../../../../../docs/technical/design/visual-language.md)); a
+/// [ThemeExtension] rather than constants, so no widget asks which mode it
+/// is in.
 @immutable
 class TomColors extends ThemeExtension<TomColors> {
   /// Creates a palette.
@@ -42,8 +36,8 @@ class TomColors extends ThemeExtension<TomColors> {
 
   /// Panels, popovers, cards — anything *above* the page.
   ///
-  /// Lighter than [surface] in light mode and lighter again in dark mode,
-  /// because elevation reads as proximity to the light source in both.
+  /// Lighter than [surface] in both modes, because elevation reads as
+  /// nearness to the light in both.
   final Color surfaceRaised;
 
   /// Inputs, code blocks, the inactive pane.
@@ -68,10 +62,7 @@ class TomColors extends ThemeExtension<TomColors> {
   final Color textMuted;
 
   /// The current thing — the open document, the checked-out branch, the
-  /// focused control.
-  ///
-  /// It marks *current*, never meaning: anything semantic uses the diff
-  /// roles below.
+  /// focused control — and never a meaning, which is the diff roles' job.
   final Color accent;
 
   /// The fill behind an active row.
@@ -117,9 +108,8 @@ class TomColors extends ThemeExtension<TomColors> {
 
   /// The dark palette.
   ///
-  /// The same temperature as [light] — every surface carries a little
-  /// yellow — which is what makes switching feel like the same product at a
-  /// different time of day rather than a different app.
+  /// The same temperature as [light] — every surface carries a little yellow
+  /// — so switching reads as the same product at another hour.
   static const TomColors dark = TomColors(
     surface: Color(0xFF1A1917),
     surfaceRaised: Color(0xFF232220),
@@ -141,9 +131,8 @@ class TomColors extends ThemeExtension<TomColors> {
 
   /// The palette in scope.
   ///
-  /// Asserts rather than falling back: a missing extension means the widget
-  /// is outside the app's theme, and a silent default would ship the wrong
-  /// colours instead of saying so.
+  /// Asserts rather than falling back: a missing extension is a widget
+  /// outside the app's theme, and a silent default would ship wrong colours.
   static TomColors of(BuildContext context) {
     final TomColors? colors = Theme.of(context).extension<TomColors>();
     assert(colors != null, 'TomColors is not in scope — is this under TomApp?');

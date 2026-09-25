@@ -1,35 +1,9 @@
-// Maps a set of changed files to the specific *_test.dart files they should
-// re-run, then hands that off to tool/run_tests.dart to execute and render.
+// Maps changed files to the `_test.dart` files named after them, then hands
+// that list to run_tests.dart (the mapping rule: `runChangedTests` in
+// tests.dart). BASE defaults to `$BASE`, then `main`.
 //
 //   dart run tool/src/commands/run_changed_tests.dart [--coverage] [BASE]
-//   dart run tool/src/commands/run_changed_tests.dart [--coverage] --last=10
-//
-// Two ways to name that set, one mapping. `--last=N` takes the N most
-// recently edited source files under src/ by modification time; everything
-// else takes a git diff against BASE. The mapping below is the part worth not
-// duplicating, which is why both live here.
-//
-// BASE defaults to $BASE, then "main" — `make flutter-test-diff BASE=develop`
-// sets the env var Make already exports to this recipe's shell. Three diff
-// sources are unioned, so a changed file counts whether it's committed on the
-// branch, only staged or modified, or brand new and untracked:
-//
-//   git diff --name-only BASE...HEAD
-//   git diff --name-only HEAD
-//   git ls-files --others --exclude-standard
-//
-// A changed lib/ file maps to its test by filename convention alone —
-// `foo.dart` -> `foo_test.dart`, wherever under that package's test/ it
-// lives — because that is the one thing every test file in this project
-// actually guarantees (see tool/run_tests.dart). There is no import-graph
-// analysis and no package-wide fallback: touching tom_core no longer reruns
-// every package that depends on it, only the tests whose own name says they
-// cover the file that changed. A changed test file is simply run directly.
-// `src/pubspec.yaml` and anything under `src/test/` map to `arch`, since
-// that is what the architecture graph test actually asserts against.
-//
-// No external packages — only dart:io — so it runs with nothing but the SDK
-// already on the machine, from any directory.
+//   dart run tool/src/commands/run_changed_tests.dart [--coverage] --last=N
 
 import 'dart:async';
 import 'dart:io';
@@ -60,9 +34,8 @@ void main(List<String> args) async {
       ? rest.first
       : Platform.environment['BASE'] ?? 'main';
 
-  // Shown here rather than left to tool/run_tests.dart, since this script's
-  // own setup — the git diff, walking each package's test/ for a filename
-  // match — is the part that can actually take a moment on a large diff.
+  // Here rather than in run_tests.dart: the diff and the test/ walks below
+  // are the slow part, and run_tests.dart skips its own under --no-banner.
   await _showCompiling();
 
   final root = repoRoot();
@@ -79,10 +52,8 @@ void main(List<String> args) async {
   var wantArch = false;
   var wantCli = false;
   for (final path in changed) {
-    // Both folders under src/test/ hold tests for something that is not a
-    // package, and they are not the same something: the layer graph, and the
-    // CLI. A change under tool/ is the CLI's too — it is what those tests
-    // drive, and nothing else maps it anywhere.
+    // src/test/ holds tests for two things that are not a package: the layer
+    // graph, and the CLI — which a change under tool/ maps to as well.
     if (path.startsWith('src/test/cli/') || path.startsWith('tool/')) {
       wantCli = true;
       continue;
@@ -146,9 +117,8 @@ void main(List<String> args) async {
     }
   }
 
-  // A mapped path can still be gone by the time we get here — e.g. a test
-  // file that itself was deleted in the diff. Drop those rather than handing
-  // tool/run_tests.dart a path that doesn't exist.
+  // A mapped path can be a test file the diff deleted, and run_tests.dart
+  // must not be handed a path that does not exist.
   for (final label in testFiles.keys.toList()) {
     final pkgDir = _apps.contains(label)
         ? Directory('${root.path}/src/apps/$label')
@@ -193,11 +163,9 @@ void main(List<String> args) async {
 
   final code = await process.exitCode;
 
-  // The `◔` the dashboard prints is the whole package's, measured by whatever
-  // subset of its suite just ran — which is why a narrowed run reports a
-  // package at 28% that the full run reports at 100%. The number worth having
-  // after a run like this is the one for the files it was narrowed to, and
-  // that is what this prints.
+  // The dashboard's `◔` is the whole package's, measured by whatever subset
+  // just ran; the number worth having here is the one for the files the run
+  // was narrowed to.
   if (coverage && code == 0) {
     _reportCoverageOf(_sourcesAmong(changed, root), root);
   }
@@ -207,13 +175,9 @@ void main(List<String> args) async {
 
 /// The production files a coverage number is about, given what changed.
 ///
-/// Both directions of the same convention. A changed `lib/foo.dart` is itself
-/// what was measured. A changed `foo_test.dart` is not — it is why something
-/// ran — so what it stands for is `foo.dart`, found the same way the run
-/// found the test in the first place: by name, anywhere under the package.
-///
-/// That second direction is what makes this useful right after writing a
-/// test, which is when the question "what does it actually cover" is asked.
+/// A changed `lib/foo.dart` is itself what was measured; a changed
+/// `foo_test.dart` stands for the `foo.dart` found by name under the same
+/// package — the direction that matters right after writing a test.
 List<String> _sourcesAmong(List<String> changed, Directory root) {
   final sources = <String>{};
 
@@ -248,11 +212,9 @@ List<String> _sourcesAmong(List<String> changed, Directory root) {
   return sources.toList()..sort();
 }
 
-/// Prints the line coverage of [sources], file by file, worst first.
+/// The line coverage of [sources], printed file by file, worst first.
 ///
-/// Read out of the lcov each package just wrote rather than measured again:
-/// the run that finished a moment ago is the measurement, and the only thing
-/// left to do is to stop averaging it over code nobody touched.
+/// Read out of the lcov each package just wrote rather than measured again.
 void _reportCoverageOf(List<String> sources, Directory root) {
   if (sources.isEmpty) return;
 
@@ -273,8 +235,8 @@ void _reportCoverageOf(List<String> sources, Directory root) {
     return;
   }
 
-  // Least covered first: the file that needs a test is the one worth putting
-  // where the eye lands, and on a long list the top is the only place read.
+  // Least covered first, because on a long list the top is the only place
+  // read.
   final rows = measured.entries.toList()
     ..sort((a, b) {
       final rate = (a.value.$2 / a.value.$1).compareTo(b.value.$2 / b.value.$1);
@@ -290,9 +252,8 @@ void _reportCoverageOf(List<String> sources, Directory root) {
     );
   }
 
-  // Apart, with the reason, rather than as 0% or as nothing at all: a barrel
-  // of exports and a bare enum declare no executable line, so counting them
-  // as zero would understate and dropping them would overstate.
+  // Apart and with the reason: a barrel or a bare enum declares no executable
+  // line, so counting it as zero would understate and dropping it overstate.
   final silent = sources.where((s) => !measured.containsKey(s)).toList()
     ..sort();
   if (silent.isNotEmpty) {
@@ -318,9 +279,8 @@ void _reportCoverageOf(List<String> sources, Directory root) {
 /// The `found`/`hit` line counts each of [sources] has in its own package's
 /// lcov, for the sources that appear in one at all.
 ///
-/// Two spellings have to be matched: `format_coverage` writes absolute paths
-/// for the pure Dart packages and `flutter test --coverage` writes paths
-/// relative to the package for the apps.
+/// Two spellings are matched: `format_coverage` writes absolute paths for the
+/// pure Dart packages, `flutter test --coverage` package-relative ones.
 Map<String, (int found, int hit)> _lcovRecords(
   List<String> sources,
   Directory root,
@@ -359,17 +319,14 @@ Set<String> _packageDirectoriesOf(List<String> sources) => {
   for (final path in sources) path.split('/').take(3).join('/'),
 };
 
-/// A brief banner shown before setup, covering it with a live "compiling"
-/// ticker instead of a silent terminal. The floor delay keeps it visible for
-/// a beat even when setup is instant — otherwise it would flash and vanish,
-/// which reads as nothing having happened at all. Duplicated from
-/// run_tests.dart rather than shared: each entry point shows its own, and
-/// run_tests.dart skips it (`--no-banner`) when this one already ran.
+/// A live "compiling" ticker over the setup, so the terminal is not silent.
+///
+/// The floor delay keeps it on screen for a beat when setup is instant;
+/// duplicated from run_tests.dart, which skips its own under `--no-banner`.
 Future<void> _showCompiling() async {
   stdout.writeln('• Running build hooks...');
 
-  // The banner exists to fill a silence someone is watching. Nobody watches a
-  // log, so in plain mode the line above is the whole banner.
+  // Nobody watches a log, so in plain mode the line above is the whole banner.
   if (isPlain) return;
 
   stdout.writeln();
@@ -400,22 +357,16 @@ int? _lastCount(List<String> args) {
   return int.tryParse(argument.substring(equals + 1)) ?? _defaultLastCount;
 }
 
-/// How many recently edited files `--last` takes when it is not given a
-/// number. Ten is about a sitting's worth of work.
+/// How many files `--last` takes when it is not given a number — about a
+/// sitting's worth of work.
 const _defaultLastCount = 10;
 
 /// The [count] most recently edited source files under `src/`, newest first,
 /// as repository-relative paths.
 ///
-/// Modification time rather than git, because the two answer different
-/// questions: git says what differs from a commit, and this says what was
-/// being worked on. A file edited and then edited back to what the commit
-/// already holds is invisible to the first and is exactly what the second is
-/// for.
-///
-/// Generated output is skipped for the mirror-image reason: one `tom codegen`
-/// run stamps every `.freezed.dart` in the workspace at once, and without
-/// this the list would be ten files nobody touched.
+/// Modification time rather than git: git says what differs from a commit,
+/// this says what was being worked on. Generated output is skipped because
+/// one `tom codegen` stamps every `.freezed.dart` in the workspace at once.
 List<String> _recentFiles(Directory root, int count) {
   final src = Directory('${root.path}/src');
   if (!src.existsSync()) return const [];
@@ -433,10 +384,8 @@ List<String> _recentFiles(Directory root, int count) {
 
 /// Every `.dart` file under [dir] that someone could have written.
 ///
-/// Walked by hand rather than with `listSync(recursive: true)` so the skipped
-/// directories are never descended into at all: `.dart_tool` alone holds tens
-/// of megabytes of cached Dart per package, none of it edited by anyone, and
-/// listing it to throw it away is the slow way to get the same answer.
+/// Walked by hand so the skipped directories are never descended into:
+/// `.dart_tool` alone holds tens of megabytes per package.
 Iterable<File> _dartFilesUnder(Directory dir) sync* {
   for (final entity in dir.listSync(followLinks: false)) {
     if (entity is Directory) {
@@ -453,8 +402,7 @@ Iterable<File> _dartFilesUnder(Directory dir) sync* {
   }
 }
 
-/// The suffixes build_runner owns — see tool/src/commands/codegen.dart, which
-/// deletes by the same two.
+/// The suffixes build_runner owns, the same two codegen.dart deletes by.
 const _generated = ['.freezed.dart', '.g.dart'];
 
 Future<List<String>> _changedFiles(Directory root, String base) async {
@@ -489,6 +437,3 @@ Future<List<String>> _changedFiles(Directory root, String base) async {
   final sorted = files.toList()..sort();
   return sorted;
 }
-
-// The repository root is found by marker now (see ../repo.dart): counting
-// levels from this file is what broke when it moved into tool/src/commands/.

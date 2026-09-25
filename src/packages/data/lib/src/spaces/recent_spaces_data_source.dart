@@ -9,15 +9,10 @@ import 'package:tom_infra/tom_infra.dart';
 
 /// Where the recent list is kept, and in what shape.
 ///
-/// [Settings] holds strings and says so — giving structure to the text is
-/// this layer's job. So the key, the JSON and the decoding live here, and
-/// what the repository above sees is rows ([Decision
-/// 25](../../../../../../docs/technical/decisions/025-a-repository-reads-through-a-data-source.md)).
-///
-/// Failures travel as the store reported them. That the product survives a
-/// store it cannot read is a promise `RecentSpacesRepository` makes, and it
-/// is kept one layer up — a source that swallowed its own failures would
-/// leave the repository unable to keep a promise it did not make.
+/// The key, the JSON and the decoding, since [Settings] holds strings
+/// ([Decision
+/// 25](../../../../../../docs/technical/decisions/025-a-repository-reads-through-a-data-source.md));
+/// failures travel as reported, since surviving them is the repository's.
 final class RecentSpacesDataSource {
   /// Creates a source over [settings].
   const RecentSpacesDataSource({required this.settings});
@@ -25,17 +20,14 @@ final class RecentSpacesDataSource {
   /// Where the list is kept between runs.
   final Settings settings;
 
-  /// The key the list is stored under.
-  ///
-  /// Namespaced, because the store is shared with every other preference
-  /// and will outlive this class.
+  /// The key the list is stored under, namespaced because the store is
+  /// shared.
   static const String _key = 'spaces.recent';
 
   /// The stored rows, in the order they were written.
   ///
-  /// A store holding something that is not a list of rows answers empty:
-  /// there is no version to migrate from, and refusing to start over a
-  /// preference file would be worse than forgetting it.
+  /// A store holding anything but a list of rows answers empty, since
+  /// refusing to start over a preference file would be worse.
   Future<Result<List<RecentSpaceDto>, SettingsFailure>> read() =>
       settings.read(_key).map(_decode);
 

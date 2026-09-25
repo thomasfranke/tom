@@ -1,9 +1,5 @@
-/// Opening a folder as a space, against real repositories.
-///
-/// Integration rather than unit, because the question is what git says about
-/// a folder — where the repository above it is, and whether there is one at
-/// all. A fake client would only prove that the fake agrees with itself, and
-/// this is the path every session starts on.
+/// Opening a folder as a space against real repositories, because the
+/// question is what git says about a folder.
 library;
 
 import 'dart:io';
@@ -55,8 +51,8 @@ void main() {
 
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('tom_open_space_');
-    // Resolved and forward-slashed: the macOS system temporary directory is
-    // a symlink, and git reports the real path in its own spelling.
+    // Resolved and forward-slashed, because the macOS temporary directory is
+    // a symlink and git reports the real path in its own spelling.
     base = tempDir.resolveSymbolicLinksSync().replaceAll(r'\', '/');
     repository = SpaceRepositoryImpl(
       spaces: SpaceDataSource(
@@ -90,8 +86,6 @@ void main() {
   });
 
   group('opening a folder inside a repository', () {
-    // The normal case, and the reason `SpaceEntity` carries two paths: most
-    // teams keep `docs/` inside the repository that holds the code.
     late String repoPath;
 
     setUp(() {
@@ -123,9 +117,7 @@ void main() {
     test(
       'a folder reached through a link is the folder it points at',
       () async {
-        // The picker answers with the link the user clicked; git answers with
-        // where the repository really is. On macOS `/tmp` itself is such a
-        // link, so this is the ordinary case and not an exotic one.
+        // On macOS `/tmp` itself is a link, so this is the ordinary case.
         Link('$base/linked').createSync(repoPath);
 
         final SpaceEntity space = valueOf(
@@ -142,8 +134,6 @@ void main() {
     );
 
     test('and the paths convert both ways', () async {
-      // What every later git call depends on: a path the file tree shows
-      // and a path git accepts are the same file.
       final SpaceEntity space = valueOf(
         await repository.open('$repoPath/docs'),
       );
@@ -161,8 +151,6 @@ void main() {
 
   group('when it is not a space', () {
     test('a folder outside any repository is named, not worked around', () {
-      // TOM never runs `git init` for the user and never opens the folder in
-      // a quieter mode (docs/product/home/doc.md).
       final String path = '$base/loose';
       Directory(path).createSync();
 
@@ -183,9 +171,6 @@ void main() {
     });
 
     test('a folder that is not there is a different failure', () async {
-      // Which sends the user somewhere else entirely: Home offers to forget
-      // a recent space whose folder was deleted, rather than explaining
-      // that git found no repository in a place that does not exist.
       final String path = '$base/gone';
 
       expect(failureOf(await repository.open(path)), SpaceFolderMissing(path));

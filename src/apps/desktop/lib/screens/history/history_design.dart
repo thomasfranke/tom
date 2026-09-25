@@ -1,35 +1,29 @@
 /// What the design fixes about the history panel.
 library;
 
-/// The numbers the history panel is drawn against.
-///
-/// The `file-history` wireframe
+/// The numbers of the `file-history` wireframe
 /// (`docs/product/git-workflow/file-history/mocks/file-history.excalidraw`),
-/// measured from the top of the panel — the shell is what puts it in the
-/// column.
+/// measured from the top of the panel.
 ///
-/// **One size is not the wireframe's.** It draws the line under a subject at
-/// 13 carrying a sha and a relative time; the product also asks for *who*
-/// (`docs/product/git-workflow/file-history/doc.md`), and three facts at 13
-/// do not fit 248 points. So the meta line is [meta], the size the status
-/// bar already uses for exactly this kind of sentence.
+/// [meta] is the one size that is not the wireframe's: it draws that line
+/// at 13, and the sha, the author and the age do not fit 248 points at 13.
 abstract final class HistoryDesign {
-  /// Panel top to the caption's baseline box.
+  /// Panel top to the caption's box.
   static const double captionTop = 18;
 
   /// Panel top to the first entry.
   static const double entriesTop = 50;
 
-  /// The pitch between entries, which is also the list's item extent.
+  /// The pitch between entries, also the list's item extent.
   static const double entryPitch = 56;
 
-  /// An entry's own box, shorter than the pitch.
+  /// An entry's box, shorter than the pitch.
   static const double entryHeight = 44;
 
-  /// Corner radius of the row a pointer is over, and of the one being read.
+  /// Corner radius of a hovered row and of the one being read.
   static const double radius = 6;
 
-  /// The panel's own caption.
+  /// The panel's caption.
   static const double caption = 10;
 
   /// A commit's subject.

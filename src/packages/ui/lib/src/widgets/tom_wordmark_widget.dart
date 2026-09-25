@@ -4,20 +4,12 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
-/// TOM, with the O as the commit on the trunk.
+/// TOM, with the O as the commit on the trunk, drawn from the master's own
+/// numbers ([TomMark]) because brand rule 1 says the commit is never redrawn:
+/// [`brand/tom-wordmark-light.svg`](../../../../../../docs/technical/design/brand/tom-wordmark-light.svg).
 ///
-/// **Drawn from the master's own numbers**, transcribed from
-/// [`brand/tom-wordmark-light.svg`](../../../../../docs/technical/design/brand/tom-wordmark-light.svg),
-/// which `tools/brand.py` generates. Brand rule 1 is that the commit is
-/// never redrawn — the ring and the trunk here are the same geometry as the
-/// icon's, not an approximation of it, so a change in `brand.py` is a change
-/// of these numbers and nothing else.
-///
-/// Painted rather than rendered from the SVG because every segment is a
-/// straight line or a circle: an SVG package would be a dependency
-/// ([rule 1](../../../../../AGENTS.md)) earning its keep on four shapes. The
-/// letters are Sora Bold outlines, extracted once into the master — which is
-/// also why no font has to be installed for the wordmark to be right.
+/// Painted rather than loaded, since straight lines and a circle do not earn
+/// an SVG dependency; the letters are Sora Bold outlines, needing no font.
 class TomWordmarkWidget extends StatelessWidget {
   /// Creates the wordmark [capHeight] tall in its capitals.
   const TomWordmarkWidget({
@@ -33,12 +25,9 @@ class TomWordmarkWidget extends StatelessWidget {
   /// The colour of the ring and the trunk — `accent`.
   final Color commit;
 
-  /// How tall the capitals are.
-  ///
-  /// **Cap height sizes the mark** (brand rule 2), never the box: the
-  /// trunk's reach above and below is part of it, so the widget is taller
-  /// than this number and that is correct. The empty state uses 60, which is
-  /// the design's `type.brand`.
+  /// How tall the capitals are — brand rule 2, cap height sizes the mark, so
+  /// the widget is taller than this by the trunk's reach. Home uses 60, the
+  /// design's `type.brand`.
   final double capHeight;
 
   @override
@@ -69,42 +58,40 @@ class TomWordmarkWidget extends StatelessWidget {
 
 /// The master's own numbers, in the master's own units.
 ///
-/// Public because the mark is not only drawn: anything that continues it —
-/// the commit line behind Home, say — has to start where the letterform
-/// stops, and a second transcription of these numbers is a second thing to
-/// get wrong when `tools/brand.py` changes.
+/// Public so whatever continues the mark — the trunk behind Home — starts
+/// where the letterform stops, from one transcription rather than two.
 abstract final class TomMark {
-  /// The letters run from y 0 to y 146 in the master.
+  /// The height of the letters, which run from y 0 to y 146.
   static const double capHeight = 146;
 
-  /// The master's viewBox is `4.4 -35.04 477.8 216.08`: its width,
+  /// The width of the master's viewBox, `4.4 -35.04 477.8 216.08`.
   static const double boxWidth = 477.8;
 
-  /// its height — taller than the letters, because the trunk pokes out,
+  /// Its height, taller than the letters by the trunk's reach.
   static const double boxHeight = 216.08;
 
-  /// and the corner it starts at.
+  /// Its left edge.
   static const double left = 4.4;
 
-  /// The top of the box, which is where the trunk's upper tip reaches.
+  /// Its top, where the trunk's upper tip reaches.
   static const double top = -35.04;
 
-  /// The commit: the O's centre in the master's units,
+  /// The O's centre.
   static const Offset commitCentre = Offset(212.1, 72.7);
 
-  /// the radius of the ring drawn through that centre,
+  /// The radius of the ring drawn through that centre.
   static const double commitRadius = 60.7;
 
-  /// and the weight of that ring.
+  /// The weight of that ring.
   static const double commitStroke = 32.8;
 
   /// The weight of the trunk the commit sits on.
   static const double trunkStroke = 19.68;
 
-  /// Where the letterform stops drawing the trunk above the commit,
+  /// Where the letterform's trunk stops above the commit.
   static const double trunkAbove = 12;
 
-  /// and where it picks it up again below.
+  /// Where it picks up again below.
   static const double trunkBelow = 133.4;
 
   /// How far the commit reaches from its centre — the break the trunk keeps.

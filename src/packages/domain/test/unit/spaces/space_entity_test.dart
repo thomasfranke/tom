@@ -2,8 +2,7 @@ import 'package:test/test.dart';
 import 'package:tom_domain/tom_domain.dart';
 
 void main() {
-  // The normal case, and the one the rest of the app gets wrong if the
-  // conversions are wrong: a folder inside a repository that holds code.
+  // The normal case: a folder inside a repository that holds code.
   final SpaceEntity nested = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
@@ -35,8 +34,6 @@ void main() {
     });
 
     test('is not fooled by a sibling with a shared prefix', () {
-      // `/code/app-docs` starts with `/code/app` as a string and is a
-      // different folder. The separator is what makes it a containment test.
       expect(
         () => SpaceEntity(
           root: '/code/app-docs',
@@ -48,8 +45,8 @@ void main() {
     });
 
     test('accepts the two spellings the OS and git each produce', () {
-      // The folder picker returns backslashes; `git rev-parse` returns
-      // forward slashes and may lower-case the drive letter. Same folder.
+      // The picker returns backslashes; `git rev-parse` returns forward
+      // slashes and may lower-case the drive letter.
       expect(
         SpaceEntity(
           root: r'C:\code\app\docs',
@@ -123,8 +120,6 @@ void main() {
     });
 
     test('answers null for a path the space does not contain', () {
-      // Not a failure: git reports the whole repository, so a status on a
-      // space opened at `docs/` routinely names source files.
       expect(
         nested.toSpaceRelative(RepoRelativePathValueObject('lib/main.dart')),
         isNull,
@@ -239,8 +234,7 @@ void main() {
   });
 
   group('equality', () {
-    // Built at runtime: const instances are canonicalised, which would make
-    // this pass with no generated `==` at all.
+    // Built at runtime: const instances are canonicalised.
     SpaceEntity spaceNamed(String name) =>
         SpaceEntity(root: '/code/app', repositoryRoot: '/code/app', name: name);
 

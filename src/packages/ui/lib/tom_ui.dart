@@ -1,8 +1,5 @@
-/// The look, shared by every application: colour roles, metrics, the brand
-/// marks and the components both of them draw.
-///
-/// Nothing outside `lib/src/` is importable from another package, so this
-/// file is the whole public surface.
+/// The look both applications draw: colour roles, metrics, the brand marks
+/// and the shared components.
 library;
 
 export 'src/theme/tom_colors.dart';

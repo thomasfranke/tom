@@ -84,8 +84,6 @@ void main() {
   });
 
   test('a document that is gone is a failure, not an empty buffer', () async {
-    // An empty buffer would invite typing into a file that is not there,
-    // and the first save would create it.
     documents.answer = Failure<DocumentEntity, DocumentFailure>(
       DocumentNotFound(writing.value),
     );
@@ -112,8 +110,6 @@ void main() {
     });
 
     test('typing a character and taking it back leaves it clean', () async {
-      // Compared, never flagged: a flag would call this unsaved for the
-      // rest of the session and the mark would stop meaning anything.
       start();
       show(docs, writing);
       await settle();
@@ -141,8 +137,6 @@ void main() {
     });
 
     test('saving a document nobody touched writes nothing', () async {
-      // Pressing the shortcut twice is not an error, and a write nobody
-      // needs still moves the timestamp git reads.
       start();
       show(docs, writing);
       await settle();
@@ -169,8 +163,6 @@ void main() {
     });
 
     test('typing during a save leaves the document dirty again', () async {
-      // What reached the disk is not what is on screen, and saying "saved"
-      // would be a claim about text no file holds.
       start();
       show(docs, writing);
       await settle();
@@ -203,8 +195,6 @@ void main() {
   });
 
   test('changing the mode does not throw the buffer away', () async {
-    // The editor watches the space and the document, never the session
-    // whole: looking at the preview must not lose somebody's work.
     start();
     show(docs, writing);
     await settle();

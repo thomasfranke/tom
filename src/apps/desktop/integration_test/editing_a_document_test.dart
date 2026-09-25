@@ -22,10 +22,8 @@ void main() {
         'is against the bytes on disk, not against anything the app '
         'remembers.',
     steps: <Step>[
-      // `untracked.md` and not one of the others, on purpose: this scenario
-      // writes to the prepared environment, and a fixture it left rewritten
-      // would be a fixture the next scenario asserts the wrong thing about.
-      // Nothing else reads this file's *content*.
+      // `untracked.md` on purpose: this scenario rewrites the file, and no
+      // other scenario reads its content.
       Step('open a document in the docs folder', (TomRobot robot) async {
         await robot.launchWindowed(pickFolder: docsInRepo.root);
         await robot.chooseFolder();
@@ -36,8 +34,6 @@ void main() {
       Step('the source pane holds the file as it is written', (
         TomRobot robot,
       ) async {
-        // Source, not a rendering of it: there is no WYSIWYG mode
-        // (Decision 3).
         await robot.seesInTheSource('# Untracked');
       }),
       Step('typing reaches the preview with no refresh step', (
@@ -60,8 +56,8 @@ void main() {
       Step('and the file on disk is what the editor held', (
         TomRobot robot,
       ) async {
-        // The only assertion in the suite that leaves the app entirely:
-        // everything above could pass with a buffer that never landed.
+        // Read off the disk: everything above could pass with a buffer that
+        // never landed.
         expect(
           File('${docsInRepo.root}/untracked.md').readAsStringSync(),
           '# Typed in TOM\n\nAnd rendered.\n',
@@ -101,8 +97,6 @@ void main() {
       Step('and the explorer is still there, because nothing takes over', (
         TomRobot robot,
       ) async {
-        // There is no full-screen takeover that hides the tree
-        // (docs/product/workspace/doc.md).
         await robot.seesInTheTree(<String>['index.md']);
       }),
       Step('source-only is the other way round', (TomRobot robot) async {

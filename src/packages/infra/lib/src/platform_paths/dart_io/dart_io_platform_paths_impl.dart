@@ -8,10 +8,8 @@ import 'package:tom_infra/tom_infra.dart';
 
 /// Derives the folders from each platform's own conventions.
 ///
-/// Not `path_provider`, for the reason [JsonFileSettingsImpl] does not use
-/// `shared_preferences`: both are Flutter plugins, and this package is pure
-/// Dart so that framework independence is asserted by `dart test` on every
-/// run rather than claimed in a document.
+/// Not `path_provider`: a Flutter plugin, and this package is pure Dart
+/// (see [JsonFileSettingsImpl]).
 ///
 /// | Platform | Folder |
 /// |---|---|
@@ -22,9 +20,7 @@ final class DartIoPlatformPathsImpl implements PlatformPaths {
   /// Creates the implementation.
   ///
   /// [operatingSystem] and [environment] default to this machine's and are
-  /// the seam the three branches above are *tested* through — two of them
-  /// are unreachable on whatever machine the suite happens to run on, which
-  /// is the most common way a path bug ships.
+  /// the seam the other platforms' branches are tested through.
   const DartIoPlatformPathsImpl({
     this.application = 'tom',
     this.operatingSystem,
@@ -68,9 +64,6 @@ final class DartIoPlatformPathsImpl implements PlatformPaths {
   }
 
   /// [build] applied to the user's home directory, when there is one.
-  ///
-  /// The three branches that need a home all fail the same way, so the check
-  /// is written once rather than at each of them.
   static Result<String, PlatformPathsFailure> _under(
     Map<String, String> environment,
     String Function(String home) build,

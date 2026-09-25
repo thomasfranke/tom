@@ -3,9 +3,8 @@ library;
 
 /// What happened to a path, in the product's own words.
 ///
-/// The six the domain model names
-/// (`docs/technical/domain-model.md`) — git's own alphabet is wider, and
-/// `tom_data` collapses what it reports into these.
+/// The six of `docs/technical/domain/git.md`; git's alphabet is wider and
+/// `tom_data` collapses it into these.
 enum FileStateEnum {
   /// The file exists on both sides with different content.
   modified,

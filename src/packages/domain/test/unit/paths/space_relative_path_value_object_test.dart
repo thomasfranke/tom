@@ -11,8 +11,6 @@ void main() {
     });
 
     test('refuses what would escape the space', () {
-      // The reason the type exists: joined onto the space root, these reach
-      // outside the folder the user opened.
       expect(SpaceRelativePathValueObject.tryParse('../secrets.md'), isNull);
       expect(SpaceRelativePathValueObject.tryParse('notes/../../x.md'), isNull);
       expect(SpaceRelativePathValueObject.tryParse('./a.md'), isNull);
@@ -75,8 +73,6 @@ void main() {
     );
 
     test('reads a sibling from the document\'s own folder', () {
-      // The way every renderer reads a link: beside the document, not at
-      // the space root.
       expect(writing.resolve('reviewing.md')?.value, 'guides/reviewing.md');
       expect(writing.resolve('./reviewing.md')?.value, 'guides/reviewing.md');
     });

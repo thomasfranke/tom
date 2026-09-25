@@ -40,8 +40,8 @@ void main() {
         await robot.seesTheShell();
       }),
       Step('it starts out knowing only what it has', (TomRobot robot) async {
-        // Nothing has fetched, so `behind` is not zero because the branches
-        // agree — it is zero because nobody has asked.
+        // `behind` is zero because nobody has fetched, not because the
+        // branches agree.
         await robot.seesTheDrift(ahead: 1);
       }),
       Step('fetching finds the two the remote gained', (TomRobot robot) async {
@@ -52,8 +52,6 @@ void main() {
       Step('and it brought no file into the working tree', (
         TomRobot robot,
       ) async {
-        // The line between fetch and pull, and the reason they are two
-        // buttons (docs/product/git-workflow/push-pull/doc.md).
         expect(
           File('${behind.root}/reviewing.md').existsSync(),
           isFalse,
@@ -89,14 +87,13 @@ void main() {
         await robot.pushes();
 
         await robot.seesThePushRefused(commits: 2);
-        // And nothing of ours reached it, which is the claim being made.
         expect(onTheRemote(), isNot(contains('docs: start the release notes')));
       }),
       Step('pulling brings their commits in', (TomRobot robot) async {
         await robot.pulls();
 
-        // The two sides wrote different files, so this merges cleanly — a
-        // pull that conflicts is a situation nothing draws yet.
+        // The two sides wrote different files, so the pull merges cleanly; a
+        // conflict is a screen nothing draws yet.
         await robot.seesTheDrift(ahead: 2);
         await robot.seesInTheTree(<String>['reviewing.md', 'approvals.md']);
       }),
@@ -107,8 +104,8 @@ void main() {
         robot.seesNoRefusal();
       }),
       Step('which the remote itself confirms', (TomRobot robot) async {
-        // The only assertion here that leaves the app: everything above
-        // could pass with a button that merely stopped complaining.
+        // Asked of the remote itself: everything above could pass with a
+        // button that merely stopped complaining.
         expect(onTheRemote(), contains('docs: start the release notes'));
         robot.seesNothingBroken();
       }),

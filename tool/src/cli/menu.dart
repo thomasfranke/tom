@@ -1,5 +1,5 @@
-// A navigable screen: a title, a section, a question, and rows the arrow keys
-// move through. One screen at a time, redrawn in place.
+// A navigable screen — title, section, question and rows the arrow keys move
+// through — redrawn in place.
 library;
 
 import 'dart:io';
@@ -41,11 +41,8 @@ final class MenuItem<T> {
       _kind = _Kind.back;
 
   /// A row that is shown but cannot be chosen — something the CLI will offer
-  /// later, listed now so its absence is visible rather than mysterious.
-  ///
-  /// Skipped by the arrow keys, which is the difference that matters: a
-  /// disabled row the cursor could land on would have to explain itself on
-  /// Enter, and nobody presses Enter twice to learn nothing happens.
+  /// later, listed so its absence is visible. Skipped by the arrow keys, since
+  /// a row the cursor lands on would have to explain itself on Enter.
   const MenuItem.disabled(
     this.label, {
     this.detail,
@@ -55,11 +52,8 @@ final class MenuItem<T> {
        emphasized = false,
        _kind = _Kind.disabled;
 
-  /// A heading that groups the rows below it. Not selectable.
-  ///
-  /// This is what lets one screen hold more than one list without sending the
-  /// user through a submenu to reach the second — the groups are visible at
-  /// once, and the arrow keys run straight through them.
+  /// A heading that groups the rows below it. Not selectable, so one screen
+  /// holds more than one list without a submenu.
   const MenuItem.section(this.label)
     : value = null,
       detail = null,
@@ -76,24 +70,14 @@ final class MenuItem<T> {
 
   /// What colour to paint [detail], when its meaning is not neutral.
   ///
-  /// A green tick against a row that passed says something the same text in
-  /// grey does not. It is a separate field rather than escape codes inside
-  /// [detail] because the alignment is computed from that string's length,
-  /// and a colour embedded in it would push every row's metadata left by
-  /// however many bytes the terminal does not draw.
-  ///
-  /// Setting it also **drops the generic marker**. A row that says what its
-  /// detail means does not want a second glyph in front of it saying only
-  /// that a detail is present — two icons on one row is one icon too many,
-  /// and the neutral one wins the eye for no reason.
+  /// A separate field rather than escape codes inside [detail], because the
+  /// alignment is computed from that string's length. Setting it also drops
+  /// the generic marker: two icons on one row is one too many.
   final String? detailColor;
 
-  /// What this row does, shown in the footer while the cursor is on it.
-  ///
-  /// Two or three lines at most: the footer explains the row you are about to
-  /// choose, and a paragraph there would compete with the list for attention
-  /// rather than support it. This is where a description belongs — never in
-  /// [detail], which is metadata and is drawn on every row at once.
+  /// What this row does, shown in the footer while the cursor is on it — two
+  /// or three lines at most, and never in [detail], which is drawn on every
+  /// row at once.
   final String? description;
 
   /// Draws the row brighter than its neighbours — the one entry worth the
@@ -111,8 +95,7 @@ enum _Kind { item, rule, back, section, disabled }
 /// backed out with `← Back`, Esc, `q` or Ctrl-C.
 ///
 /// Throws [StateError] when the terminal is not interactive: a menu has no
-/// meaning under CI, and callers are expected to have routed to the
-/// non-interactive path long before here (see `Terminal.isPlain`).
+/// meaning under CI, and callers route to the plain path before here.
 Future<T?> showMenu<T>(
   Terminal terminal, {
   required String title,
@@ -158,9 +141,8 @@ Future<T?> showMenu<T>(
     drawnLines = lines.length;
   }
 
-  // Every screen owns the window from the top left. Without this the second
-  // screen of a session would be drawn wherever the previous one left the
-  // cursor, appended below it rather than replacing it.
+  // Every screen owns the window from the top left; without this the second
+  // screen would be drawn wherever the previous one left the cursor.
   terminal.beginScreen();
   render();
 
@@ -183,12 +165,9 @@ Future<T?> showMenu<T>(
   return null;
 }
 
-/// Builds one frame as a list of rendered lines, so the caller can count them
-/// and rewind by exactly that many on the next.
-///
-/// Public so a frame can be rendered without a terminal — `tom --preview` is
-/// how the look is checked and tuned, since a redraw loop cannot be captured
-/// by piping stdout somewhere.
+/// One frame as a list of rendered lines, so the caller can rewind by exactly
+/// that many on the next. Public so `tom --preview` can render one without a
+/// terminal.
 List<String> composeFrame<T>({
   required String title,
   required List<MenuItem<T>> items,
@@ -231,15 +210,11 @@ List<String> composeFrame<T>({
   return lines;
 }
 
-/// The footer: what the row under the cursor does.
-///
-/// Always the same height, whether or not the row has anything to say. A
-/// footer that grew and shrank would push the list up and down as the cursor
-/// moved, which is the one thing a fixed label column was there to prevent.
+/// The footer: what the row under the cursor does, always the same height, so
+/// the list does not move as the cursor does.
 List<String> _footer<T>(MenuItem<T> selected, {required int columns}) {
-  // No blank line above the rule: every screen already ends its list with a
-  // rule of its own, and two rules with a gap between them read as two
-  // separators rather than as one edge under the last row.
+  // No blank line above the rule: every screen already ends its list with
+  // one, and two rules with a gap read as two separators.
   final lines = [
     '${' ' * Layout.labelColumn}${palette.rule}'
         '${Layout.ruleGlyph * Layout.ruleWidth}${Ansi.reset}',
@@ -263,12 +238,9 @@ List<String> _footer<T>(MenuItem<T> selected, {required int columns}) {
   return lines;
 }
 
-/// Breaks [text] into lines of at most [width], on word boundaries, and never
-/// more than [Layout.footerLines] of them.
-///
-/// Truncating rather than wrapping further is deliberate: a description that
-/// does not fit in three lines is a description that needs rewriting, and
-/// silently growing the footer would move the list.
+/// [text] broken into lines of at most [width] on word boundaries, and never
+/// more than [Layout.footerLines] of them: a description that does not fit
+/// needs rewriting, and a growing footer would move the list.
 List<String> _wrap(String text, {required int width}) {
   if (text.isEmpty || width < 8) return const [];
 
@@ -303,9 +275,7 @@ List<String> _row<T>(
   }
 
   if (item._kind == _Kind.section) {
-    // One line, no padding of its own: a rule above it already marks the
-    // break, and a heading that also carried blank lines would push the
-    // groups apart twice over. Whoever wants air adds it to the list.
+    // No padding of its own: the rule above already marks the break.
     return [
       '${' ' * Layout.promptColumn}${palette.section}${item.label}'
           '${Ansi.reset}',

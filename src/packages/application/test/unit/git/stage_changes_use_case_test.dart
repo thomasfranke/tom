@@ -45,7 +45,6 @@ void main() {
   });
 
   test('staging nothing is allowed and does nothing', () async {
-    // "Stage the selection" with nothing selected is not an error.
     final Result<void, AppFailure> result = await staging().stage(
       docs,
       const <RepoRelativePathValueObject>[],
@@ -100,10 +99,8 @@ void main() {
   });
 }
 
-/// Git, remembering what it was asked to stage and unstage.
-///
-/// Throwing rather than returning for the unasked methods is the point: a
-/// use case that called one would fail loudly instead of quietly passing.
+/// Git, remembering what it was asked to stage and unstage and throwing for
+/// everything else, so a use case that called an unasked method fails loudly.
 final class _Git implements GitRepository {
   Result<void, GitFailure>? answer;
   bool throws = false;

@@ -11,10 +11,8 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// One entry, as the design draws it.
 ///
-/// **The open document takes the accent** — which marks the current thing
-/// and nothing else — and a file the editor cannot open is muted *and* has
-/// no hover, because colour is never the only signal
-/// (`docs/product/navigation/file-tree/doc.md`).
+/// A file the editor cannot open is muted *and* has no hover, because colour
+/// is never the only signal (`docs/product/navigation/file-tree/doc.md`).
 class FileTreeRowWidget extends ConsumerWidget {
   /// Creates the row for [row].
   const FileTreeRowWidget({
@@ -31,9 +29,6 @@ class FileTreeRowWidget extends ConsumerWidget {
   final bool isOpen;
 
   /// Whether this document has edits the file on disk does not.
-  ///
-  /// Drawn where the eye already is — the tree is how a file is chosen, so
-  /// it is where a file with unsaved work has to say so.
   final bool isDirty;
 
   @override
@@ -103,8 +98,8 @@ class FileTreeRowWidget extends ConsumerWidget {
           ),
         FileTreeCentredWidget(
           left: labelLeft,
-          // The name stops before the dot rather than running under it: an
-          // ellipsis is a smaller loss than a mark nobody can see.
+          // The name stops before the dot: an ellipsis is a smaller loss than
+          // a mark nobody can see.
           right: isDirty
               ? FileTreeDesign.dirtyDotRight + FileTreeDesign.dirtyDot + 8
               : FileTreeDesign.rowInset,

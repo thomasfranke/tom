@@ -8,17 +8,12 @@ import 'package:tom_desktop/screens/branches/branches_design.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// Filters the branches, or names the one about to be started.
+/// The filter, or the name of the branch about to be started.
 ///
-/// **One box, because the state holds one string** — which of the two it
-/// means is [hint]'s to say. Filtering for a branch that turns out not to
-/// exist therefore leaves its name already typed, which is the useful way
-/// round.
-///
-/// The controller is the draft while this is on screen, seeded once and
-/// pushing every keystroke up: a field re-seeded under a cursor loses what
-/// was being typed. It is re-seeded only when the notifier empties the
-/// draft, which is what a switch that landed does.
+/// One box because the state holds one string, so a filter for a branch that
+/// does not exist is already typed as its name. The controller is seeded
+/// once and cleared only when the notifier empties the draft: re-seeding
+/// under a cursor loses what is being typed.
 class BranchesFieldWidget extends ConsumerStatefulWidget {
   /// Creates the box, labelled [hint].
   const BranchesFieldWidget({required this.hint, super.key});
@@ -49,8 +44,7 @@ class _BranchesFieldWidgetState extends ConsumerState<BranchesFieldWidget> {
   @override
   void initState() {
     super.initState();
-    // The surface exists to be typed into; opening it and then reaching for
-    // the mouse to click the box would be a step nobody wants.
+    // The surface exists to be typed into; nobody should have to click first.
     _focus.requestFocus();
   }
 

@@ -14,18 +14,15 @@ part 'git_status_value_object.freezed.dart';
 /// 10](../../../../../../docs/technical/decisions/010-watcher-and-git-cooperate-by-protocol.md)).
 @freezed
 abstract class GitStatusValueObject with _$GitStatusValueObject {
-  /// Creates a status.
+  /// A status.
   ///
-  /// [branch] may be null while [isDetached] is false: that is a repository
-  /// on a branch whose name the parser could not read, which is a different
-  /// state from a detached `HEAD` and must not be shown as one. The reverse
-  /// is impossible and asserted.
+  /// [branch] may be null while [isDetached] is false: a branch whose name
+  /// the parser could not read is not a detached `HEAD` and must not be shown
+  /// as one. The reverse is asserted.
   @Assert('!isDetached || branch == null')
   const factory GitStatusValueObject({
-    /// The branch `HEAD` points at.
-    ///
-    /// Null when `HEAD` is detached, and also when git named a branch this
-    /// version cannot parse — [isDetached] is what tells the two apart.
+    /// The branch `HEAD` points at; null when detached, and also when the
+    /// name could not be parsed, which [isDetached] tells apart.
     required BranchNameValueObject? branch,
 
     /// The branch it tracks, or null when it tracks nothing.
@@ -39,13 +36,12 @@ abstract class GitStatusValueObject with _$GitStatusValueObject {
 
     /// Every path that differs, in the order git reported it.
     ///
-    /// Handed over, not copied: Freezed generates element-wise equality but
-    /// does not copy the collection, so a caller that kept its own reference
-    /// could change what this status says — and change its `hashCode` while
-    /// it sits in a set or drives a rebuild. Every producer therefore passes
-    /// a list nothing else holds; `GitStatusParser` passes an unmodifiable
-    /// one. Making that structural needs an immutable-collection package,
-    /// which is a dependency decision and not this file's to take.
+    /// Handed over, not copied: Freezed compares element-wise but copies
+    /// nothing, so a caller keeping its own reference could change this
+    /// status and its `hashCode` under a set or a rebuild. Every producer
+    /// passes a list nothing else holds (`GitStatusParser` an unmodifiable
+    /// one); making that structural needs an immutable-collection package,
+    /// a dependency decision not this file's to take.
     required List<StatusEntryValueObject> entries,
 
     /// Whether `HEAD` points at a commit rather than a branch.
@@ -57,8 +53,7 @@ abstract class GitStatusValueObject with _$GitStatusValueObject {
   /// Whether nothing differs from the last commit.
   bool get isClean => entries.isEmpty;
 
-  /// Whether anything is staged and a commit would therefore record
-  /// something.
+  /// Whether a commit would record something.
   bool get hasStagedChanges =>
       entries.any((StatusEntryValueObject entry) => entry.isStaged);
 }

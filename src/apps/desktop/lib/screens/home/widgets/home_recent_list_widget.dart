@@ -10,9 +10,8 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// The spaces to go back to, one click each.
 ///
-/// The folders are not checked before they are drawn: a row whose folder is
-/// gone is still shown, because Home's answer to that is to offer to forget
-/// it rather than to hide it (`docs/product/home/doc.md`).
+/// A row whose folder is gone is still drawn: Home offers to forget it
+/// rather than hiding it (`docs/product/home/doc.md`).
 class HomeRecentListWidget extends StatelessWidget {
   /// Creates the list of [recents].
   const HomeRecentListWidget({required this.recents, super.key});

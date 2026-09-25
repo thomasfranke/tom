@@ -28,7 +28,6 @@ void main() {
     });
 
     test('a list is one span, whatever it nests', () async {
-      // Granularity is top level: sub-block is a diff v2 question.
       expect(await spansOf('- one\n- two\n  - nested\n- three\n'), <String>[
         'list 0..3',
       ]);
@@ -47,9 +46,8 @@ void main() {
     });
 
     test('every flavour of list and code is placed too', () async {
-      // One case per syntax the parser is given: each is its own subclass,
-      // and a subclass nothing exercises is one that could stop recording
-      // without anything noticing.
+      // One case per syntax subclass, since one nothing exercises could stop
+      // recording unnoticed.
       expect(
         await spansOf(
           '1. one\n2. two\n\n'
@@ -78,8 +76,7 @@ void main() {
     });
 
     test('anything else the parser makes an element of is html', () async {
-      // A GitHub alert becomes a `div`, which is not a construct the product
-      // has a word for — and is still something on the page.
+      // A GitHub alert becomes a `div`, which the product has no word for.
       expect(await spansOf('> [!NOTE]\n> Mind this.\n'), <String>['html 0..1']);
     });
 
@@ -94,8 +91,6 @@ void main() {
 
   group('the positions', () {
     test('a setext heading starts at its text, not at its underline', () async {
-      // The paragraph syntax consumes the text and hands it back before the
-      // heading claims it; recording the current line would lose the words.
       expect(await spansOf('Title\n=====\n\nProse.\n'), <String>[
         'heading 0..1',
         'paragraph 3..3',
@@ -103,8 +98,6 @@ void main() {
     });
 
     test('identical lines do not collapse onto the first of them', () async {
-      // The parser is located by identity: an indexOf would place every
-      // later row on the first matching line.
       expect(
         await spansOf('| 1 | 2 |\n|---|---|\n| x | y |\n| x | y |\n\nEnd.\n'),
         <String>['table 0..3', 'paragraph 5..5'],
@@ -159,8 +152,6 @@ void main() {
     });
 
     test('a line inside a code block is not mistaken for one', () async {
-      // `[d]: url` inside a fence is code. They come from the parser's own
-      // map, which is the only thing that knows the difference.
       expect(
         (await outlineOf('```\n[d]: https://tom.dev\n```\n')).linkDefinitions,
         isEmpty,
@@ -174,9 +165,8 @@ void main() {
     });
 
     test('a footnote definition is dropped, not placed wrongly', () async {
-      // The parser synthesises a footnotes section that corresponds to no
-      // lines at all — the one construct Spike B found unplaceable, and M2's
-      // problem.
+      // The parser synthesises a footnotes section corresponding to no lines
+      // at all.
       final List<String> spans = await spansOf('Text.[^a]\n\n[^a]: Note.\n');
 
       expect(spans.first, 'paragraph 0..0');

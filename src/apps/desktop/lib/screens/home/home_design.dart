@@ -3,18 +3,11 @@ library;
 
 import 'package:tom_ui/tom_ui.dart';
 
-/// The numbers Home is drawn against.
+/// The numbers of the drawing that generates `docs/product/home/mocks/`, a
+/// 1440×900 window; when code and drawing disagree the drawing is right.
 ///
-/// The drawing's own numbers rather than a reading of the picture, from what
-/// generates `docs/product/home/mocks/` — and when code and drawing disagree
-/// the drawing is right.
-///
-/// It targets a 1440×900 window, and everything here is either centred or a
-/// gap between two things, so the layout holds at any size; the canvas keeps
-/// the one number that would not survive as a proportion.
-///
-/// Public and beside the screen rather than private inside it: Home is a
-/// dozen files now, and a gap typed twice is a gap that drifts.
+/// Everything here is centred or a gap between two things, so the layout
+/// holds at any size.
 abstract final class HomeDesign {
   /// The width the ways in share.
   static const double column = 440;
@@ -28,10 +21,8 @@ abstract final class HomeDesign {
   /// Corner radius of a card or a pill.
   static const double cardRadius = 10;
 
-  /// The gutter that keeps the column centred despite the milestone chip.
-  ///
-  /// The design hangs the chip *outside* the column rather than inside, so
-  /// the clone control still lines up with the one above it.
+  /// The gutter that keeps the column centred despite the milestone chip,
+  /// which the design hangs outside the column.
   static const double chipGutter = 30 + TomMetrics.padTight;
 
   /// One row of the recent list.

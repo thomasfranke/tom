@@ -4,66 +4,56 @@ library;
 import 'package:flutter/material.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The numbers the explorer is drawn against.
-///
-/// The `explorer` component of the visual design, which every screen with a
-/// space open places — that is what keeps the tree identical across all of
-/// them. Type and radii come from
+/// The numbers of the visual design's `explorer` component, measured from
+/// the top of the panel; type and radii from
 /// [components.md](../../../../../../docs/technical/design/components.md).
-///
-/// Every vertical number is measured from the top of the panel, which is
-/// where the design measures from: the shell is what puts it under the top
-/// bar.
-///
-/// Public and beside the panel rather than private inside it: the panel and
-/// its rows are separate files now, and two copies of 34 would drift.
 abstract final class FileTreeDesign {
-  /// Panel top to the caption's baseline box.
+  /// Panel top to the caption's box.
   static const double captionTop = 18;
 
   /// Panel top to the search field.
   static const double searchTop = 48;
 
-  /// The search field's own box.
+  /// The search field's width.
   static const double searchWidth = 148;
 
-  /// Height of the search field.
+  /// The search field's height.
   static const double searchHeight = 28;
 
-  /// The milestone chip beside the search field.
+  /// Panel edge to the milestone chip beside the search field.
   static const double chipLeft = TomMetrics.padTight + 158;
 
   /// Panel top to the first row.
   static const double rowsTop = 108;
 
-  /// The pitch between rows, which is also the list's item extent.
+  /// The pitch between rows, also the list's item extent.
   static const double rowPitch = 34;
 
-  /// The row's own box, shorter than the pitch.
+  /// The row's box, shorter than the pitch.
   static const double rowHeight = 26;
 
-  /// How far the row's box is inset from both edges.
+  /// The row's box inset from both edges.
   static const double rowInset = 12;
 
-  /// The mark against a document with unsaved edits.
+  /// The dot against a document with unsaved edits.
   static const double dirtyDot = 8;
 
-  /// How far the dot's own right edge sits from the panel's.
+  /// The dot's right edge from the panel's.
   static const double dirtyDotRight = 26;
 
   /// One level of nesting.
   static const double indent = 16;
 
-  /// How far left of its label a chevron sits.
+  /// A chevron's offset left of its label.
   static const double chevronOffset = 12;
 
-  /// Where a row's text starts, at the top level.
+  /// Where a row's text starts at the top level.
   static const double labelLeft = TomMetrics.pad;
 
   /// Corner radius: a row, and the search field.
   static const double radius = 6;
 
-  /// The panel's own caption.
+  /// The panel's caption.
   static const double caption = 10;
 
   /// The search field's placeholder.
@@ -78,13 +68,8 @@ abstract final class FileTreeDesign {
 
 /// The row's type, centred on its own line.
 ///
-/// `even` leading is the whole point: by default the extra space of a 1.4
-/// line goes mostly above the glyphs, which is what made a row read as
-/// sitting low inside the open document's pill.
-///
-/// A function beside the constants rather than a static on them, so
-/// [FileTreeDesign] stays what its name says: numbers, and nothing that
-/// behaves.
+/// `even` leading is the point: by default a 1.4 line's extra space goes
+/// mostly above the glyphs, and the row reads as sitting low in its pill.
 TextStyle fileTreeRowText({
   required double size,
   required Color color,

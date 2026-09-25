@@ -15,8 +15,7 @@ void main() {
   final SpaceRelativePathValueObject writing = SpaceRelativePathValueObject(
     'guides/writing.md',
   );
-  // A real one: the type refuses anything that is not 40 hexadecimal
-  // characters, which is the whole reason it is a type.
+  // A real sha, because the type refuses anything else.
   final CommitShaValueObject sha = CommitShaValueObject(
     'abc1234def5678901234567890abcdef12345678',
   );
@@ -41,7 +40,6 @@ void main() {
     );
 
     expect(git.revision, sha.value);
-    // Repository-relative, because that is the only spelling git answers to.
     expect(git.path?.value, 'docs/guides/writing.md');
     expect(
       (result as Success<DocumentEntity, AppFailure>).value.content,
@@ -52,8 +50,6 @@ void main() {
   test(
     'what comes back is a document, keeping the path it was asked for',
     () async {
-      // The preview splits a document, and a version's own relative links have
-      // to resolve where the working copy's do.
       final Result<DocumentEntity, AppFailure> result = await reading().read(
         docs,
         sha,

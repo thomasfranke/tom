@@ -35,8 +35,6 @@ void main() {
     );
 
     test('an absolute POSIX path', () {
-      // The bug this type exists to prevent: an absolute path standing in
-      // for one git reported.
       expect(
         RepoRelativePathValueObject.tryParse('/Users/thf/space/a.md'),
         isNull,
@@ -52,8 +50,6 @@ void main() {
     });
 
     test('a parent segment, which would leave the repository', () {
-      // The guarantee the type carries: joined onto a repository root, it
-      // cannot address anything outside it.
       for (final String escape in const <String>[
         '../secrets.env',
         '../../etc/passwd',
@@ -74,15 +70,13 @@ void main() {
     });
 
     test('an empty segment, however it is spelled', () {
-      // A trailing slash used to pass and left `name` empty.
       expect(RepoRelativePathValueObject.tryParse('docs/'), isNull);
       expect(RepoRelativePathValueObject.tryParse('docs//a.md'), isNull);
     });
   });
 
   test('a filename that merely starts with a dot is ordinary', () {
-    // `..` is refused as a whole segment, not as a substring: a dotfile is a
-    // real document and `a..b.md` is a real filename.
+    // `..` is refused as a whole segment, not as a substring.
     expect(RepoRelativePathValueObject.tryParse('.gitignore'), isNotNull);
     expect(RepoRelativePathValueObject.tryParse('docs/a..b.md'), isNotNull);
   });

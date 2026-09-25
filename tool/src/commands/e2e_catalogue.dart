@@ -6,12 +6,9 @@ import 'dart:io';
 
 import '../repo.dart';
 
-/// Where the scenarios live.
-///
-/// Inside the desktop app rather than in a package of their own, because an
-/// end-to-end run happens in the app's *own* native runner, with the app's
-/// entitlements and its Podfile. A second runner would drift, and the tests
-/// would then be proving something about a configuration nobody ships.
+/// Where the scenarios live: inside the desktop app, because an end-to-end
+/// run happens in the app's own native runner with its entitlements and its
+/// Podfile, and a second runner would drift.
 const scenarioDirectory = 'src/apps/desktop/integration_test';
 
 /// One scenario the CLI can list and run.
@@ -37,14 +34,10 @@ final class Scenario {
   /// The file that declares it, relative to the app package.
   final String file;
 
-  /// Whether it reads the prepared environment, and so cannot run without
-  /// one.
+  /// Whether it reads the prepared environment, and so cannot run without one.
   ///
-  /// Read from the source rather than assumed: a scenario needs the
-  /// environment exactly when its file asks for a fixture, and a flag
-  /// someone had to remember to set would be wrong the first time they
-  /// forgot. Today every scenario needs it; the day one does not, this
-  /// answers correctly without anyone noticing it had to.
+  /// Read from the source rather than flagged: a scenario needs the
+  /// environment exactly when its file asks for a fixture.
   final bool needsEnvironment;
 }
 
@@ -64,11 +57,8 @@ final class ScenarioResult {
   /// When it ran, in UTC.
   final DateTime when;
 
-  /// The app version that ran it.
-  ///
-  /// Stored because a green tick against an old version is not the same
-  /// claim as a green tick against this one — and the list is read to
-  /// answer "has this been checked since?".
+  /// The app version that ran it: a green tick against an old version is not
+  /// the same claim as one against this.
   final String version;
 
   /// How many steps it got through.
@@ -101,12 +91,9 @@ final class ScenarioResult {
 
 /// The headings the menu lists, in the order somebody walks through the app.
 ///
-/// **Declared, not discovered.** Groups used to come out in whatever order
-/// the first scenario of each happened to be read in — alphabetical by name
-/// — which put `Editor` above `Home` and read as no journey at all.
-///
-/// A group a scenario names but this list does not is listed last rather
-/// than hidden: a typo should be visible, not silently dropped.
+/// Declared rather than discovered, so the order is a decision; a group a
+/// scenario names but this list does not is listed last rather than hidden,
+/// so a typo is visible.
 const scenarioGroups = <String>[
   'Home',
   'Workspace',
@@ -120,9 +107,8 @@ const scenarioGroups = <String>[
 
 /// Every scenario declared under [scenarioDirectory], sorted by name.
 ///
-/// Read from the source rather than from a registry someone has to keep up
-/// to date: a scenario is declared by calling `scenario('…')`, and a list
-/// maintained beside that would be wrong the first time somebody forgot it.
+/// Read from the source, since a registry kept beside `scenario('…')` would
+/// be wrong the first time somebody forgot it.
 List<Scenario> discoverScenarios() {
   final directory = Directory('${repoRoot().path}/$scenarioDirectory');
   if (!directory.existsSync()) return const [];
@@ -163,16 +149,9 @@ String? _valueOf(RegExp pattern, String source, int from) {
 final _group = RegExp(r"""group:\s*'([^']+)'""");
 final _describe = RegExp(r"""describe:\s*\n?\s*'([^']*)'""");
 
-/// Where the record of what ran is kept.
-///
-/// Beside the environment and **not inside it**. The two have different
-/// lifetimes and it cost a history to learn it: `prepare` throws the
-/// environment away by design, and a results file living in there went with
-/// it — every scenario back to "never run" on a screen that is read to
-/// answer *has this been checked?*.
-///
-/// The environment is disposable test data. This is a record of what
-/// happened, and nothing rebuilds it.
+/// Where the record of what ran is kept: beside the environment and **not
+/// inside it**, because `prepare` throws the environment away by design and
+/// this is a record nothing rebuilds.
 const resultsFile = '.e2e-results.json';
 
 /// The results of the last run of each scenario, by name.
@@ -189,7 +168,6 @@ Map<String, ScenarioResult> readResults() {
     };
   } on FormatException {
     // A results file nobody can read is a results file with nothing in it.
-    // It is a record of what happened, not something anything depends on.
     return const {};
   }
 }
@@ -206,11 +184,8 @@ void writeResult(String name, ScenarioResult result) {
   );
 }
 
-/// The version of the app being tested.
-///
-/// Read from the desktop pubspec, which is the product version: every
-/// package moves in lockstep with it, so it is the one number that says
-/// what was running.
+/// The version of the app being tested, from the desktop pubspec: every
+/// package moves in lockstep with it.
 String appVersion() {
   final file = File('${repoRoot().path}/src/apps/desktop/pubspec.yaml');
   final match = RegExp(
@@ -220,29 +195,19 @@ String appVersion() {
   return match?.group(1) ?? '?';
 }
 
-/// What a row says when it cannot be run.
-///
-/// Words and no glyph. "Blocked" is a different thing from "failed", and a
-/// mark of its own would compete with the ✓ and ✘ that carry the result —
-/// on a screen where the eye is looking for green, a third symbol is noise.
+/// What a row says when it cannot be run — words and no glyph, because
+/// "blocked" is not "failed" and a third mark would compete with ✓ and ✘.
 const blockedNote = 'needs the environment';
 
-/// `01:23`, the way a stopwatch reads.
-///
-/// **What it measures is the whole wait**, from the moment the row was
-/// chosen: the build, the app opening, and the flow itself. That is the
-/// number someone is deciding against when they wonder whether to run the
-/// suite now or after lunch — the part that is Flutter compiling is still
-/// part of what it costs.
+/// `01:23`, the way a stopwatch reads, measuring the whole wait from the
+/// moment the row was chosen: the build, the app opening and the flow, since
+/// Flutter compiling is part of what a run costs.
 String describeElapsed(Duration elapsed) =>
     '${elapsed.inMinutes.toString().padLeft(2, '0')}:'
     '${(elapsed.inSeconds % 60).toString().padLeft(2, '0')}';
 
-/// `2026-09-21 · today`, or nothing at all.
-///
-/// The relative half is what the list is actually read for — "has anyone
-/// checked this recently" — and the absolute half is what makes it
-/// comparable to a release.
+/// `2026-09-21 · today`: the relative half answers "has anyone checked this
+/// recently", the absolute half is what compares to a release.
 String describeWhen(DateTime when) {
   final local = when.toLocal();
   final date = '${local.year}-${_two(local.month)}-${_two(local.day)}';

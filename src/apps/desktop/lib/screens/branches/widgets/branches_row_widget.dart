@@ -13,9 +13,8 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// A branch, and whether it is the one checked out.
 ///
-/// The current one is marked in `accent_soft` — the role that means
-/// *current* and never meaning — and it is drawn rather than hidden: the
-/// list is also how you read where you are.
+/// The current one is drawn rather than hidden, because the list is also how
+/// you read where you are.
 class BranchesRowWidget extends ConsumerWidget {
   /// Creates the row for [branch].
   const BranchesRowWidget({required this.branch, super.key});
@@ -43,8 +42,8 @@ class BranchesRowWidget extends ConsumerWidget {
             color: branch.isCurrent ? colors.accentSoft : Colors.transparent,
             borderRadius: BorderRadius.circular(BranchesDesign.radius),
             child: InkWell(
-              // Clicking where you already are is not an error and not an
-              // action; the notifier answers it by doing nothing.
+              // Clicking where you already are is neither an error nor an
+              // action; the notifier does nothing.
               onTap: () => unawaited(
                 ref.read(branchesProvider.notifier).choose(branch.name),
               ),

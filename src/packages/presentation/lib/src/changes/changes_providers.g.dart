@@ -10,18 +10,16 @@ part of 'changes_providers.dart';
 // ignore_for_file: type=lint, type=warning
 /// Reads where the repository stands.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and cannot see that a process is what answers
-/// it.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 @ProviderFor(readGitStatus)
 final readGitStatusProvider = ReadGitStatusProvider._();
 
 /// Reads where the repository stands.
 ///
-/// Declared here and **overridden by the composition root**: this package
-/// names the use case it needs and cannot see that a process is what answers
-/// it.
+/// Declared here and overridden by the composition root, which is how every
+/// use case reaches this package.
 
 final class ReadGitStatusProvider
     extends
@@ -33,9 +31,8 @@ final class ReadGitStatusProvider
     with $Provider<ReadGitStatusUseCase> {
   /// Reads where the repository stands.
   ///
-  /// Declared here and **overridden by the composition root**: this package
-  /// names the use case it needs and cannot see that a process is what answers
-  /// it.
+  /// Declared here and overridden by the composition root, which is how every
+  /// use case reaches this package.
   ReadGitStatusProvider._()
     : super(
         from: null,

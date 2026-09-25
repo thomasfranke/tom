@@ -1,8 +1,4 @@
 /// What the editor's providers do when nobody wired them.
-///
-/// The point of declaring them here with no default is that forgetting the
-/// composition root fails loudly and at once, rather than producing an
-/// editor that quietly reads nothing and saves nowhere.
 library;
 
 import 'package:riverpod/misc.dart';
@@ -18,10 +14,8 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  /// What reading [provider] threw, unwrapped.
-  ///
-  /// Riverpod wraps whatever a provider's body throws in a
-  /// [ProviderException], so the thing worth asserting on is one level in.
+  /// What reading [provider] threw, unwrapped: Riverpod wraps whatever a
+  /// provider's body throws in a [ProviderException].
   Object causeOfReading(ProviderListenable<Object?> provider) {
     try {
       container.read(provider);
@@ -44,8 +38,6 @@ void main() {
   });
 
   test('and each says where it is supposed to be wired', () {
-    // A message that names the place is the difference between a minute and
-    // an afternoon for whoever adds the next screen.
     expect(
       (causeOfReading(saveDocumentProvider) as StateError).message,
       allOf(contains('composition root'), contains('runTom')),

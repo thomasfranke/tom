@@ -6,12 +6,8 @@ import 'package:tom_data/src/capabilities/filesystem/filesystem_entry_dto.dart';
 import 'package:tom_data/src/capabilities/filesystem/filesystem_entry_type_enum.dart';
 import 'package:tom_infra/tom_infra.dart';
 
-/// Where a space's entries come from, and how.
-///
-/// The repository above knows that a space has entries; this knows they are
-/// gathered by walking a folder one level at a time. Nothing here names a
-/// domain type — what comes out is what the capability produced, in the
-/// order the tree wants it.
+/// Where a space's entries come from: a folder walked one level at a time,
+/// answered in the capability's types and in tree order.
 final class SpaceDataSource {
   /// Creates a source over [filesystem], making git clients with
   /// [gitClientFor].
@@ -32,40 +28,25 @@ final class SpaceDataSource {
 
   /// Where [folder] really is, every link on the way followed.
   ///
-  /// Asked before git is, so the two answers a space is built from spell the
-  /// folder the same way: `git rev-parse` resolves links on its own, and a
-  /// picker does not.
+  /// Asked before git is, because `git rev-parse` resolves links on its own
+  /// and a picker does not.
   Future<Result<String, FilesystemFailure>> resolve(String folder) =>
       filesystem.resolvePath(folder);
 
-  /// The root of the repository [folder] sits in.
-  ///
-  /// The relationship a space is built on — a space is a folder, and the
-  /// repository it belongs to is usually a folder above it (rule 12). Asking
-  /// git is the only way to learn it, so it is gathered here with the rest.
+  /// The root of the repository [folder] sits in, usually a folder above it
+  /// (rule 12).
   Future<Result<String, GitClientFailure>> repositoryRootOf(String folder) =>
       gitClientFor(folder).repositoryRoot();
 
-  /// What git keeps its repository in, and the one name never descended into.
-  ///
-  /// Matched whatever it turns out to be: a folder in an ordinary clone, a
-  /// *file* pointing elsewhere in a worktree or a submodule. Both are git's
-  /// plumbing and neither is documentation
-  /// (`docs/product/navigation/file-tree/doc.md`).
+  /// The one name never descended into, whether a folder or the file a
+  /// worktree or submodule has (`docs/product/navigation/file-tree/doc.md`).
   static const String _gitDirectory = '.git';
 
-  /// Everything under [root], deepest last, in tree order.
+  /// Everything under [root], in tree order: a folder's children follow it.
   ///
-  /// **One level at a time rather than [Filesystem.listDirectory] with
-  /// `recursive: true`**, for a reason that is not style: a recursive
-  /// listing walks into `.git/` before anything can filter it out, and the
-  /// `.git/` of a mature repository holds more entries than every document
-  /// the product will ever show. Skipping a folder is only cheap if the
-  /// decision is taken *before* descending into it — which is why the rule
-  /// lives here, with the walk, rather than above it.
-  ///
-  /// The children of a folder are appended immediately after it, so the flat
-  /// list is already in tree order.
+  /// **One level at a time, never [Filesystem.listDirectory] recursively**: a
+  /// recursive listing walks into `.git/` before anything can filter it, and
+  /// a mature repository keeps more there than the product will ever show.
   Future<Result<List<FilesystemEntryDto>, FilesystemFailure>> entries(
     String root,
   ) async {
@@ -78,12 +59,11 @@ final class SpaceDataSource {
     return walked.map((_) => List<FilesystemEntryDto>.unmodifiable(collected));
   }
 
-  /// Lists [directory], appending what it holds to [into].
+  /// [directory]'s contents appended to [into], recursively.
   ///
-  /// A folder below the root that the machine will not open is skipped and
-  /// the rest is still returned: one unreadable folder costs that folder,
-  /// not the file tree. [isRoot] is what makes the space's own folder the
-  /// exception — a space whose root cannot be read has nothing to show.
+  /// A folder the machine will not open costs that folder and not the tree,
+  /// unless it [isRoot], since a space whose root cannot be read has nothing
+  /// to show.
   Future<Result<void, FilesystemFailure>> _walk(
     String directory,
     List<FilesystemEntryDto> into, {
@@ -110,7 +90,7 @@ final class SpaceDataSource {
     return _walked;
   }
 
-  /// A walk that produced whatever it could — the only success this has.
+  /// The only success a walk has.
   static const Result<void, FilesystemFailure> _walked =
       Success<void, FilesystemFailure>(null);
 
