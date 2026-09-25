@@ -255,12 +255,9 @@ class PreviewReady implements PreviewState {
   
 
  final  ParsedDocumentValueObject document;
-/// What it changed against `HEAD`, once git has said.
-///
-/// Null until then, and null for a version being read: the text is
-/// already here and a git call is a process, so the pane draws the
-/// document first and decorates it when the answer lands
-/// (`docs/product/diff/rendered-diff/doc.md`).
+/// What it changed against the base, once git has said; null until
+/// then, when the comparison failed, and for a version nobody asked to
+/// compare (`docs/product/diff/rendered-diff/doc.md`).
  final  DocumentDiffValueObject? diff;
 
 /// Create a copy of PreviewState

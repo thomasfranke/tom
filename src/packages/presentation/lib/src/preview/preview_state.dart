@@ -9,8 +9,7 @@ part 'preview_state.freezed.dart';
 
 /// The states the preview can be in, and there are only these.
 ///
-/// [PreviewEmpty] is not a stalled load: it is a space with no document
-/// chosen, which is how every space opens.
+/// [PreviewEmpty] is a space with no document chosen, not a stalled load.
 @freezed
 sealed class PreviewState with _$PreviewState {
   /// No document is open.
@@ -23,12 +22,9 @@ sealed class PreviewState with _$PreviewState {
   const factory PreviewState.ready(
     ParsedDocumentValueObject document, {
 
-    /// What it changed against `HEAD`, once git has said.
-    ///
-    /// Null until then, and null for a version being read: the text is
-    /// already here and a git call is a process, so the pane draws the
-    /// document first and decorates it when the answer lands
-    /// (`docs/product/diff/rendered-diff/doc.md`).
+    /// What it changed against the base, once git has said; null until
+    /// then, when the comparison failed, and for a version nobody asked to
+    /// compare (`docs/product/diff/rendered-diff/doc.md`).
     DocumentDiffValueObject? diff,
   }) = PreviewReady;
 

@@ -1,8 +1,5 @@
-/// UI state: the space session, notifiers and view models. Pure Dart — it
-/// cannot import Flutter.
-///
-/// Nothing outside `lib/src/` is importable from another package, so this
-/// file is the whole public surface.
+/// UI state — the space session, notifiers and view models — as pure Dart
+/// that cannot import Flutter.
 library;
 
 export 'src/branches/branches_notifier.dart';
@@ -11,6 +8,8 @@ export 'src/branches/branches_state.dart';
 export 'src/changes/changes_notifier.dart';
 export 'src/changes/changes_providers.dart';
 export 'src/changes/changes_state.dart';
+export 'src/compare/compare_notifier.dart';
+export 'src/compare/compare_state.dart';
 export 'src/editor/editor_notifier.dart';
 export 'src/editor/editor_providers.dart';
 export 'src/editor/editor_state.dart';

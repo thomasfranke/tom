@@ -19,6 +19,7 @@ Every screen — desktop or mobile — lives next to the product it belongs to, 
 | file-history | The commits that touched this document | Desktop | [products/git-workflow/file-history/mocks/](../../product/git-workflow/file-history/mocks/) | M1 |
 | push-rejected | The remote moved first | Desktop | [products/git-workflow/push-pull/mocks/](../../product/git-workflow/push-pull/mocks/) | M1 |
 | documents-mobile | The space as a list — on a phone the tree *is* the first screen | Mobile | [products/navigation/file-tree/mocks/](../../product/navigation/file-tree/mocks/) | Phase 3 |
+| comparing | The rendered diff against another branch or commit | Desktop | [products/diff/branch-diff/mocks/](../../product/diff/branch-diff/mocks/) | M2 |
 | review-mobile | What changed, rendered, with approve as the one action | Mobile | [products/diff/rendered-diff/mocks/](../../product/diff/rendered-diff/mocks/) | Phase 3 |
 
 A feature-scoped mock does not need to redraw the whole window — chrome, explorer, status bar (desktop) or nav bar, action bar (mobile). `shell` does, because the panel layout *is* what it's showing; most others only need to show enough of the feature to be reviewable, cropped to what matters.
@@ -214,7 +215,7 @@ and the source of truth still in the repository.
 
 ## What is deliberately not drawn yet
 
-**The rendered diff.** Its block granularity is the output of Spike B ([roadmap.md](../../roadmap.md)) — whether a block can be rendered in isolation is still an open question ([domain model](../domain-model.md)). Drawing it in detail now would be work thrown away the moment the spike reports, so `shell` shows the preview assembled block by block and stops there.
+**The rendered diff.** Its block granularity is the output of Spike B ([roadmap.md](../../roadmap.md)) — whether a block can be rendered in isolation is still an open question ([domain model](../domain/README.md)). Drawing it in detail now would be work thrown away the moment the spike reports, so `shell` shows the preview assembled block by block and stops there.
 
 **Conflict resolution, section blame, wikilink navigation.** Post-MVP, and none of them constrain the M0 layout.
 

@@ -58,9 +58,9 @@ void main() {
         diffDocumentProvider.overrideWithValue(
           DiffDocumentUseCase(
             gitFor: (SpaceEntity space) => git,
-            // Its own reader: the committed version is a second parse, of a
-            // different document, and counting it against the buffer's would
-            // make "typing parses once" mean something else.
+            // Its own reader: the committed side is a second parse, and
+            // counting it against the buffer's would break "typing parses
+            // once".
             blocks: committed,
             differ: BlockDifferService(aligner: aligner),
             observability: const _Silent(),
@@ -106,8 +106,6 @@ void main() {
   });
 
   test('a space with no document chosen is empty, not loading', () async {
-    // Every space opens this way: the tree is on screen and nothing has
-    // been clicked.
     start();
     show(docs, null);
     await settle();
@@ -124,7 +122,6 @@ void main() {
     await settle();
 
     expect(rendered(), '# writing.md\n');
-    // The disk was read once, by the editor. The preview reads the buffer.
     expect(documents.asked, <SpaceRelativePathValueObject>[writing]);
   });
 
@@ -140,8 +137,6 @@ void main() {
   });
 
   test('a document that is gone is a failure, not an empty page', () async {
-    // An empty page would say the document holds nothing, which is a
-    // different claim from "it is not there".
     documents.answer = Failure<DocumentEntity, DocumentFailure>(
       DocumentNotFound(writing.value),
     );
@@ -168,8 +163,6 @@ void main() {
     });
 
     test('a run of typing is parsed once, not once per character', () async {
-      // A parse per keystroke is work nobody sees: the frame it would land
-      // in already has the next keystroke in it.
       start();
       show(docs, writing);
       await settle();
@@ -186,8 +179,6 @@ void main() {
     });
 
     test('the last blocks stay on screen while the next parse waits', () async {
-      // Flashing "reading it" between two keystrokes would make the pane
-      // unreadable exactly while it is being written in.
       start();
       show(docs, writing);
       await settle();
@@ -199,8 +190,6 @@ void main() {
     });
 
     test('a parse that broke says so rather than showing the last', () async {
-      // Stale blocks under a document that no longer produces them would be
-      // the preview lying about what is on screen.
       start();
       show(docs, writing);
       await settle();
@@ -218,8 +207,6 @@ void main() {
     });
 
     test('a parse the user has already typed past is dropped', () async {
-      // Two renders in flight answer in whatever order the machine likes;
-      // the newer one is the one on screen either way.
       start();
       show(docs, writing);
       await settle();
@@ -248,6 +235,59 @@ void main() {
     });
   });
 
+  group('a preview that arrives after the document', () {
+    test('renders what the editor is already holding', () async {
+      // The editor first and the preview after, the way the mode bar brings
+      // the panel back over a buffer already held.
+      container.listen<EditorState>(editorProvider, (_, _) {});
+      show(docs, writing);
+      await settle();
+
+      start();
+      await settle();
+
+      expect(rendered(), '# writing.md\n');
+    });
+  });
+
+  group('a version that cannot be read', () {
+    test('says so, instead of showing the working copy as the past', () async {
+      start();
+      show(docs, writing);
+      await settle();
+      git.answer = const Failure<String, GitFailure>(
+        GitPathNotInRevision('docs/guides/writing.md'),
+      );
+
+      container
+          .read(spaceSessionProvider.notifier)
+          .read(
+            CommitEntity(
+              sha: CommitShaValueObject(
+                'abc1234def5678901234567890abcdef12345678',
+              ),
+              subject: 'Before this file existed',
+              body: '',
+              author: const AuthorValueObject(
+                name: 'Test',
+                email: 'test@example.com',
+              ),
+              date: CommitDateValueObject(
+                utc: DateTime.utc(2026),
+                offset: Duration.zero,
+              ),
+            ),
+          );
+      await settle();
+      await settle();
+
+      expect(
+        (container.read(previewProvider) as PreviewFailed).failure,
+        isA<GitPathNotInRevision>(),
+      );
+    });
+  });
+
   group('the rendered diff', () {
     /// What the state says changed, once everything scheduled has run.
     DocumentDiffValueObject? diffOf() =>
@@ -258,10 +298,35 @@ void main() {
       show(docs, writing);
       await settle();
 
-      // The text is already in hand and the comparison is a git process, so
-      // the pane is never held back waiting for it.
       expect(container.read(previewProvider), isA<PreviewReady>());
       await settle();
+      expect(diffOf(), isNotNull);
+    });
+
+    test('an edit never publishes the document without its marks', () async {
+      git.content = '# Committed\n';
+      final List<PreviewState> published = <PreviewState>[];
+      start();
+      container.listen<PreviewState>(
+        previewProvider,
+        (PreviewState? _, PreviewState next) => published.add(next),
+      );
+      show(docs, writing);
+      await settle();
+      await settle();
+      expect(diffOf(), isNotNull, reason: 'it starts decorated');
+      published.clear();
+
+      container.read(editorProvider.notifier).edit('# Typed\n');
+      await settleTyping();
+      await settle();
+
+      expect(
+        published.whereType<PreviewReady>().where(
+          (PreviewReady state) => state.diff == null,
+        ),
+        isEmpty,
+      );
       expect(diffOf(), isNotNull);
     });
 
@@ -274,8 +339,6 @@ void main() {
       await settleTyping();
       await settle();
 
-      // The buffer, never the disk: an edit is compared before it is saved,
-      // which is the whole reason the preview holds the after side.
       final DocumentDiffValueObject diff = diffOf()!;
       expect(diff.before.document.content, '# Committed\n');
       expect(diff.after.document.content, '# Typed\n');
@@ -288,10 +351,153 @@ void main() {
       await settle();
       await settle();
 
-      // What failed is the comparison. The document is readable either way,
-      // so the pane keeps it and simply carries no decoration.
       expect(container.read(previewProvider), isA<PreviewReady>());
       expect(diffOf(), isNull);
+    });
+
+    test('the base is HEAD until somebody asks for another', () async {
+      start();
+      show(docs, writing);
+      await settle();
+      await settle();
+
+      expect(git.revisionsAsked, <String>['HEAD']);
+    });
+
+    test('another base is read from that revision instead', () async {
+      // The whole item: the same comparison, against something else
+      // (`docs/product/diff/branch-diff/doc.md`).
+      git.perRevision['feat/rendered-diff'] = '# On the branch\n';
+      start();
+      show(docs, writing);
+      await settle();
+      await settle();
+
+      container
+          .read(spaceSessionProvider.notifier)
+          .compare(
+            RevisionValueObject.branch(
+              BranchEntity(
+                name: BranchNameValueObject('feat/rendered-diff'),
+                isCurrent: false,
+              ),
+            ),
+          );
+      await settle();
+      await settle();
+
+      expect(git.revisionsAsked.last, 'feat/rendered-diff');
+      expect(diffOf()!.before.document.content, '# On the branch\n');
+      expect(diffOf()!.after.document.content, '# writing.md\n');
+    });
+
+    test('a commit is a base by its full sha', () async {
+      start();
+      show(docs, writing);
+      await settle();
+      await settle();
+
+      container
+          .read(spaceSessionProvider.notifier)
+          .compare(RevisionValueObject.commit(_earlier));
+      await settle();
+      await settle();
+
+      expect(git.revisionsAsked.last, _earlier.sha.value);
+    });
+
+    test('the text stays on screen while the new base is read', () async {
+      // Another base is not another document, so the pane must not go back
+      // to "reading it" — there is nothing new to read.
+      start();
+      show(docs, writing);
+      await settle();
+      await settle();
+      final int parses = blocks.asked.length;
+
+      container
+          .read(spaceSessionProvider.notifier)
+          .compare(RevisionValueObject.commit(_earlier));
+
+      expect(container.read(previewProvider), isA<PreviewReady>());
+      await settle();
+      await settle();
+      expect(rendered(), '# writing.md\n');
+      expect(
+        blocks.asked.length,
+        parses,
+        reason: 'the document was parsed again for a comparison',
+      );
+    });
+
+    test('taking the base back compares against HEAD again', () async {
+      start();
+      show(docs, writing);
+      await settle();
+      await settle();
+      container
+          .read(spaceSessionProvider.notifier)
+          .compare(RevisionValueObject.commit(_earlier));
+      await settle();
+      await settle();
+
+      container.read(spaceSessionProvider.notifier).compare(null);
+      await settle();
+      await settle();
+
+      expect(git.revisionsAsked.last, 'HEAD');
+    });
+
+    test('a commit re-marks the document without re-reading it', () async {
+      // A commit moves `HEAD` without touching a character of the buffer, so
+      // a document that was marked has to come back clean — and the pane
+      // must not go back to "reading it" to say so.
+      git.content = '# Committed\n';
+      start();
+      show(docs, writing);
+      await settle();
+      await settle();
+      expect(diffOf(), isNotNull);
+      final int parses = blocks.asked.length;
+      final int comparisons = git.revisionsAsked.length;
+
+      // What `ChangesNotifier` does at the end of every operation.
+      container
+          .read(spaceSessionProvider.notifier)
+          .observe(
+            const GitStatusValueObject(
+              branch: null,
+              upstream: null,
+              ahead: 0,
+              behind: 0,
+              entries: <StatusEntryValueObject>[],
+              isDetached: false,
+            ),
+          );
+      await settle();
+      await settle();
+
+      expect(
+        git.revisionsAsked.length,
+        comparisons + 1,
+        reason: 'the marks were left standing over a commit',
+      );
+      expect(blocks.asked.length, parses, reason: 'it re-read the document');
+    });
+
+    test('a version being read is compared when a base was chosen', () async {
+      // Two commits, which is the other half of this item: the past is
+      // compared only when somebody asks.
+      start();
+      show(docs, writing);
+      await settle();
+      container.read(spaceSessionProvider.notifier)
+        ..compare(RevisionValueObject.commit(_earlier))
+        ..read(_earlier);
+      await settle();
+      await settle();
+
+      expect(diffOf(), isNotNull);
     });
 
     test('a version being read is not compared against anything', () async {
@@ -322,8 +528,6 @@ void main() {
       await settle();
       await settle();
 
-      // Nothing is being changed against the past: comparing two commits is
-      // the branch and commit diff, which is its own item.
       expect(aligner.asked, 0);
       expect(diffOf(), isNull);
     });
@@ -371,9 +575,8 @@ final class _Blocks implements BlockReaderPort {
     DocumentEntity document,
   ) async {
     asked.add(document);
-    // Only when a test asked for one: a zero `Future.delayed` is still a
-    // timer, and a timer costs a turn of the event loop that the settling
-    // helper here does not wait for.
+    // Only when asked: a zero `Future.delayed` is still a timer, and costs
+    // an event-loop turn the settling helper does not wait for.
     if (delay > Duration.zero) {
       await Future<void>.delayed(delay);
     }
@@ -398,25 +601,43 @@ final class _Blocks implements BlockReaderPort {
   }
 }
 
+/// A commit to compare against, and to open as a version.
+final CommitEntity _earlier = CommitEntity(
+  sha: CommitShaValueObject('abc1234def5678901234567890abcdef12345678'),
+  author: const AuthorValueObject(name: 'Test', email: 'test@example.com'),
+  date: CommitDateValueObject(utc: DateTime.utc(2026), offset: Duration.zero),
+  subject: 'Earlier',
+  body: '',
+);
+
 /// Git, answering with whatever the test says the revision holds.
 final class _Git implements GitRepository {
   String content = '';
   Result<String, GitFailure>? answer;
 
+  /// What it was asked to read, and at which revision.
+  final List<String> revisionsAsked = <String>[];
+
+  /// What a named revision holds, when a test set it apart from [content].
+  final Map<String, String> perRevision = <String, String>{};
+
   @override
   Future<Result<String, GitFailure>> contentAt({
     required String revision,
     required RepoRelativePathValueObject path,
-  }) async => answer ?? Success<String, GitFailure>(content);
+  }) async {
+    revisionsAsked.add(revision);
+    return answer ??
+        Success<String, GitFailure>(perRevision[revision] ?? content);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// An aligner calling every block of the old side gone and every new one new.
-///
-/// The classification is the domain's and is tested there; what this test is
-/// about is *when* the preview asks and what it does with the answer.
+/// An aligner calling every old block gone and every new one new; the
+/// classification is the domain's, this test is about *when* the preview
+/// asks.
 final class _Aligner implements BlockAlignerPort {
   /// How many times it was asked.
   int asked = 0;

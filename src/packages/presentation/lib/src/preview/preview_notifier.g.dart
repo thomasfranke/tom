@@ -8,42 +8,27 @@ part of 'preview_notifier.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Renders whatever the editor is holding — or the version being read.
+/// Renders the editor's buffer, never the disk — or, for an opened history
+/// entry, the version git holds (`docs/product/editor/source-mode/doc.md`).
 ///
-/// **It reads the buffer, never the disk**, which is what makes an edit
-/// appear here with no refresh step (`docs/product/editor/source-mode/doc.md`).
-/// The one exception is an opened history entry: the session names a commit,
-/// that version is what is rendered — not diff text — and the editor is not
-/// listened to at all while it is on screen.
-///
-/// It *listens* rather than watching: a rebuild would throw the rendered
-/// blocks away and flash the pane back to "reading it" on every keystroke.
+/// It *listens* to the editor rather than watching: a rebuild would throw
+/// the rendered blocks away and flash "reading it" on every keystroke.
 
 @ProviderFor(PreviewNotifier)
 final previewProvider = PreviewNotifierProvider._();
 
-/// Renders whatever the editor is holding — or the version being read.
+/// Renders the editor's buffer, never the disk — or, for an opened history
+/// entry, the version git holds (`docs/product/editor/source-mode/doc.md`).
 ///
-/// **It reads the buffer, never the disk**, which is what makes an edit
-/// appear here with no refresh step (`docs/product/editor/source-mode/doc.md`).
-/// The one exception is an opened history entry: the session names a commit,
-/// that version is what is rendered — not diff text — and the editor is not
-/// listened to at all while it is on screen.
-///
-/// It *listens* rather than watching: a rebuild would throw the rendered
-/// blocks away and flash the pane back to "reading it" on every keystroke.
+/// It *listens* to the editor rather than watching: a rebuild would throw
+/// the rendered blocks away and flash "reading it" on every keystroke.
 final class PreviewNotifierProvider
     extends $NotifierProvider<PreviewNotifier, PreviewState> {
-  /// Renders whatever the editor is holding — or the version being read.
+  /// Renders the editor's buffer, never the disk — or, for an opened history
+  /// entry, the version git holds (`docs/product/editor/source-mode/doc.md`).
   ///
-  /// **It reads the buffer, never the disk**, which is what makes an edit
-  /// appear here with no refresh step (`docs/product/editor/source-mode/doc.md`).
-  /// The one exception is an opened history entry: the session names a commit,
-  /// that version is what is rendered — not diff text — and the editor is not
-  /// listened to at all while it is on screen.
-  ///
-  /// It *listens* rather than watching: a rebuild would throw the rendered
-  /// blocks away and flash the pane back to "reading it" on every keystroke.
+  /// It *listens* to the editor rather than watching: a rebuild would throw
+  /// the rendered blocks away and flash "reading it" on every keystroke.
   PreviewNotifierProvider._()
     : super(
         from: null,
@@ -71,18 +56,13 @@ final class PreviewNotifierProvider
   }
 }
 
-String _$previewNotifierHash() => r'0da6066542b844596c6363c4adaad6012e0d08fa';
+String _$previewNotifierHash() => r'd6ae5d8c63017ee82c12966c8f057ddc32a8bc92';
 
-/// Renders whatever the editor is holding — or the version being read.
+/// Renders the editor's buffer, never the disk — or, for an opened history
+/// entry, the version git holds (`docs/product/editor/source-mode/doc.md`).
 ///
-/// **It reads the buffer, never the disk**, which is what makes an edit
-/// appear here with no refresh step (`docs/product/editor/source-mode/doc.md`).
-/// The one exception is an opened history entry: the session names a commit,
-/// that version is what is rendered — not diff text — and the editor is not
-/// listened to at all while it is on screen.
-///
-/// It *listens* rather than watching: a rebuild would throw the rendered
-/// blocks away and flash the pane back to "reading it" on every keystroke.
+/// It *listens* to the editor rather than watching: a rebuild would throw
+/// the rendered blocks away and flash "reading it" on every keystroke.
 
 abstract class _$PreviewNotifier extends $Notifier<PreviewState> {
   PreviewState build();

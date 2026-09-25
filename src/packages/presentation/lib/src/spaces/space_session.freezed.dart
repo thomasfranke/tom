@@ -16,42 +16,35 @@ mixin _$SpaceSessionState {
 
 /// The folder the user opened, and the repository that encloses it.
  SpaceEntity get space;/// The document the editor and the preview are showing, or null when
-/// none has been chosen.
+/// none has been chosen — the state a space opens in, not an error.
 ///
-/// Null is the state a space opens in, not an error. It is a
-/// [SpaceRelativePathValueObject] because that is what the app navigates
-/// in — git's spelling is [SpaceEntity.toRepoRelative]'s to produce, and
-/// nobody else's.
- SpaceRelativePathValueObject? get openDocument;/// How the document area is being looked at.
+/// Space-relative because that is what the app navigates in; git's
+/// spelling is [SpaceEntity.toRepoRelative]'s to produce.
+ SpaceRelativePathValueObject? get openDocument;/// How the document area is being looked at; split is where a space
+/// opens.
 ///
-/// Here rather than in a panel because it decides which panels the
-/// region draws at all: the bar that offers the three modes and the
-/// shell that obeys them are two readers, and two readers is what this
-/// state is for.
-///
-/// Split is where a space opens — the product's own claim is that
-/// source and preview belong side by side.
+/// Here rather than in a panel because two things read it: the bar that
+/// offers the modes and the shell that decides which panels to draw.
  DocumentModeEnum get mode;/// Where the repository stands, or null while nobody has read it yet.
 ///
-/// Here because three panels ask: the changes panel draws the list, the
-/// status bar says the branch and the counts, and M2's diff will want
-/// the same reading. Three answers to "which branch is this" is the
-/// failure mode this state exists to prevent.
-///
-/// A reading, not a subscription — stale as soon as anything writes to
-/// disk, and re-read after every operation that changes the tree.
+/// A reading, not a subscription: stale as soon as anything writes to
+/// disk, re-read after every operation that changes the tree. Shared so
+/// the status bar and the changes panel draw from one answer.
  GitStatusValueObject? get git;/// The commit whose version of [openDocument] is being read, or null
 /// when the working copy is.
 ///
-/// Here because three panels ask: the preview renders that version
-/// rather than the buffer, the bar above the document says which commit
-/// is on screen and offers the way back, and the shell draws no source
-/// pane at all — nothing types into the past.
-///
 /// The whole commit rather than its sha, because the bar names the
-/// author and the date and a second lookup to say so would be a second
-/// answer that can disagree with the list.
- CommitEntity? get readingVersion;
+/// author and the date and a second lookup could disagree with the list.
+ CommitEntity? get readingVersion;/// The branch or commit the document is compared against, or null for
+/// the default — `HEAD` for the working copy, nothing for a version
+/// being read.
+///
+/// Here because two things read it: the preview, which builds the diff
+/// against it, and the bar above the document, which says what is being
+/// compared. It survives opening another document on purpose — comparing
+/// a branch is done one file at a time, and a base that reset on every
+/// click would make that a chore (`docs/product/diff/branch-diff/doc.md`).
+ RevisionValueObject? get comparingAgainst;
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -62,16 +55,16 @@ $SpaceSessionStateCopyWith<SpaceSessionState> get copyWith => _$SpaceSessionStat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion)&&(identical(other.comparingAgainst, comparingAgainst) || other.comparingAgainst == comparingAgainst));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,space,openDocument,mode,git,readingVersion);
+int get hashCode => Object.hash(runtimeType,space,openDocument,mode,git,readingVersion,comparingAgainst);
 
 @override
 String toString() {
-  return 'SpaceSessionState(space: $space, openDocument: $openDocument, mode: $mode, git: $git, readingVersion: $readingVersion)';
+  return 'SpaceSessionState(space: $space, openDocument: $openDocument, mode: $mode, git: $git, readingVersion: $readingVersion, comparingAgainst: $comparingAgainst)';
 }
 
 
@@ -82,11 +75,11 @@ abstract mixin class $SpaceSessionStateCopyWith<$Res>  {
   factory $SpaceSessionStateCopyWith(SpaceSessionState value, $Res Function(SpaceSessionState) _then) = _$SpaceSessionStateCopyWithImpl;
 @useResult
 $Res call({
- SpaceEntity space, SpaceRelativePathValueObject? openDocument, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion
+ SpaceEntity space, SpaceRelativePathValueObject? openDocument, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion, RevisionValueObject? comparingAgainst
 });
 
 
-$SpaceEntityCopyWith<$Res> get space;$GitStatusValueObjectCopyWith<$Res>? get git;$CommitEntityCopyWith<$Res>? get readingVersion;
+$SpaceEntityCopyWith<$Res> get space;$GitStatusValueObjectCopyWith<$Res>? get git;$CommitEntityCopyWith<$Res>? get readingVersion;$RevisionValueObjectCopyWith<$Res>? get comparingAgainst;
 
 }
 /// @nodoc
@@ -99,14 +92,15 @@ class _$SpaceSessionStateCopyWithImpl<$Res>
 
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? space = null,Object? openDocument = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? space = null,Object? openDocument = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,Object? comparingAgainst = freezed,}) {
   return _then(_self.copyWith(
 space: null == space ? _self.space : space // ignore: cast_nullable_to_non_nullable
 as SpaceEntity,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
 as SpaceRelativePathValueObject?,mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
 as DocumentModeEnum,git: freezed == git ? _self.git : git // ignore: cast_nullable_to_non_nullable
 as GitStatusValueObject?,readingVersion: freezed == readingVersion ? _self.readingVersion : readingVersion // ignore: cast_nullable_to_non_nullable
-as CommitEntity?,
+as CommitEntity?,comparingAgainst: freezed == comparingAgainst ? _self.comparingAgainst : comparingAgainst // ignore: cast_nullable_to_non_nullable
+as RevisionValueObject?,
   ));
 }
 /// Create a copy of SpaceSessionState
@@ -141,6 +135,18 @@ $CommitEntityCopyWith<$Res>? get readingVersion {
 
   return $CommitEntityCopyWith<$Res>(_self.readingVersion!, (value) {
     return _then(_self.copyWith(readingVersion: value));
+  });
+}/// Create a copy of SpaceSessionState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$RevisionValueObjectCopyWith<$Res>? get comparingAgainst {
+    if (_self.comparingAgainst == null) {
+    return null;
+  }
+
+  return $RevisionValueObjectCopyWith<$Res>(_self.comparingAgainst!, (value) {
+    return _then(_self.copyWith(comparingAgainst: value));
   });
 }
 }
@@ -224,10 +230,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  RevisionValueObject? comparingAgainst)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SpaceSessionState() when $default != null:
-return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion);case _:
+return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst);case _:
   return orElse();
 
 }
@@ -245,10 +251,10 @@ return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readin
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  RevisionValueObject? comparingAgainst)  $default,) {final _that = this;
 switch (_that) {
 case _SpaceSessionState():
-return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion);case _:
+return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -265,10 +271,10 @@ return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readin
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  RevisionValueObject? comparingAgainst)?  $default,) {final _that = this;
 switch (_that) {
 case _SpaceSessionState() when $default != null:
-return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion);case _:
+return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst);case _:
   return null;
 
 }
@@ -280,51 +286,45 @@ return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readin
 
 
 class _SpaceSessionState implements SpaceSessionState {
-  const _SpaceSessionState({required this.space, this.openDocument, this.mode = DocumentModeEnum.split, this.git, this.readingVersion});
+  const _SpaceSessionState({required this.space, this.openDocument, this.mode = DocumentModeEnum.split, this.git, this.readingVersion, this.comparingAgainst});
   
 
 /// The folder the user opened, and the repository that encloses it.
 @override final  SpaceEntity space;
 /// The document the editor and the preview are showing, or null when
-/// none has been chosen.
+/// none has been chosen — the state a space opens in, not an error.
 ///
-/// Null is the state a space opens in, not an error. It is a
-/// [SpaceRelativePathValueObject] because that is what the app navigates
-/// in — git's spelling is [SpaceEntity.toRepoRelative]'s to produce, and
-/// nobody else's.
+/// Space-relative because that is what the app navigates in; git's
+/// spelling is [SpaceEntity.toRepoRelative]'s to produce.
 @override final  SpaceRelativePathValueObject? openDocument;
-/// How the document area is being looked at.
+/// How the document area is being looked at; split is where a space
+/// opens.
 ///
-/// Here rather than in a panel because it decides which panels the
-/// region draws at all: the bar that offers the three modes and the
-/// shell that obeys them are two readers, and two readers is what this
-/// state is for.
-///
-/// Split is where a space opens — the product's own claim is that
-/// source and preview belong side by side.
+/// Here rather than in a panel because two things read it: the bar that
+/// offers the modes and the shell that decides which panels to draw.
 @override@JsonKey() final  DocumentModeEnum mode;
 /// Where the repository stands, or null while nobody has read it yet.
 ///
-/// Here because three panels ask: the changes panel draws the list, the
-/// status bar says the branch and the counts, and M2's diff will want
-/// the same reading. Three answers to "which branch is this" is the
-/// failure mode this state exists to prevent.
-///
-/// A reading, not a subscription — stale as soon as anything writes to
-/// disk, and re-read after every operation that changes the tree.
+/// A reading, not a subscription: stale as soon as anything writes to
+/// disk, re-read after every operation that changes the tree. Shared so
+/// the status bar and the changes panel draw from one answer.
 @override final  GitStatusValueObject? git;
 /// The commit whose version of [openDocument] is being read, or null
 /// when the working copy is.
 ///
-/// Here because three panels ask: the preview renders that version
-/// rather than the buffer, the bar above the document says which commit
-/// is on screen and offers the way back, and the shell draws no source
-/// pane at all — nothing types into the past.
-///
 /// The whole commit rather than its sha, because the bar names the
-/// author and the date and a second lookup to say so would be a second
-/// answer that can disagree with the list.
+/// author and the date and a second lookup could disagree with the list.
 @override final  CommitEntity? readingVersion;
+/// The branch or commit the document is compared against, or null for
+/// the default — `HEAD` for the working copy, nothing for a version
+/// being read.
+///
+/// Here because two things read it: the preview, which builds the diff
+/// against it, and the bar above the document, which says what is being
+/// compared. It survives opening another document on purpose — comparing
+/// a branch is done one file at a time, and a base that reset on every
+/// click would make that a chore (`docs/product/diff/branch-diff/doc.md`).
+@override final  RevisionValueObject? comparingAgainst;
 
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
@@ -336,16 +336,16 @@ _$SpaceSessionStateCopyWith<_SpaceSessionState> get copyWith => __$SpaceSessionS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion)&&(identical(other.comparingAgainst, comparingAgainst) || other.comparingAgainst == comparingAgainst));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,space,openDocument,mode,git,readingVersion);
+int get hashCode => Object.hash(runtimeType,space,openDocument,mode,git,readingVersion,comparingAgainst);
 
 @override
 String toString() {
-  return 'SpaceSessionState(space: $space, openDocument: $openDocument, mode: $mode, git: $git, readingVersion: $readingVersion)';
+  return 'SpaceSessionState(space: $space, openDocument: $openDocument, mode: $mode, git: $git, readingVersion: $readingVersion, comparingAgainst: $comparingAgainst)';
 }
 
 
@@ -356,11 +356,11 @@ abstract mixin class _$SpaceSessionStateCopyWith<$Res> implements $SpaceSessionS
   factory _$SpaceSessionStateCopyWith(_SpaceSessionState value, $Res Function(_SpaceSessionState) _then) = __$SpaceSessionStateCopyWithImpl;
 @override @useResult
 $Res call({
- SpaceEntity space, SpaceRelativePathValueObject? openDocument, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion
+ SpaceEntity space, SpaceRelativePathValueObject? openDocument, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion, RevisionValueObject? comparingAgainst
 });
 
 
-@override $SpaceEntityCopyWith<$Res> get space;@override $GitStatusValueObjectCopyWith<$Res>? get git;@override $CommitEntityCopyWith<$Res>? get readingVersion;
+@override $SpaceEntityCopyWith<$Res> get space;@override $GitStatusValueObjectCopyWith<$Res>? get git;@override $CommitEntityCopyWith<$Res>? get readingVersion;@override $RevisionValueObjectCopyWith<$Res>? get comparingAgainst;
 
 }
 /// @nodoc
@@ -373,14 +373,15 @@ class __$SpaceSessionStateCopyWithImpl<$Res>
 
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? space = null,Object? openDocument = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? space = null,Object? openDocument = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,Object? comparingAgainst = freezed,}) {
   return _then(_SpaceSessionState(
 space: null == space ? _self.space : space // ignore: cast_nullable_to_non_nullable
 as SpaceEntity,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
 as SpaceRelativePathValueObject?,mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
 as DocumentModeEnum,git: freezed == git ? _self.git : git // ignore: cast_nullable_to_non_nullable
 as GitStatusValueObject?,readingVersion: freezed == readingVersion ? _self.readingVersion : readingVersion // ignore: cast_nullable_to_non_nullable
-as CommitEntity?,
+as CommitEntity?,comparingAgainst: freezed == comparingAgainst ? _self.comparingAgainst : comparingAgainst // ignore: cast_nullable_to_non_nullable
+as RevisionValueObject?,
   ));
 }
 
@@ -416,6 +417,18 @@ $CommitEntityCopyWith<$Res>? get readingVersion {
 
   return $CommitEntityCopyWith<$Res>(_self.readingVersion!, (value) {
     return _then(_self.copyWith(readingVersion: value));
+  });
+}/// Create a copy of SpaceSessionState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$RevisionValueObjectCopyWith<$Res>? get comparingAgainst {
+    if (_self.comparingAgainst == null) {
+    return null;
+  }
+
+  return $RevisionValueObjectCopyWith<$Res>(_self.comparingAgainst!, (value) {
+    return _then(_self.copyWith(comparingAgainst: value));
   });
 }
 }

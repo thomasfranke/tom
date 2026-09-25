@@ -8,32 +8,26 @@ part of 'space_session_notifier.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Holds the open space for as long as one is open, so that every panel
-/// reads the same answer ([Decision
+/// The open space, or null while the window shows Home ([Decision
 /// 9](../../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).
-/// Null is "no space open", which is what the window shows Home for.
 ///
-/// Kept alive deliberately: Riverpod disposes a provider as soon as nothing
+/// Kept alive on purpose: Riverpod disposes a provider as soon as nothing
 /// listens, and this one is written by Home — the screen on its way out.
 
 @ProviderFor(SpaceSessionNotifier)
 final spaceSessionProvider = SpaceSessionNotifierProvider._();
 
-/// Holds the open space for as long as one is open, so that every panel
-/// reads the same answer ([Decision
+/// The open space, or null while the window shows Home ([Decision
 /// 9](../../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).
-/// Null is "no space open", which is what the window shows Home for.
 ///
-/// Kept alive deliberately: Riverpod disposes a provider as soon as nothing
+/// Kept alive on purpose: Riverpod disposes a provider as soon as nothing
 /// listens, and this one is written by Home — the screen on its way out.
 final class SpaceSessionNotifierProvider
     extends $NotifierProvider<SpaceSessionNotifier, SpaceSessionState?> {
-  /// Holds the open space for as long as one is open, so that every panel
-  /// reads the same answer ([Decision
+  /// The open space, or null while the window shows Home ([Decision
   /// 9](../../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).
-  /// Null is "no space open", which is what the window shows Home for.
   ///
-  /// Kept alive deliberately: Riverpod disposes a provider as soon as nothing
+  /// Kept alive on purpose: Riverpod disposes a provider as soon as nothing
   /// listens, and this one is written by Home — the screen on its way out.
   SpaceSessionNotifierProvider._()
     : super(
@@ -63,14 +57,12 @@ final class SpaceSessionNotifierProvider
 }
 
 String _$spaceSessionNotifierHash() =>
-    r'90cc86015b18030824112536382a98cf98d0f29b';
+    r'672deeb74f54b51b753cd484fa2cac12bc7cb66d';
 
-/// Holds the open space for as long as one is open, so that every panel
-/// reads the same answer ([Decision
+/// The open space, or null while the window shows Home ([Decision
 /// 9](../../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).
-/// Null is "no space open", which is what the window shows Home for.
 ///
-/// Kept alive deliberately: Riverpod disposes a provider as soon as nothing
+/// Kept alive on purpose: Riverpod disposes a provider as soon as nothing
 /// listens, and this one is written by Home — the screen on its way out.
 
 abstract class _$SpaceSessionNotifier extends $Notifier<SpaceSessionState?> {

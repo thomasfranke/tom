@@ -1,8 +1,5 @@
-/// Entities, value objects, failures, repository contracts and domain services.
-/// Knows no framework, no git, no disk.
-///
-/// Nothing outside `lib/src/` is importable from another package, so this file
-/// is the whole public surface.
+/// The product's vocabulary: entities, value objects, failures, contracts and
+/// domain services, knowing no framework, no git, no disk.
 library;
 
 export 'src/diff/block_aligner_port.dart';
@@ -30,6 +27,7 @@ export 'src/git/git_failure.dart';
 export 'src/git/git_repository.dart';
 export 'src/git/git_repository_for.dart';
 export 'src/git/git_status_value_object.dart';
+export 'src/git/revision_value_object.dart';
 export 'src/git/status_entry_value_object.dart';
 export 'src/paths/repo_relative_path_value_object.dart';
 export 'src/paths/space_relative_path_value_object.dart';

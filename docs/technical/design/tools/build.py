@@ -333,3 +333,74 @@ for i in range(2):
 
 s.status("feat/rendered-diff", "2 ahead, 3 behind")
 save(s, f"{PRODUCTS}/git-workflow/push-pull/mocks/push-rejected.excalidraw")
+
+# ── 10. comparing against a revision ─────────────────────────────────────
+# The rendered diff pointed somewhere other than the last commit. Two things
+# this screen settles: where the control lives (the bar above the document,
+# because a base belongs to one file) and that the popover offers branches
+# and this document's commits behind one filter.
+s = Scene(10)
+s.title("Comparing", "The rendered diff against another branch or commit · M2")
+s.window(height=H)
+s.chip("m2", CANVAS_W - 76, 15, "M2")
+s.rect("branch", 392, 12, 190, 28, round=True)
+s.text("brancht", 408, 18, "main", size=BODY)
+s.explorer(TREE, selected=2, search_chip="M2", height=H)
+
+CEN = CANVAS_W - EXPLORER_W
+s.hline("modebar", EXPLORER_W, BODY_Y + 36, CEN)
+tabs(s, EXPLORER_W + 28, BODY_Y + 9, ["Source", "Split", "Preview"], active=2)
+# The control sits at the right of the bar, and the popover hangs from its
+# right edge — anchored left it would run off a narrow window.
+s.text("cmp", CANVAS_W - 246, BODY_Y + 8, "Compared to feat/rendered-diff",
+       size=CAPTION, color=MILESTONE["M0"])
+
+# The preview, decorated. The reading measure is the document's and the
+# gutter is taken out of the pane around it, so an unchanged file and a
+# changed one set their prose to the same line length.
+PY_, PH = BODY_Y + 36, BODY_H - 36
+MEASURE = 420
+GUT = EXPLORER_W + (CEN - MEASURE) // 2 - 32
+BX, BW = GUT + 32, MEASURE
+by = PY_ + 30
+for i, (bh, mark) in enumerate([(34, None), (58, "M"), (44, "A"), (40, "R")]):
+    if mark:
+        s.rect(f"mk{i}", GUT, by + 6, 20, 20, round=True)
+        s.text(f"mkt{i}", GUT + 6, by + 10, mark, size=CAPTION)
+        s.rect(f"bk{i}", BX, by, BW, bh, stroke=SOFT, dash=True)
+    s.bars(f"bkr{i}", BX + 14, by + 14, [BW - 80, BW - 140][: 1 if bh < 50 else 2])
+    by += bh + 16
+
+# The surface: one filter over both lists, and the way back under them.
+# Drawn first, because it is opaque and everything below sits on it.
+POPW, POPX = 320, CANVAS_W - PAD - 320
+BRANCHES = [("feat/rendered-diff", True), ("main", False)]
+COMMITS = 2
+POPH = 18 + 42 + 24 + 32 * len(BRANCHES) + 8 + 26 + 46 * COMMITS + 32
+s.popover("pop", POPX, PY_ + 2, POPW, POPH)
+y = PY_ + 18
+s.field("popf", POPX + PAD_TIGHT, y, POPW - 2 * PAD_TIGHT,
+        "Filter branches and commits")
+y += 42
+s.caption("popb", POPX + PAD_TIGHT, y, "BRANCHES")
+y += 24
+for i, (name, current) in enumerate(BRANCHES):
+    if current:
+        s.rect(f"pr{i}", POPX + 8, y - 5, POPW - 16, 26,
+               stroke=MILESTONE["M0"], round=True)
+    s.text(f"pb{i}", POPX + PAD_TIGHT + 8, y, name, size=CAPTION)
+    y += 32
+y += 8
+s.caption("popc", POPX + PAD_TIGHT, y, "THIS DOCUMENT'S COMMITS")
+y += 26
+for i in range(COMMITS):
+    s.rect(f"pc{i}", POPX + PAD_TIGHT + 8, y, 180, 8, stroke=SOFT)
+    s.text(f"pcm{i}", POPX + PAD_TIGHT + 8, y + 12,
+           "abc1234 · you · 3 days ago", size=CAPTION, color=LABEL)
+    y += 46
+s.hline("popsep", POPX, y - 4, POPW, color=SOFT)
+s.text("popback", POPX + PAD_TIGHT + 8, y + 8,
+       "Compare against the last commit", size=CAPTION, color=LABEL)
+
+s.status("~/dev/tom/docs", "roadmap.md", "main")
+save(s, f"{PRODUCTS}/diff/branch-diff/mocks/comparing.excalidraw")

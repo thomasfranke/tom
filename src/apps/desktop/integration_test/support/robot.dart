@@ -12,61 +12,64 @@ import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_desktop/screens/branches/branches_control_widget.dart';
 import 'package:tom_desktop/screens/branches/widgets/branches_popover_widget.dart';
 import 'package:tom_desktop/screens/changes/changes_panel.dart';
+import 'package:tom_desktop/screens/compare/compare_control_widget.dart';
+import 'package:tom_desktop/screens/compare/widgets/compare_popover_widget.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/history/history_panel.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
 import 'package:tom_desktop/screens/shell/status_panel.dart';
 import 'package:tom_ui/tom_ui.dart';
+import 'package:window_manager/window_manager.dart';
 import 'e2e_module_impl.dart';
+import 'evidence.dart';
 
-/// Drives the assembled app.
+/// Drives the assembled app through what is on screen.
 ///
-/// **This file is the reuse.** A scenario is a list of named steps and
-/// nothing else; every tap, every wait and every assertion lives here, so
-/// the tenth scenario costs a list and not another copy of "find the button,
-/// tap it, settle". When the Home layout changes, one file changes.
-///
-/// It talks to the app the way a person does — through what is on screen —
-/// and never reaches into a provider or a repository. A harness that read
-/// the state directly would go green on an app whose screen never updated.
+/// Every tap, wait and assertion lives here so a scenario is only a list of
+/// steps. It never reads a provider or a repository: a harness that read the
+/// state would go green on a screen that never updated.
 final class TomRobot {
   /// Wraps [tester], storing this scenario's preferences at [settingsPath].
-  TomRobot(this.tester, {required this.settingsPath});
+  TomRobot(this.tester, {required this.settingsPath, required this.evidence});
 
   /// The harness driving the widget tree.
   final WidgetTester tester;
 
+  /// What photographs the window after every action this performs.
+  final Evidence evidence;
+
+  /// How long to hold the screen on each thing just done; zero unless
+  /// `tom e2e <name> --watch` passed the define, since a run at full speed
+  /// is unwatchable.
+  ///
+  /// Parsed rather than `int.fromEnvironment`: the define is absent in every
+  /// ordinary run, and a zero the analyzer can fold sets two lints arguing.
+  static Duration get hold => Duration(
+    milliseconds:
+        int.tryParse(const String.fromEnvironment('TOM_E2E_HOLD_MS')) ?? 0,
+  );
+
   /// Where this scenario's preferences live.
   ///
-  /// One file per scenario, cleared before the first step. Within a
-  /// scenario it survives a relaunch — which is what "remembers a space"
-  /// needs — and between scenarios nothing leaks, so the order they run in
-  /// cannot change what they assert.
+  /// Cleared before the first step and kept across a relaunch, so a restart
+  /// remembers and the next scenario does not.
   final String settingsPath;
 
-  /// Starts the app, with the folder dialog answering [pickFolder].
+  /// Starts the app — the real modules and object graph — with the folder
+  /// dialog answering [pickFolder].
   ///
-  /// The real modules and the real object graph — `tomApp` is what `main()`
-  /// runs — plus one module that answers the native dialog no test can
-  /// open. Mounted rather than started, because a scenario calls this more
-  /// than once to prove something survived a restart, and `runApp` a second
-  /// time does not replace a tree that is already there.
-  ///
-  /// The one thing it leaves out is the window: a title and a minimum size,
-  /// which has no screen to assert about.
+  /// Mounted rather than started, because a scenario relaunches to prove
+  /// something survived a restart and `runApp` a second time does not
+  /// replace a tree already there. The window's title and size are left out.
   Future<void> launch({String? pickFolder}) async {
-    // Unmounted first, and this is not ceremony. Flutter updates an element
-    // in place when the widget at that position is of the same type, so
-    // pumping a second `ProviderScope` keeps the *first* one's container —
-    // and with it every provider's state. A scenario that restarted the app
-    // would find it exactly where it left it, which is the opposite of what
-    // it is asserting.
+    // Unmounted first: Flutter updates an element in place when the widget's
+    // type matches, so a second `ProviderScope` would keep the first one's
+    // container and every provider's state with it.
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
-    // Home's trunk animates forever, and `pumpAndSettle` waits for a frame
-    // that never comes. The platform's own "no animations" switch is what
-    // the widget honours, so the run asks for the still screen the way an
-    // accessibility setting would — the product's own path, not a test hook.
+    // Home's trunk animates forever and `pumpAndSettle` would never settle;
+    // the platform's own no-animations switch is the product's path to a
+    // still screen.
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
@@ -80,11 +83,8 @@ final class TomRobot {
     await settle();
   }
 
-  /// Starts the app sized for a desktop window.
-  ///
-  /// The shell is three regions side by side and has a minimum width it
-  /// holds together in; a default test surface is narrower than a phone and
-  /// would report overflows that no user can produce.
+  /// Starts the app sized for a desktop window; the default test surface is
+  /// narrower than a phone and overflows the shell.
   Future<void> launchWindowed({
     String? pickFolder,
     Size size = const Size(1280, 840),
@@ -94,34 +94,44 @@ final class TomRobot {
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await launch(pickFolder: pickFolder);
+    await _showTheWindow();
+  }
+
+  /// Brings the window forward, only for a run somebody is watching.
+  ///
+  /// A window not on the active Space is not painted, and mounting the app
+  /// rather than calling `runTom()` leaves the window to nobody.
+  Future<void> _showTheWindow() async {
+    if (hold <= Duration.zero) {
+      return;
+    }
+    await windowManager.ensureInitialized();
+    await windowManager.show();
+    await windowManager.focus();
+    await settle();
   }
 
   /// Waits until the app stops animating.
   ///
-  /// With a timeout, because the default is ten minutes: an animation that
-  /// never ends — a spinner on a screen with nothing coming, which this app
-  /// has already had once — otherwise hangs the whole run rather than
-  /// failing the step that caused it.
+  /// Bounded, because the default is ten minutes and an animation that never
+  /// ends would hang the run rather than fail the step.
   Future<void> settle() async {
     await tester.pumpAndSettle(
       const Duration(milliseconds: 100),
       EnginePhase.sendSemanticsUpdate,
       const Duration(seconds: 15),
     );
+    if (hold > Duration.zero) {
+      await tester.binding.delayed(hold);
+    }
   }
 
   /// Pumps until [ready] holds, and gives up quietly when it does not.
   ///
-  /// **Settling is not waiting.** `pumpAndSettle` returns as soon as no
-  /// frame is scheduled, and the app's work is not a frame: opening a space
-  /// runs `git` in another process, and a screen with nothing animating on
-  /// it settles in a millisecond while that is still in flight. A scenario
-  /// that asserted right there was reading the screen before the answer had
-  /// arrived — which passed on a warm machine and failed on a busy one, at
-  /// whichever step happened to lose the race.
-  ///
-  /// It gives up rather than throwing, so the assertion that follows fails
-  /// with what was actually on screen instead of with a timeout.
+  /// Settling is not waiting: `pumpAndSettle` returns as soon as no frame is
+  /// scheduled, and git running in another process is not a frame. Giving
+  /// up lets the assertion after it fail with what was on screen rather than
+  /// with a timeout.
   Future<void> _waitUntil(
     bool Function() ready, {
     Duration limit = const Duration(seconds: 10),
@@ -137,10 +147,8 @@ final class TomRobot {
 
   // ── What the user does ────────────────────────────────────────────────
 
-  /// Presses *Choose folder…* on Home.
-  ///
-  /// What the dialog answers was decided at [launch]: the module overriding
-  /// it is installed before the app starts, because the app reads it once.
+  /// Presses *Choose folder…* on Home; what the dialog answers was decided
+  /// at [launch].
   Future<void> chooseFolder() async {
     await tapText('Choose folder…');
   }
@@ -157,9 +165,8 @@ final class TomRobot {
 
   /// Drops a space from the recent list, by the name of its row.
   ///
-  /// The row is found by its name and the button by its tooltip, rather than
-  /// by position: a list that reordered would otherwise forget the wrong
-  /// space and still pass.
+  /// By name and tooltip rather than position, so a list that reordered
+  /// cannot forget the wrong space and pass.
   Future<void> forgetRecent(String name) async {
     final Finder row = find.ancestor(
       of: find.text(name),
@@ -177,21 +184,17 @@ final class TomRobot {
     await settle();
   }
 
-  /// Chooses one of the modes on the bar above the document area.
-  ///
-  /// By its label — `Source`, `Split`, `Preview` — which is what a person
-  /// clicks.
+  /// Chooses a mode on the bar above the document area by its label —
+  /// `Source`, `Split`, `Preview`.
   Future<void> looksAt(String mode) async {
     await tapText(mode);
   }
 
   /// Replaces what the source pane holds with [source].
   ///
-  /// **The one place this file touches a widget rather than the screen.** A
-  /// code editor is not a `TextField` and has no `enterText`; what it does
-  /// have is the controller the editor on screen is actually driving, so
-  /// this is still the real editor being edited and not a provider being
-  /// written to behind it.
+  /// The one place this file touches a widget rather than the screen: a code
+  /// editor has no `enterText`, so this drives the controller of the editor
+  /// on screen.
   Future<void> typesInTheSource(String source) async {
     tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text =
         source;
@@ -200,9 +203,8 @@ final class TomRobot {
 
   /// Ticks the changes row that shows [name], staging it.
   ///
-  /// Scoped to the row rather than to the panel: the caption carries a
-  /// checkbox of its own — *All* — and a tap that found that one would
-  /// stage everything while the step said one file.
+  /// Scoped to the row, because the caption's own checkbox — *All* — would
+  /// stage everything.
   Future<void> stages(String name) async {
     await _waitUntil(() => _showing(_inTheChanges(name)));
     Finder box() => find.descendant(
@@ -212,20 +214,16 @@ final class TomRobot {
       matching: find.byType(Checkbox),
     );
     await tester.tap(box());
-    // Waited for, not settled: staging runs git in another process and then
-    // reads it again, and a screen with nothing animating settles in a
-    // millisecond while both are still in flight.
+    // Waited for, not settled: staging runs git and re-reads it, and nothing
+    // animates meanwhile.
     await _waitUntil(
       () => _showing(box()) && tester.widget<Checkbox>(box()).value == true,
     );
     await settle();
   }
 
-  /// Presses *Fetch* and waits for git to answer.
-  ///
-  /// The wait is for the button to come back: all three remote actions are
-  /// disabled while one runs, and settling only says no frame is scheduled
-  /// while git is still in another process.
+  /// Presses *Fetch* and waits for the button to come back, which is git
+  /// having answered.
   Future<void> fetches() => _remoteAction('Fetch');
 
   /// Presses *Push*.
@@ -238,18 +236,14 @@ final class TomRobot {
   Future<void> _remoteAction(String label) async {
     await _waitUntil(() => _showing(find.text(label)));
     await tester.tap(find.text(label));
-    // While it runs the bar's own buttons read `Fetch…` and are disabled;
-    // the label coming back is the action having finished *and* the status
-    // having been read again.
+    // The bar's buttons read `Fetch…` while it runs; the label coming back is
+    // the action finished and the status re-read.
     await _waitUntil(() => _showing(find.text(label)));
     await settle();
   }
 
-  /// Ticks *All*, staging everything the panel is listing.
-  ///
-  /// The caption's own checkbox, which is the other half of "everything at
-  /// once, or one file at a time" — and the reason [stages] is careful to
-  /// find a *row's* box rather than this one.
+  /// Ticks *All*, staging everything the panel lists — the caption's own
+  /// checkbox, the one [stages] avoids.
   Future<void> stagesEverything() async {
     final Finder all = find.descendant(
       of: find.ancestor(of: find.text('All'), matching: find.byType(Row)).first,
@@ -263,10 +257,8 @@ final class TomRobot {
     await settle();
   }
 
-  /// Asserts *Commit* cannot be pressed.
-  ///
-  /// Unavailable rather than absent, and refused before the attempt rather
-  /// than reported after it.
+  /// Asserts *Commit* cannot be pressed: unavailable rather than absent, and
+  /// refused before the attempt.
   Future<void> seesCommitUnavailable() async {
     final Finder button = find.descendant(
       of: find.byType(ChangesPanel),
@@ -292,8 +284,7 @@ final class TomRobot {
   /// Presses *Commit*.
   ///
   /// Checked before it is pressed, because a disabled button swallows a tap
-  /// without a word: the step would go green and the assertion after it
-  /// would fail somewhere else entirely.
+  /// without a word.
   Future<void> commits() async {
     final Finder button = find.descendant(
       of: find.byType(ChangesPanel),
@@ -305,19 +296,16 @@ final class TomRobot {
       reason: 'Commit is disabled — is anything staged, and described?',
     );
     await tester.tap(button);
-    // The box emptying is what says the commit landed *and* the status has
-    // been read again — settling only says no frame is scheduled, and git
-    // is another process.
+    // The box emptying says the commit landed and the status was re-read;
+    // git is another process, so settling says nothing.
     await _waitUntil(
       () => tester.widget<TextField>(_anyField).controller!.text.isEmpty,
     );
     await settle();
   }
 
-  /// Presses the save shortcut, the way a person does.
-  ///
-  /// The platform's own — a Mac user presses ⌘S — and the editor has to have
-  /// the focus, which is what the tap is for.
+  /// Presses the platform's own save shortcut; the tap gives the editor the
+  /// focus first.
   Future<void> saves() async {
     await tester.tap(find.byType(CodeEditor));
     await tester.pump(const Duration(milliseconds: 200));
@@ -330,15 +318,11 @@ final class TomRobot {
     await settle();
   }
 
-  /// Clicks the row of the file tree that shows [name].
-  ///
-  /// Scoped to the explorer rather than to the window: the space's own folder
-  /// is named in the top bar too, and a tap that found the chrome instead of
-  /// the tree would pass while doing nothing.
+  /// Clicks the row of the file tree that shows [name], scoped to the
+  /// explorer because the top bar names the space's folder too.
   Future<void> clickInTheTree(String name) async {
-    // Waited for, not assumed: opening a space walks a real folder, and the
-    // shell is on screen before that answer has arrived. Here rather than in
-    // each scenario, so the race is paid for once.
+    // Waited for here rather than in each scenario: the shell is on screen
+    // before the folder walk has answered.
     await _waitUntil(() => _showing(_inTheTree(name)));
     await tester.tap(_inTheTree(name));
     await settle();
@@ -353,10 +337,8 @@ final class TomRobot {
     expect(find.text('no space open'), findsOneWidget);
   }
 
-  /// Asserts the shell has taken over — a space is open.
-  ///
-  /// By the explorer, which the product says is always on screen once a
-  /// space is open and never hidden by anything.
+  /// Asserts a space is open, by the explorer, which is always on screen
+  /// once one is.
   Future<void> seesTheShell() async {
     await _waitUntil(() => _showing(find.text('EXPLORER')));
     expect(
@@ -367,11 +349,8 @@ final class TomRobot {
     expect(find.text('Choose folder…'), findsNothing);
   }
 
-  /// Asserts the tree shows [names], each exactly once.
-  ///
-  /// The wait is the same race as everywhere else, read forwards: opening a
-  /// space walks the folder, and the shell is on screen before that answer
-  /// has arrived.
+  /// Asserts the tree shows [names], each exactly once, once the folder walk
+  /// has answered.
   Future<void> seesInTheTree(List<String> names) async {
     await _waitUntil(() => _showing(_inTheTree(names.first)));
     for (final String name in names) {
@@ -392,10 +371,8 @@ final class TomRobot {
     );
   }
 
-  /// Asserts the preview is showing a document that says [text].
-  ///
-  /// Rich text, because the preview renders markdown rather than writing it
-  /// out: `find.text` would match nothing at all here.
+  /// Asserts the preview is showing a document that says [text], as rich
+  /// text because the preview renders markdown rather than writing it out.
   Future<void> seesInThePreview(String text) async {
     final Finder shown = find.textContaining(text, findRichText: true);
     await _waitUntil(() => _showing(shown));
@@ -405,12 +382,10 @@ final class TomRobot {
   /// Asserts the rendered diff is marking [letters], top to bottom.
   ///
   /// Scoped to the preview, because the changes column draws the same mark
-  /// about whole files — a finder that matched either would pass while the
-  /// document carried no decoration at all.
+  /// about whole files.
   Future<void> seesTheDiffMarks(List<String> letters) async {
-    // On the letters and not on how many there are: a block going from
-    // added to modified is one mark either way, and a wait that counted
-    // them would come back happy with the decoration from before the edit.
+    // On the letters, not the count: a block going from added to modified is
+    // one mark either way.
     await _waitUntil(() => _diffMarks().join() == letters.join());
     expect(
       _diffMarks(),
@@ -440,11 +415,9 @@ final class TomRobot {
       .map((DiffMarkWidget mark) => mark.letter)
       .toList();
 
-  /// Asserts the status bar names [path] as the document that is open.
-  ///
-  /// Scoped to the bar, because a document at the space's root has the same
-  /// spelling in the tree — and a finder that matched either would pass
-  /// while the bar said nothing.
+  /// Asserts the status bar names [path] as the open document, scoped to the
+  /// bar because a document at the space's root is spelled the same in the
+  /// tree.
   Future<void> seesTheOpenDocument(String path) async {
     final Finder shown = find.descendant(
       of: find.byType(StatusPanel),
@@ -454,10 +427,8 @@ final class TomRobot {
     expect(shown, findsOneWidget, reason: 'the status bar does not name $path');
   }
 
-  /// Asserts the source pane is showing [text].
-  ///
-  /// Through the editor's own controller, for the reason [typesInTheSource]
-  /// gives: what a code editor paints is not a `Text` widget.
+  /// Asserts the source pane is showing [text], through the editor's own
+  /// controller (see [typesInTheSource]).
   Future<void> seesInTheSource(String text) async {
     await _waitUntil(() => _showing(find.byType(CodeEditor)));
     expect(
@@ -479,11 +450,8 @@ final class TomRobot {
     }
   }
 
-  /// Asserts the changes panel does not list [name].
-  ///
-  /// Waits for the row to *go*, which is the same race read backwards: a
-  /// file stops differing because git was asked again, and the row is still
-  /// on screen until that answer arrives.
+  /// Asserts the changes panel does not list [name], waiting for the row to
+  /// go once git has been asked again.
   Future<void> seesNotInTheChanges(String name) async {
     await _waitUntil(() => !_showing(_inTheChanges(name)));
     expect(
@@ -500,11 +468,8 @@ final class TomRobot {
     expect(find.text(clean), findsOneWidget);
   }
 
-  /// Asserts the top bar says how far the branch has drifted.
-  ///
-  /// [ahead] and [behind] are what the two arrows should read; zero means
-  /// that half should be absent, because a counter with nothing to count is
-  /// chrome read twice and ignored.
+  /// Asserts the top bar says how far the branch has drifted; a zero half is
+  /// absent rather than a counter reading nothing.
   Future<void> seesTheDrift({int ahead = 0, int behind = 0}) async {
     final String expected = <String>[
       if (ahead > 0) '↑ $ahead',
@@ -524,10 +489,7 @@ final class TomRobot {
     );
   }
 
-  /// Asserts the push was refused, in the words the product chose.
-  ///
-  /// All three sentences, because the wording *is* the product here: who
-  /// got there first, what to do, and that nothing committed was lost
+  /// Asserts the push was refused, in all three sentences the product chose
   /// (`docs/product/git-workflow/push-pull/doc.md`).
   Future<void> seesThePushRefused({required int commits}) async {
     final String headline =
@@ -621,10 +583,8 @@ final class TomRobot {
     expect(find.text('Back to now'), findsNothing);
   }
 
-  /// Whatever the history panel shows as [text].
-  ///
-  /// Scoped to the panel, because a commit's message can name a file the
-  /// tree is showing too.
+  /// Whatever the history panel shows as [text]; a commit message can name a
+  /// file the tree shows too.
   Finder _inTheHistory(String text) =>
       find.descendant(of: find.byType(HistoryPanel), matching: find.text(text));
 
@@ -647,11 +607,8 @@ final class TomRobot {
     await settle();
   }
 
-  /// Opens the popover and clicks [branch].
-  ///
-  /// Does not wait for the switch: what happens next is the step's to
-  /// assert — it may be a checkout, or it may be the question about an
-  /// unsaved buffer.
+  /// Opens the popover and clicks [branch], without waiting for the switch:
+  /// what follows may be a checkout or the unsaved question.
   Future<void> switchesTo(String branch) async {
     await opensTheBranches();
     await tester.tap(_inTheBranches(branch));
@@ -681,6 +638,80 @@ final class TomRobot {
   Future<void> staysOnTheBranch() async {
     await tapText('Stay on this branch');
   }
+
+  // ── Comparing against a branch or a commit ───────────────────────────
+
+  /// Opens the surface that chooses what the document is compared against.
+  Future<void> opensTheComparison() async {
+    final Finder control = find.descendant(
+      of: find.byType(CompareControlWidget),
+      matching: find.byType(TextButton),
+    );
+    await _waitUntil(() => _showing(control));
+    await tester.tap(control);
+    await _waitUntil(() => _showing(_theComparisonField));
+  }
+
+  /// Opens it and picks [revision], by the name or subject it is listed under.
+  Future<void> comparesAgainst(String revision) async {
+    await opensTheComparison();
+    // The lists are read when the surface opens, so the row being reached
+    // for is not there on the first frame.
+    await _waitUntil(() => _showing(_inTheComparison(revision)));
+    await tester.tap(_inTheComparison(revision));
+    await settle();
+  }
+
+  /// Opens it and takes the comparison back to the last commit.
+  Future<void> stopsComparing() async {
+    await opensTheComparison();
+    await tapText('Compare against the last commit');
+  }
+
+  /// Asserts the bar says the document is compared against [what].
+  Future<void> seesTheComparison(String what) async {
+    final Finder shown = find.descendant(
+      of: find.byType(CompareControlWidget),
+      matching: find.textContaining(what),
+    );
+    await _waitUntil(() => _showing(shown));
+    expect(
+      shown,
+      findsOneWidget,
+      reason: 'the bar does not say the document is compared to $what',
+    );
+  }
+
+  /// Asserts the bar is back to offering a comparison rather than naming one.
+  Future<void> seesTheDefaultComparison() async {
+    await _waitUntil(() => _showing(find.text('Compare against…')));
+    expect(find.textContaining('Compared to'), findsNothing);
+  }
+
+  /// Asserts the open surface is offering each of [names].
+  Future<void> seesOnOffer(List<String> names) async {
+    await _waitUntil(() => _showing(_inTheComparison(names.first)));
+    for (final String name in names) {
+      expect(
+        _inTheComparison(name),
+        findsOneWidget,
+        reason: '$name is not among the revisions offered',
+      );
+    }
+  }
+
+  /// Whatever the compare popover shows as [text]; the control above it names
+  /// the base the document is already on.
+  Finder _inTheComparison(String text) => find.descendant(
+    of: find.byType(ComparePopoverWidget),
+    matching: find.text(text),
+  );
+
+  /// The popover's own box, which is the one field on screen while it is up.
+  Finder get _theComparisonField => find.descendant(
+    of: find.byType(ComparePopoverWidget),
+    matching: find.byType(TextField),
+  );
 
   /// Asserts the control in the top bar names [branch].
   Future<void> seesTheBranchControl(String branch) async {
@@ -722,10 +753,8 @@ final class TomRobot {
     expect(find.textContaining('has unsaved changes.'), findsNothing);
   }
 
-  /// Whatever the branch popover shows as [name].
-  ///
-  /// Scoped to the popover, because the control above it names a branch too
-  /// — and it is the one the popover would be switching *from*.
+  /// Whatever the branch popover shows as [name]; the control above it names
+  /// the branch being switched *from*.
   Finder _inTheBranches(String name) => find.descendant(
     of: find.byType(BranchesPopoverWidget),
     matching: find.text(name),
@@ -737,26 +766,20 @@ final class TomRobot {
     matching: find.byType(TextField),
   );
 
-  /// Whatever the changes panel shows as [name].
-  ///
-  /// Scoped to the panel, because the same file is named in the tree too.
+  /// Whatever the changes panel shows as [name]; the tree names the same
+  /// file too.
   Finder _inTheChanges(String name) =>
       find.descendant(of: find.byType(ChangesPanel), matching: find.text(name));
 
-  /// The commit box.
-  ///
-  /// Scoped to the panel now that the branch popover has a field of its own;
-  /// the search above the tree is still not a field.
+  /// The commit box, scoped to the panel because the branch popover has a
+  /// field of its own.
   Finder get _anyField => find.descendant(
     of: find.byType(ChangesPanel),
     matching: find.byType(TextField),
   );
 
-  /// Asserts which of the two panes the document area is showing.
-  ///
-  /// By each panel's own caption, which is what a person reads — and what a
-  /// panel the shell had hardcoded would keep showing whatever the mode bar
-  /// said.
+  /// Asserts which of the two panes the document area is showing, by each
+  /// panel's own caption.
   void seesThePanes({required bool source, required bool preview}) {
     expect(
       find.text('SOURCE'),
@@ -770,18 +793,14 @@ final class TomRobot {
     );
   }
 
-  /// Asserts the app says, in each place it says it, that [path] is unsaved.
-  ///
-  /// All three at once on purpose: the one thing a text editor may never do
-  /// is lose work quietly, so a mark that went missing in one place is a
-  /// failure even while the other two still show it.
+  /// Asserts the app says [path] is unsaved in every place it says it; a
+  /// mark missing in one place is a failure while the other two show it.
   Future<void> seesUnsaved(String path) async {
     await _waitUntil(() => _showing(find.text('Unsaved')));
     expect(find.text('Unsaved'), findsOneWidget, reason: 'no mark on the bar');
     await seesTheOpenDocument('$path — unsaved');
-    // And the third place: a dot against the file in the explorer, found by
-    // being round rather than by a key — what makes it a mark is its shape,
-    // and a key would let a square pass.
+    // The explorer's dot is found by being round rather than by a key: the
+    // shape is what makes it a mark.
     expect(
       _marksInTheTree(),
       hasLength(1),
@@ -818,25 +837,21 @@ final class TomRobot {
     );
   }
 
-  /// Asserts the top bar says which repository the space is a folder of.
-  ///
-  /// A space is a folder, not a repository (rule 12), and the bar is where
-  /// the difference is visible: `app / docs`, not `docs` alone.
+  /// Asserts the top bar says which repository the space is a folder of
+  /// (rule 12): `app / docs`, not `docs` alone.
   void seesTheSpaceIsIn(String repository) {
     expect(
       find.text(repository),
       findsWidgets,
       reason: 'the top bar does not name the repository the space is in',
     );
-    // In the chrome and not in the tree: the repository is *above* the space,
-    // so a folder of that name inside it would be a different thing.
+    // In the chrome and not in the tree, where a folder of that name would
+    // be a different thing.
     seesNotInTheTree(repository);
   }
 
-  /// Whatever the file tree shows as [name].
-  ///
-  /// Scoped to the panel, because the space's folder is named in the chrome
-  /// as well and a finder that matched either would assert nothing.
+  /// Whatever the file tree shows as [name]; the chrome names the space's
+  /// folder too.
   Finder _inTheTree(String name) => find.descendant(
     of: find.byType(FileTreePanel),
     matching: find.text(name),
@@ -875,20 +890,15 @@ final class TomRobot {
     }
   }
 
-  /// Asserts nothing is offered to go back to.
-  ///
-  /// Waits for the list to *go*, which is the same race read backwards:
-  /// forgetting writes the preferences file, and the row is still on screen
-  /// until that comes back.
+  /// Asserts nothing is offered to go back to, waiting for the list to go
+  /// once the preferences file is written.
   Future<void> seesNoRecent() async {
     await _waitUntil(() => !_showing(find.text('RECENT')));
     expect(find.text('RECENT'), findsNothing);
   }
 
-  /// Asserts the app is not showing an unhandled error.
-  ///
-  /// Cheap, and worth doing at the end of every scenario: a red screen makes
-  /// most assertions fail in confusing ways, and this names it directly.
+  /// Asserts the app is not showing an unhandled error, which makes every
+  /// other assertion fail confusingly.
   void seesNothingBroken() {
     expect(tester.takeException(), isNull);
     expect(find.byType(ErrorWidget), findsNothing);

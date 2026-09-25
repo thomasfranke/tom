@@ -4,6 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/screens/compare/compare_control_widget.dart';
 import 'package:tom_desktop/screens/history/history_words.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -11,27 +12,21 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// Source · Split · Preview, and whether the buffer has reached the disk.
 ///
-/// **Chrome, not a panel.** It decides which panels the document region
-/// draws, so it cannot be one of them — and it still names none of them:
-/// what it writes is the mode, and a descriptor is what says which panels
-/// that mode includes.
-///
-/// Tabs with a rule under the current one rather than a segmented control:
-/// the wireframe draws them that way, and a filled control here would
-/// compete with the document for the eye.
+/// Chrome, not a panel: it decides which panels the document region draws
+/// and still names none, because what it writes is the mode and the
+/// descriptor says which panels that includes.
 class ShellModeBarWidget extends ConsumerWidget {
   /// Creates the bar.
   const ShellModeBarWidget({super.key});
 
   /// Left edge to the first tab, and the gap between two of them.
   ///
-  /// A gap rather than the wireframe's pitch: a fixed column would clip the
-  /// longest label the day the interface font changes, and the drawing's
-  /// 80 is that gap plus a word.
+  /// A gap rather than the wireframe's pitch of 80, which is this plus a
+  /// word: a fixed column would clip the longest label when the font changes.
   static const double _inset = 28;
   static const double _gap = 32;
 
-  /// The rule under the current tab, which is as wide as its label.
+  /// The rule under the current tab, as wide as its label.
   static const double _ruleHeight = 2;
 
   /// Label to rule.
@@ -68,6 +63,8 @@ class ShellModeBarWidget extends ConsumerWidget {
               child: _ModeTabWidget(mode: each, isCurrent: each == mode),
             ),
           const Spacer(),
+          const CompareControlWidget(),
+          const SizedBox(width: _gap),
           const _UnsavedMarkWidget(),
           const SizedBox(width: TomMetrics.pad),
         ],
@@ -76,13 +73,11 @@ class ShellModeBarWidget extends ConsumerWidget {
   }
 }
 
-/// The bar while a past version is on screen, instead of the three modes.
+/// The bar while a past version is on screen: which version, and the way
+/// back (`docs/product/git-workflow/file-history/doc.md`).
 ///
-/// **It replaces them rather than joining them**: the modes choose between
-/// source and preview, and there is no source for a commit — you cannot
-/// type into the past. What the bar owes instead is which version this is
-/// and the way back, which is the one control here
-/// (`docs/product/git-workflow/file-history/doc.md`).
+/// It replaces the modes rather than joining them, because there is no
+/// source for a commit.
 class _VersionBarWidget extends ConsumerWidget {
   const _VersionBarWidget({required this.commit});
 
@@ -117,6 +112,10 @@ class _VersionBarWidget extends ConsumerWidget {
               ),
             ),
           ),
+          const SizedBox(width: ShellModeBarWidget._gap),
+          // Offered over a version too: comparing two commits is the same
+          // question asked from the past (`docs/product/diff/branch-diff/doc.md`).
+          const CompareControlWidget(),
           const SizedBox(width: ShellModeBarWidget._gap),
           TextButton(
             onPressed: () => ref.read(historyProvider.notifier).closeVersion(),
@@ -174,8 +173,8 @@ class _ModeTabWidget extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: ShellModeBarWidget._ruleGap),
-            // The rule is the state, and the weight above it says the same
-            // thing a second way — colour is never the only signal.
+            // The rule and the weight say the same thing: colour is never the
+            // only signal.
             SizedBox(
               height: ShellModeBarWidget._ruleHeight,
               child: isCurrent ? ColoredBox(color: colors.accent) : null,
@@ -197,10 +196,7 @@ class _ModeTabWidget extends ConsumerWidget {
 
 /// The gap between the buffer and the file, named where the editing happens.
 ///
-/// Absent while the two agree: a mark that is always there is a mark nobody
-/// reads. The tree and the status bar say the same thing in their own words
-/// — three places, because the one thing a text editor may never do is lose
-/// work quietly.
+/// Absent while the two agree, because a mark always there is never read.
 class _UnsavedMarkWidget extends ConsumerWidget {
   const _UnsavedMarkWidget();
 
@@ -218,9 +214,8 @@ class _UnsavedMarkWidget extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final TomColors colors = TomColors.of(context);
-    // A refused save is not the same news as an unwritten edit: the first
-    // needs doing something about, the second only needs the shortcut the
-    // status bar spells out.
+    // A refused save is different news from an unwritten edit: the first
+    // needs doing something about.
     final Color colour = mark.refused ? colors.removed : colors.modified;
     return Row(
       mainAxisSize: MainAxisSize.min,
