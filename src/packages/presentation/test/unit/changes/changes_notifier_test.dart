@@ -94,8 +94,6 @@ void main() {
   });
 
   test('opening a space asks git, and the session gets the answer', () async {
-    // The reading is the session's, not the panel's: the status bar says
-    // the branch and the counts from the same one.
     start();
     container.read(spaceSessionProvider.notifier).open(docs);
 
@@ -108,7 +106,6 @@ void main() {
   });
 
   test('a repository that will not answer clears the session too', () async {
-    // A stale branch name beside a failure would be the status bar lying.
     git.statusFailure = const GitNotARepository('/code/app');
     start();
     container.read(spaceSessionProvider.notifier).open(docs);
@@ -148,8 +145,6 @@ void main() {
     });
 
     test('all stages only what is not staged yet', () async {
-      // Built from the status rather than from `git add -A`, so what it acts
-      // on is exactly the list that was on screen.
       git.reported = statusOf(<StatusEntryValueObject>[
         entry(writing, isStaged: true),
         entry(index, isStaged: false),
@@ -161,6 +156,31 @@ void main() {
       await container.read(changesProvider.notifier).setAllStaged(staged: true);
 
       expect(git.staged, <RepoRelativePathValueObject>[index]);
+    });
+
+    test('and none takes back only what is staged', () async {
+      git.reported = statusOf(<StatusEntryValueObject>[
+        entry(writing, isStaged: true),
+        entry(index, isStaged: false),
+      ]);
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      await container
+          .read(changesProvider.notifier)
+          .setAllStaged(staged: false);
+
+      expect(git.unstaged, <RepoRelativePathValueObject>[writing]);
+    });
+
+    test('with no space open it does nothing at all', () async {
+      start();
+
+      await container.read(changesProvider.notifier).setAllStaged(staged: true);
+
+      expect(git.staged, isEmpty);
+      expect(git.unstaged, isEmpty);
     });
 
     test('a refusal keeps the panel usable and says what happened', () async {
@@ -176,7 +196,6 @@ void main() {
     });
 
     test('the message being typed survives the re-read', () async {
-      // A reload after staging must not empty a box somebody is typing into.
       start();
       container.read(spaceSessionProvider.notifier).open(docs);
       await settle();
@@ -188,8 +207,6 @@ void main() {
     });
 
     test('a message typed while git was busy is not thrown away', () async {
-      // Git is another process: a sentence written during the round trip
-      // would otherwise be overwritten by the answer coming back.
       start();
       container.read(spaceSessionProvider.notifier).open(docs);
       await settle();
@@ -220,8 +237,6 @@ void main() {
 
       expect(git.messages, <String>['docs: say what changed']);
       expect(ready().message, '');
-      // After a commit the list reflects a clean tree
-      // (docs/product/git-workflow/commit/doc.md).
       expect(observed()?.entries, isEmpty);
     });
 
@@ -246,7 +261,6 @@ void main() {
     });
 
     test('a commit that failed keeps the sentence somebody wrote', () async {
-      // It is the only copy of it.
       start();
       container.read(spaceSessionProvider.notifier).open(docs);
       await settle();

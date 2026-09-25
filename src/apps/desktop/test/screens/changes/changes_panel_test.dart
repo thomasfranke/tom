@@ -63,8 +63,8 @@ void main() {
             observability: const _Silent(),
           ),
         ),
-        // A refused push puts its remedy on this column, so the panel needs
-        // the remote actions wired even though it offers none of them.
+        // A refused push puts its remedy on this column, so the remote
+        // actions are wired though the panel offers none of them.
         pushRemoteProvider.overrideWithValue(
           PushRemoteUseCase(
             gitFor: (SpaceEntity space) => git,
@@ -77,8 +77,8 @@ void main() {
             observability: const _Silent(),
           ),
         ),
-        // A pull writes to the working tree, so it walks the tree again —
-        // which means a test that pulls needs a folder to walk.
+        // A pull rewrites the working tree and walks it again, so a test
+        // that pulls needs a folder to walk.
         listSpaceEntriesProvider.overrideWithValue(
           const ListSpaceEntriesUseCase(
             spaces: _NothingInIt(),
@@ -90,8 +90,13 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  /// Mounts the panel at the width the shell gives it, with [space] open.
-  Future<void> pumpPanel(WidgetTester tester, {SpaceEntity? space}) async {
+  /// Mounts the panel at the shell's width with [space] open, at [height]
+  /// when it shares the aside with another.
+  Future<void> pumpPanel(
+    WidgetTester tester, {
+    SpaceEntity? space,
+    double? height,
+  }) async {
     tester.view
       ..physicalSize = const Size(1280, 800)
       ..devicePixelRatio = 1;
@@ -104,11 +109,15 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: tomTheme(Brightness.light),
-          home: const Scaffold(
+          home: Scaffold(
             body: Row(
               children: <Widget>[
-                Expanded(child: SizedBox.shrink()),
-                SizedBox(width: TomMetrics.git, child: ChangesPanel()),
+                const Expanded(child: SizedBox.shrink()),
+                SizedBox(
+                  width: TomMetrics.git,
+                  height: height,
+                  child: const ChangesPanel(),
+                ),
               ],
             ),
           ),
@@ -139,8 +148,7 @@ void main() {
   });
 
   testWidgets('every change git reports is a row', (WidgetTester tester) async {
-    // Everything the *repository* reports, not only the space: a commit
-    // records the index, so a file outside the space still goes in.
+    // The repository's changes, not the space's: a commit records the index.
     git.reported = statusOf(<StatusEntryValueObject>[
       entry('docs/index.md', FileStateEnum.modified, isStaged: true),
       entry('lib/main.dart', FileStateEnum.added, isStaged: false),
@@ -157,7 +165,7 @@ void main() {
   testWidgets('each row says what happened with a letter, not a colour only', (
     WidgetTester tester,
   ) async {
-    // Roughly one in twelve men cannot separate the red from the green
+    // Colour is never the only signal
     // (docs/technical/design/visual-language.md).
     git.reported = statusOf(<StatusEntryValueObject>[
       entry('a.md', FileStateEnum.modified, isStaged: false),
@@ -177,8 +185,7 @@ void main() {
   testWidgets('ticking a row stages it, one file at a time', (
     WidgetTester tester,
   ) async {
-    // Whole files: there is no hunk-level staging
-    // (docs/product/git-workflow/commit/doc.md).
+    // Whole files, no hunks (docs/product/git-workflow/commit/doc.md).
     git.reported = statusOf(<StatusEntryValueObject>[
       entry('docs/index.md', FileStateEnum.modified, isStaged: false),
     ]);
@@ -205,7 +212,6 @@ void main() {
     testWidgets('is disabled until there is a message', (
       WidgetTester tester,
     ) async {
-      // A commit requires a message, and the refusal is before the attempt.
       await pumpPanel(tester, space: docs);
 
       expect(isEnabled(tester), isFalse);
@@ -242,7 +248,6 @@ void main() {
         tester.widget<TextField>(find.byType(TextField)).controller!.text,
         isEmpty,
       );
-      // After a commit the list reflects that the tree is clean again.
       expect(
         find.text('Nothing has changed since the last commit.'),
         findsOneWidget,
@@ -290,8 +295,7 @@ void main() {
     testWidgets('says who got there first, and that nothing was lost', (
       WidgetTester tester,
     ) async {
-      // The wording is the product: somebody who does not live in a
-      // terminal has to read this and know what to do
+      // The wording is the product's
       // (docs/product/git-workflow/push-pull/doc.md).
       git.reported = statusOf(const <StatusEntryValueObject>[], behind: 3);
       await pumpPanel(tester, space: docs);
@@ -310,8 +314,7 @@ void main() {
     testWidgets('offers Pull as the remedy, right there', (
       WidgetTester tester,
     ) async {
-      // Not a fourth button in the chrome: it belongs where somebody has
-      // just been told they need it.
+      // Not a fourth button in the chrome: it belongs beside the news.
       await pumpPanel(tester, space: docs);
       await pushAndBeRefused(tester);
 
@@ -327,10 +330,23 @@ void main() {
       expect(find.text('Pull'), findsNothing);
       expect(find.textContaining('pushed'), findsNothing);
     });
+
+    testWidgets('and the panel still fits the height it shares', (
+      WidgetTester tester,
+    ) async {
+      // About half the window when the aside stacks two panels, and the
+      // banner is tall: the box and the button give way rather than overflow.
+      git.reported = statusOf(const <StatusEntryValueObject>[], behind: 3);
+      await pumpPanel(tester, space: docs, height: 378);
+
+      await pushAndBeRefused(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Someone pushed 3 commits first.'), findsOneWidget);
+    });
   });
 
   testWidgets('both modes render, and differ', (WidgetTester tester) async {
-    // A colour added in one mode without its counterpart is a bug.
     git.reported = statusOf(<StatusEntryValueObject>[
       entry('docs/index.md', FileStateEnum.modified, isStaged: false),
     ]);

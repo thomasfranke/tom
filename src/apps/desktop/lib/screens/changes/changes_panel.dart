@@ -17,13 +17,10 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// Stage, describe, commit.
 ///
-/// **The list is the repository's, not the space's.** A commit records the
-/// index, so a file staged outside the space would go in whether or not this
-/// panel drew it — and a list that hid it would be the one thing worse than
-/// a long list (`docs/product/git-workflow/commit/doc.md`).
-///
-/// What git said lives in the session, because the status bar reads it too;
-/// what is *drafted* lives in [ChangesNotifier], because nobody else does.
+/// The list is the repository's, not the space's, because a commit records
+/// the index (`docs/product/git-workflow/commit/doc.md`). What git said
+/// lives in the session, which the status bar reads too; the draft lives in
+/// [ChangesNotifier] because nobody else does.
 class ChangesPanel extends ConsumerWidget {
   /// Creates the panel.
   const ChangesPanel({super.key});
@@ -37,11 +34,9 @@ class ChangesPanel extends ConsumerWidget {
     final bool isBusy = state is ChangesReady && state.isBusy;
     final List<StatusEntryValueObject> entries =
         status?.entries ?? const <StatusEntryValueObject>[];
-    // **While a push stands refused, the banner is the column.** It is the
-    // only thing here somebody has to act on before anything else matters,
-    // so the box and the button below it give way rather than competing —
-    // which is also what keeps the panel inside the height it is given when
-    // it is sharing the aside (`docs/product/git-workflow/push-pull/doc.md`).
+    // While a push stands refused the banner is the column: the box and the
+    // button give way, which is also what keeps the panel inside its height
+    // when it shares the aside (`docs/product/git-workflow/push-pull/doc.md`).
     final bool rejected = ref.watch(remoteProvider) is RemoteRejected;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,24 +56,27 @@ class ChangesPanel extends ConsumerWidget {
               ChangesDesign.caption * 1.4,
         ),
         Expanded(child: _body(state, entries, isBusy: isBusy)),
-        // Above the box rather than in place of the list: an operation that
-        // was refused has to say so while what it refused is still on
-        // screen.
+        // Above the box rather than in place of the list, so a refusal is
+        // said while what it refused is still on screen.
         if (state case ChangesReady(failure: final AppFailure refused))
           Padding(
             padding: const EdgeInsets.only(top: ChangesDesign.stackGap),
             child: ChangesNoteWidget(_explain(refused)),
           ),
-        const SizedBox(height: ChangesDesign.stackGap),
-        const ChangesMessageWidget(),
-        const SizedBox(height: ChangesDesign.stackGap),
-        ChangesCommitButtonWidget(
-          canCommit:
-              !isBusy &&
-              state is ChangesReady &&
-              state.message.trim().isNotEmpty &&
-              (status?.hasStagedChanges ?? false),
-        ),
+        // Hidden, not emptied: the message is the notifier's and comes back
+        // with the banner.
+        if (!rejected) ...<Widget>[
+          const SizedBox(height: ChangesDesign.stackGap),
+          const ChangesMessageWidget(),
+          const SizedBox(height: ChangesDesign.stackGap),
+          ChangesCommitButtonWidget(
+            canCommit:
+                !isBusy &&
+                state is ChangesReady &&
+                state.message.trim().isNotEmpty &&
+                (status?.hasStagedChanges ?? false),
+          ),
+        ],
         const SizedBox(height: TomMetrics.pad),
       ],
     );
@@ -99,7 +97,6 @@ class ChangesPanel extends ConsumerWidget {
       'Nothing has changed since the last commit.',
     ),
     ChangesReady() => ListView.builder(
-      // The design's pitch, and what lets the list build lazily.
       itemExtent: ChangesDesign.rowPitch,
       itemCount: entries.length,
       itemBuilder: (BuildContext context, int index) =>
@@ -109,8 +106,8 @@ class ChangesPanel extends ConsumerWidget {
 
   /// What to say about a repository that would not answer.
   ///
-  /// A catch-all, because this switches over [AppFailure] itself: whatever
-  /// went wrong, the panel says something rather than staying blank.
+  /// A catch-all, because this switches over [AppFailure] itself and the
+  /// panel must say something whatever went wrong.
   static String _explain(AppFailure failure) => switch (failure) {
     GitNotInstalled() => 'TOM could not find git on this machine.',
     GitNotARepository() => 'That folder is not inside a Git repository.',

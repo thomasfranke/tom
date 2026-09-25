@@ -45,9 +45,8 @@ void main() {
             observability: const _Silent(),
           ),
         ),
-        // A switch rewrites the working tree, so everything that reads it
-        // is asked again — which means a test that switches needs all three
-        // wired even when it is only asserting about branches.
+        // A switch re-reads the status, the folder and the buffer, so a test
+        // that switches needs all three wired.
         readGitStatusProvider.overrideWithValue(
           ReadGitStatusUseCase(
             gitFor: (SpaceEntity space) => git,
@@ -113,8 +112,6 @@ void main() {
 
   group('the list', () {
     test('it puts the checked-out branch first and keeps the rest', () async {
-      // Current first because that is what you orient from; the others keep
-      // git's own order rather than being sorted into a second opinion.
       await open();
 
       expect(visible(), <String>['main', 'feat/one', 'fix/two']);
@@ -129,8 +126,6 @@ void main() {
     });
 
     test('a failure to list is a state, not an empty list', () async {
-      // An empty popover would say "this repository has no branches", which
-      // is a different and untrue sentence.
       git.branchesAnswer = const Failure<List<BranchEntity>, GitFailure>(
         GitOperationFailed(),
       );
@@ -160,9 +155,6 @@ void main() {
     });
 
     test('and everything the checkout rewrote is read again', () async {
-      // A switch replaces files on disk: the status, the folder and the
-      // buffer are all describing the branch that was left behind
-      // (`docs/product/git-workflow/branch-switch/doc.md`).
       await open(withDocument: true);
       final int readsBefore = documents.reads;
       final int statusBefore = git.statuses;
@@ -186,7 +178,6 @@ void main() {
 
   group('unsaved work', () {
     test('a switch that would lose the buffer asks instead', () async {
-      // The one thing a text editor may never do is lose work quietly.
       await open(withDocument: true);
       typeSomething();
 
@@ -209,8 +200,6 @@ void main() {
     });
 
     test('a save that failed leaves the question standing', () async {
-      // Switching anyway would throw away the very thing the question was
-      // asked to protect.
       await open(withDocument: true);
       typeSomething();
       await notifier().choose(BranchNameValueObject('feat/one'));
@@ -263,8 +252,6 @@ void main() {
 
   group('starting a branch', () {
     test('the name carries over from the filter', () async {
-      // Filtering for a branch that turns out not to exist is exactly when
-      // somebody wants to create it.
       await open();
       notifier().type('feat/three');
 
@@ -307,8 +294,6 @@ void main() {
     });
 
     test('creating it also asks about an unsaved buffer', () async {
-      // Creating a branch checks it out, so it rewrites the tree for the
-      // same reason switching does.
       await open(withDocument: true);
       typeSomething();
       notifier()
@@ -334,6 +319,19 @@ void main() {
       expect(git.created, <String>['feat/three']);
       expect(git.switched, isEmpty);
     });
+  });
+
+  test('going back to the list keeps the name that was being typed', () async {
+    await open();
+    notifier()
+      ..startCreating()
+      ..type('feat/three');
+
+    notifier().stopCreating();
+
+    expect(ready().isCreating, isFalse);
+    expect(ready().draft, 'feat/three');
+    expect(ready().rejected, isNull);
   });
 
   test('another space starts with nothing said about the last one', () async {

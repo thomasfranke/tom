@@ -12,7 +12,7 @@ Record a snapshot of the changes made to the space, with a message.
 - A commit requires a message. Committing with nothing staged is disabled.
 - After a commit, the file list reflects that the working tree is clean again.
 - An operation git refused says so where it was asked for, without the list going away — what was refused has to still be on screen.
-- The message box is never taken away. Git working on something else is not a reason to interrupt a sentence, and a message typed while it was working is not lost when the answer comes back.
+- The message box is never taken away because Git is working. Working on something else is not a reason to interrupt a sentence, and a message typed while it was working is not lost when the answer comes back. **One thing does displace it: a push standing refused**, which has to be dealt with before another commit means anything — and what was typed is kept, coming back with the banner rather than being emptied.
 
 ## Rules — mobile ("capture")
 
