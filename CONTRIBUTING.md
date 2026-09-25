@@ -10,12 +10,12 @@ Not sure whether an idea fits, or where to start? Open an issue and ask. Questio
 
 - **Check the non-goals.** [about.md](docs/about.md) lists what TOM deliberately will not become — WYSIWYG editing, real-time collaboration, its own cloud sync. A quick look before you start is the surest way to have your work land well. And if one of them strikes you as wrong, that is genuinely worth hearing: open an issue and make the case.
 - **Read the decisions.** [docs/technical/decisions/](docs/technical/decisions/) records the architectural choices and *why* they were made. If your change contradicts one, that is a conversation to have in an issue first — not a surprise in a PR.
-- **Follow the patterns.** The rules code is held to are in [layers](docs/technical/layers.md) and [flows](docs/technical/flows.md); the canonical *form* of each one lives in the dartdoc of the code that implements it, which is the copy that cannot go stale.
+- **Follow the patterns.** The rules code is held to are in [architecture](docs/technical/architecture.md), [conventions](docs/technical/conventions/README.md) and [runtime](docs/technical/runtime/README.md); the canonical *form* of each one lives in the dartdoc of the code that implements it, which is the copy that cannot go stale.
 - **Open an issue for anything substantial.** Small fixes can go straight to a PR; a feature or refactor deserves a discussion first, so nobody wastes an afternoon.
 
 ## Development setup
 
-See [docs/technical/setup.md](docs/technical/setup.md). In short: `make setup` from the repository root. The Dart workspace is under `src/` — seven packages, one per layer, six of them pure Dart.
+See [docs/technical/process/setup.md](docs/technical/process/setup.md). In short: `make setup` from the repository root. The Dart workspace is under `src/` — one package per layer, six of them pure Dart.
 
 ## How contributions reach the project
 
@@ -65,7 +65,7 @@ Not to be confused with modules: the repository answers *who has this code*, a f
 - **The layers stay pure Dart.** Only `tom_desktop` may import Flutter. You do not need to remember this: the pubspecs make the wrong import fail to resolve, and `make test-arch` asserts it ([Decision 14](docs/technical/decisions/014-each-layer-is-its-own-package.md)).
 - **Riverpod only in `presentation/` and `bootstrap/di/`.** Everything below takes its dependencies through constructors ([Decision 7](docs/technical/decisions/007-external-dependencies-behind-contracts.md)).
 - **Reviewable?** The PR gives concrete steps to see the change working, starting from a described repo state, on a named platform.
-- **Tests?** Match the level to what changed ([strategy](docs/technical/layers.md#testing)): parsers get fixtures, the block differ gets golden files, use cases get fake repositories, repository implementations get a real git repo in a temp dir. A PR whose Testing section is empty will be asked about it.
+- **Tests?** Match the level to what changed ([strategy](docs/technical/conventions/testing.md)): parsers get fixtures, the block differ gets golden files, use cases get fake repositories, repository implementations get a real git repo in a temp dir. A PR whose Testing section is empty will be asked about it.
 - **Incomplete feature?** Put it behind a build-time flag ([below](#feature-flags)) — disabled means *unreachable*, not merely invisible, and every flag states when it will be removed.
 - **English everywhere:** code, comments, commits, documentation.
 
@@ -75,7 +75,7 @@ Not to be confused with modules: the repository answers *who has this code*, a f
 - `tom_desktop`: `flutter test`.
 - Parsers get fixtures of real git output; the block differ gets golden files; `GitRepositoryImpl` gets integration tests against a real git repo created in a temp directory.
 
-See [the testing table](docs/technical/layers.md#testing).
+See [the testing table](docs/technical/conventions/testing.md#what-each-subject-gets).
 
 ## Contributor License Agreement
 

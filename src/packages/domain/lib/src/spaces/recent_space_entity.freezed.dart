@@ -17,13 +17,12 @@ mixin _$RecentSpaceEntity {
 /// The absolute path of the folder that was opened; its identity.
  String get root;/// What it was called the last time it was open.
 ///
-/// Stored rather than re-derived so the list reads the same as the app
-/// did, even for a folder that is no longer there to ask.
- String get name;/// When it was last opened, in UTC.
+/// Stored rather than re-derived, so the list reads the same for a folder
+/// that is no longer there to ask.
+ String get name;/// When it was last opened, in UTC; what orders the list.
 ///
-/// Only used to order the list. An instant rather than a position,
-/// because two windows can open two spaces and neither should have to
-/// renumber the other's.
+/// An instant rather than a position, so two windows opening two spaces
+/// never renumber each other's.
  DateTime get lastOpened;
 /// Create a copy of RecentSpaceEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -225,14 +224,13 @@ class _RecentSpaceEntity implements RecentSpaceEntity {
 @override final  String root;
 /// What it was called the last time it was open.
 ///
-/// Stored rather than re-derived so the list reads the same as the app
-/// did, even for a folder that is no longer there to ask.
+/// Stored rather than re-derived, so the list reads the same for a folder
+/// that is no longer there to ask.
 @override final  String name;
-/// When it was last opened, in UTC.
+/// When it was last opened, in UTC; what orders the list.
 ///
-/// Only used to order the list. An instant rather than a position,
-/// because two windows can open two spaces and neither should have to
-/// renumber the other's.
+/// An instant rather than a position, so two windows opening two spaces
+/// never renumber each other's.
 @override final  DateTime lastOpened;
 
 /// Create a copy of RecentSpaceEntity

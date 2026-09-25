@@ -1,18 +1,6 @@
-/// The layer graph, checked against what the code and the pubspecs declare.
-///
-/// The package boundaries already make an illegal `package:` import fail to
-/// compile. This test covers the three failures the compiler cannot see:
-///
-///   * a dependency **added to a pubspec**, after which the illegal import
-///     compiles perfectly well;
-///   * an SDK library — `dart:io` needs no declaration, so nothing stops a
-///     pure layer spawning a process or opening a file;
-///   * a Flutter package arriving through `dev_dependencies`, after which the
-///     package no longer runs under `dart test` at all.
-///
-/// A diagram in the docs would catch none of them. This does.
-///
-///     dart test test/architecture_test.dart
+/// The layer graph, checked for the three leaks the compiler cannot see: a
+/// dependency added to a pubspec, an SDK library that needs no declaration,
+/// and Flutter arriving through `dev_dependencies`.
 library;
 
 import 'dart:io';
@@ -20,31 +8,19 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
-/// What each package may depend on.
-///
-/// Declaring *fewer* is fine — a layer that has not needed one of these yet is
-/// not a problem. Declaring anything absent from this map is the failure being
-/// guarded against.
+/// What each package may depend on. Declaring fewer is fine; declaring
+/// anything absent from this map is the failure guarded against.
 const Map<String, Set<String>> graph = <String, Set<String>>{
   'tom_core': <String>{},
   'tom_domain': <String>{'tom_core'},
   'tom_application': <String>{'tom_core', 'tom_domain'},
-  // The two halves of the data layer, and they depend on each other on
-  // purpose (Decision 24): `tom_infra` holds each capability's contract and
-  // failures, `tom_data` the DTOs that cross those contracts and the
-  // repositories written against them. One layer, two packages, and pub
-  // resolves the cycle.
-  //
-  // What `tom_infra` may *not* have is `tom_domain`, which is the whole
-  // guarantee: an adapter cannot name a domain type, because the package
-  // holding them is not on its list.
+  // One layer in two packages that depend on each other on purpose
+  // (Decision 24); what `tom_infra` may not have is `tom_domain`, which is
+  // the whole guarantee.
   'tom_data': <String>{'tom_core', 'tom_domain', 'tom_infra'},
   'tom_infra': <String>{'tom_core', 'tom_data'},
   'tom_presentation': <String>{'tom_core', 'tom_domain', 'tom_application'},
-  // The look, and nothing else: it draws what it is handed. Depending on
-  // nothing is what makes it shareable — a component that reached a contract
-  // or a use case would drag the graph into whichever application drew it
-  // (Decision 26).
+  // Depends on nothing, which is what makes the look shareable (Decision 26).
   'tom_ui': <String>{},
   'tom_desktop': <String>{
     'tom_core',
@@ -55,9 +31,8 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
     'tom_presentation',
     'tom_ui',
   },
-  // Reserved skeleton for Phase 3 (docs/roadmap.md). No infra/data
-  // yet — those are platform-specific and arrive with the mobile-specific
-  // implementations of the contracts tom_infra defines for desktop.
+  // Reserved for Phase 3 (docs/roadmap.md); its infra and data arrive with
+  // the mobile implementations of the contracts.
   'tom_mobile': <String>{
     'tom_core',
     'tom_domain',
@@ -67,25 +42,17 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
   },
 };
 
-/// What each package may depend on **to test only**, on top of [graph].
+/// What each package may depend on to test only, on top of [graph].
 ///
-/// Empty, and worth keeping: `tom_data` needed `tom_infra` as a dev
-/// dependency only while the ports lived in `tom_data` and the arrow pointed
-/// the other way. It is an ordinary dependency now (Decision 24), so the
-/// exception is gone — and the next package that wants one has somewhere to
-/// declare it, and a test below proving `lib/` never uses it.
+/// Empty since Decision 24, and kept so the next exception has somewhere to
+/// be declared and a test below proving `lib/` never uses it.
 const Map<String, Set<String>> testOnlyGraph = <String, Set<String>>{};
 
 /// Libraries each package may not import, whatever its pubspec says.
 ///
-/// The pubspec answers *which packages* a layer may reach; this answers *which
-/// capabilities*. They are different questions: `dart:io` ships with the SDK
-/// and is available to everything by default, so without this table a domain
-/// entity can run `Process.run` and every other mechanism stays green.
-///
-/// `tom_infra` is where the process, the socket and the file belong — that is
-/// the whole job of the package. `tom_desktop` is the composition root and is
-/// deliberately unconstrained.
+/// The pubspec answers which *packages* a layer may reach; this answers
+/// which *capabilities*, since `dart:io` needs no declaration and a domain
+/// entity could otherwise run `Process.run` with every other check green.
 const Map<String, Set<String>> forbiddenImports = <String, Set<String>>{
   'tom_core': <String>{
     'dart:io',
@@ -108,9 +75,7 @@ const Map<String, Set<String>> forbiddenImports = <String, Set<String>>{
   'tom_data': <String>{'dart:io', 'dart:ffi', 'package:flutter'},
   'tom_presentation': <String>{'dart:io', 'dart:ffi', 'package:flutter'},
   'tom_infra': <String>{'package:flutter'},
-  // Flutter is the point of this one; the machine is not. A component that
-  // reads a file or spawns a process is a component that cannot be drawn on
-  // the other platform, which is the whole reason the package exists.
+  // A component that reads a file cannot be drawn on the other platform.
   'tom_ui': <String>{'dart:io', 'dart:ffi', 'dart:isolate'},
   'tom_desktop': <String>{},
   'tom_mobile': <String>{},
@@ -118,9 +83,8 @@ const Map<String, Set<String>> forbiddenImports = <String, Set<String>>{
 
 /// Packages that drag Flutter in, in any dependency section.
 ///
-/// `flutter_test` in a pure package's `dev_dependencies` is the quiet version
-/// of the failure: nothing imports a widget, but the package can no longer run
-/// under `dart test`, and framework independence stops being provable.
+/// `flutter_test` in a pure package's `dev_dependencies` is the quiet
+/// failure: nothing imports a widget, but `dart test` no longer runs.
 const Set<String> flutterPackages = <String>{
   'flutter',
   'flutter_test',
@@ -131,20 +95,13 @@ const Set<String> flutterPackages = <String>{
 
 /// The composition roots — the packages that wire an application together.
 ///
-/// The end-to-end harness is not a third entry here, and the reason is
-/// worth knowing before anyone tries: an end-to-end run happens inside the
-/// app's own native runner, with the app's entitlements and its Podfile. A
-/// package of its own would need a second runner, and a second runner
-/// drifts — at which point the tests prove something about a configuration
-/// nobody ships. So the scenarios live in `apps/desktop/integration_test/`.
+/// The end-to-end harness is not a third: it runs inside the app's own
+/// native runner, and a second runner drifts into a configuration nobody
+/// ships, so the scenarios live in `apps/desktop/integration_test/`.
 const Set<String> compositionRoots = <String>{'tom_desktop', 'tom_mobile'};
 
-/// The packages allowed to know Flutter exists.
-///
-/// The roots, plus `tom_ui` — which is Flutter and nothing else, so that the
-/// two applications draw the same marks and the same colours instead of each
-/// keeping its own copy (Decision 26). It is *not* a root: it wires nothing,
-/// and the graph above is what keeps it from growing into one.
+/// The packages allowed to know Flutter exists: the roots plus `tom_ui`,
+/// which draws for both applications and wires nothing (Decision 26).
 const Set<String> framework = <String>{...compositionRoots, 'tom_ui'};
 
 /// An `import` or `export`, with the URI it names.
@@ -217,7 +174,7 @@ void main() {
           reason:
               '$package declares a dependency it is not allowed to have. If '
               'the layering genuinely changed, change it here first and say '
-              'why in docs/technical/layers.md.',
+              'why in docs/technical/architecture.md.',
         );
       });
 
@@ -346,12 +303,10 @@ void main() {
   });
 
   test("a screen's own widgets stay its own", () {
-    // A screen's sub-widgets used to be private classes in one file, which
-    // is what said "these are Home's, not yours". Splitting them into files
-    // made them public — privacy in Dart is per file — so the statement
-    // moved here. `screens/<a>/widgets/` is readable from `screens/<a>/`
-    // and nowhere else; anything two screens both draw belongs in `tom_ui`,
-    // where the other application can draw it too (Decision 26).
+    // Privacy in Dart is per file, so a screen's widgets split into files
+    // are public and the statement lives here: `screens/<a>/widgets/` is
+    // readable from `screens/<a>/` only, and what two screens both draw
+    // belongs in `tom_ui` (Decision 26).
     final RegExp owned = RegExp(
       r'package:tom_desktop/screens/([a-z_]+)/widgets/',
     );
@@ -374,7 +329,6 @@ void main() {
           if (owner == null) {
             continue;
           }
-          // The screen the widget belongs to, and the one importing it.
           final String belongsTo = owner.group(1)!;
           if (!file.path.contains('/screens/$belongsTo/')) {
             offences.add('$path imports ${match.group(1)}');
@@ -393,11 +347,8 @@ void main() {
     );
   });
 
-  // The naming and shape rules — `Impl` in the class and in the file, a
-  // capability as a complete folder, the barrel as its whole `lib/src`, a
-  // repository holding no capability — live in `tom rules`
-  // (`tool/src/commands/rules.dart`), which `tom verify` runs. Same
-  // mechanism, different subject: this file is about the graph.
+  // The naming and shape rules live in `tom rules`
+  // (`tool/src/commands/rules.dart`); this file is about the graph.
 
   test('nothing overrides a dependency', () {
     final List<String> overriding = <String>[
@@ -423,11 +374,8 @@ void main() {
   });
 }
 
-/// Every `.dart` file under a package's `lib/`, generated ones included.
-///
-/// Generated code is scanned on purpose: an annotation that generates a
-/// `package:flutter` import in a pure package is exactly the kind of leak that
-/// arrives without anyone writing the import.
+/// Every `.dart` file under a package's `lib/`, generated ones included,
+/// since a generated `package:flutter` import is the leak nobody writes.
 Iterable<File> dartFilesIn(Directory package) =>
     dartFilesUnder(Directory('${package.path}/lib'));
 
@@ -439,10 +387,8 @@ Iterable<File> dartFilesUnder(Directory directory) => directory.existsSync()
           .where((File file) => file.path.endsWith('.dart'))
     : const <File>[];
 
-/// The `src/` directory, found from wherever the test was started.
-///
-/// `dart test` from `src/`, from a single package, or `make test` from the
-/// repository root all have to reach the same place.
+/// The `src/` directory, found from wherever the test was started — `src/`,
+/// a single package, or the repository root.
 Directory findWorkspaceRoot() {
   bool isWorkspace(Directory dir) {
     final File pubspec = File('${dir.path}/pubspec.yaml');

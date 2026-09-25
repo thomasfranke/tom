@@ -17,12 +17,10 @@ mixin _$FileTreeRow {
 /// What the space holds here.
  SpaceEntryValueObject get entry;/// How far in it is drawn — 0 at the top level.
 ///
-/// Derived from the path rather than counted during the walk, so a bug
-/// in the walk cannot indent the tree wrongly.
- int get depth;/// Whether this is a folder whose contents are showing.
-///
-/// False for anything that is not a folder: a file has nothing to
-/// expand, and the chevron says so by its absence.
+/// Derived from the path rather than counted during the walk, so the
+/// walk cannot indent the tree wrongly.
+ int get depth;/// Whether this is a folder whose contents are showing; false for a
+/// file.
  bool get isExpanded;
 /// Create a copy of FileTreeRow
 /// with the given fields replaced by the non-null parameter values.
@@ -233,13 +231,11 @@ class _FileTreeRow extends FileTreeRow {
 @override final  SpaceEntryValueObject entry;
 /// How far in it is drawn — 0 at the top level.
 ///
-/// Derived from the path rather than counted during the walk, so a bug
-/// in the walk cannot indent the tree wrongly.
+/// Derived from the path rather than counted during the walk, so the
+/// walk cannot indent the tree wrongly.
 @override final  int depth;
-/// Whether this is a folder whose contents are showing.
-///
-/// False for anything that is not a folder: a file has nothing to
-/// expand, and the chevron says so by its absence.
+/// Whether this is a folder whose contents are showing; false for a
+/// file.
 @override final  bool isExpanded;
 
 /// Create a copy of FileTreeRow

@@ -8,7 +8,7 @@ repository: https://github.com/thomasfranke/tom
 
 # The product version. Every package moves in lockstep with this number — none
 # is published separately, so independent versioning would be bookkeeping with
-# no reader. Releases are tags; see docs/versioning.md.
+# no reader. Releases are tags; see docs/technical/process/versioning.md.
 version: 0.1.0
 
 environment:
@@ -29,7 +29,7 @@ dependencies:
 
   # Renders the inline content *inside* a block. Block-level layout and the
   # container around each block are ours, which is what the rendered diff
-  # needs (flows.md#the-preview-is-assembled-block-by-block).
+  # needs (docs/technical/runtime/documents.md).
   flutter_markdown_plus: ^1.0.12
 
   # State, and one of only two packages above the pure Dart layers.

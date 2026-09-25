@@ -8,7 +8,7 @@ The rendered diff is the product's differentiator ([about.md](../../about.md)), 
 
 That is two questions, and only the first has a published answer. Aligning two sequences is Myers; deciding that *"Prose."* became *"Prose, rewritten."* is a judgement about text.
 
-[`dependencies.md`](../dependencies.md) had named two candidate packages and chosen neither. One of them decided itself: `diff_match_patch` is at 0.4.1 with an SDK constraint of `>=2.12.0 <3.0.0`, so it does not resolve in a Dart 3 workspace. `diffutil_dart` is Apache-2.0, current, and Myers over lists — and it takes an `equalityChecker`, which is exactly the hook the second question needs: what Myers treats as "the same item" is ours to define.
+[`stack/markdown-and-diff.md`](../stack/markdown-and-diff.md) had named two candidate packages and chosen neither. One of them decided itself: `diff_match_patch` is at 0.4.1 with an SDK constraint of `>=2.12.0 <3.0.0`, so it does not resolve in a Dart 3 workspace. `diffutil_dart` is Apache-2.0, current, and Myers over lists — and it takes an `equalityChecker`, which is exactly the hook the second question needs: what Myers treats as "the same item" is ours to define.
 
 ## Decision
 
@@ -42,4 +42,4 @@ Three things are decided here, and each one was paid for:
 
 ---
 
-*Revises nothing. `dependencies.md` named the two candidates; this chooses one and says what was built on top of it.*
+*Revises nothing. The dependency stack named the two candidates; this chooses one and says what was built on top of it.*

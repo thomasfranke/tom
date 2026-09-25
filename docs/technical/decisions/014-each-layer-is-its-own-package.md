@@ -25,7 +25,7 @@ Seven packages, one per layer, in a pub workspace under `src/`:
 | `tom_presentation` | `tom_core`, `tom_domain`, `tom_application` | no |
 | `tom_desktop` | all of the above | **yes** |
 
-The tree, and what each package holds, is in [layers.md](../layers.md).
+The tree, and what each package holds, is in [architecture.md](../architecture.md).
 
 ## What this buys, precisely
 

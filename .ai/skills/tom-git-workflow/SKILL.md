@@ -94,7 +94,7 @@ v0.4.0-beta.1     # pre-release channel
 - Tagging is the release trigger and is restricted to maintainers.
 - The changelog is generated from the Conventional Commits since the previous tag — the reason the convention is enforced rather than suggested.
 - A release never waits for a branch to stabilize: unfinished features are already on `main`, dormant behind disabled flags.
-- Version alignment across the two repos: the public repo defines the number; see `docs/versioning.md`.
+- Version alignment across the two repos: the public repo defines the number; see `docs/technical/process/versioning.md`.
 
 ## In the tom-pro repository
 

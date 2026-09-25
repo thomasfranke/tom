@@ -14,13 +14,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SpaceEntity {
 
-/// Absolute path to the folder the user opened; the identity of the
-/// space.
+/// Absolute path to the folder the user opened; the space's identity.
  String get root;/// Absolute path to the enclosing Git repository.
- String get repositoryRoot;/// What the space is called in the UI.
-///
-/// Derived from the folder name unless configured otherwise — see
-/// [nameOfFolder], which is what derives it.
+ String get repositoryRoot;/// What the space is called in the UI, by default [nameOfFolder].
  String get name;
 /// Create a copy of SpaceEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -218,15 +214,11 @@ class _SpaceEntity extends SpaceEntity {
    _SpaceEntity({required this.root, required this.repositoryRoot, required this.name}): assert(_isEnclosedBy(root, repositoryRoot), 'repositoryRoot must enclose root'),super._();
   
 
-/// Absolute path to the folder the user opened; the identity of the
-/// space.
+/// Absolute path to the folder the user opened; the space's identity.
 @override final  String root;
 /// Absolute path to the enclosing Git repository.
 @override final  String repositoryRoot;
-/// What the space is called in the UI.
-///
-/// Derived from the folder name unless configured otherwise — see
-/// [nameOfFolder], which is what derives it.
+/// What the space is called in the UI, by default [nameOfFolder].
 @override final  String name;
 
 /// Create a copy of SpaceEntity

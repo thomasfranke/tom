@@ -1,24 +1,29 @@
 # Technical documentation
 
-**How TOM is built.** Developer- and agent-facing: the layer graph, the runtime
-flows, the domain model, the dependency stack, the development process, the
-visual system — and the numbered decision log underneath all of it.
+**How TOM is built.** Developer- and agent-facing: the layer graph, the
+conventions every package is held to, the runtime flows, the domain model, the
+dependency stack, the development process, the visual system — and the
+numbered decision log underneath all of it.
 
 What the project *is* is [`about.md`](../about.md); what each feature *must do*
 is [`product/`](../product/README.md). This folder answers *how*, for a reader
 who already knows *what*.
 
+## Start here
+
+[`architecture.md`](architecture.md) — the package graph, what each package
+holds, and what makes a violation fail to compile. Every other chapter details
+one part of it.
+
 ## Chapters
 
-| File | Answers |
+| Folder | Answers |
 |---|---|
-| [`layers.md`](layers.md) | The package graph, what enforces it, errors across boundaries, testing |
-| [`flows.md`](flows.md) | How it behaves at runtime: the git queue, the watcher protocol, the diff pipeline, wiring |
-| [`domain-model.md`](domain-model.md) | The entities and value objects — deliberately partial, with the open questions named |
-| [`dependencies.md`](dependencies.md) | The stack, package by package, with licenses and what was deliberately excluded |
-| [`setup.md`](setup.md) | Getting a development environment running; CI in two levels |
-| [`versioning.md`](versioning.md) | The versioning policy |
-| [`repository-settings.md`](repository-settings.md) | Branch protection and the settings that are not in code |
+| [`conventions/`](conventions/README.md) | The rules inside a package: naming, structure, errors across boundaries, external dependencies, the test layout |
+| [`runtime/`](runtime/README.md) | How it behaves while running: the git queue, the watcher protocol, the diff pipeline, the session, the wiring |
+| [`domain/`](domain/README.md) | The entities and value objects — deliberately partial, with the open questions named |
+| [`stack/`](stack/README.md) | The dependencies, package by package, with licenses and what was deliberately excluded |
+| [`process/`](process/README.md) | Setting up, the `tom` CLI, CI, versioning, and the repository settings that are not in code |
 | [`decisions/`](decisions/README.md) | The numbered decision log (ADR) — one file per decision, flat and global |
 | [`design/`](design/README.md) | The wireframe index, the visual language, and the tooling that generates both |
 
@@ -36,12 +41,13 @@ the code is right and the doc is a bug.
 
 ## Normative sections
 
-[`layers.md`](layers.md) and its testing section are **normative** — binding on
-every change, not merely descriptive of the current one. Deviating from either
-requires a new entry in [`decisions/`](decisions/README.md) stating why, in the
-same change that deviates. Never a silent exception.
+[`architecture.md`](architecture.md) and [`conventions/`](conventions/README.md)
+are **normative** — binding on every change, not merely descriptive of the
+current one. Deviating from either requires a new entry in
+[`decisions/`](decisions/README.md) stating why, in the same change that
+deviates. Never a silent exception.
 
-Every other file here describes current practice and carries no such
+Every other chapter here describes current practice and carries no such
 requirement.
 
 ## Where decisions live
@@ -56,6 +62,14 @@ on.
 
 A reversed decision is never deleted; it gets the status *superseded by NNN*.
 
+## One file per subject
+
+Every chapter is a folder whose `README.md` is its index, and every file under
+it answers one question. A file that has grown a second subject is split
+rather than sectioned: the reason is that the links into this folder come from
+dartdoc — a comment that points at `conventions/errors.md` is pointing at a
+file whose whole content is the rule it means, and stays right when the file
+next to it is rewritten.
 
 ---
 

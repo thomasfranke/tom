@@ -31,7 +31,7 @@ Decision 15's reasoning was about a mapping with no second store to map to. That
 
 - `tom_data` gains conversions between DTOs and entities as stores appear, and that is where they stay: the domain never serialises, and infrastructure never learns what an entity is.
 - A DTO that turns out to be identical to its entity is a DTO that was not needed. The word is not a layer to fill in; it is a name for a shape the store forced.
-- [`layers.md`](../layers.md#inside-a-package) carries the naming rule this makes room for, and the code-review skill matches it.
+- [`conventions/naming.md`](../conventions/naming.md) carries the naming rule this makes room for, and the code-review skill matches it.
 
 ## Revisit when
 

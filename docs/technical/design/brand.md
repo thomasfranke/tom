@@ -35,7 +35,7 @@ The icon does not change with the app's theme — a dock icon is a fixed object 
 
 ## The wordmark
 
-`TOM`, Sora Bold, 200px master, 6px of tracking. T and M are the glyph outlines, extracted once from the font with fontTools and kept in `brand.py` as path data, so rendering it needs no font installed anywhere — not in the app, not on the machine that builds the docs. Sora is published under the [SIL Open Font License 1.1](https://openfontlicense.org), which permits the outlines in a logo without obligation; it is not a dependency of the code and does not appear in [dependencies.md](dependencies.md).
+`TOM`, Sora Bold, 200px master, 6px of tracking. T and M are the glyph outlines, extracted once from the font with fontTools and kept in `brand.py` as path data, so rendering it needs no font installed anywhere — not in the app, not on the machine that builds the docs. Sora is published under the [SIL Open Font License 1.1](https://openfontlicense.org), which permits the outlines in a logo without obligation; it is not a dependency of the code and does not appear in [the dependency stack](../stack/README.md).
 
 The letters take `text_primary`, the commit takes `accent`, in whichever mode the surface is in — `tom-wordmark-light.svg` and `tom-wordmark-dark.svg` are the same file in the two role tables. It is sized by **cap height**, never by the file's box, because the trunk's reach above and below is part of the mark: at cap 60, the wordmark is 89px tall.
 

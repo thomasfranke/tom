@@ -28,7 +28,7 @@ The test for which is which is behavioural, not grammatical: **would two of them
 What does **not** change:
 
 - the words themselves. The product still says space, document, block, and the suffix is a second word, not a different one. Renaming a concept still renames the docs and the code in the same pull request.
-- `Impl` stays out ([layers.md](../layers.md#inside-a-package)): an implementation is named for what makes it different, not for being one.
+- `Impl` stays out ([conventions/naming.md](../conventions/naming.md)): an implementation is named for what makes it different, not for being one.
 - Contracts keep their own role word and take neither suffix — `BlockReaderPort` is a port, `SpaceRepository` a repository, `MarkdownParser` a capability. The role word is in the class *and* in the file (`block_reader_port.dart`, `space_repository.dart`), which is how the rule tells a contract from a type that forgot its suffix.
 
 **The rule is checked.** `tom rules naming` (a step of `tom verify`) fails a class under `tom_domain/lib/src/` that ends in neither `Entity` nor `ValueObject`, and exempts by file suffix what already says what it is: `_failure.dart`, `_enum.dart`, `_repository.dart`, `_port.dart`, `_rule.dart`. A new kind of contract in the domain is a new suffix in that list, not a suffix on the type.

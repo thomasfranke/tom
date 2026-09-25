@@ -14,13 +14,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MarkdownOutlineDto {
 
-/// The spans, in the order they appear, never overlapping.
-///
-/// Handed over unmodifiable, never copied.
- List<MarkdownSpanDto> get spans;/// Every link reference definition, as its own lines, newline-joined.
-///
-/// Empty when the text declares none. The lines are the text's own, so
-/// appending them to any fragment of it parses the same way.
+/// The spans in order, never overlapping, handed over unmodifiable.
+ List<MarkdownSpanDto> get spans;/// Every link reference definition as the text's own lines, newline-joined
+/// and empty when there are none, so appending them to any fragment of the
+/// text parses the same way.
  String get linkDefinitions;
 /// Create a copy of MarkdownOutlineDto
 /// with the given fields replaced by the non-null parameter values.
@@ -217,23 +214,18 @@ class _MarkdownOutlineDto implements MarkdownOutlineDto {
   const _MarkdownOutlineDto({required final  List<MarkdownSpanDto> spans, required this.linkDefinitions}): _spans = spans;
   
 
-/// The spans, in the order they appear, never overlapping.
-///
-/// Handed over unmodifiable, never copied.
+/// The spans in order, never overlapping, handed over unmodifiable.
  final  List<MarkdownSpanDto> _spans;
-/// The spans, in the order they appear, never overlapping.
-///
-/// Handed over unmodifiable, never copied.
+/// The spans in order, never overlapping, handed over unmodifiable.
 @override List<MarkdownSpanDto> get spans {
   if (_spans is EqualUnmodifiableListView) return _spans;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_spans);
 }
 
-/// Every link reference definition, as its own lines, newline-joined.
-///
-/// Empty when the text declares none. The lines are the text's own, so
-/// appending them to any fragment of it parses the same way.
+/// Every link reference definition as the text's own lines, newline-joined
+/// and empty when there are none, so appending them to any fragment of the
+/// text parses the same way.
 @override final  String linkDefinitions;
 
 /// Create a copy of MarkdownOutlineDto

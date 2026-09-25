@@ -4,4 +4,4 @@ Result, AppFailure and the primitives every layer shares. Depends on nothing.
 
 Depends on: *nothing*.
 
-Part of [TOM](../../../README.md); the layer graph is in [docs/technical/layers.md](../../../docs/technical/layers.md).
+Part of [TOM](../../../README.md); the layer graph is in [docs/technical/architecture.md](../../../docs/technical/architecture.md).

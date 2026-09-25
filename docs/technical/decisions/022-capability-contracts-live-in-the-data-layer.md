@@ -52,6 +52,6 @@ The fix is a second public library — `capabilities.dart` exporting only the po
 
 ## Alternatives considered
 
-**Leave the contracts in `tom_infra`.** Keeps capability and adapter in one folder, which is the arrangement `layers.md` described and the one that reads best in isolation. Rejected because it drags the DTOs out of the data layer with them, and because it inverts the arrow the whole layering exists to point.
+**Leave the contracts in `tom_infra`.** Keeps capability and adapter in one folder, which is the arrangement [`conventions/inside-a-package.md`](../conventions/inside-a-package.md) describes and the one that reads best in isolation. Rejected because it drags the DTOs out of the data layer with them, and because it inverts the arrow the whole layering exists to point.
 
 **A third package for the contracts.** `tom_ports` between the two, depended on by both. It resolves the tension exactly and costs an eighth package plus a name that says less than `capabilities/` does. Reconsider if `tom_data` ever grows large enough that the two halves want separate build boundaries.

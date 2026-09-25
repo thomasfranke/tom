@@ -19,11 +19,9 @@ mixin _$ParsedDocumentValueObject {
 ///
 /// Handed over unmodifiable, never copied: Freezed compares collections
 /// element-wise and copies nothing.
- List<BlockValueObject> get blocks;/// Every link reference definition in the document, as its own lines.
-///
-/// What makes `[text][ref]` resolve in a block that does not hold the
-/// definition. **Footnotes do not survive the same way** and are M2's
-/// problem, with a failing case waiting in Decision 19.
+ List<BlockValueObject> get blocks;/// Every link reference definition in the document, as its own lines, so
+/// `[text][ref]` resolves in a block that does not hold the definition.
+/// Footnotes do not survive the same way (Decision 19).
  String get linkDefinitions;
 /// Create a copy of ParsedDocumentValueObject
 /// with the given fields replaced by the non-null parameter values.
@@ -247,11 +245,9 @@ class _ParsedDocumentValueObject implements ParsedDocumentValueObject {
   return EqualUnmodifiableListView(_blocks);
 }
 
-/// Every link reference definition in the document, as its own lines.
-///
-/// What makes `[text][ref]` resolve in a block that does not hold the
-/// definition. **Footnotes do not survive the same way** and are M2's
-/// problem, with a failing case waiting in Decision 19.
+/// Every link reference definition in the document, as its own lines, so
+/// `[text][ref]` resolves in a block that does not hold the definition.
+/// Footnotes do not survive the same way (Decision 19).
 @override final  String linkDefinitions;
 
 /// Create a copy of ParsedDocumentValueObject

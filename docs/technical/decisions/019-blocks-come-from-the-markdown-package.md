@@ -59,7 +59,7 @@ There is also a node with **no source at all**: the `<section class="footnotes">
 
 ## Consequences
 
-- The preview can be assembled block by block ([flows](../flows.md#the-preview-is-assembled-block-by-block)), which is what the rendered diff needs. The document's link reference map travels with the blocks.
+- The preview can be assembled block by block ([runtime/documents.md](../runtime/documents.md)), which is what the rendered diff needs. The document's link reference map travels with the blocks.
 - **Footnotes are the one construct this breaks.** Options, none of them decided here: render footnote-bearing blocks with the document in scope, keep a document-level footnote map beside the reference map, or declare footnotes out of scope for diff v1. Whichever is chosen belongs to M2, with a test that fails today.
 - The parser lives behind a capability contract in `tom_infra` ([Decision 7](007-external-dependencies-behind-contracts.md)), so no package type reaches the domain — which is exactly why `BlockValueObject` carries a span and its text rather than a `Node`.
 

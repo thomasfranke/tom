@@ -8,7 +8,7 @@ repository: https://github.com/thomasfranke/tom
 
 # The product version. Every package moves in lockstep with this number — none
 # is published separately, so independent versioning would be bookkeeping with
-# no reader. Releases are tags; see docs/versioning.md.
+# no reader. Releases are tags; see docs/technical/process/versioning.md.
 version: 0.1.0
 
 environment:

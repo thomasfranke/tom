@@ -5,7 +5,7 @@ description: Writes and trims the comments and dartdoc in this repository. Use t
 
 # TOM — writing a comment
 
-The rule is one sentence, in [`layers.md`](../../../docs/technical/layers.md#inside-a-package): **a comment is two or three lines — what the thing is, then why it is that way.** This skill exists because knowing the rule is not what keeps it. The rule was written down, read, and then broken in the same session by a 23-line dartdoc — so what follows is shape and examples, not a restatement.
+The rule is one sentence, in [`conventions/inside-a-package.md`](../../../docs/technical/conventions/inside-a-package.md): **a comment is two or three lines — what the thing is, then why it is that way.** This skill exists because knowing the rule is not what keeps it. The rule was written down, read, and then broken in the same session by a 23-line dartdoc — so what follows is shape and examples, not a restatement.
 
 ## The three shapes, and nothing else
 
@@ -101,7 +101,7 @@ What came out: the quote from `RecentSpacesRepository`'s own dartdoc (link, don'
 
 ## Before adding a paragraph, ask three things
 
-1. **Is it already written somewhere?** A contract's dartdoc, a Decision, `layers.md`. Then link.
+1. **Is it already written somewhere?** A contract's dartdoc, a Decision, a file under `docs/technical/`. Then link.
 2. **Would the next reader undo the code without it?** No — then it is not load-bearing.
 3. **Is it about this file, or about the idea?** The idea goes in `docs/technical/`.
 

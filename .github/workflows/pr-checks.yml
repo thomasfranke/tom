@@ -1,6 +1,6 @@
 name: CI
 
-# Level one of the two described in docs/technical/setup.md#ci-in-two-levels:
+# Level one of the two described in docs/technical/process/ci.md:
 # format, analyze, a from-scratch codegen run (fails on drift between
 # committed .g.dart/.freezed.dart and what build_runner actually produces),
 # the architecture test, dart test on the six pure packages and flutter test
@@ -14,7 +14,7 @@ on:
   push:
     branches: [main]
 
-# Read-only by default (docs/technical/repository-settings.md); this workflow
+# Read-only by default (docs/technical/process/repository-settings.md); this workflow
 # never needs to write anything.
 permissions:
   contents: read

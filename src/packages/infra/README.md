@@ -6,4 +6,4 @@ Organised by capability, not technology: each one is a folder holding the contra
 
 Depends on: `tom_core`.
 
-Part of [TOM](../../../README.md); the layer graph is in [docs/technical/layers.md](../../../docs/technical/layers.md).
+Part of [TOM](../../../README.md); the layer graph is in [docs/technical/architecture.md](../../../docs/technical/architecture.md).

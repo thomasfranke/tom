@@ -4,7 +4,7 @@
 
 ## Decision
 
-`re_editor` (MIT, `^0.10.0`) carries source mode. The fallback named in [dependencies.md](../dependencies.md) — a plain `TextField` — is withdrawn: it cannot do the job.
+`re_editor` (MIT, `^0.10.0`) carries source mode. The fallback named in [stack/editor.md](../stack/editor.md) — a plain `TextField` — is withdrawn: it cannot do the job.
 
 ## Rationale
 

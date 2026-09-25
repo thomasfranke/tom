@@ -4,4 +4,4 @@ UI state: the space session, notifiers and view models. Pure Dart — it cannot 
 
 Depends on: `tom_application`, `tom_core`, `tom_domain`.
 
-Part of [TOM](../../../README.md); the layer graph is in [docs/technical/layers.md](../../../docs/technical/layers.md).
+Part of [TOM](../../../README.md); the layer graph is in [docs/technical/architecture.md](../../../docs/technical/architecture.md).

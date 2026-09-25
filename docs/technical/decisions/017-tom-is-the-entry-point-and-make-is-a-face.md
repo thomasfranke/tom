@@ -6,7 +6,7 @@
 
 Development commands lived in the `Makefile`, with the substantial ones delegating to four Dart scripts in `tool/` (`run_tests.dart`, `run_codegen.dart`, `run_changed_tests.dart`, `coverage_gate.dart`). Three things had gone wrong with that arrangement:
 
-**`make` is not installed on Windows**, which this project builds for ([Decision 13](013-stack-is-flutter-and-dart.md), `build-windows`). A contributor there could read the Makefile and retype its recipes, which [setup.md](../setup.md) offered as the fallback — but that is not an entry point, it is a transcription exercise.
+**`make` is not installed on Windows**, which this project builds for ([Decision 13](013-stack-is-flutter-and-dart.md), `build-windows`). A contributor there could read the Makefile and retype its recipes, which [process/commands.md](../process/commands.md) offered as the fallback — but that is not an entry point, it is a transcription exercise.
 
 **The Makefile was no longer the only entry point.** `.github/workflows/pr-checks.yml` bypassed `make codegen-gate` and `make flutter-test` and inlined roughly fifty lines of bash reimplementing both loops, with a comment explaining why: the dashboards redraw on a 250ms ticker with ANSI cursor moves, which a CI log prints as new lines instead of overwriting. The result was two implementations of the same run, only one of which anybody exercised locally.
 

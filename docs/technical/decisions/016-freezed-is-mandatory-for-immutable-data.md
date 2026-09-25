@@ -4,21 +4,21 @@
 
 ## Context
 
-Freezed is already a structural dependency ([layers.md#external-dependencies](../layers.md#external-dependencies)) and already in use for the `AppFailure` hierarchies (`GitFailure`, `DocumentFailure`, `SearchFailure`, `FilesystemFailure`), whose generated equality [Decision 5](005-errors-use-result-with-sealed-classes.md) already relies on. What was missing was a rule for everything that comes after: `SpaceEntity`, `DocumentEntity`, `GitStatusValueObject`, `CommitEntity`, `BranchEntity`, `DiffBlock` ([domain-model.md](../domain-model.md)) and presentation view-state are not built yet (phase 0), and without an explicit rule, each one is a small decision on its own — hand-write `==`/`copyWith`, or generate it. Left implicit, the codebase ends up with two shapes of the same problem depending on who wrote which class first.
+Freezed is already a structural dependency ([conventions/external-dependencies.md](../conventions/external-dependencies.md)) and already in use for the `AppFailure` hierarchies (`GitFailure`, `DocumentFailure`, `SearchFailure`, `FilesystemFailure`), whose generated equality [Decision 5](005-errors-use-result-with-sealed-classes.md) already relies on. What was missing was a rule for everything that comes after: `SpaceEntity`, `DocumentEntity`, `GitStatusValueObject`, `CommitEntity`, `BranchEntity`, `DiffBlock` ([domain/](../domain/README.md)) and presentation view-state are not built yet (phase 0), and without an explicit rule, each one is a small decision on its own — hand-write `==`/`copyWith`, or generate it. Left implicit, the codebase ends up with two shapes of the same problem depending on who wrote which class first.
 
 ## Decision
 
 Every immutable data class that is an **entity, value object with more than one field, presentation view-state, or sealed hierarchy** is implemented with `@freezed`. A hand-written `==`/`hashCode`/`copyWith` is not an accepted alternative once a class qualifies — this is the same reasoning [Decision 5](005-errors-use-result-with-sealed-classes.md) already applied to `AppFailure`, generalized to every layer freezed is allowed in.
 
 **Does not extend to:**
-- Single-field identifier/path value objects (`RepoRelativePathValueObject`, `AbsolutePath`, `BranchNameValueObject`, `CommitShaValueObject`, `SpaceName` — [domain-model.md](../domain-model.md), [Decision 15](015-ddd-is-applied-selectively.md)). Freezed's generated surface (`copyWith`, `when`/`map`) has nothing to earn its keep on a single-field wrapper; a Dart 3 `extension type` is the zero-cost fit there. This stays a recommendation, not a mandate — revisit if a wrapper grows a second field.
+- Single-field identifier/path value objects (`RepoRelativePathValueObject`, `AbsolutePath`, `BranchNameValueObject`, `CommitShaValueObject`, `SpaceName` — [domain/](../domain/README.md), [Decision 15](015-ddd-is-applied-selectively.md)). Freezed's generated surface (`copyWith`, `when`/`map`) has nothing to earn its keep on a single-field wrapper; a Dart 3 `extension type` is the zero-cost fit there. This stays a recommendation, not a mandate — revisit if a wrapper grows a second field.
 - Use cases, repositories, infra implementations, notifiers (already codegen'd by Riverpod), widgets — none of these are data.
 
 ## Rationale
 
 - Consistency: one way to express immutable data, not one-per-author.
 - Decision 5's rationale already made the case for the failure hierarchies specifically ("generated equality replaces hand-written `==`/`hashCode` instead of it being hand-written per failure"); nothing in that rationale is specific to failures.
-- Freezed stays a build-time-only dependency ([layers.md](../layers.md#external-dependencies)) regardless of how many classes use it — the runtime-coupling argument that allows it in every layer does not weaken as usage grows.
+- Freezed stays a build-time-only dependency ([conventions/external-dependencies.md](../conventions/external-dependencies.md)) regardless of how many classes use it — the runtime-coupling argument that allows it in every layer does not weaken as usage grows.
 
 ## Consequences
 
@@ -27,4 +27,4 @@ Every immutable data class that is an **entity, value object with more than one 
 
 ## Revisit when
 
-Spike B settled `BlockValueObject`'s shape ([Decision 19](019-blocks-come-from-the-markdown-package.md), [domain-model.md](../domain-model.md#block)): a span, its text and its kind — three immutable fields, so this rule applies to it with nothing to except.
+Spike B settled `BlockValueObject`'s shape ([Decision 19](019-blocks-come-from-the-markdown-package.md), [domain/blocks.md](../domain/blocks.md)): a span, its text and its kind — three immutable fields, so this rule applies to it with nothing to except.

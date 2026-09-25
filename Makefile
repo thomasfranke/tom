@@ -168,7 +168,7 @@ run: ## Run the app (override with DEVICE=windows|linux|macos)
 ##############################
 
 # The community build: proof the public repo compiles on its own. The
-# distributed artifact is built elsewhere — docs/technical/repository-settings.md.
+# distributed artifact is built elsewhere — docs/technical/process/repository-settings.md.
 
 build: ## Compile check for the current platform (artifact is not distributed)
 	@$(TOM) build $(DEVICE)

@@ -46,7 +46,7 @@ Everything is in [`docs/`](docs/) — and yes, it is edited the way TOM proposes
 | | |
 |---|---|
 | [Product](docs/about.md) | What this is, and the non-goals it will not drift into |
-| [Architecture](docs/technical/layers.md) | The seven packages, the graph, and what enforces it |
+| [Architecture](docs/technical/architecture.md) | The eight packages, the graph, and what enforces it |
 | [Decisions](docs/technical/decisions/) | Every architectural choice and why — the folder listing reads as a summary |
 | [Roadmap](docs/roadmap.md) | What is being built, in what order, and by which package |
 | [Products](docs/product/) | What each feature must do, one folder per feature |
