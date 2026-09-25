@@ -1,33 +1,35 @@
 /// A scenario: a named flow, declared as steps, reported as it runs.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'evidence.dart';
 import 'fixture.dart';
 import 'robot.dart';
 
-/// The marker every line of the protocol starts with.
+/// The marker every line of the protocol starts with, which is how the CLI
+/// tells a step report from anything else `flutter test` printed.
 ///
-/// The CLI reads `flutter test --reporter=json`, where a `print` inside a
-/// test arrives as an event carrying its message. This prefix is how the
-/// dashboard tells a step report from anything else the test or the
-/// framework happened to print.
-///
-/// Deliberately not a word anyone would type: a scenario that printed
-/// "step" in a label must not be able to drive the progress bar.
+/// Not a word anyone would type, so a label cannot drive the progress bar.
 const String stepMarker = '⦙tom-e2e⦙';
+
+/// How long one step may take before the run gives up on it.
+///
+/// The backstop for the one wait that is not bounded: a step that never
+/// returns would otherwise take the suite with it and say nothing.
+const Duration stepLimit = Duration(seconds: 90);
 
 /// One named thing the scenario does.
 ///
-/// The name is the whole point. It is what the progress screen shows while
-/// it runs and what names the failure when it does not, so it is written for
-/// someone reading a dashboard, not for someone reading code: *"choose the
-/// docs folder"*, not *"tapChooseFolder"*.
+/// The name is what the progress screen shows and what names a failure, so
+/// it is written for a dashboard: *"choose the docs folder"*, not
+/// *"tapChooseFolder"*.
 final class Step {
-  /// Creates a step called [name] that performs [body].
+  /// A step called [name] that performs [body].
   const Step(this.name, this.body);
 
   /// What the progress screen shows while this runs.
@@ -39,30 +41,26 @@ final class Step {
 
 /// Declares an end-to-end scenario and runs its [steps] in order.
 ///
-/// **The flow is data, not code.** A scenario lists what happens; *how* each
-/// of those things happens lives in [TomRobot], where the next scenario
-/// reuses it. That split is what keeps a suite of flows from becoming twenty
-/// copies of the same taps.
-///
-/// Knowing every step before the first one runs is what makes a progress bar
-/// possible at all — `12/71` needs the 71 up front, and a scenario that
-/// discovered its own length could only ever show a spinner.
-///
-/// [describe] is shown on the progress screen under the name. It says what
-/// the scenario is *for*, in the words someone would use to explain why the
-/// test exists; the step names already say what it does.
+/// The flow is data: a scenario lists what happens, and how lives in
+/// [TomRobot] where the next scenario reuses it. Every step is known before
+/// the first runs, which is what a `12/71` progress bar needs. [describe]
+/// says what the scenario is *for*, under the name on the progress screen.
 void scenario(
   String name, {
   required String describe,
   required List<Step> steps,
   String group = 'Home',
 }) {
-  // The binding is what separates this from a widget test. Under
-  // `flutter test` alone the world runs on a fake clock where real file I/O
-  // and a real `Process.run` never complete — so an app that reads a folder
-  // and drives git would wait forever for its own first frame. This one
-  // runs on a device, with a real event loop.
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // A real event loop: under `flutter test` alone the clock is fake, and real
+  // file I/O and `Process.run` never complete.
+  final TestWidgetsFlutterBinding binding =
+      IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // The live binding skips the frames between pumps; a watched run asks for
+  // all of them so the window moves rather than jumps.
+  if (TomRobot.hold > Duration.zero &&
+      binding is LiveTestWidgetsFlutterBinding) {
+    binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
+  }
   testWidgets(name, (WidgetTester tester) async {
     _report(<String, Object?>{
       'event': 'begin',
@@ -71,18 +69,25 @@ void scenario(
       'group': group,
       'steps': steps.length,
     });
-    // Its own preferences, wiped before the first step: a scenario must not
-    // inherit what the last one remembered, and must never write into the
-    // application-support folder a person's own copy of the app uses.
+    // Its own preferences, wiped first: a scenario must not inherit the last
+    // one's, nor write into the folder a person's own copy of the app uses.
     final String settingsPath = scenarioSettingsPath(name);
     final File store = File(settingsPath);
     if (store.existsSync()) {
       store.deleteSync();
     }
-    final TomRobot robot = TomRobot(tester, settingsPath: settingsPath);
+    final Evidence evidence = Evidence(name, tester: tester);
+    final TomRobot robot = TomRobot(
+      tester,
+      settingsPath: settingsPath,
+      evidence: evidence,
+    );
     final Stopwatch watch = Stopwatch()..start();
     for (int index = 0; index < steps.length; index++) {
       final Step step = steps[index];
+      // Frames are named after their step, so a failure points at pictures
+      // of itself.
+      evidence.step = '${index + 1}-${step.name}';
       _report(<String, Object?>{
         'event': 'step',
         'index': index + 1,
@@ -90,11 +95,19 @@ void scenario(
         'name': step.name,
       });
       try {
-        await step.body(robot);
+        await step.body(robot).timeout(stepLimit);
+        // Photographed between steps, never inside one: reading a frame back
+        // asks for one to be rasterised, and inside a step's pump-and-settle
+        // the settling never settles.
+        await evidence.capture();
       } on Object catch (error) {
-        // The step name travels with the failure, because "expected one
-        // widget, found none" is unreadable without knowing which of
-        // seventy-one moments it was.
+        // The failure's own frame — except after a timeout. `timeout` cannot
+        // cancel the body, which is still inside the binding; a capture here
+        // gives it room to run into teardown and report a second error over
+        // the timeout.
+        if (error is! TimeoutException) {
+          await evidence.capture();
+        }
         _report(<String, Object?>{
           'event': 'failed',
           'index': index + 1,
@@ -115,10 +128,8 @@ void scenario(
 
 /// Writes one line of the protocol.
 ///
-/// `print` rather than a channel of its own: it is the one thing that
-/// survives the trip through `flutter test`'s json reporter without the
-/// harness needing anything special, and a run outside the CLI still shows
-/// something a person can read.
+/// `print`, because it is the one thing that survives `flutter test`'s json
+/// reporter unaided and still reads outside the CLI.
 void _report(Map<String, Object?> event) =>
     // ignore: avoid_print — this *is* the protocol; see `stepMarker`.
     print('$stepMarker${jsonEncode(event)}');

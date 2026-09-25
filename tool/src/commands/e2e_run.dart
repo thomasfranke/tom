@@ -12,17 +12,12 @@ import 'e2e_catalogue.dart';
 /// The marker the scenarios prefix their reports with.
 ///
 /// It has to agree with `integration_test/support/scenario.dart`, and it is
-/// the one thing the two sides share. Deliberately not a word anyone would
-/// type: a scenario that printed "step" in a label must not be able to drive
-/// the progress bar.
+/// not a word anyone would type, so a label saying "step" cannot drive the
+/// progress bar.
 const stepMarker = '⦙tom-e2e⦙';
 
-/// Where a run of the whole suite has got to.
-///
-/// Carried into each scenario's screen so the header can say *2 of 6* and
-/// how many have passed. Without it a suite reads as a stack of unrelated
-/// runs, and the question someone actually has — *is this going well?* —
-/// has to be answered by scrolling.
+/// Where a run of the whole suite has got to, carried into each scenario's
+/// screen so the header can say *2 of 6* and how many have passed.
 final class SuiteProgress {
   SuiteProgress(this.total) : _started = DateTime.now();
 
@@ -31,10 +26,8 @@ final class SuiteProgress {
 
   /// When the run was asked for.
   ///
-  /// Here rather than in the screen, because the screen is thrown away
-  /// between scenarios and this number is the whole wait: someone deciding
-  /// whether to sit through the rest of the suite is asking how long it has
-  /// been running, not how long this one file has.
+  /// Here rather than in the screen, which is thrown away between scenarios:
+  /// the question is how long the suite has been running, not this one file.
   final DateTime _started;
 
   /// How long the whole run has been going.
@@ -53,27 +46,21 @@ final class SuiteProgress {
 }
 
 /// Clears the screen so the next scenario has all of it.
-///
-/// One scenario at a time means one screen at a time: appending them leaves
-/// the eye scrolling to find what is running now, and the finished ones say
-/// nothing the summary will not say better.
 void clearScreen() {
   if (stdout.hasTerminal) stdout.write('\x1B[2J\x1B[H');
 }
 
 /// Runs [scenario] and paints its progress until it is done.
-///
-/// One scenario at a time, which is not a limitation of the screen: each
-/// file launches the app, and on macOS the next launch fails while the
-/// previous window is still going. Running them one by one is also what the
-/// menu asks for — someone picking a row wants that row.
 Future<int> runScenario(
   Scenario scenario, {
   bool quiet = false,
   SuiteProgress? suite,
+  bool watch = false,
 }) async {
   final screen = _ScenarioScreen(scenario, quiet: quiet, suite: suite)..start();
-  _forget(scenario);
+  // One stamp for the whole run, handed to the app, so the frames, the video
+  // and the log carry the same one.
+  final stamp = _stampNow();
 
   final process = await Process.start('flutter', <String>[
     'test',
@@ -82,6 +69,10 @@ Future<int> runScenario(
     'macos',
     '--plain-name',
     scenario.name,
+    // A define rather than a file the run reads: the value belongs to this
+    // invocation, and the next one must not inherit it.
+    if (watch) '--dart-define=TOM_E2E_HOLD_MS=$_holdWhileWatching',
+    '--dart-define=TOM_E2E_STAMP=$stamp',
   ], workingDirectory: '${repoRoot().path}/src/apps/desktop');
 
   final errors = <String>[];
@@ -104,7 +95,15 @@ Future<int> runScenario(
   ]);
 
   final code = await process.exitCode;
-  final log = _keep(scenario, transcript.toString());
+  // The outcome is the last word of every file the run leaves; a negative
+  // code means killed, not answered.
+  final outcome = code == 0
+      ? 'passed'
+      : code < 0
+      ? 'cancelled'
+      : 'failed';
+  final log = _keep(scenario, transcript.toString(), stamp, outcome);
+  await _film(scenario, stamp, outcome);
   screen.finish(passed: code == 0, errors: errors, log: log);
   writeResult(
     scenario.name,
@@ -120,76 +119,112 @@ Future<int> runScenario(
   return code;
 }
 
-/// Throws away what the last run of [scenario] left, before this one starts.
+/// Joins the frames a scenario left into a video, two a second.
 ///
-/// **A log outlives the run that wrote it, and that is how it lies.** The
-/// transcript is written when the scenario ends, so a run killed during the
-/// build — or one that never got that far — leaves the *previous* run's log
-/// under the same name, with its events and its verdict intact. Two
-/// scenarios in one file share the name too, so the survivor may not even be
-/// the same scenario. Reading it then reports a pass that did not happen.
-///
-/// Deleting first costs nothing: a run that reaches the end writes its own,
-/// and one that does not should leave no answer rather than an old one.
-void _forget(Scenario scenario) {
-  final file = File('${repoRoot().path}/${_logPath(scenario)}');
-  if (file.existsSync()) file.deleteSync();
+/// The frames are the evidence and the video a convenience: ffmpeg is not
+/// something this repository asks anybody to install.
+Future<void> _film(Scenario scenario, String stamp, String outcome) async {
+  final directory = Directory(
+    '${repoRoot().path}/$evidenceDirectory/${_slug(scenario.name)}',
+  );
+  if (!directory.existsSync()) return;
+  // This run's frames and not the folder's: runs accumulate here.
+  final frames = directory
+      .listSync()
+      .whereType<File>()
+      .where((file) => file.uri.pathSegments.last.startsWith('$stamp-shot-'))
+      .toList();
+  if (frames.length < 2) return;
+
+  final video = '${directory.path}/$stamp-$outcome.mp4';
+  try {
+    await Process.run('ffmpeg', <String>[
+      '-y',
+      '-framerate',
+      '2',
+      '-pattern_type',
+      'glob',
+      '-i',
+      '${directory.path}/$stamp-shot-*.png',
+      '-c:v',
+      'libx264',
+      // h264 refuses an odd width, and a window is whatever size the scenario
+      // asked for.
+      '-vf',
+      'pad=ceil(iw/2)*2:ceil(ih/2)*2',
+      '-pix_fmt',
+      'yuv420p',
+      video,
+    ]);
+  } on ProcessException {
+    // No ffmpeg on this machine; the frames are still there.
+  }
 }
 
-/// Where everything a scenario printed is kept, and its path.
+/// [name] as a path, the way `integration_test/support/evidence.dart` spells
+/// it: the app writes the folder and this reads it.
+String _slug(String name) => name
+    .toLowerCase()
+    .replaceAll(RegExp('[^a-z0-9]+'), '-')
+    .replaceAll(RegExp(r'^-|-$'), '');
+
+/// Where the app writes what it photographed.
+const evidenceDirectory = '.e2e-evidence';
+
+/// How long `--watch` holds the screen after each action, in milliseconds.
 ///
-/// **The screen shows the handful of lines worth reading; this is the rest.**
-/// A run that fails on a machine is diagnosed by running it again, which is
-/// three minutes and only works if it fails again — and the failures worth
-/// keeping are exactly the ones that do not. So every run leaves its whole
-/// transcript behind, overwritten by the next run of that scenario.
+/// Not a setting: a number somebody can tune is a number nobody agrees on.
+const _holdWhileWatching = 700;
+
+/// Keeps everything a scenario printed, and answers its path.
 ///
-/// Gitignored, and beside the results rather than inside `.e2e/`: `prepare`
-/// throws that folder away, and a log of what happened is not something
-/// anything rebuilds.
-String _keep(Scenario scenario, String transcript) {
-  final path = _logPath(scenario);
+/// The screen shows the handful of lines worth reading; this is the rest, for
+/// a failure that does not happen again when the run is repeated. Beside the
+/// frames rather than inside `.e2e/`, which `prepare` throws away.
+String _keep(
+  Scenario scenario,
+  String transcript,
+  String stamp,
+  String outcome,
+) {
+  final path = _logPath(scenario, stamp, outcome);
   File('${repoRoot().path}/$path')
     ..parent.createSync(recursive: true)
     ..writeAsStringSync(transcript);
   return path;
 }
 
-/// Where [scenario]'s transcript lives, relative to the repository.
-///
-/// Named after the *file*, so two scenarios declared together share it —
-/// which is why [_forget] exists.
-String _logPath(Scenario scenario) =>
-    '$logDirectory/${scenario.file.replaceAll(RegExp(r'\.dart$'), '')}.log';
+/// Where [scenario]'s transcript lives, relative to the repository: beside
+/// the frames of the same run, named after the scenario rather than the file
+/// two of them share, with the stamp keeping runs apart and the outcome
+/// readable from a listing.
+String _logPath(Scenario scenario, String stamp, String outcome) =>
+    '$evidenceDirectory/${_slug(scenario.name)}/$stamp-$outcome.log';
 
-/// Where the transcripts go.
-const logDirectory = '.e2e-logs';
+/// When a run started, to the second, as every file it writes spells it.
+///
+/// To the second because the stamp is all that keeps two runs apart: the
+/// frame counter restarts every run, so two runs in one minute would overwrite
+/// each other's frames and be filmed as one. It has to agree with
+/// `integration_test/support/evidence.dart`, which stamps itself the same way.
+String _stampNow() {
+  final now = DateTime.now();
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${now.year}-${two(now.month)}-${two(now.day)}'
+      'T${two(now.hour)}-${two(now.minute)}-${two(now.second)}';
+}
 
 /// Waits until the app the scenario opened is actually gone.
 ///
-/// `flutter test` returns when the *test* finishes, which is not when the
-/// window it opened has closed. The next scenario's build copies the app
-/// bundle into place with `rsync`, and that fails while the old process is
-/// still holding it:
-///
-/// ```
-/// rsync(15409): error: rsync_receiver
-/// Failed to package …/src/apps/desktop.
-/// ** BUILD FAILED **
-/// ```
-///
-/// — which arrives as a scenario reporting `0/0 steps`, having asserted
-/// nothing at all. It is the whole reason a suite that passes one file at a
-/// time can fail two of six when run end to end.
-///
-/// It waits and never kills. The pattern is this repository's own debug
-/// bundle, so an installed TOM is not matched; a developer running *this*
-/// build while the suite runs would be, and waiting for them is right —
-/// their window breaks the same build.
+/// `flutter test` returns when the test finishes, not when the window closes,
+/// and the next scenario's build copies the bundle with `rsync`, which fails
+/// while the old process still holds it — a scenario reporting `0/0 steps`
+/// having asserted nothing. It waits and never kills: the pattern is this
+/// repository's own debug bundle, and a developer's window breaks the same
+/// build.
 Future<void> _waitForTheWindowToClose() async {
-  // Anchored at the end, because the same path is a *substring* of what the
-  // linker is doing: it writes `…/MacOS/TOM.debug.dylib`, and an unanchored
-  // pattern waits for the compiler as well as for the app.
+  // Anchored at the end: the linker writes `…/MacOS/TOM.debug.dylib`, and an
+  // unanchored pattern would wait for the compiler as well as the app.
   final bundle =
       '${repoRoot().path.replaceAll('.', r'\.')}'
       '/src/apps/desktop/build/macos/Build/Products/'
@@ -197,7 +232,7 @@ Future<void> _waitForTheWindowToClose() async {
   final deadline = DateTime.now().add(const Duration(seconds: 20));
   while (DateTime.now().isBefore(deadline)) {
     final running = await Process.run('pgrep', <String>['-f', bundle]);
-    // pgrep exits non-zero when nothing matches, which is what is wanted.
+    // pgrep exits non-zero when nothing matches.
     if (running.exitCode != 0) return;
     await Future<void>.delayed(const Duration(milliseconds: 200));
   }
@@ -215,15 +250,11 @@ Map<String, Object?>? _parse(String line) {
   }
 }
 
-/// Whether [line] is worth keeping to show after a failure.
+/// Whether [line] is worth showing after a failure: the assertion, the step
+/// it happened in, or the app never starting.
 ///
-/// The framework prints a great deal; what a person needs is the assertion
-/// and the step it happened in, and those are the lines that say so.
-///
-/// The last three are not assertions at all — they are the app never
-/// starting, which used to show as a scenario with `0/0 steps` and nothing
-/// underneath it. A failure whose screen says nothing is read as a flake,
-/// and this one is not: it is the previous window still holding the bundle.
+/// The build lines matter because a scenario with `0/0 steps` and nothing
+/// under it reads as a flake, and it is not (see [_waitForTheWindowToClose]).
 bool _looksLikeAFailure(String line) =>
     line.contains('Expected:') ||
     line.contains('Actual:') ||
@@ -235,9 +266,8 @@ bool _looksLikeAFailure(String line) =>
 
 /// The block repainted while a scenario runs.
 ///
-/// Not a `Dashboard` subclass: that one paints a *row per target*, and this
-/// paints one scenario in detail — a name, what it is for, where it is, and
-/// how long it has taken.
+/// Not a `Dashboard` subclass: that paints a row per target, and this paints
+/// one scenario in detail.
 final class _ScenarioScreen {
   _ScenarioScreen(this.scenario, {required this.quiet, this.suite})
     : _started = DateTime.now();
@@ -259,10 +289,8 @@ final class _ScenarioScreen {
 
   /// Paints the first frame and keeps the clocks moving.
   ///
-  /// A repaint every second, and not for decoration: the longest silence in
-  /// a run is the build, which reports nothing for half a minute. A clock
-  /// that only moved when a step arrived would stop exactly where someone
-  /// starts wondering whether anything is still happening.
+  /// A repaint every second, because the build reports nothing for half a
+  /// minute and a clock that stopped there would look like a hang.
   void start() {
     paint();
     if (quiet || !stdout.hasTerminal) return;
@@ -311,8 +339,8 @@ final class _ScenarioScreen {
     for (final line in errors.take(8)) {
       stdout.writeln('  ${palette.detail}$line${Ansi.reset}');
     }
-    // Always, and not only when nothing was recognised: the lines above are
-    // the ones worth reading, and this is where the rest of them went.
+    // Always, not only when nothing was recognised: this is where the rest
+    // of the output went.
     stdout.writeln('  ${palette.detail}Full output: $log${Ansi.reset}');
   }
 
@@ -365,11 +393,8 @@ final class _ScenarioScreen {
     ];
   }
 
-  /// The two lines above a scenario when it is one of many.
-  ///
-  /// Counts rather than a list: what is wanted here is whether the run is
-  /// going well and how much is left, and a roll of finished names answers
-  /// neither.
+  /// The lines above a scenario when it is one of many: counts, because the
+  /// question is whether the run is going well and how much is left.
   List<String> _suiteHeader() {
     final progress = suite;
     if (progress == null) return const <String>[];
@@ -380,8 +405,8 @@ final class _ScenarioScreen {
         ? ''
         : '  ${palette.fail}\u2718 ${progress.failed}${Ansi.reset}';
     return <String>[
-      // The header every other screen carries. This one paints its own,
-      // because it cleared the terminal the CLI had drawn it on.
+      // The header every other screen carries, painted here because this one
+      // cleared the terminal the CLI had drawn it on.
       '${palette.title}${Layout.appTitle}${Ansi.reset} '
           '${palette.titleSuffix}${Layout.titleSeparator} '
           '${Layout.appSubtitle}${Ansi.reset}',

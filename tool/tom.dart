@@ -1,16 +1,8 @@
 #!/usr/bin/env dart
 
-// The CLI entry point: `dart run tool/tom.dart`.
-//
-// Two faces, one engine. With no arguments it opens a navigable menu; with a
-// subcommand it runs the same code path non-interactively, which is what CI
-// and other agents call. The menu never does work the subcommand cannot do —
-// it prints the command it is about to run, so the two can never drift apart
-// without the divergence showing on screen.
-//
-// It lives in `tool/` at the repository root, outside the Dart workspace in
-// `src/`, and imports nothing but `dart:*` on purpose: a tool that resolves
-// the workspace cannot require the workspace to be resolved before it runs.
+// The CLI entry point, `dart run tool/tom.dart`: a menu with no arguments, the
+// same code path as a subcommand, and nothing but `dart:*` imported because a
+// tool that resolves the workspace cannot need it resolved first.
 library;
 
 import 'dart:io';
@@ -37,14 +29,11 @@ const _subtitle = Layout.appSubtitle;
 
 /// Everything the CLI can do, in the order the menu and `--help` list it.
 ///
-/// Alphabetical, not by importance: the list is read by someone looking for a
-/// name they already have in mind, and any other order makes them scan the
-/// whole thing. The test kinds are ordered by cost instead — see [_testKinds],
-/// where the reader is choosing rather than looking something up.
+/// Alphabetical, because the list is read by someone looking for a name they
+/// already have in mind.
 const _commands = <_Command>[
-  // Hidden from the root screen, not from the CLI: `verify` already runs both,
-  // and a menu row for each would offer two steps of a sequence nobody runs
-  // one at a time. A script, and the Makefile, still call them directly.
+  // Hidden from the root screen, not from the CLI: `verify` runs both, and a
+  // script or the Makefile still calls them by name.
   _Command('analyze', 'Static analysis across every package', hidden: true),
   _Command(
     'build',
@@ -72,9 +61,8 @@ const _commands = <_Command>[
         'both suffixes, whether or not a package has produced one yet — and '
         'rebuilds the lot.',
   ),
-  // Not "run coverage": measuring is already part of every test run, and the
-  // threshold is already part of `verify`. Building the report and opening it
-  // is the only thing left that nothing else does, so that is the command.
+  // Measuring is part of every test run and the threshold of `verify`;
+  // building the report and opening it is what nothing else does.
   _Command(
     'coverage',
     'Build the coverage report and open it',
@@ -83,8 +71,7 @@ const _commands = <_Command>[
         'progress bar, as Tests — then builds one HTML report out of every '
         'package measured and opens it. Needs genhtml, which ships with lcov.',
   ),
-  // Hidden for the same reason as format and analyze: it is a step of
-  // `verify`, not something anyone sets out to run on its own.
+  // A step of `verify`, hidden for the same reason as analyze.
   _Command(
     'codegen-gate',
     'Regenerate from scratch and fail if the result drifted',
@@ -112,8 +99,7 @@ const _commands = <_Command>[
         'them was not already formatted — in a gate, "I fixed it for you" and '
         '"it was wrong" are the same event.',
   ),
-  // The label is spelled out because the derivation would give `Fvm`, and a
-  // tool's name is not a word to capitalize.
+  // Spelled out: the derivation would give `Fvm`.
   _Command(
     'fvm',
     'Pin the Flutter version declared in src/.fvmrc',
@@ -128,9 +114,7 @@ const _commands = <_Command>[
     'Open the desktop app',
     description: 'Builds and launches the desktop app on this machine.',
   ),
-  // Labelled for what it does rather than for what it is called: `setup` is
-  // the token scripts and the Makefile commit to, but on a screen it says
-  // nothing, and the thing it runs has a name everyone already knows.
+  // `setup` is the token scripts commit to; the label says what it runs.
   _Command(
     'setup',
     'Resolve every package in the workspace',
@@ -141,9 +125,7 @@ const _commands = <_Command>[
         'first thing to run after a clone, and after pulling a pubspec change.',
   ),
   _Command('test', 'The architecture assertions, the packages, the apps'),
-  // Spelled out for the same reason as FVM: the derivation would give
-  // `Updates`, which reads as a noun — a list of them — rather than as the
-  // question the command asks.
+  // Spelled out: `Updates` reads as a noun rather than as the question asked.
   _Command(
     'updates',
     'Compare the pinned Flutter and Dart against the latest stable',
@@ -183,12 +165,10 @@ const _commands = <_Command>[
   ),
 ];
 
-/// The kinds of test the suite is split into, alphabetically — the same order
-/// the commands are in, and for the same reason: the row is found by name.
+/// The kinds of test the suite is split into, alphabetically.
 ///
-/// They match the folders under each package's `test/` — `unit/`,
-/// `integration/` — so a row maps to a path, not to a naming convention that
-/// has to be maintained separately.
+/// They match the folders under each package's `test/`, so a row maps to a
+/// path rather than to a convention maintained separately.
 const _testKinds = <_TestKind>[
   _TestKind(
     'integration',
@@ -207,10 +187,7 @@ const _testKinds = <_TestKind>[
   ),
 ];
 
-/// How `codegen` can be run.
-///
-/// Ordered by blast radius, mildest first: `normal` regenerates what this
-/// branch touched, `hard` deletes every generated file and rebuilds the lot.
+/// How `codegen` can be run, ordered by blast radius, mildest first.
 const _codegenModes = <_CodegenMode>[
   _CodegenMode(
     'normal',
@@ -233,9 +210,8 @@ const _codegenModes = <_CodegenMode>[
 
 /// The desktop platforms `build` targets, in the order the submenu lists them.
 ///
-/// There is deliberately no "all of them" row: a macOS bundle cannot be
-/// produced on Linux and vice versa, so the only honest offer is one platform
-/// at a time — the host by default, the others when a cross build is set up.
+/// No "all of them" row: a macOS bundle cannot be produced on Linux and vice
+/// versa, so the only honest offer is one platform at a time.
 const _platforms = <_Platform>[
   _Platform('macos', 'macOS'),
   _Platform('linux', 'Linux'),
@@ -244,8 +220,7 @@ const _platforms = <_Platform>[
 
 /// The mobile targets `src/apps/mobile` will build for, once it does.
 ///
-/// Listed with no `name`: there is no argument to pass yet, and inventing one
-/// now would be a promise about a command line that does not exist.
+/// No `name`, because there is no argument to pass yet.
 const _mobilePlatforms = <_Platform>[
   _Platform('', 'Android'),
   _Platform('', 'iOS'),
@@ -253,30 +228,21 @@ const _mobilePlatforms = <_Platform>[
 
 /// Runs the CLI and hands its exit code to the process.
 ///
-/// The code has to be *assigned*, not returned: Dart discards whatever `main`
-/// answers, so a `Future<int> main` reports success for every failure it ever
-/// finds — which is the quiet version of a broken gate, because CI goes green
-/// on a tree that does not analyze.
-///
-/// [exitCode] rather than [exit]: `exit` terminates the isolate where it
-/// stands, skipping the `finally` in [_browse] that puts the terminal back.
-/// A menu session that failed would leave the user in the alternate buffer
-/// with no echo. Assigning lets the isolate finish and flush on its own.
+/// Assigned to [exitCode] rather than returned or passed to [exit]: Dart
+/// discards what `main` answers, and `exit` skips the `finally` in [_browse]
+/// that puts the terminal back.
 Future<void> main(List<String> args) async {
   exitCode = await _run(args);
 }
 
-/// The CLI proper: dispatches [args] and answers the code the process should
-/// exit with.
+/// Dispatches [args] and answers the code the process should exit with.
 Future<int> _run(List<String> args) async {
   if (args.contains('--help') || args.contains('-h')) {
     _printUsage();
     return 0;
   }
 
-  // Renders the root screen once, as static text, and exits. The redraw loop
-  // needs a terminal; this does not, which is what makes the look reviewable
-  // from a pipe, a diff or a test.
+  // The root screen as static text, reviewable from a pipe, a diff or a test.
   if (args.contains('--preview')) {
     stdout.writeln(_rootFrame(columns: 96).join('\n'));
     return 0;
@@ -284,8 +250,7 @@ Future<int> _run(List<String> args) async {
 
   if (args.isNotEmpty) return _dispatch(args.first, args.skip(1).toList());
 
-  // No arguments and nowhere to draw: a menu would hang waiting for a key
-  // that is never coming, so say what to type instead.
+  // A menu would hang waiting for a key that is never coming.
   if (Terminal.isPlain) {
     stderr.writeln('tom: no terminal attached — pass a command.');
     _printUsage();
@@ -295,17 +260,11 @@ Future<int> _run(List<String> args) async {
   return _browse();
 }
 
-/// The interactive loop: pick a command, run it, come back to where it was
-/// picked.
+/// The interactive loop: pick a command, run it, come back to its screen.
 ///
-/// Everything happens full screen, the work included, so a run looks like the
-/// menu that started it rather than like output arriving from somewhere else.
-/// The cost is that the alternate buffer discards what it held on the way
-/// out, which is why a finished run waits for a keystroke: that pause is the
-/// only chance to read it.
-///
-/// After that keystroke the loop returns to the command's own screen, not to
-/// the root — running codegen twice in a row is one keystroke, not four.
+/// Full screen, the work included, so a run reads as part of the menu that
+/// started it. The alternate buffer discards what it held on the way out,
+/// which is why a finished run waits for a keystroke.
 Future<int> _browse() async {
   final terminal = Terminal.attach();
   try {
@@ -323,9 +282,8 @@ Future<int> _browse() async {
         return 0;
       }
 
-      // A row's value is the invocation it stands for, so `Unit` arrives here
-      // as `test unit`: the kind is already decided and only the scope is
-      // still open.
+      // A row's value is the invocation it stands for: `Unit` arrives as
+      // `test unit`, with only the scope still open.
       final invocation = chosen.split(' ');
       final name = invocation.first;
       final carried = invocation.skip(1).toList();
@@ -339,9 +297,8 @@ Future<int> _browse() async {
 
 /// Runs [name] as many times as asked, returning when the user backs out.
 ///
-/// A command with a screen of its own returns to that screen after each run.
-/// One without — `verify` — has nothing to return to, so it runs once and the
-/// loop above takes over.
+/// A command with a screen of its own returns to it after each run; one
+/// without, like `verify`, runs once.
 Future<void> _runUntilBack(
   Terminal terminal,
   String name,
@@ -352,24 +309,17 @@ Future<void> _runUntilBack(
     final arguments = await _promptFor(terminal, name, context);
     if (arguments == null) return;
 
-    // What the first screen decided is kept for the next round, so a run
-    // returns to the screen it was started from rather than to the one
-    // before it. Answering "which app?" again after every scenario would be
-    // a keystroke spent re-deciding something nobody changed.
+    // What the first screen decided is kept, so a run returns to the screen
+    // it started from rather than asking "which app?" again.
     context = _contextAfter(name, arguments, context);
 
     terminal.beginScreen();
     _printHeader(name, arguments);
 
-    // Cooked mode for the duration of the work, so a Ctrl-C reaches the child
-    // rather than arriving as a byte nobody is reading.
-    //
-    // The exit code is dropped on purpose — the only place in the CLI where
-    // that is true. A failed command inside a session is something to read
-    // and try again, not a reason to throw the user out of the menu; it has
-    // already printed its own failure, and the keystroke below is what gives
-    // them time to see it. The subcommand face is where a code has to
-    // survive, and it does, through `main`.
+    // Cooked mode while the child runs, so a Ctrl-C reaches it. The exit code
+    // is dropped on purpose, the only place in the CLI where it is: a failure
+    // inside a session is read and retried, not a reason to leave the menu,
+    // and the subcommand face keeps its code through `main`.
     terminal.suspend();
     await _dispatch(name, arguments);
     terminal.resume();
@@ -381,8 +331,8 @@ Future<void> _runUntilBack(
 
 /// What the next round of [name]'s screen should already know.
 ///
-/// Only end-to-end has two screens deep enough for this to matter: the app
-/// is chosen once and the scenarios are chosen many times.
+/// Only end-to-end is two screens deep: the app is chosen once, the
+/// scenarios many times.
 List<String> _contextAfter(
   String name,
   List<String> arguments,
@@ -396,24 +346,20 @@ List<String> _contextAfter(
 /// The e2e arguments that are not a scenario name.
 const _environmentWords = <String>{'prepare', 'clean', 'list', 'fixtures'};
 
-/// Whether [name] shows a screen of its own — and so has one to return to
-/// after a run, and one to ask on before it.
+/// Whether [name] shows a screen of its own, to ask on before a run and to
+/// return to after it.
 ///
-/// The same predicate answers both, which is what keeps them from disagreeing:
-/// a command that returns to a screen it never showed would loop forever.
+/// One predicate for both, so a command cannot return to a screen it never
+/// showed and loop forever.
 bool _hasOwnScreen(String name, List<String> carried) => switch (name) {
   'build' || 'clean' || 'codegen' => true,
-  // Two screens of its own, so it always has one to return to.
   'e2e' => true,
-  // The list of rules is the screen — a run goes back to it, because
-  // reading one break and checking the next is the normal way through.
+  // The list of rules is the screen: read one break, check the next.
   'rules' => true,
-  // Only the per-package form asks anything; `coverage last` and
-  // `coverage diff` already know what they are about.
+  // `coverage last` and `coverage diff` already know their target.
   'coverage' => carried.isEmpty,
-  // `test` asks about scope only once a kind is chosen. The whole suite has
-  // nothing to ask, and neither do the architecture assertions — they are not
-  // split per package.
+  // The whole suite and the architecture assertions are not split per
+  // package, so there is no scope to ask for.
   'test' =>
     carried.isNotEmpty &&
         carried.first != arch &&
@@ -423,8 +369,7 @@ bool _hasOwnScreen(String name, List<String> carried) => switch (name) {
   _ => false,
 };
 
-/// Draws the same title and section a menu would, above a run's output, so
-/// the work reads as part of the screen that started it.
+/// The title and section a menu would draw, above a run's output.
 void _printHeader(String name, List<String> arguments) {
   stdout
     ..writeln(
@@ -440,10 +385,7 @@ void _printHeader(String name, List<String> arguments) {
     );
 }
 
-/// Holds the finished output on screen until a key is pressed.
-///
-/// Without it the alternate buffer would be cleared by the next screen and
-/// the run would have produced nothing anyone could read.
+/// Holds the finished output on screen until a key is pressed (see [_browse]).
 Future<void> _waitForKey(Terminal terminal) async {
   stdout
     ..writeln()
@@ -454,25 +396,18 @@ Future<void> _waitForKey(Terminal terminal) async {
   await terminal.keys.first;
 }
 
-/// The root screen has no section heading: there is only one group of
-/// commands above `Tests`, and a heading over the only thing on screen names
-/// nothing the title has not already said.
+/// The root screen's prompt. Its first group has no section heading, which
+/// would name nothing the title has not already said.
 const _prompt = 'What do you want to run?';
 
-/// Commands the root screen lists under `Tests` rather than in the first
-/// group.
+/// Commands the root screen lists under `Tests`.
 ///
-/// `test` itself is here because the screen offers its kinds rather than the
-/// command; `coverage` because someone looking for it is thinking about
-/// tests, not about the browser it happens to open.
+/// `test` itself because the screen offers its kinds rather than the command;
+/// `coverage` because whoever looks for it is thinking about tests.
 const _testGroup = {'test', 'coverage', 'e2e', 'rules'};
 
-/// Commands the root screen lists under `Dev Tools`.
-///
-/// What they have in common is that they act on the repository rather than on
-/// the product: they resolve it, regenerate it, tidy it, pin its toolchain,
-/// check it before a PR. The first group is left with the two things that
-/// produce the app itself — build it, run it.
+/// Commands the root screen lists under `Dev Tools`: what acts on the
+/// repository rather than on the product.
 const _devToolsGroup = {'clean', 'codegen', 'format', 'verify'};
 
 /// Commands the root screen lists under `Setup`: getting a machine ready.
@@ -480,16 +415,9 @@ const _setupGroup = {'doctor', 'fvm', 'setup', 'updates'};
 
 /// The root screen's rows.
 ///
-/// Labels only. The right-hand slot is for metadata a row carries — when it
-/// last ran, whether it is stale — not for descriptions; filling it on every
-/// row turns the list into a ragged second column. The summaries live in
-/// `--help`, where there is room for them.
-///
-/// The test kinds are a group on this screen rather than a submenu behind
-/// `Test`: they are the rows reached most often, and a whole screen to choose
-/// between three of them is a keystroke spent on nothing. A row's value is the
-/// invocation it stands for, which is what keeps `Unit` and `tom test unit`
-/// the same thing.
+/// Labels only; the right-hand slot is for a row's metadata, not its
+/// description, which lives in `--help`. The test kinds are a group here
+/// rather than a submenu because they are the rows reached most often.
 List<MenuItem<String>> get _rootItems => [
   for (final command in _commands)
     if (!command.hidden &&
@@ -507,9 +435,8 @@ List<MenuItem<String>> get _rootItems => [
       MenuItem(command.label, command.name, description: command.description),
   const MenuItem.rule(),
   const MenuItem.section('Tests'),
-  // Alphabetical, like the first group and for the same reason. The rule
-  // below separates what runs a body of tests from what asks a question
-  // about the repository — different things, even though both are `test`.
+  // The rule below separates what runs a body of tests from what asks a
+  // question about the repository.
   const MenuItem(
     'Coverage (Unit + Integration)',
     'coverage',
@@ -520,9 +447,8 @@ List<MenuItem<String>> get _rootItems => [
   ),
   for (final kind in _testKinds)
     MenuItem(kind.label, 'test ${kind.name}', description: kind.description),
-  // A command rather than a fourth kind: the others run a folder of Dart
-  // files, and this opens the app on a device and walks it through a flow.
-  // Same section, because it is where someone looks for it.
+  // A command rather than a fourth kind: it opens the app on a device rather
+  // than running a folder of Dart files.
   for (final command in _commands)
     if (command.name == 'e2e')
       MenuItem(command.label, command.name, description: command.description),
@@ -584,25 +510,17 @@ List<MenuItem<String>> get _rootItems => [
   ),
 ];
 
-/// The `Setup` section's rows, alphabetically.
+/// The `Setup` section's rows, sorted by label.
 ///
-/// By label rather than by command name, which is the one section where the
-/// two disagree: `setup` reads as `Pub get` and `updates` as `Check for
-/// updates`, so ordering by name would put `FVM` first and produce a list
-/// that is alphabetical only to whoever wrote it. Every other group takes the
-/// order [_commands] declares, where label and name agree.
-///
-/// Sorted here rather than stored in order, so relabelling a row cannot leave
-/// the section out of order behind it.
+/// The one section where label and name disagree (`setup` reads as `Pub
+/// get`), and sorted here rather than stored in order so relabelling a row
+/// cannot leave the section out of order.
 List<MenuItem<String>> get _setupRows =>
     [for (final name in _setupGroup) _rowFor(name)]
       ..sort((a, b) => a.label.compareTo(b.label));
 
-/// The root-screen row for the command called [name].
-///
-/// Read off the command rather than restated, so a row and its `--help` line
-/// cannot drift apart. Used by the sections that list their rows in an order
-/// of their own instead of taking them in the order [_commands] declares.
+/// The root-screen row for the command called [name], read off the command so
+/// a row and its `--help` line cannot drift apart.
 MenuItem<String> _rowFor(String name) {
   final command = _commands.firstWhere((command) => command.name == name);
   return MenuItem(
@@ -623,11 +541,9 @@ List<String> _rootFrame({required int columns}) => composeFrame<String>(
 
 /// Collects the arguments [command] needs, on a screen of its own.
 ///
-/// Returns an empty list for a command that takes none, and `null` when the
-/// user backed out — which is a return to the root menu, not a run with
-/// defaults filled in behind their back.
-/// [carried] is what the chosen row already decided — `Unit` arrives as
-/// `test unit`. A command can still ask for the rest.
+/// Empty for a command that takes none, `null` when the user backed out —
+/// a return to the root, never a run with defaults filled in. [carried] is
+/// what the chosen row already decided.
 Future<List<String>?> _promptFor(
   Terminal terminal,
   String command,
@@ -643,16 +559,10 @@ Future<List<String>?> _promptFor(
   _ => carried,
 };
 
-/// Asks which rule file to check, with running all of them as the first row.
+/// Asks which rule file to check, with all of them as the first row.
 ///
-/// A row is a file in `tool/src/rules/`, so a break names what to open, and
-/// the description under it is what that file checks — which makes the
-/// screen a map of the folder rather than a second list to keep in step
-/// with it.
-///
-/// Each row carries what it last said, the way the scenario list does:
-/// "checked since?" is the question this screen is opened to answer, and a
-/// tick against an older version is not the same claim as one against this.
+/// A row is a file in `tool/src/rules/`, so the screen is a map of the folder;
+/// each row carries what it last said, the way the scenario list does.
 Future<List<String>?> _askRule(Terminal terminal) async {
   final results = readRuleResults();
   final chosen = await showMenu<String>(
@@ -677,8 +587,7 @@ Future<List<String>?> _askRule(Terminal terminal) async {
           entry.label,
           entry.name,
           detail: describeRuleResult(results[entry.name]),
-          // Green for a pass, red for a break, grey for never run: "it
-          // passed" and "it ran" are different claims.
+          // Grey for never run: "it passed" and "it ran" are different claims.
           detailColor: switch (results[entry.name]) {
             null => palette.rowDisabled,
             final result when result.passed => palette.ok,
@@ -696,18 +605,13 @@ Future<List<String>?> _askRule(Terminal terminal) async {
 
 /// Asks which app to drive, and then what to do with it.
 ///
-/// Two screens, and each asks one thing. The first is only ever *which app*
-/// — the environment does not belong here, because a screen that asked
-/// which app and also offered two things that are not apps would be asking
-/// two questions at once.
-///
-/// Mobile is listed and disabled for the same reason the build screen lists
-/// it: `src/apps/mobile` exists, and a screen that hid it would read as a
-/// bug rather than a plan.
+/// Two screens, one question each: the environment is not an app, so it does
+/// not belong on the first. Mobile is listed and disabled rather than hidden,
+/// as on the build screen (see [_askPlatform]).
 Future<List<String>?> _askE2e(Terminal terminal, List<String> carried) async {
   const section = 'End-to-end';
-  // Already on an app: go straight back to its scenarios. This is what
-  // makes a finished run return to the list it was chosen from.
+  // Already on an app: back to its scenarios, so a finished run returns to
+  // the list it was chosen from.
   if (carried.isNotEmpty) {
     return _askScenario(terminal, section: section);
   }
@@ -742,18 +646,10 @@ Future<List<String>?> _askE2e(Terminal terminal, List<String> carried) async {
 
 /// Asks which scenario to run, or what to do with the environment.
 ///
-/// Every scenario the source declares, grouped as it declares itself, each
-/// row carrying when it last passed and on which version of the app — which
-/// is what the list is read for: *has this been checked since?*
-///
-/// A scenario that has never run is listed without a date rather than
-/// hidden. Absence is information.
-///
-/// The environment lives at the bottom of this screen and not the one
-/// before it: preparing it only matters once someone is about to run
-/// something, and this is where they are when that becomes true. The header
-/// says whether it is there, so a row that would fail for want of it says
-/// so before it is chosen.
+/// Each row says when it last passed and on which version, since "checked
+/// since?" is what the list is read for; one that never ran is listed without
+/// a date rather than hidden. The environment sits at the bottom because
+/// preparing it only matters once someone is about to run something.
 Future<List<String>?> _askScenario(
   Terminal terminal, {
   required String section,
@@ -770,9 +666,8 @@ Future<List<String>?> _askScenario(
     groups.putIfAbsent(scenario.group, () => <Scenario>[]).add(scenario);
   }
 
-  // Nothing that reads the environment can run without one, so those rows
-  // are shown and not selectable rather than hidden — the list is also how
-  // someone learns what exists.
+  // Rows that need the environment are shown and not selectable rather than
+  // hidden: the list is also how someone learns what exists.
   final blocked = scenarios.where((s) => s.needsEnvironment).length;
   final runnable = !prepared ? scenarios.length - blocked : scenarios.length;
 
@@ -808,9 +703,7 @@ Future<List<String>?> _askScenario(
           : '${result.passed ? '\u2713' : '\u2718'} '
                 '${describeWhen(result.when)} \u00b7 v${result.version} '
                 '\u00b7 ${describeElapsed(result.elapsed)}';
-      // Green for a pass, red for a failure, grey for everything else. The
-      // colour is the first thing read on this screen, and "it passed" and
-      // "it ran" are different claims.
+      // Grey for never run: "it passed" and "it ran" are different claims.
       final resultColor = result == null
           ? palette.rowDisabled
           : (result.passed ? palette.ok : palette.fail);
@@ -884,32 +777,22 @@ Future<List<String>?> _askScenario(
   return chosen == null ? null : <String>[chosen];
 }
 
-/// Asks which package to clear.
-///
-/// The same package screen as codegen's and coverage's, because it is the
-/// same question. `All of them` leads it, as it does there, and here it is
-/// also what most runs want: a clean is usually reached for precisely when
-/// nothing on disk is trusted any more.
+/// Asks which package to clear, on the package screen codegen and coverage
+/// share.
 Future<List<String>?> _askCleanTarget(Terminal terminal) async {
   final target = await _askPackage(terminal, section: 'Clean');
   return target == null ? null : [target];
 }
 
-/// Asks which package to measure and report on.
-///
-/// Coverage is a property of one package's `lib/`, so the same package screen
-/// applies — and unlike the test kinds, there is nothing above it to choose
-/// first.
+/// Asks which package to measure: coverage is a property of one package's
+/// `lib/`.
 Future<List<String>?> _askCoverageTarget(Terminal terminal) async {
   final target = await _askPackage(terminal, section: 'Coverage');
   return target == null ? null : [target];
 }
 
-/// Asks which package to run a kind of test over.
-///
-/// Same screen as codegen's, because it is the same question: the kind was
-/// already chosen on the root screen, and what is left is scope.
-///
+/// Asks which package to run a kind of test over; the kind was chosen on the
+/// root screen.
 Future<List<String>?> _askTestTarget(
   Terminal terminal,
   List<String> carried,
@@ -920,21 +803,16 @@ Future<List<String>?> _askTestTarget(
   final kind = _testKinds.firstWhere((k) => k.name == carried.first);
   final section = 'Tests ${Layout.crumbSeparator} ${kind.label}';
 
-  // Every kind left is split per package. The one that was not — end to
-  // end — is a command of its own now, with two screens of its own.
   final target = await _askPackage(terminal, section: section);
   return target == null ? null : [kind.name, target];
 }
 
 /// Asks how thoroughly to regenerate, then over which package.
 ///
-/// Two screens rather than one list of sixteen combinations: the questions
-/// are independent, and backing out of the second returns to the first rather
-/// than to the root, which is what makes a wrong turn cost one keystroke.
-///
-/// `Hard` carries its consequence in the annotation rather than behind a
-/// confirmation prompt: it is destructive only to files that are generated by
-/// definition, so the cost of picking it by accident is time, not work.
+/// Two screens rather than one list of combinations, so backing out of the
+/// second returns to the first. `Hard` carries its consequence in the
+/// annotation rather than behind a confirmation: it only destroys generated
+/// files.
 Future<List<String>?> _askCodegen(Terminal terminal) async {
   while (true) {
     final mode = await showMenu<String>(
@@ -971,10 +849,8 @@ Future<List<String>?> _askCodegen(Terminal terminal) async {
 
 /// Asks which package to work on, with the whole workspace first.
 ///
-/// `All of them` leads because it is what most runs want; the individual rows
-/// are for the case where the whole point is not waiting on the other seven.
 /// Grouped into packages and apps because that split decides where a target
-/// resolves — `src/packages/` or `src/apps/` — not merely how it reads.
+/// resolves, `src/packages/` or `src/apps/`.
 Future<String?> _askPackage(Terminal terminal, {required String section}) =>
     showMenu(
       terminal,
@@ -1021,16 +897,21 @@ const _backDescription =
 /// The argument that stands for the whole workspace.
 const _allTargets = 'all';
 
+/// [rest] with [watchFlag] taken out, which leaves a scenario name in prose.
+///
+/// Both questions — was a name given, and what is it — are asked of the
+/// filtered list, or `tom e2e --watch` looks for a scenario called nothing.
+List<String> _scenarioWords(List<String> rest) =>
+    rest.where((word) => word != watchFlag).toList();
+
 /// A package name as the menu shows it: capitalized, except where the package
 /// spells itself.
 String _labelFor(String target) =>
     '${target[0].toUpperCase()}${target.substring(1)}';
 
-/// What each package is, for the footer.
-///
-/// Taken from `docs/technical/layers.md`, which is the source of truth for
-/// the graph — a row that described a layer differently from the document
-/// enforcing it would be worse than a row that said nothing.
+/// What each package is, for the footer, taken from
+/// `docs/technical/architecture.md` so a row cannot describe a layer differently
+/// from the document enforcing it.
 const _packageDescriptions = <String, String>{
   'core':
       'Result, the AppFailure marker and the ports every layer needs. '
@@ -1061,12 +942,9 @@ const _packageDescriptions = <String, String>{
 
 /// Asks which platform to build for.
 ///
-/// The host is drawn brighter and annotated, because it is the one row that
-/// needs no toolchain set up first — everything else is a cross build.
-///
-/// Mobile is listed and disabled rather than omitted: `src/apps/mobile` is a
-/// real package in the workspace, so a build screen that showed only desktop
-/// would read as a bug rather than as a plan.
+/// The host is emphasized because it is the one row that needs no toolchain
+/// set up; mobile is listed and disabled rather than omitted, since
+/// `src/apps/mobile` is a real package and its absence would read as a bug.
 Future<List<String>?> _askPlatform(Terminal terminal) async {
   final host = hostPlatform;
   final items = <MenuItem<String>>[
@@ -1112,9 +990,7 @@ Future<List<String>?> _askPlatform(Terminal terminal) async {
 
 /// Runs [name] with [rest], or explains why it cannot.
 ///
-/// Every command does its own work here. Nothing shells out to `make`: the
-/// Makefile is a thin face over this, not the other way round, so a CLI that
-/// called it would be a circle.
+/// Nothing shells out to `make`: the Makefile is a face over this.
 Future<int> _dispatch(String name, List<String> rest) async {
   final command = _commands.where((c) => c.name == name).firstOrNull;
   if (command == null) {
@@ -1123,10 +999,9 @@ Future<int> _dispatch(String name, List<String> rest) async {
     return 64;
   }
 
-  // Before anything runs. `_targetsFrom` ignores what it does not recognise,
-  // which is right for the modes and kinds travelling in the same list and
-  // wrong for everything else: it turns a typo into "none named", and none
-  // named means all of them. `tom clean cor` cleaned all eight packages.
+  // Checked before anything runs: `_targetsFrom` ignores what it does not
+  // recognise, which is right for the modes and kinds in the same list and
+  // turns a typo into "none named", which means all of them.
   final unrecognized = _unrecognized(command.name, rest);
   if (unrecognized.isNotEmpty) {
     stderr.writeln(
@@ -1149,8 +1024,7 @@ Future<int> _dispatch(String name, List<String> rest) async {
       targets: _targetsFrom(rest),
     ),
     'coverage' => switch (rest) {
-      // Narrowed to what was just touched, which is the case where the point
-      // is the suite that does not run.
+      // Narrowed to what was just touched, so the rest of the suite never runs.
       _ when rest.contains(last) => await runLastCoverage(
         count: _countFrom(rest),
       ),
@@ -1179,10 +1053,16 @@ Future<int> _dispatch(String name, List<String> rest) async {
       _ when rest.contains('clean') => await runE2eClean(),
       _ when rest.contains('fixtures') => await runE2eFixtures(),
       _ when rest.contains('list') => await runE2eList(),
-      _ when rest.contains(_allTargets) => await runAllScenarios(),
-      [] => await runE2eList(),
+      _ when rest.contains(_allTargets) => await runAllScenarios(
+        watch: rest.contains(watchFlag),
+      ),
+      // `tom e2e` and `tom e2e --watch` both name no scenario, so both list.
+      _ when _scenarioWords(rest).isEmpty => await runE2eList(),
       // Anything else is a scenario name, in prose.
-      _ => await runNamedScenario(rest.join(' ')),
+      _ => await runNamedScenario(
+        _scenarioWords(rest).join(' '),
+        watch: rest.contains(watchFlag),
+      ),
     },
     'rules' => await runRules(rest.isEmpty ? null : rest.first),
     'verify' => await runVerify(),
@@ -1191,14 +1071,9 @@ Future<int> _dispatch(String name, List<String> rest) async {
 }
 
 /// The arguments [command] does not understand.
-///
-/// Every command that takes any reads them out of one flat list, so the list
-/// is the only place that can tell a word it was given from a word it knows.
 List<String> _unrecognized(String command, List<String> arguments) {
-  // `e2e` is the exception, and it has to be: a scenario is named in prose
-  // — "Opens a docs folder inside a repository" — so there is no set of
-  // words to check it against. It validates the name itself, against what
-  // the source declares, and lists them all when it does not match.
+  // A scenario is named in prose, so `e2e` validates the name itself against
+  // what the source declares.
   if (command == 'e2e') return const <String>[];
   final words = _wordsFor(command);
   final flags = _flagsFor(command);
@@ -1214,8 +1089,7 @@ List<String> _unrecognized(String command, List<String> arguments) {
 /// The bare words [command] accepts.
 Set<String> _wordsFor(String command) => switch (command) {
   'build' || 'run' => const {..._platformNames},
-  // The catalogue is the list, so a rule added there is accepted here
-  // without a second copy to forget.
+  // The catalogue is the list, so a rule added there is accepted here.
   'rules' => <String>{for (final entry in catalogue) entry.name},
   'clean' => const {_allTargets, ...allTargets},
   'coverage' => const {_allTargets, ...allTargets, changed, last},
@@ -1242,9 +1116,8 @@ Set<String> _flagsFor(String command) => switch (command) {
 
 /// The packages named in [rest], or all of them.
 ///
-/// Anything that is not a known package is ignored rather than rejected: the
-/// modes and kinds travel in the same argument list, and `all` is spelled out
-/// precisely so it lands here as "none named".
+/// Anything else is ignored rather than rejected, because the modes and kinds
+/// travel in the same list; [_unrecognized] is what catches a typo.
 List<String> _targetsFrom(List<String> rest) {
   final named = rest.where(allTargets.contains).toList();
   return named.isEmpty ? allTargets : named;
@@ -1252,20 +1125,16 @@ List<String> _targetsFrom(List<String> rest) {
 
 /// The `--base=REF` an argument list carries, if any.
 ///
-/// A flag rather than a bare argument: a git ref can be spelled anything at
-/// all, so a positional one would be indistinguishable from a typo'd package
-/// name.
+/// A flag rather than a bare argument: a git ref can be spelled anything, so
+/// a positional one would be indistinguishable from a typo'd package name.
 String? _baseFrom(List<String> arguments) {
   const flag = '--base=';
   final argument = arguments.where((a) => a.startsWith(flag)).firstOrNull;
   return argument?.substring(flag.length);
 }
 
-/// The `--count=N` an argument list carries, if any.
-///
-/// A flag rather than a bare argument, for the same reason as `--base`: a
-/// positional number in the same list as the kinds and the package names
-/// would be indistinguishable from a typo.
+/// The `--count=N` an argument list carries, if any; a flag for the same
+/// reason as [_baseFrom].
 int? _countFrom(List<String> arguments) {
   const flag = '--count=';
   final argument = arguments.where((a) => a.startsWith(flag)).firstOrNull;
@@ -1301,8 +1170,7 @@ void _printUsage() {
     ..writeln('  dart run tool/tom.dart           Open the menu')
     ..writeln('  dart run tool/tom.dart <command> Run it directly')
     ..writeln();
-  // Width from the longest name rather than a constant, so adding a command
-  // cannot quietly break the column.
+  // Width from the longest name, so adding a command cannot break the column.
   final width = _commands
       .map((c) => c.name.length)
       .reduce((a, b) => a > b ? a : b);
@@ -1323,26 +1191,22 @@ final class _Command {
 
   final String? _label;
 
-  /// What the footer says while this command's row is selected.
-  ///
-  /// Longer than [summary], which has one line in `--help` to work with.
-  /// Hidden commands have none: they are never a row.
+  /// What the footer says while this command's row is selected; longer than
+  /// [summary], which has one `--help` line to work with.
   final String? description;
 
-  /// Kept out of the root screen's rows, but still a command: reachable by
-  /// name, listed in `--help`.
+  /// Kept off the root screen, but still reachable by name and listed in
+  /// `--help`.
   final bool hidden;
 
-  /// What the command is called on the command line: lowercase, one word,
-  /// the token a user types and a script commits to.
+  /// The token a user types and a script commits to: lowercase, one word.
   final String name;
 
   /// What the menu reads as: [name] capitalized, unless the command spells
   /// itself differently.
   ///
-  /// Derived rather than stored so the two cannot drift — a row that says
-  /// `Verify` always runs `verify`. The override exists for names that are
-  /// not words, like `FVM`.
+  /// Derived rather than stored so a row that says `Verify` always runs
+  /// `verify`; the override is for names that are not words, like `FVM`.
   String get label => _label ?? '${name[0].toUpperCase()}${name.substring(1)}';
 
   final String summary;
@@ -1374,8 +1238,8 @@ final class _CodegenMode {
   /// What the footer says while this row is selected.
   final String description;
 
-  /// What the row has to warn about, or `null` when it has nothing to say.
-  /// Shown as the row's right-hand annotation.
+  /// The row's right-hand annotation, or `null` when there is nothing to warn
+  /// about.
   final String? caveat;
 }
 
@@ -1389,9 +1253,5 @@ final class _TestKind {
   final String description;
 
   /// What the row says.
-  ///
-  /// Every kind left is split per package — they belong to one and live
-  /// under its `test/`. The one that was not, end to end, became a command
-  /// of its own: it opens the app on a device rather than running a folder.
   final String label;
 }

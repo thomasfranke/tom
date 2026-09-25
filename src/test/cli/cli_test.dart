@@ -1,16 +1,5 @@
-// Black-box tests for `tom`, the CLI in tool/.
-//
-// They run it the way anyone runs it — a process, a command line, an exit
-// code — and assert on what comes back. Nothing here imports the CLI, which
-// is the point: `tool/` holds no pubspec, because a tool that resolves the
-// workspace cannot require the workspace to be resolved before it runs, so it
-// can have no test/ of its own. Driving the built artefact from the workspace
-// side costs nothing and tests the thing people actually invoke.
-//
-// Two hatches in the CLI exist for exactly this, and both say so where they
-// are defined: `--preview` renders the root screen as static text, and
-// Dashboard.frame() does the same for a run. A redraw loop cannot be captured
-// by piping stdout anywhere.
+/// Black-box tests for `tom`, run as a process and asserted on what comes
+/// back, because `tool/` has no pubspec and so no test/ of its own.
 library;
 
 import 'dart:io';
@@ -26,9 +15,8 @@ void main() {
     });
 
     test('lists every command, hidden ones included', () {
-      // Hidden means "not a row on the root screen", never "not a command":
-      // scripts and the Makefile call analyze, setup and the two gates by
-      // name, and `--help` is where someone finds out they exist.
+      // Hidden means not a row on the root screen, never not a command:
+      // scripts call analyze, setup and the gates by name.
       for (final String command in _everyCommand) {
         expect(
           result.stdout,
@@ -60,8 +48,7 @@ void main() {
 
   group('exit codes', () {
     test('an unknown command is a usage error', () {
-      // EX_USAGE. A script that mistypes a command has to be able to tell
-      // that from the command having failed at its job.
+      // EX_USAGE, so a script can tell a mistyped command from a failed one.
       expect(_tom(<String>['nonesuch']).exitCode, 64);
     });
 
@@ -77,12 +64,31 @@ void main() {
     });
   });
 
+  group('e2e', () {
+    test('a flag on its own is not a scenario name', () {
+      // Taking `--watch` out can leave no name, and no name is the same
+      // request as `tom e2e`: a listing, not a scenario called ''.
+      final ProcessResult result = _tom(<String>['e2e', '--watch']);
+
+      expect(result.exitCode, 0);
+      expect(result.stdout, contains('End-to-end'));
+    });
+
+    test('a name that does not exist is still a usage error', () {
+      final ProcessResult result = _tom(<String>[
+        'e2e',
+        'Nothing by this name',
+      ]);
+
+      expect(result.exitCode, 64);
+    });
+  });
+
   group('doctor', () {
     late final ProcessResult result = _tom(<String>['doctor']);
 
     test('passes on a machine that can build this repository', () {
-      // If this fails here, the machine running the tests cannot build the
-      // product — which is worth failing a test over.
+      // A machine that cannot build the product is worth failing a test over.
       expect(result.exitCode, 0, reason: result.stdout.toString());
     });
 
@@ -105,10 +111,8 @@ void main() {
 
 /// Every command the CLI answers to, hidden ones included.
 ///
-/// Spelled out here rather than read from `tool/tom.dart`, deliberately: a
-/// list derived from the thing under test agrees with it by construction and
-/// proves nothing. Adding a command means adding it here, which is the moment
-/// to decide whether it belongs in `--help` at all.
+/// Spelled out rather than read from `tool/tom.dart`: a list derived from
+/// the thing under test agrees with it by construction and proves nothing.
 const List<String> _everyCommand = <String>[
   'analyze',
   'build',
@@ -127,20 +131,16 @@ const List<String> _everyCommand = <String>[
   'verify',
 ];
 
-/// Runs the CLI with [arguments] and waits for it to finish.
-///
-/// [Platform.resolvedExecutable] rather than a bare `dart`, for the same
-/// reason the CLI itself uses it: the SDK running these tests is the one that
-/// must run what they spawn.
+/// The CLI run with [arguments], through [Platform.resolvedExecutable] so
+/// the SDK running these tests is the one running what they spawn.
 ProcessResult _tom(List<String> arguments) => Process.runSync(
   Platform.resolvedExecutable,
   <String>['run', 'tool/tom.dart', ...arguments],
   workingDirectory: _repositoryRoot.path,
 );
 
-/// The repository root, found by marker rather than by counting levels up
-/// from this file — which is what broke the scripts in `tool/` when they moved
-/// into a subfolder.
+/// The repository root, found by marker rather than by counting levels up,
+/// so moving this file cannot break it.
 Directory get _repositoryRoot {
   Directory directory = Directory.current;
   for (int level = 0; level < 8; level++) {

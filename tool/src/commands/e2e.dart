@@ -12,44 +12,30 @@ import 'process.dart';
 
 /// Where the prepared environment lives, relative to the repository root.
 ///
-/// Inside the repository and gitignored, rather than in the system temporary
-/// directory, for one reason: **you can open it in the app**. An end-to-end
-/// failure is read by looking at what the test was looking at, and a path
-/// under `/var/folders/...` that is deleted on reboot is not something
-/// anyone inspects.
+/// Inside the repository and gitignored rather than in the system temporary
+/// folder, so a failure can be read by opening what the test saw in the app.
 const e2eDirectory = '.e2e';
 
 /// What the tests read to find out what was prepared.
 ///
-/// The CLI builds the environment and the tests assert against it, and they
-/// live in different worlds — `tool/` has no pubspec and cannot share a
-/// constant with `src/`. A manifest is the seam: one side writes it, the
-/// other reads it, and a scenario renamed in one place fails loudly in the
-/// other instead of quietly testing nothing.
+/// `tool/` has no pubspec and cannot share a constant with `src/`, so the
+/// manifest is the seam: a scenario renamed on one side fails loudly on the
+/// other.
 const manifestFile = 'manifest.json';
 
-/// Where the mock the environment is built from lives.
+/// Where the fixtures the environment is built from live.
 ///
-/// **In the repository, committed, and readable as documentation.** The
-/// content used to be Dart string constants in this file, which meant the
-/// only way to see what a test was looking at was to read the code that
-/// wrote it. It is markdown; it belongs on disk as markdown — reviewable in
-/// a diff, openable in the app, and editable by whoever is adding a case
-/// without touching the CLI at all.
-///
-/// Beside the scenarios that read it, for the same reason they live in the
-/// app rather than in a package of their own: the fixture and the flow
-/// through it are one change.
+/// Committed markdown on disk rather than string constants here, so what a
+/// test looks at is reviewable in a diff and openable in the app; beside the
+/// scenarios that read it, because the fixture and the flow are one change.
 const mockDirectory = 'src/apps/desktop/integration_test/fixtures';
 
 /// One situation the app can be pointed at.
 ///
 /// A *fixture* is a situation on disk; a *scenario* is a flow through the
-/// app. Several scenarios share one fixture, and one that needed its own
-/// would be describing a situation nobody has.
-///
-/// Everything but [name] is read from the fixture's `fixture.json`. The
-/// folder is the content; the file is what git has and has not seen of it.
+/// app, and several share one fixture. Everything but [name] is read from
+/// the folder's `fixture.json`: the folder is the content, the file is what
+/// git has and has not seen of it.
 final class E2eFixture {
   const E2eFixture({
     required this.name,
@@ -124,36 +110,29 @@ final class E2eFixture {
   /// Files that exist but git has never been told about.
   final List<String> untracked;
 
-  /// Path to the tail of it that is not committed.
+  /// Path to the tail of it that git has not seen.
   ///
-  /// The folder holds the file as the app will show it; this says how much
-  /// of the end of it git has not seen. Committing the file without that
-  /// tail and writing it back afterwards is what makes the file *modified*
-  /// — which is a state on disk, and cannot be a file of its own.
+  /// The file is committed without the tail and written back whole, which is
+  /// what makes it *modified*: a state on disk, not a file of its own.
   final Map<String, String> uncommitted;
 
   /// The remote this repository tracks, or null when it tracks none.
   final E2eRemote? remote;
 
-  /// Further commits on the fixture's own branch, oldest first.
-  ///
-  /// What gives a document a *history*: one commit is a file that has been
-  /// recorded, and it takes several — some of them touching other files —
-  /// before "the commits that changed this one" means anything.
+  /// Further commits on the fixture's own branch, oldest first — what gives a
+  /// document a history.
   final List<E2eCommit> commits;
 
   /// Branches beside the fixture's own, each with its own commits.
   ///
-  /// What gives a switch somewhere to go *and something to change*: a branch
-  /// holding the same files as `main` would let a switch that did nothing to
-  /// the working tree pass.
+  /// A branch holding the same files as `main` would let a switch that never
+  /// touched the working tree pass.
   final List<E2eBranch> branches;
 
   /// Whether it has to be staged outside the repository.
   ///
-  /// True for exactly one situation — a folder with no repository above it
-  /// — because git looks *upward*: anywhere in this project is inside a
-  /// repository, and the app would open it correctly and uselessly.
+  /// Git looks upward, so a folder with no repository above it cannot be
+  /// anywhere inside this project.
   final bool outsideTheProject;
 
   /// Where the files to copy are.
@@ -170,11 +149,10 @@ const fixtureFile = 'fixture.json';
 /// of the files the app would then show.
 const contentDirectory = 'content';
 
-/// Every fixture under [mockDirectory], in the order they are listed.
+/// Every fixture under [mockDirectory], sorted by name.
 ///
 /// Read from disk rather than declared here: adding a situation is adding a
-/// folder, and a list maintained beside it would be wrong the first time
-/// somebody forgot it.
+/// folder.
 List<E2eFixture> e2eFixtures() {
   final directory = Directory('${repoRoot().path}/$mockDirectory');
   if (!directory.existsSync()) return const <E2eFixture>[];
@@ -184,27 +162,35 @@ List<E2eFixture> e2eFixtures() {
   ]..sort((a, b) => a.name.compareTo(b.name));
 }
 
-/// Runs one of the environment commands directly.
+/// Runs the scenario slowly enough to watch it happen: `tom e2e <name>
+/// --watch`.
 ///
-/// `tom e2e <mode>` goes through the menu; this is the same code reachable
-/// without it, which is what CI uses and what a `make` target calls.
+/// Declared here because both entry points take it — the menu and this
+/// file's [main] — and a flag spelled twice is one eventually forgotten.
+const watchFlag = '--watch';
+
+/// Runs one of the environment commands directly, without the menu.
+///
+/// [watchFlag] is taken from anywhere in the line, as the menu takes it.
 Future<void> main(List<String> arguments) async {
-  final mode = arguments.isEmpty ? 'list' : arguments.first;
+  final watch = arguments.contains(watchFlag);
+  final words = arguments.where((word) => word != watchFlag).toList();
+  final mode = words.isEmpty ? 'list' : words.first;
   exitCode = switch (mode) {
     'prepare' => await runE2ePrepare(),
     'clean' => await runE2eClean(),
     'list' => await runE2eList(),
     'fixtures' => await runE2eFixtures(),
-    'all' => await runAllScenarios(),
-    _ => await runNamedScenario(arguments.join(' ')),
+    'all' => await runAllScenarios(watch: watch),
+    _ => await runNamedScenario(words.join(' '), watch: watch),
   };
 }
 
 /// Runs every scenario, one at a time.
 ///
-/// Sequential, and not for tidiness: each one launches the app, and on
-/// macOS the next launch fails while the previous window is still there.
-Future<int> runAllScenarios() async {
+/// Sequential because each one launches the app, and on macOS the next launch
+/// fails while the previous window is still there.
+Future<int> runAllScenarios({bool watch = false}) async {
   final scenarios = discoverScenarios();
   if (scenarios.isEmpty) {
     stderr.writeln('tom e2e: no scenarios found under $scenarioDirectory');
@@ -216,12 +202,11 @@ Future<int> runAllScenarios() async {
   var worst = 0;
   for (final scenario in scenarios) {
     progress.index++;
-    // The next scenario takes the whole screen. Stacking them leaves the eye
-    // scrolling to find what is running now, and a finished one says nothing
-    // the summary below will not say better.
+    // The next scenario takes the whole screen; a finished one says nothing
+    // the summary will not say better.
     clearScreen();
     _freshEnvironmentFor(scenario);
-    final code = await runScenario(scenario, suite: progress);
+    final code = await runScenario(scenario, suite: progress, watch: watch);
     if (code == 0) {
       progress.passed++;
     } else {
@@ -234,11 +219,8 @@ Future<int> runAllScenarios() async {
   return worst;
 }
 
-/// What the whole run came to.
-///
-/// Printed after the last screen rather than painted into it: this is the
-/// thing someone reads when they come back to the terminal, so it has to
-/// survive the scenario screens being cleared over each other.
+/// What the whole run came to, printed after the last screen so it survives
+/// the scenario screens being cleared over each other.
 void _printSuiteSummary(
   SuiteProgress progress,
   List<String> failures,
@@ -267,8 +249,7 @@ void _printSuiteSummary(
   if (failures.isEmpty) {
     return;
   }
-  // Named, because "one failed" sends someone back through six screens to
-  // find out which.
+  // Named, because "one failed" is otherwise six screens back.
   stdout.writeln('  ${palette.fail}Failed${Ansi.reset}');
   for (final name in failures) {
     stdout.writeln('    ${palette.detail}$name${Ansi.reset}');
@@ -277,7 +258,7 @@ void _printSuiteSummary(
 }
 
 /// Runs the scenario called [name].
-Future<int> runNamedScenario(String name) async {
+Future<int> runNamedScenario(String name, {bool watch = false}) async {
   final scenarios = discoverScenarios();
   final match = scenarios.where((s) => s.name == name);
   if (match.isEmpty) {
@@ -290,24 +271,19 @@ Future<int> runNamedScenario(String name) async {
     return 64; // EX_USAGE
   }
   _freshEnvironmentFor(match.first);
-  return runScenario(match.first);
+  return runScenario(match.first, watch: watch);
 }
 
 /// Rebuilds the environment before [scenario], when it reads one.
 ///
-/// **Scenarios write.** One commits, one saves a file, one pushes — so the
-/// situation the next scenario opens is not the one its fixture describes
-/// unless somebody rebuilds it. Running the same scenario twice used to
-/// fail the second time, and the failure pointed at the app rather than at
-/// the leftovers.
+/// Scenarios write — one commits, one saves, one pushes — so the next one
+/// would otherwise open a situation nobody described.
 void _freshEnvironmentFor(Scenario scenario) {
   if (scenario.needsEnvironment) buildEnvironment();
 }
 
-/// The header every screen carries.
-///
-/// A command that paints its own frame has to put it back: a header on most
-/// screens reads as a bug on the one it is missing from.
+/// The header every screen carries; a command that paints its own frame has
+/// to put it back.
 void _printTitle() => stdout.writeln(
   '${palette.title}${Layout.appTitle}${Ansi.reset} '
   '${palette.titleSuffix}${Layout.titleSeparator} '
@@ -315,17 +291,10 @@ void _printTitle() => stdout.writeln(
 );
 
 /// Whether `tom e2e prepare` has been run.
-///
-/// Asked by the menu, which says so on the row that would otherwise fail
-/// for want of it.
 bool environmentIsPrepared() =>
     File('${repoRoot().path}/$e2eDirectory/$manifestFile').existsSync();
 
 /// Lists the scenarios, with what happened the last time each ran.
-///
-/// Read from the source, not from a list someone maintains: a scenario is
-/// declared by calling `scenario('…')`, and a registry kept beside that
-/// would be wrong the first time somebody forgot it.
 Future<int> runE2eList() async {
   final scenarios = discoverScenarios();
   final results = readResults();
@@ -340,9 +309,8 @@ Future<int> runE2eList() async {
 
   final prepared = environmentIsPrepared();
   final groups = <String, List<Scenario>>{
-    // Seeded in the declared order, so the menu reads as the journey
-    // through the app rather than as the order the files were read in.
-    // Empty ones are dropped below; an undeclared one lands at the end.
+    // Seeded in the declared order, so the list reads as the journey through
+    // the app; empty groups are dropped, an undeclared one lands at the end.
     for (final heading in scenarioGroups) heading: <Scenario>[],
   };
   for (final scenario in scenarios) {
@@ -359,9 +327,8 @@ Future<int> runE2eList() async {
       ..writeln();
     for (final scenario in entry.value) {
       final result = results[scenario.name];
-      // Blocked reads differently from failed, and both read differently
-      // from never having run. A scenario that never ran is listed without
-      // a date rather than hidden: absence is information.
+      // Blocked, failed and never run read differently, and a scenario that
+      // never ran is listed without a date rather than hidden.
       final detail = switch (result) {
         _ when scenario.needsEnvironment && !prepared =>
           '${palette.rowDisabled}$blockedNote${Ansi.reset}',
@@ -390,13 +357,8 @@ Future<int> runE2eList() async {
   return 0;
 }
 
-/// Lists the folders the scenarios are pointed at.
-///
-/// Named *fixtures* and not scenarios, which is what they were called until
-/// the word had to mean two things at once. A fixture is a situation on
-/// disk; a scenario is a flow through the app. Several scenarios share one
-/// fixture, and one that needed its own would be describing a situation
-/// nobody has.
+/// Lists the fixtures: the situations on disk, as against the scenarios that
+/// flow through them (see [E2eFixture]).
 Future<int> runE2eFixtures() async {
   _printTitle();
   announce('End-to-end — fixtures');
@@ -412,15 +374,8 @@ Future<int> runE2eFixtures() async {
 
 /// Builds the environment from scratch, and answers the fixtures it made.
 ///
-/// **Destructive on purpose**: it deletes what was there first. A scenario
-/// the last run left modified is not a scenario, and a prepare that
-/// sometimes prepared would be the worst kind of flake — the one that
-/// depends on whether the previous test passed.
-///
-/// Which is why [runScenario] is given a fresh one every time rather than
-/// trusting whatever is on disk: the scenarios *write*. One commits, one
-/// saves a file, one pushes — and the next then starts from a situation
-/// nobody described. It costs a second; a build costs a minute.
+/// It deletes what was there first: a fixture the last run left modified is
+/// not the fixture, and [_freshEnvironmentFor] relies on that.
 List<E2eFixture> buildEnvironment() {
   final directory = Directory('${repoRoot().path}/$e2eDirectory');
   if (directory.existsSync()) {
@@ -476,13 +431,10 @@ Future<int> runE2eClean() async {
 
 /// A remote the fixture tracks, and how far each side has drifted from it.
 ///
-/// **A bare repository beside the working tree, never a server.** To git a
-/// filesystem path is as real a remote as GitHub — `fetch`, `push` and
-/// `pull` take the same code path, and the transport is the one part TOM
-/// does not implement anyway ([Decision
-/// 2](../../../docs/technical/decisions/002-git-via-system-binary.md): it is
-/// the user's own git). What that buys is a suite with no network, no
-/// credentials and no shared state, on a divergence built to order.
+/// A bare repository beside the working tree, never a server: to git a
+/// filesystem path is as real a remote as GitHub, so fetch, push and pull
+/// take the same code path with no network, no credentials and a divergence
+/// built to order.
 final class E2eRemote {
   const E2eRemote({required this.theirs, required this.mine});
 
@@ -503,12 +455,11 @@ final class E2eRemote {
       E2eCommit.read(entry! as Map<String, Object?>),
   ];
 
-  /// Commits only the remote has — what a fetch discovers and a push is
+  /// Commits only the remote has: what a fetch discovers and a push is
   /// refused for.
   ///
-  /// Made *after* the first push and never fetched, so the working tree
-  /// starts out not knowing about them: `behind` is zero until the app asks,
-  /// which is the whole point of having a Fetch button.
+  /// Made after the first push and never fetched, so `behind` is zero until
+  /// the app asks.
   final List<E2eCommit> theirs;
 
   /// Commits only the working tree has — what there is to publish.
@@ -517,9 +468,8 @@ final class E2eRemote {
 
 /// A branch to manufacture, and the commits that make it differ.
 ///
-/// Built from the fixture's first commit and left behind: the repository
-/// ends on its own branch, so a scenario starts where the user would and
-/// has somewhere to switch *to*.
+/// Branched off the fixture's whole history and left behind; the repository
+/// ends on `main`, so a scenario starts where the user would.
 final class E2eBranch {
   const E2eBranch({required this.name, required this.commits});
 
@@ -555,7 +505,7 @@ final class E2eBranch {
 final class E2eCommit {
   const E2eCommit({required this.message, required this.write});
 
-  /// Reads one entry of a `theirs` or `mine` list.
+  /// Reads one entry of a `commits`, `theirs` or `mine` list.
   factory E2eCommit.read(Map<String, Object?> decoded) => E2eCommit(
     message: decoded['message']! as String,
     write: <String, String>{
@@ -572,22 +522,18 @@ final class E2eCommit {
 
   /// The files it creates or replaces, by path inside the repository.
   ///
-  /// The two sides write *different* files on purpose: a pull that has to
-  /// merge cleanly is what the recovery scenario needs, and a conflict is a
-  /// situation of its own that nothing draws yet.
+  /// The two sides of a remote write *different* files: the recovery scenario
+  /// needs a pull that merges cleanly, and a conflict has no screen yet.
   final Map<String, String> write;
 }
 
 /// Stages [fixture] and returns what the manifest says about it.
 ///
-/// The folder is copied as it is; the history is made here. What makes a
-/// file *modified* or *untracked* is a state of the repository, not a file
-/// anyone can commit — so the mock holds the working tree the app will
-/// show, and this builds the history that tree is a change to.
+/// The folder is copied as it is and the history is made here: *modified*
+/// and *untracked* are states of the repository, not files anyone can commit.
 Map<String, Object?> _build(E2eFixture fixture, Directory root) {
-  // A fixture that is *outside* any repository cannot be staged under
-  // `.e2e/`, which is inside this one. The manifest records where it went,
-  // so a scenario asks for it by name and never learns it is elsewhere.
+  // A fixture outside any repository cannot sit under `.e2e/`, which is
+  // inside this one; the manifest records where it went instead.
   final destination = fixture.outsideTheProject
       ? '${Directory.systemTemp.path}/tom-e2e-${fixture.name}'
       : '${root.path}/${fixture.name}';
@@ -601,8 +547,7 @@ Map<String, Object?> _build(E2eFixture fixture, Directory root) {
 
   if (!fixture.outsideTheProject) {
     _initRepository(destination);
-    // Committed without the tails, which are then written back: that is
-    // what leaves the file modified in the working tree.
+    // Committed without the tails, which are written back below.
     fixture.uncommitted.forEach((path, tail) {
       _write('$destination/$path', _without(tail, at: '$destination/$path'));
     });
@@ -613,13 +558,13 @@ Map<String, Object?> _build(E2eFixture fixture, Directory root) {
       for (final path in fixture.untracked) ':(exclude)$path',
     ]);
     _git(destination, ['commit', '--quiet', '--message', fixture.commit]);
-    // On this branch, before any other is made, so every branch starts from
-    // the whole history rather than from the first commit of it.
+    // On `main` before any branch is made, so every branch starts from the
+    // whole history.
     for (final commit in fixture.commits) {
       _commit(destination, commit);
     }
-    // Each branch starts from that first commit and the repository comes
-    // back to `main`, so a scenario opens where a person would.
+    // The repository comes back to `main`, so a scenario opens where a person
+    // would.
     for (final branch in fixture.branches) {
       _git(destination, ['switch', '--quiet', '--create', branch.name]);
       for (final commit in branch.commits) {
@@ -641,8 +586,7 @@ Map<String, Object?> _build(E2eFixture fixture, Directory root) {
   return <String, Object?>{
     'root': space,
     if (!fixture.outsideTheProject) 'repositoryRoot': destination,
-    // So a scenario can ask the *remote* what actually arrived, which is
-    // the only way to tell a push that landed from a button that lit up.
+    // So a scenario can ask the remote what actually arrived.
     if (fixture.remote != null) 'remoteRoot': '$destination.git',
     if (fixture.branches.isNotEmpty)
       'branches': <String>[for (final branch in fixture.branches) branch.name],
@@ -662,9 +606,8 @@ Map<String, Object?> _build(E2eFixture fixture, Directory root) {
 
 /// The file [at] without its [tail], which it must end with.
 ///
-/// Loudly, because a tail that stopped matching would otherwise commit the
-/// whole file and leave a fixture with nothing modified in it — a scenario
-/// asserting on status would then fail somewhere unrelated to the cause.
+/// Loud, because a tail that stopped matching would commit the whole file and
+/// leave nothing modified, failing a scenario far from the cause.
 String _without(String tail, {required String at}) {
   final content = File(at).readAsStringSync();
   if (!content.endsWith(tail)) {
@@ -676,20 +619,16 @@ String _without(String tail, {required String at}) {
   return content.substring(0, content.length - tail.length);
 }
 
-/// The markdown files under [space], relative to it and sorted.
-///
-/// Walked rather than listed in the fixture: the folder is the truth, and a
-/// list beside it is one more thing to forget.
+/// The markdown files under [space], relative to it and sorted; walked rather
+/// than listed in the fixture, because the folder is the truth.
 List<String> _documentsIn(String space) => <String>[
   for (final entry in Directory(space).listSync(recursive: true))
     if (entry is File && entry.path.endsWith('.md'))
       entry.path.substring(space.length + 1),
 ]..sort();
 
-/// [paths], which are relative to [repository], relative to [space] instead.
-///
-/// The manifest speaks the app's language: every path a test reads is
-/// relative to the folder the user opened.
+/// [paths], relative to [repository], made relative to [space]: every path a
+/// test reads is relative to the folder the user opened.
 List<String> _relativeTo(String space, String repository, List<String> paths) =>
     <String>[
       for (final path in paths)
@@ -697,11 +636,8 @@ List<String> _relativeTo(String space, String repository, List<String> paths) =>
           '$repository/$path'.substring(space.length + 1),
     ];
 
-/// Copies [from] onto [to], folders and all.
-///
-/// By hand rather than through `cp`: the CLI runs on whatever the
-/// contributor has, and a shell out for something `dart:io` does is a
-/// platform difference waiting to be found by someone on Windows.
+/// Copies [from] onto [to], folders and all — by hand rather than through
+/// `cp`, which is a platform difference waiting for someone on Windows.
 void _copy(Directory from, Directory to) {
   if (!from.existsSync()) {
     throw StateError('tom e2e: ${from.path} does not exist.');
@@ -718,24 +654,12 @@ void _copy(Directory from, Directory to) {
   }
 }
 
-/// Creates a repository at [path] with an identity and a `main` branch.
-///
-/// `symbolic-ref` rather than `init --initial-branch`, which needs git 2.28:
-/// the environment must not be stricter about git than the app is.
 /// Gives the repository at [path] a remote, and the drift [remote] asks for.
 ///
-/// The order is the whole trick, and it is why this cannot be declared as
-/// two numbers:
-///
-/// 1. a bare repository beside the working tree, and a first push — now the
-///    two agree and `origin/main` is tracked;
-/// 2. *their* commits, made through a throwaway clone and pushed, so the
-///    bare moves while this repository's `origin/main` stays where it was —
-///    which is what leaves `behind` at zero until somebody fetches;
-/// 3. *my* commits, made here and not pushed — which is what leaves
-///    something to publish, and what a rejection is about.
-///
-/// The result is the `push-rejected` mock, built rather than hoped for.
+/// The order is the drift: a bare repository and a first push, so
+/// `origin/main` is tracked; *their* commits through a throwaway clone, so the
+/// bare moves while `origin/main` here stays put; then *my* commits, unpushed,
+/// so there is something to publish and something for a push to be refused.
 void _attachRemote(String path, E2eRemote remote) {
   final bare = '$path.git';
   if (Directory(bare).existsSync()) {
@@ -748,8 +672,7 @@ void _attachRemote(String path, E2eRemote remote) {
 
   if (remote.theirs.isNotEmpty) {
     // Through a clone, because a bare repository has no working tree to
-    // commit in — and this is also how the commits actually get there in
-    // life: somebody else's checkout pushed first.
+    // commit in.
     final theirs = '${Directory.systemTemp.path}/tom-e2e-theirs';
     if (Directory(theirs).existsSync()) {
       Directory(theirs).deleteSync(recursive: true);
@@ -786,6 +709,10 @@ void _configure(String path) {
   }
 }
 
+/// Creates a repository at [path] with an identity and a `main` branch.
+///
+/// `symbolic-ref` rather than `init --initial-branch`, which needs git 2.28:
+/// the environment must not be stricter about git than the app is.
 void _initRepository(String path) {
   Directory(path).createSync(recursive: true);
   _git(path, ['init', '--quiet', '.']);
@@ -793,10 +720,8 @@ void _initRepository(String path) {
   _configure(path);
 }
 
-/// Runs git inside [directory], failing loudly.
-///
-/// A half-built environment is worse than none: a test against it fails
-/// somewhere unrelated to what it was asserting.
+/// Runs git inside [directory], failing loudly: a half-built environment
+/// fails a test somewhere unrelated to what it asserted.
 void _git(String directory, List<String> arguments) {
   final result = Process.runSync(
     'git',
