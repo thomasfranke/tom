@@ -13,11 +13,8 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// One block, in the container the app owns.
-///
-/// The container is the point: today it is a box with a gap under it, and in
-/// M2 it is what carries the diff mark and the navigation anchor. What is
-/// *inside* it is delegated.
+/// One block, in the container the app owns; what is inside it is
+/// delegated.
 class PreviewBlockWidget extends ConsumerWidget {
   /// Creates the view of [block], scoped by [document].
   const PreviewBlockWidget({
@@ -34,14 +31,11 @@ class PreviewBlockWidget extends ConsumerWidget {
   /// The document it belongs to, for the scope it needs to render alone.
   final ParsedDocumentValueObject document;
 
-  /// The prose size, which is the reading mode's answer or the split's.
+  /// The prose size, the reading mode's or the split's.
   final double body;
 
-  /// Whether the text is drawn as gone.
-  ///
-  /// What a removed block looks like in the rendered diff: still rendered,
-  /// because reading what was deleted is the point, and struck through
-  /// because it is not in the document any more.
+  /// Whether the text is struck through, as a removed block is: still
+  /// rendered, because reading what was deleted is the point.
   final bool struckThrough;
 
   @override
@@ -64,18 +58,16 @@ class PreviewBlockWidget extends ConsumerWidget {
         (SpaceSessionState? session) => session?.space,
       ),
     );
-    // A link or an image is written relative to the document it is in, so
-    // the block needs to know which document that is — not just the space.
+    // A link or an image is relative to the document it is in, not the space.
     final SpaceRelativePathValueObject? origin = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => session?.openDocument,
       ),
     );
     return MarkdownBody(
-      // The link reference definitions travel with the block: they are
-      // declared at document scope, so a block rendered on its own would
-      // otherwise draw `[text][ref]` as literal text. Footnotes do not
-      // survive the same way — M2's problem (Decision 19).
+      // The link reference definitions are document scope, so a block
+      // rendered alone would otherwise draw `[text][ref]` literally.
+      // Footnotes do not survive the same way (Decision 19).
       data: document.linkDefinitions.isEmpty
           ? block.source
           : '${block.source}\n\n${document.linkDefinitions}',
@@ -84,6 +76,7 @@ class PreviewBlockWidget extends ConsumerWidget {
       syntaxHighlighter: CodeHighlighterImpl(
         language: _languageOf(block),
         brightness: Theme.of(context).brightness,
+        style: _codeStyle(colors, struckThrough),
       ),
       imageBuilder: (Uri uri, String? title, String? alt) =>
           _image(uri, alt, space, origin, colors),
@@ -92,10 +85,8 @@ class PreviewBlockWidget extends ConsumerWidget {
     );
   }
 
-  /// The fence's language, or empty when it has none.
-  ///
-  /// Read off the block's own first line, because the highlighter is handed
-  /// the code and not the fence.
+  /// The fence's language, or empty when it has none; read off the block's
+  /// first line because the highlighter is handed the code, not the fence.
   static String _languageOf(BlockValueObject block) {
     if (block.kind != BlockKindEnum.code) {
       return '';
@@ -108,11 +99,8 @@ class PreviewBlockWidget extends ConsumerWidget {
 
   /// An image from the space, or a line saying it is not there.
   ///
-  /// Local files only: a document's images live beside it in the repository,
-  /// which is the whole point of keeping documentation in one. A remote
-  /// image would be the network, and nothing in TOM reaches it yet. The
-  /// path is read from [origin]'s folder, the way the document's author
-  /// wrote it.
+  /// Local files only, resolved from [origin]'s folder; nothing in TOM
+  /// reaches the network yet.
   static Widget _image(
     Uri uri,
     String? alt,
@@ -149,11 +137,9 @@ class PreviewBlockWidget extends ConsumerWidget {
 
   /// Opens [href] when it names a document in this space.
   ///
-  /// A relative link to a `.md` file is navigation the app already has, so
-  /// it moves the session — read from [origin]'s folder, so `../about.md`
-  /// in `guides/writing.md` is `about.md`, and a link that climbs out of
-  /// the space is refused. **An external link does nothing yet**: opening a
-  /// browser needs a plugin, and taking one is the maintainer's call.
+  /// Resolved from [origin]'s folder, and a link that climbs out of the
+  /// space is refused. An external link does nothing yet: opening a browser
+  /// needs a plugin.
   static void _follow(
     String? href,
     SpaceRelativePathValueObject? origin,
@@ -174,22 +160,15 @@ class PreviewBlockWidget extends ConsumerWidget {
     }
   }
 
-  /// The document's type, from the table.
-  ///
-  /// Serif for prose and mono for code, both the system's until the faces
-  /// are bundled — the same stand-in Home draws the wordmark's text with.
+  /// The document's type, the system's faces until the real ones are
+  /// bundled.
   static MarkdownStyleSheet _styleSheetOf(
     BuildContext context,
     TomColors colors,
     double body,
     bool struckThrough,
   ) {
-    // The one thing a removed block changes about its own rendering: it is
-    // still the document's type at the document's size, because it is being
-    // read, and the line through it is what says it is gone.
-    final TextDecoration? gone = struckThrough
-        ? TextDecoration.lineThrough
-        : null;
+    final TextDecoration? gone = _gone(struckThrough);
     final TextStyle prose = TextStyle(
       fontSize: body,
       height: PreviewDesign.bodyHeight,
@@ -215,13 +194,8 @@ class PreviewBlockWidget extends ConsumerWidget {
         ),
       ),
       blockquotePadding: const EdgeInsets.only(left: TomMetrics.padTight),
-      code: TextStyle(
-        fontFamily: 'Menlo',
-        fontSize: PreviewDesign.code,
-        height: 1.6,
-        color: colors.textPrimary,
-        backgroundColor: colors.surfaceSunken,
-      ),
+      // Inline code only: a fence never reads this (see [_codeStyle]).
+      code: _codeStyle(colors, struckThrough),
       codeblockDecoration: BoxDecoration(
         color: colors.surfaceSunken,
         borderRadius: BorderRadius.circular(6),
@@ -237,8 +211,7 @@ class PreviewBlockWidget extends ConsumerWidget {
       horizontalRuleDecoration: BoxDecoration(
         border: Border(top: BorderSide(color: colors.border)),
       ),
-      // The gap between blocks is the container's, not the renderer's: one
-      // block is one MarkdownBody, and it must not add a second margin.
+      // The gap between blocks is the container's, not the renderer's.
       blockSpacing: 0,
     );
   }
@@ -255,4 +228,23 @@ class PreviewBlockWidget extends ConsumerWidget {
     color: colors.textPrimary,
     decoration: decoration,
   );
+
+  /// The line through a removed block's text, or nothing; the one thing a
+  /// removed block changes about its own rendering.
+  static TextDecoration? _gone(bool struckThrough) =>
+      struckThrough ? TextDecoration.lineThrough : null;
+
+  /// How code is drawn, fenced or inline.
+  ///
+  /// Handed to both the style sheet and [CodeHighlighterImpl], because a
+  /// fence reads the sheet's `code` nowhere.
+  static TextStyle _codeStyle(TomColors colors, bool struckThrough) =>
+      TextStyle(
+        fontFamily: 'Menlo',
+        fontSize: PreviewDesign.code,
+        height: 1.6,
+        color: colors.textPrimary,
+        backgroundColor: colors.surfaceSunken,
+        decoration: _gone(struckThrough),
+      );
 }

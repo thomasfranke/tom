@@ -1,9 +1,4 @@
 /// [DartIoGitClientImpl] against real repositories created by `git init`.
-///
-/// Integration, not unit: the contract's whole job is driving the system
-/// binary, so a fake would only prove that the fake agrees with itself. This
-/// is the project's confidence differentiator, and it runs on all three
-/// platforms.
 library;
 
 import 'dart:io';
@@ -43,9 +38,8 @@ void main() {
     if (bare) {
       return;
     }
-    // Deliberately *not* `pull.rebase`: setting it here would configure the
-    // machine the way `git pull` silently needed, and hide that the client
-    // has to say so itself. It used to be set, and it hid exactly that.
+    // Deliberately not `pull.rebase`: setting it would hide that the client
+    // has to say `--no-rebase` itself.
     for (final List<String> setting in const <List<String>>[
       <String>['user.name', 'Test'],
       <String>['user.email', 'test@example.com'],
@@ -80,9 +74,8 @@ void main() {
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('tom_git_client_test_');
     // Resolved and forward-slashed, because git reports the real path in its
-    // own spelling: on macOS the system temporary directory is a symlink, and
-    // on Windows `dart:io` answers with backslashes while git always answers
-    // with `/`. Either difference turns a correct client into a red test.
+    // own spelling: the macOS temporary directory is a symlink, and on
+    // Windows `dart:io` answers with backslashes while git answers with `/`.
     base = tempDir.resolveSymbolicLinksSync().replaceAll(r'\', '/');
     repoPath = '$base/repo';
     initRepository(repoPath);
@@ -131,8 +124,6 @@ void main() {
           workingDirectory: gone,
         );
 
-        // The distinction the implementation has to make: a missing folder and
-        // a missing binary both arrive as a ProcessException.
         expect(
           failureOf(await orphan.repositoryRoot()),
           GitClientNotARepository(gone),
@@ -143,10 +134,8 @@ void main() {
     test(
       'fails rather than throwing when the folder cannot even be probed',
       () async {
-        // The recovery above asks whether the folder is there. Under a parent
-        // the machine will not read, that question throws too — and a
-        // `dart:io` exception escaping this package is the one thing it
-        // promises never to do.
+        // Under a parent the machine will not read, the probe for the folder
+        // throws too.
         final String locked = '$base/locked';
         Directory('$locked/space').createSync(recursive: true);
         Process.runSync('chmod', <String>['000', locked]);
@@ -180,9 +169,6 @@ void main() {
           .firstWhere((String entry) => entry.startsWith('? '))
           .substring(2);
 
-      // Root-relative, not relative to the folder the space opened on: `docs/`
-      // inside a code repository is the normal case, and a path that only
-      // works from one of the two is a path neither side can use.
       expect(path, 'docs/b.md');
       expect(
         await below.stage(<String>[path]),
@@ -323,9 +309,6 @@ void main() {
     });
 
     test('unstaging works before the first commit', () async {
-      // The state every new space starts in. `restore --staged` rebuilds the
-      // index from `HEAD`, which does not exist yet, so the client has to
-      // take the path back out of the index another way.
       final String fresh = '$base/fresh';
       initRepository(fresh);
       File('$fresh/b.md').writeAsStringSync('# B\n');
@@ -344,9 +327,6 @@ void main() {
     });
 
     test('unstaging a path that was not staged is not a failure', () async {
-      // `restore --staged` succeeds on one, so the unborn-HEAD path must
-      // too — otherwise the same gesture fails depending on whether the
-      // repository has a commit.
       final String fresh = '$base/fresh-untouched';
       initRepository(fresh);
       File('$fresh/b.md').writeAsStringSync('# B\n');
@@ -416,8 +396,6 @@ void main() {
     test(
       'a branch with no commits yet returns nothing, not a failure',
       () async {
-        // A space opened on a folder someone just ran `git init` in: History is
-        // empty, which git calls fatal and the product calls Tuesday.
         final String fresh = '$base/fresh';
         initRepository(fresh);
 
@@ -515,9 +493,6 @@ void main() {
     });
 
     test('a path absent from the revision says so, and names both', () async {
-      // Its own failure rather than the fallback: "this file has no earlier
-      // version" is the normal state of a new document, and the rendered
-      // diff answers it with every block added instead of an error.
       expect(
         failureOf(await client.show('HEAD', 'missing.md')),
         isA<GitClientPathNotInRevision>()
@@ -543,6 +518,18 @@ void main() {
       );
     });
 
+    test(
+      'a revision that resolves to nothing is a failure, not an answer',
+      () async {
+        // Git says `invalid object name` for an unborn `HEAD` and for a sha it
+        // cannot find alike, and only the first is "no earlier version".
+        expect(
+          failureOf(await client.show('deadbeef', 'a.md')),
+          isA<GitClientCommandFailed>(),
+        );
+      },
+    );
+
     test('a repository with no commits yet says the same', () async {
       final String freshPath = '$base/fresh';
       initRepository(freshPath);
@@ -551,9 +538,6 @@ void main() {
         workingDirectory: freshPath,
       );
 
-      // An unborn `HEAD` resolves to nothing at all, so neither the revision
-      // nor the file is there — which is the same answer to the same
-      // question, and a space opened on a fresh `git init` is normal.
       expect(
         failureOf(await fresh.show('HEAD', 'a.md')),
         isA<GitClientPathNotInRevision>(),
@@ -627,11 +611,8 @@ void main() {
     });
 
     test('pull merges divergent branches on an unconfigured machine', () async {
-      // The one the app's own Pull button lives or dies by. Since git 2.27 a
-      // bare `git pull` *refuses* to reconcile divergent branches unless the
-      // machine says how — so a user who never set `pull.rebase`, which is
-      // most of them, would have found the remedy offered by the rejection
-      // screen failing in the one situation it exists for.
+      // A bare `git pull` refuses divergent branches on a machine with no
+      // `pull.rebase` set, which is most of them; the fixture sets none.
       pushFromElsewhere('# A from elsewhere\n', 'A elsewhere');
       write('mine.md', '# Mine\n');
       await client.stage(<String>['mine.md']);
@@ -639,8 +620,7 @@ void main() {
 
       expect(await client.pull(), isA<Success<void, GitClientFailure>>());
 
-      // Merged, not rebased: the local commit is still there, which is what
-      // "nothing you committed has been lost" means.
+      // Merged, not rebased: the local commit is still there.
       expect(File('$repoPath/mine.md').existsSync(), isTrue);
       expect(File('$repoPath/a.md').readAsStringSync(), '# A from elsewhere\n');
     });
@@ -658,9 +638,8 @@ void main() {
     });
 
     test('a conflict git words differently is still named', () async {
-      // Modify/delete prints `CONFLICT (modify/delete): a.md deleted in ...`
-      // — no `Merge conflict in`, so anything reading the paths off the
-      // message announces a conflict over zero files.
+      // Modify/delete prints `CONFLICT (modify/delete): a.md deleted in ...`,
+      // with no `Merge conflict in` line to read the path off.
       File('$otherPath/a.md').deleteSync();
       git(<String>['add', '--all'], inside: otherPath);
       git(<String>[
@@ -742,14 +721,9 @@ void main() {
     test(
       'gives up on pipes a process git left behind is holding open',
       () async {
-        // Killing git closes git's own ends of the pipes. A process started
-        // under it — here by a hook, in the field an `ssh` or a credential
-        // helper — keeps its copy, and reading them to the end then means
-        // waiting for that process rather than for git. The queue is
-        // serialized, so the space stays stuck for as long as it lives: the
-        // exact stall the timeout exists to prevent. The assertion is the
-        // clock, because the old behaviour reaches the same failure
-        // eventually — twenty seconds later.
+        // A hook's background child keeps its copy of the pipes after git is
+        // killed. The assertion is the clock, because waiting on that child
+        // reaches the same failure twenty seconds later.
         final File hook = File('$repoPath/.git/hooks/pre-commit')
           ..writeAsStringSync('#!/bin/sh\nsleep 20 &\nsleep 20\n');
         Process.runSync('chmod', <String>['755', hook.path]);

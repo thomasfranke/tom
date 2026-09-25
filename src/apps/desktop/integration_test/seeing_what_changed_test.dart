@@ -7,11 +7,8 @@ void main() {
   final E2eFixtures fixtures = E2eFixtures.load();
   final Fixture docsInRepo = fixtures['docs-in-repo'];
 
-  /// `guides/writing.md` as the fixture's one commit left it.
-  ///
-  /// The working tree has a paragraph more than this — `fixture.json` keeps
-  /// it out of the commit — which is what makes the file open already
-  /// carrying a diff.
+  /// `guides/writing.md` as the fixture's one commit left it; the working
+  /// tree has one paragraph more, so the file opens already carrying a diff.
   const String committed = '''
 # Writing
 
@@ -50,17 +47,12 @@ final answer = 42;
         await robot.clickInTheTree('writing.md');
         await robot.seesTheOpenDocument('guides/writing.md');
 
-        // One paragraph the commit does not have, and nothing else: the
-        // rest of the document is untouched and is drawn untouched.
         await robot.seesTheDiffMarks(<String>['A']);
         await robot.seesInThePreview('One line added, uncommitted.');
       }),
       Step('a document matching the last commit carries no decoration', (
         TomRobot robot,
       ) async {
-        // The rule that keeps the diff usable: it is on screen for whole
-        // documents at a time, so an unchanged one must add nothing to read
-        // past (`docs/product/diff/rendered-diff/doc.md`).
         await robot.clickInTheTree('index.md');
         await robot.seesTheOpenDocument('index.md');
 
@@ -72,8 +64,7 @@ final answer = 42;
         await robot.clickInTheTree('writing.md');
         await robot.seesTheOpenDocument('guides/writing.md');
 
-        // The buffer, not the disk: nothing has been saved, and the
-        // comparison is against what git holds either way.
+        // Typed, never saved: the comparison is the buffer against git.
         await robot.typesInTheSource(
           committed.replaceFirst('Keep it short.', 'Keep it very short.'),
         );
@@ -84,8 +75,6 @@ final answer = 42;
       Step('and a deleted paragraph is still there to read', (
         TomRobot robot,
       ) async {
-        // The whole claim: what went is *rendered*, struck through in the
-        // place it used to hold — not written out as removed source lines.
         const String deleted =
             'Keep it short. A paragraph that runs past a screen is two '
             'paragraphs that\nhave not been separated yet.\n\n';
@@ -93,6 +82,16 @@ final answer = 42;
 
         await robot.seesTheDiffMarks(<String>['R']);
         await robot.seesInThePreview('two paragraphs that');
+      }),
+      Step('a deleted code block is read the same way', (TomRobot robot) async {
+        // A fence is rendered by the highlighter alone, outside the preview's
+        // style sheet, so struck-through code is a separate claim from prose.
+        await robot.typesInTheSource(
+          committed.substring(0, committed.indexOf('```dart')),
+        );
+
+        await robot.seesTheDiffMarks(<String>['R']);
+        await robot.seesInThePreview('final answer = 42;');
         robot.seesNothingBroken();
       }),
     ],

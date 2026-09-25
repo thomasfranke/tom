@@ -10,15 +10,16 @@ import 'package:re_highlight/styles/atom-one-light.dart';
 
 /// Highlights a code block in [language], or leaves it plain.
 ///
-/// The same package source mode already brings ([Decision
-/// 18](../../../../../../docs/technical/decisions/018-source-mode-uses-re-editor.md)),
-/// so highlighting the preview costs no new dependency.
-///
-/// A language the highlighter does not know is rendered unstyled rather than
-/// guessed at: a wrong colouring reads as a bug in the document.
+/// `re_highlight` is what source mode already brings
+/// ([Decision 18](../../../../../../docs/technical/decisions/018-source-mode-uses-re-editor.md)).
+/// An unknown language is left unstyled rather than guessed at.
 class CodeHighlighterImpl implements SyntaxHighlighter {
-  /// Creates a highlighter for [language], in [brightness].
-  CodeHighlighterImpl({required this.language, required this.brightness});
+  /// Creates a highlighter for [language], in [brightness], over [style].
+  CodeHighlighterImpl({
+    required this.language,
+    required this.brightness,
+    required this.style,
+  });
 
   /// The fence's language tag, lowercased, or empty for a bare fence.
   final String language;
@@ -26,13 +27,28 @@ class CodeHighlighterImpl implements SyntaxHighlighter {
   /// Which mode the theme must match.
   final Brightness brightness;
 
+  /// How the code is drawn before anything is coloured.
+  ///
+  /// Handed in because a fence reads it nowhere else: with a highlighter set,
+  /// `flutter_markdown_plus` renders the fence from `formatText` alone and
+  /// never applies the style sheet's `code`.
+  final TextStyle style;
+
   /// The engine, built once: registering every language is the expensive
-  /// part and it does not depend on the block.
+  /// part.
   static final Highlight _engine = Highlight()
     ..registerLanguages(builtinAllLanguages);
 
   @override
-  TextSpan format(String source) {
+  TextSpan format(String source) => TextSpan(
+    // The colouring goes inside the style: a theme sets a colour and nothing
+    // else, and a span's style merges over the one it sits in.
+    style: style,
+    children: <InlineSpan>[_coloured(source)],
+  );
+
+  /// [source] with each token in the theme's colour, or plain in one span.
+  TextSpan _coloured(String source) {
     if (!_engine.listLanguages().contains(language)) {
       return TextSpan(text: source);
     }

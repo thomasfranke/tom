@@ -47,9 +47,8 @@ void main() {
         ),
         diffDocumentProvider.overrideWithValue(
           DiffDocumentUseCase(
-            // The committed version is whatever the working copy holds
-            // unless a test says otherwise, so a preview that is only about
-            // rendering draws no diff decoration at all.
+            // `HEAD` matches the working copy unless a test says otherwise,
+            // so a test about rendering draws no diff decoration.
             gitFor: (SpaceEntity space) => git,
             blocks: const _Blocks(),
             differ: const BlockDifferService(
@@ -103,8 +102,7 @@ void main() {
   testWidgets('a document is drawn one container per block', (
     WidgetTester tester,
   ) async {
-    // Never one widget tree for the whole document: the container around
-    // each block is what carries the diff decoration in M2.
+    // The container around each block is what carries the diff decoration.
     documents.content = '# Title\n\nProse.\n\n- one\n- two\n';
 
     await pumpPreview(tester, document: writing);
@@ -131,8 +129,7 @@ void main() {
     testWidgets('a document matching HEAD carries no decoration at all', (
       WidgetTester tester,
     ) async {
-      // The rule the panel is built around: the diff is on screen for whole
-      // documents, so an unchanged one must add nothing to read past.
+      // An unchanged document must add nothing to read past.
       documents.content = '# Title\n\nProse.\n';
 
       await pumpPreview(tester, document: writing);
@@ -170,8 +167,7 @@ void main() {
     testWidgets('a deleted paragraph is still rendered, marked as removed', (
       WidgetTester tester,
     ) async {
-      // The whole claim of the feature: what went is *read*, rendered as
-      // formatted output rather than shown as `-` lines of raw markdown.
+      // What went is rendered, not shown as `-` lines of raw markdown.
       documents.content = '# Title\n';
       git.committed = () => '# Title\n\nThe paragraph that went.\n';
 
@@ -181,6 +177,34 @@ void main() {
       expect(
         find.textContaining('The paragraph that went.', findRichText: true),
         findsOneWidget,
+      );
+    });
+
+    testWidgets('a deleted code block is struck through like the prose', (
+      WidgetTester tester,
+    ) async {
+      // A fence reads none of the style sheet: with a highlighter set, the
+      // strike reaches the code only through the highlighter.
+      documents.content = '# Title\n';
+      git.committed = () => '# Title\n\n```dart\nfinal int gone = 1;\n```\n';
+
+      await pumpPreview(tester, document: writing);
+
+      expect(marks(tester), <String>['R']);
+      expect(
+        _decorationsOf(tester, 'final int gone'),
+        contains(TextDecoration.lineThrough),
+      );
+    });
+
+    testWidgets('a code block that stayed is not', (WidgetTester tester) async {
+      documents.content = '# Title\n\n```dart\nfinal int kept = 1;\n```\n';
+
+      await pumpPreview(tester, document: writing);
+
+      expect(
+        _decorationsOf(tester, 'final int kept'),
+        isNot(contains(TextDecoration.lineThrough)),
       );
     });
 
@@ -211,8 +235,8 @@ void main() {
     testWidgets('a comparison git could not make leaves the document alone', (
       WidgetTester tester,
     ) async {
-      // What failed is the comparison, and the document is readable either
-      // way — so the pane draws it undecorated rather than an error.
+      // The document is readable either way, so it is drawn undecorated
+      // rather than replaced by an error.
       documents.content = '# Title\n\nProse.\n';
       git.answer = const Failure<String, GitFailure>(GitNotInstalled());
 
@@ -249,8 +273,7 @@ void main() {
     testWidgets('with the pane to itself it is wider, and set larger', (
       WidgetTester tester,
     ) async {
-      // Reading is not a lesser mode: nothing is competing for the width,
-      // and this is the mode somebody reads a whole document in.
+      // Reading is not a lesser mode: nothing competes for the width.
       documents.content = '# Title\n\nProse.\n';
       await pumpPreview(tester, document: writing);
 
@@ -317,8 +340,8 @@ void main() {
     testWidgets('is read from the document\'s own folder', (
       WidgetTester tester,
     ) async {
-      // The way the author wrote it: `about.md` beside `guides/writing.md`
-      // is `guides/about.md`, and `../about.md` is the one at the root.
+      // Relative to the document, as the author wrote it: `../about.md` from
+      // `guides/writing.md` is the one at the root.
       documents.content = '[about](../about.md)\n';
 
       await pumpPreview(tester, document: writing);
@@ -348,13 +371,36 @@ void main() {
 
     await pumpPreview(tester, document: writing);
 
-    // Offstage included: an image that has not loaded lays out at zero
-    // height, and the list reports a zero-height block as not on screen.
+    // Offstage included: an unloaded image lays out at zero height, which
+    // the list reports as not on screen.
     final Image image = tester.widget<Image>(
       find.byType(Image, skipOffstage: false),
     );
     expect((image.image as FileImage).file.path, '/code/app/docs/logo.png');
   });
+}
+
+/// Every decoration the rendered spans containing [text] carry.
+///
+/// Read off the spans rather than the style sheet, because a fence is where
+/// the two disagree and the line the reader sees is what matters.
+Set<TextDecoration?> _decorationsOf(WidgetTester tester, String text) {
+  final Set<TextDecoration?> found = <TextDecoration?>{};
+  // The blocks are selectable, so the spans are a `SelectableText.rich`'s.
+  for (final SelectableText selectable in tester.widgetList<SelectableText>(
+    find.byType(SelectableText),
+  )) {
+    final InlineSpan? span = selectable.textSpan;
+    if (span == null || !span.toPlainText().contains(text)) {
+      continue;
+    }
+    found.add(span.style?.decoration);
+    span.visitChildren((InlineSpan child) {
+      found.add(child.style?.decoration);
+      return true;
+    });
+  }
+  return found;
 }
 
 /// A repository answering with whatever content the test set.
@@ -396,8 +442,7 @@ final class _Git implements GitRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// The real reader, over the real parser — the panel is what is under test,
-/// and a fake outline here would test the fake.
+/// The real reader over the real parser; a fake outline would test the fake.
 final class _Blocks implements BlockReaderPort {
   const _Blocks();
 

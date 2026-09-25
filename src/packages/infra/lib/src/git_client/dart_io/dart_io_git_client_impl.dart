@@ -10,24 +10,16 @@ import 'package:tom_infra/tom_infra.dart';
 
 /// Drives the system's `git` binary through [Process].
 ///
-/// The only implementation today, chosen at the composition root: credentials,
-/// SSH and config come for free because it is the user's own git running
+/// The user's own git, so credentials, SSH and config come for free
 /// ([Decision
 /// 2](../../../../../../../docs/technical/decisions/002-git-via-system-binary.md)).
-/// A `libgit2/` sibling is scheduled rather than speculative — iOS and Android
-/// have no binary to drive.
-///
-/// One instance per space, and git 2.23 or newer for `switch` and `restore`.
+/// One instance per space; git 2.23 or newer for `switch` and `restore`.
 final class DartIoGitClientImpl implements GitClient {
-  /// Creates a client running git inside [workingDirectory].
+  /// Creates a client running git inside [workingDirectory], which may sit
+  /// below the repository root — see [_pathspec].
   ///
-  /// [workingDirectory] may sit below the repository root; git resolves
-  /// upwards on its own and [repositoryRoot] reports where it landed. Every
-  /// path crossing the contract stays relative to that root whatever this
-  /// folder is — see [_pathspec].
   /// [timeout] bounds a local command, [networkTimeout] one that reaches a
-  /// remote — without them a hung command stalls the whole queue, not one
-  /// action.
+  /// remote; a hung command would stall the whole queue, not one action.
   DartIoGitClientImpl({
     required this.workingDirectory,
     this.timeout = const Duration(seconds: 30),
@@ -45,24 +37,19 @@ final class DartIoGitClientImpl implements GitClient {
 
   /// The tail of the serialized queue.
   ///
-  /// Every operation chains onto this, so a commit during a checkout, or two
-  /// fetches racing for the index lock, cannot happen on one instance.
+  /// Every operation chains onto it, so two commands cannot race for the
+  /// index lock on one instance.
   Future<void> _queue = Future<void>.value();
 
-  /// Bytes to text, tolerating anything that is not valid UTF-8.
-  ///
-  /// A decoder that threw would turn "this file is odd" into an exception
-  /// crossing a boundary.
+  /// Bytes to text, tolerating anything that is not valid UTF-8, so an odd
+  /// file cannot throw across the boundary.
   static const Utf8Decoder _decoder = Utf8Decoder(allowMalformed: true);
 
   /// How long a killed process's pipes are given to close.
   ///
-  /// Killing git closes git's own ends, but anything it started that outlives
-  /// it — a hook's background job, and whatever else inherited the pipe —
-  /// holds its copy open for as long as it lives, and `dart:io` cannot kill a
-  /// process group. Waiting on them unbounded would hang the queue the timeout
-  /// exists to protect, so they are abandoned instead: the bytes of a command
-  /// that was killed are worth nothing anyway.
+  /// A grandchild that inherited the pipe holds it open for as long as it
+  /// lives and `dart:io` cannot kill a process group, so waiting unbounded
+  /// would hang the queue the timeout exists to protect.
   static const Duration _drainGrace = Duration(seconds: 2);
 
   /// The `--format` of [log] and of [branches], spelling out the fields the
@@ -119,10 +106,8 @@ final class DartIoGitClientImpl implements GitClient {
       if (limit != null) '--max-count=$limit',
       if (path != null) ...<String>['--', _pathspec(path)],
     ]);
-    // A branch whose first commit has not happened yet is not an error: the
-    // history is empty, which is exactly what a space opened on a freshly
-    // initialised repository should show. Calling it fatal is git's
-    // convention, not the product's.
+    // An unborn branch has an empty history, which is a state and not an
+    // error; calling it fatal is git's convention, not the product's.
     return switch (result) {
       Failure<String, GitClientFailure>(
         failure: GitClientCommandFailed(:final String stderr),
@@ -146,10 +131,8 @@ final class DartIoGitClientImpl implements GitClient {
       'show',
       '$revision:$path',
     ]);
-    // "This file has no earlier version" is an answer, not a breakage: a new
-    // document, a renamed one, a repository with no commits yet. Recognised
-    // here rather than in `_translate`, which is handed the command line and
-    // not the two halves of it.
+    // Recognised here rather than in `_translate`, which is handed the command
+    // line and not its two halves.
     return switch (result) {
       Failure<String, GitClientFailure>(
         failure: GitClientCommandFailed(:final String stderr),
@@ -174,13 +157,10 @@ final class DartIoGitClientImpl implements GitClient {
       '--',
       ...paths.map(_pathspec),
     ]);
-    // `restore --staged` rewrites the index from `HEAD`, so before the first
-    // commit there is nothing to restore from and git calls it fatal — on a
-    // freshly initialised repository, which is a normal state for a space.
-    // Every staged path is an addition there by definition, and taking it
-    // back out of the index is exactly what unstaging means.
-    // `--ignore-unmatch` keeps the two branches behaving alike: `restore`
-    // succeeds on a path that was not staged, and so must this.
+    // `restore --staged` rebuilds the index from `HEAD`, which is fatal before
+    // the first commit; every staged path is an addition there, so taking it
+    // back out of the index is what unstaging means. `--ignore-unmatch` keeps
+    // both branches succeeding on a path that was not staged.
     return switch (result) {
       Failure<void, GitClientFailure>(
         failure: GitClientCommandFailed(:final String stderr),
@@ -217,15 +197,10 @@ final class DartIoGitClientImpl implements GitClient {
 
   @override
   Future<Result<void, GitClientFailure>> pull() =>
-      // `--no-rebase` because a bare `git pull` **fails** on divergent
-      // branches unless the machine has `pull.rebase` or `pull.ff` set —
-      // git has demanded that choice since 2.27, and the choice is the
-      // product's to make, not something to inherit from whoever set up the
-      // laptop. Merge rather than rebase because the app promises, in those
-      // words, that *nothing you committed has been lost*: a merge keeps
-      // every local commit where it is, while a rebase rewrites them and
-      // can stop halfway somewhere a reader of documentation has no way out
-      // of (`docs/product/git-workflow/push-pull/doc.md`).
+      // `--no-rebase`: a bare `git pull` fails on divergent branches unless
+      // `pull.rebase` or `pull.ff` is set, and the choice is the product's.
+      // Merge, because the app promises that nothing committed is lost and a
+      // rebase can stop halfway (`docs/product/git-workflow/push-pull/doc.md`).
       _gitVoid(<String>['pull', '--no-rebase'], limit: networkTimeout);
 
   @override
@@ -234,15 +209,9 @@ final class DartIoGitClientImpl implements GitClient {
 
   /// [path], as a pathspec git resolves from the repository root.
   ///
-  /// Every path crossing this contract is repository-root relative, because
-  /// that is what `status --porcelain=v2` returns and a path the caller read
-  /// from [status] has to be usable in [stage]. A bare pathspec would be
-  /// resolved against [workingDirectory] instead, which is the repository
-  /// root only by accident: a space is a folder, not a repository, and `docs/`
-  /// inside a code repository is the normal case, not the exotic one.
-  ///
-  /// `literal` on top of `top` because a document may legitimately be called
-  /// `notes[draft].md`, and git reads `[` in a pathspec as a glob.
+  /// A bare pathspec resolves against [workingDirectory], which is the root
+  /// only by accident; `top` keeps a path read from [status] usable in
+  /// [stage]. `literal` because git reads `[` in a pathspec as a glob.
   static String _pathspec(String path) => ':(top,literal)$path';
 
   /// Runs a command whose output the caller does not need.
@@ -265,8 +234,8 @@ final class DartIoGitClientImpl implements GitClient {
 
   /// Chains [operation] onto the queue.
   ///
-  /// The queue never carries a failure forward: one operation that somehow
-  /// threw must not stop every later command in the space.
+  /// The queue never carries a failure forward, so one operation that threw
+  /// cannot stop every later command in the space.
   Future<T> _enqueue<T>(Future<T> Function() operation) {
     final Future<T> result = _queue.then((void _) => operation());
     _queue = result.then<void>((T _) {}).catchError((Object _) {});
@@ -323,16 +292,10 @@ final class DartIoGitClientImpl implements GitClient {
 
   /// Why [Process.start] refused, without letting the probe throw.
   ///
-  /// Two very different things arrive as a `ProcessException`: no `git` on
-  /// the PATH, and a working directory git could not enter — a space whose
-  /// folder was deleted or unmounted while it was open. Reporting the second
-  /// as "git is not installed" would send the user to fix their machine over
-  /// a missing folder.
-  ///
-  /// The probe can fail too: a parent the machine will not let TOM read
-  /// answers neither yes nor no. That is still a folder TOM cannot open, and
-  /// never a missing binary — and a `FileSystemException` escaping here is
-  /// the one thing this package promises never to leak.
+  /// A `ProcessException` is either no `git` on the PATH or a working
+  /// directory git could not enter, and the second must not read as "git is
+  /// not installed". A probe the machine refuses is still a folder TOM cannot
+  /// open, never a missing binary, and never a leaked `FileSystemException`.
   Future<GitClientFailure> _startFailure() async {
     bool reachable;
     try {
@@ -350,9 +313,8 @@ final class DartIoGitClientImpl implements GitClient {
 
   /// Waits for both pipes to close, giving up after [_drainGrace].
   ///
-  /// Both futures keep their handlers whether or not this returns first, so a
-  /// pipe that dies with the process cannot surface later as an unhandled
-  /// asynchronous error.
+  /// Both futures keep their handlers either way, so a pipe that dies with
+  /// the process cannot surface later as an unhandled asynchronous error.
   static Future<void> _drain(Future<String> out, Future<String> err) {
     final Future<void> closed = Future.wait<String>(<Future<String>>[
       out,
@@ -363,13 +325,9 @@ final class DartIoGitClientImpl implements GitClient {
 
   /// [conflict] carrying the paths git's index reports, when it can be asked.
   ///
-  /// The `CONFLICT (...)` lines have a shape per kind — `Merge conflict in
-  /// the path` for a content clash, `the path deleted in ... and modified in
-  /// ...` for modify/delete, two paths for rename/rename — so reading them off
-  /// the message misses most of them and the product would announce a conflict
-  /// listing no files. The index knows: `--diff-filter=U` is every path left
-  /// conflicted, whatever produced it. What the message gave stands only if
-  /// asking fails.
+  /// The `CONFLICT (...)` lines have a shape per kind and reading them misses
+  /// most; `--diff-filter=U` is every path left conflicted whatever produced
+  /// it. What the message gave stands only if asking fails.
   Future<GitClientFailure> _named(GitClientMergeConflict conflict) async {
     final List<String> unmerged = await _unmergedPaths();
     return unmerged.isEmpty ? conflict : GitClientMergeConflict(unmerged);
@@ -377,10 +335,9 @@ final class DartIoGitClientImpl implements GitClient {
 
   /// Every path git left unmerged, relative to the repository root.
   ///
-  /// Runs outside the queue on purpose: the caller is holding the queue slot
-  /// it would wait for. `diff.relative` is forced off because a user who set
-  /// it would otherwise get paths relative to [workingDirectory], which the
-  /// contract does not allow.
+  /// Runs outside the queue, because the caller holds the slot it would wait
+  /// for. `diff.relative` is forced off so a user who set it still gets
+  /// root-relative paths, as the contract requires.
   Future<List<String>> _unmergedPaths() async {
     final Result<String, GitClientFailure> unmerged = await _run(<String>[
       '-c',
@@ -402,21 +359,14 @@ final class DartIoGitClientImpl implements GitClient {
 
   /// What git is run with, on top of the user's own environment.
   ///
-  /// The parent environment is kept — PATH, the SSH agent and the credential
-  /// helper are the user's, which is the whole point of driving their binary.
-  /// These are forced on top of it, and none changes what git does:
-  /// no credential prompt nothing is there to answer, no index lock taken for
-  /// a read TOM performs far more often than a person would, and messages in
-  /// English so that recognising one below is not a bet on the user's locale.
-  ///
-  /// Suppressing the prompt takes all four: `GIT_TERMINAL_PROMPT` covers only
-  /// the terminal, and git then falls through to `GIT_ASKPASS`, then to ssh's
-  /// own `SSH_ASKPASS`. An askpass left reachable turns a missing credential
-  /// into a dialog nobody is looking at, blocking for the whole
+  /// The parent environment stays: PATH, agent and credential helper are the
+  /// user's. Suppressing the prompt takes all three prompt variables, because
+  /// git falls through from the terminal to `GIT_ASKPASS` to ssh's own
+  /// `SSH_ASKPASS`, and one left reachable blocks for the whole
   /// [networkTimeout] instead of failing as [GitClientAuthenticationFailed].
-  /// `GIT_SSH_COMMAND` is deliberately not set: it would override the user's
-  /// own `core.sshCommand`, which is exactly the config this client exists to
-  /// honour.
+  /// `GIT_OPTIONAL_LOCKS=0` because TOM reads far more often than a person;
+  /// `LC_ALL=C` so the patterns below are not a bet on the locale.
+  /// `GIT_SSH_COMMAND` stays unset: it would override `core.sshCommand`.
   static const Map<String, String> _environment = <String, String>{
     'GIT_TERMINAL_PROMPT': '0',
     'GIT_ASKPASS': '',
@@ -427,15 +377,10 @@ final class DartIoGitClientImpl implements GitClient {
 
   /// Maps what the command reported to a [GitClientFailure].
   ///
-  /// Recognition is by message, which git offers no alternative to — exit
-  /// codes are 1 or 128 for nearly everything. Each pattern is anchored on
-  /// wording git has kept stable for years, `LC_ALL=C` guarantees the
-  /// language, and anything unrecognised falls back to
-  /// [GitClientCommandFailed] rather than being guessed at.
-  ///
-  /// Both streams are read because the halves of a conflict arrive
-  /// separately: the `CONFLICT` lines on stdout, `Automatic merge failed` on
-  /// stderr.
+  /// By message, since exit codes are 1 or 128 for nearly everything: wording
+  /// git has kept stable, `LC_ALL=C` fixing the language, and anything else
+  /// [GitClientCommandFailed]. Both streams are read because a conflict's
+  /// `CONFLICT` lines land on stdout and `Automatic merge failed` on stderr.
   GitClientFailure _translate(
     String command,
     int exitCode,
@@ -488,29 +433,27 @@ final class DartIoGitClientImpl implements GitClient {
     multiLine: true,
   );
 
-  /// The path named by one `CONFLICT (...): Merge conflict in <path>` line.
-  ///
-  /// The fallback behind [_unmergedPaths], and only that: it recognises the
-  /// content conflict and none of the other kinds.
+  /// The path named by one `CONFLICT (...): Merge conflict in <path>` line —
+  /// the fallback behind [_unmergedPaths], recognising content conflicts only.
   static final RegExp _conflictedPath = RegExp(
     r'^CONFLICT \([^)]*\): Merge conflict in (.+)$',
     multiLine: true,
   );
 
-  /// The revision holds no such path.
+  /// The revision holds no such path, in git's three phrasings — the third
+  /// being an unborn `HEAD`.
   ///
-  /// Three phrasings for one answer: the file is not in that tree, it is on
-  /// disk but not in that tree, or the revision itself resolves to nothing —
-  /// which is what an unborn `HEAD` and a sha that is not there both say.
+  /// The third is anchored on `HEAD` by name, because git says the same of a
+  /// sha it cannot resolve or a damaged object store, and those are failures
+  /// rather than "no earlier version".
   static final RegExp _pathNotInRevision = RegExp(
-    'does not exist in|exists on disk, but not in|invalid object name',
+    'does not exist in|exists on disk, but not in'
+    "|invalid object name '?HEAD'?",
     caseSensitive: false,
   );
 
-  /// `HEAD` names no commit — the branch exists but carries none yet.
-  ///
-  /// Three phrasings for one state: `log` says the first, `rev-parse` the
-  /// second, and `restore --staged` the third.
+  /// `HEAD` names no commit yet: `log` says the first, `rev-parse` the
+  /// second, `restore --staged` the third.
   static final RegExp _unbornHead = RegExp(
     r'does not have any commits yet|bad default revision'
     r"|could not resolve 'HEAD'",
