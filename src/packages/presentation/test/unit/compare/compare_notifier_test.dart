@@ -98,14 +98,14 @@ void main() {
     await settle();
     await settle();
 
-    expect(
-      ready().branches.map((BranchEntity it) => it.name.value),
-      <String>['main', 'feat/rendered-diff'],
-    );
-    expect(
-      ready().commits.map((CommitEntity it) => it.subject),
-      <String>['docs: fix a typo in the index', 'docs: expand the index'],
-    );
+    expect(ready().branches.map((BranchEntity it) => it.name.value), <String>[
+      'main',
+      'feat/rendered-diff',
+    ]);
+    expect(ready().commits.map((CommitEntity it) => it.subject), <String>[
+      'docs: fix a typo in the index',
+      'docs: expand the index',
+    ]);
   });
 
   test('it asks git nothing of its own', () async {
@@ -188,14 +188,9 @@ void main() {
       await settle();
       await settle();
 
-      notifier().choose(
-        RevisionValueObject.branch(ready().branches.last),
-      );
+      notifier().choose(RevisionValueObject.branch(ready().branches.last));
 
-      expect(
-        base(),
-        RevisionValueObject.branch(branch('feat/rendered-diff')),
-      );
+      expect(base(), RevisionValueObject.branch(branch('feat/rendered-diff')));
     });
 
     test('a commit is a base too, and carries the whole commit', () async {

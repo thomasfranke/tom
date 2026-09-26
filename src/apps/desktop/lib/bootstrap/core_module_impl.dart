@@ -11,6 +11,7 @@ import 'package:tom_desktop/screens/editor/editor_panel.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/history/history_panel.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
+import 'package:tom_desktop/screens/search/search_panel.dart';
 import 'package:tom_desktop/screens/shell/status_panel.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 
@@ -61,16 +62,27 @@ class CoreModuleImpl implements TomModule {
       builder: (BuildContext context) => const PreviewPanel(),
     ),
     PanelDescriptor(
+      id: 'tom.search',
+      title: 'Search',
+      placement: PanelPlacementEnum.aside,
+      // First in the column, because it is the one panel somebody drives
+      // from the keyboard: results below the fold are results nobody sees
+      // while typing. The commit box below it stays above the fold at the
+      // window the app opens at.
+      builder: (BuildContext context) => const SearchPanel(),
+    ),
+    PanelDescriptor(
       id: 'tom.changes',
       title: 'Changes',
       placement: PanelPlacementEnum.aside,
+      order: 1,
       builder: (BuildContext context) => const ChangesPanel(),
     ),
     PanelDescriptor(
       id: 'tom.history',
       title: 'History',
       placement: PanelPlacementEnum.aside,
-      order: 1,
+      order: 2,
       builder: (BuildContext context) => const HistoryPanel(),
     ),
     PanelDescriptor(

@@ -79,9 +79,7 @@ void main() {
         'and a past version opened from the history, which is compared '
         'against nothing by default, is compared when somebody asks for it.',
     steps: <Step>[
-      Step('open a document whose index has a history', (
-        TomRobot robot,
-      ) async {
+      Step('open a document whose index has a history', (TomRobot robot) async {
         await robot.launchWindowed(pickFolder: withHistory.root);
         await robot.chooseFolder();
         await robot.seesTheShell();

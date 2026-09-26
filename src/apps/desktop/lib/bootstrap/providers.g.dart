@@ -481,6 +481,74 @@ final class GitRepositoryForProvider
 
 String _$gitRepositoryForHash() => r'a4c8b05b0e581fdfcfa426133a33480581a7fb1d';
 
+/// How to reach the search index of a space.
+///
+/// One index per space and the same one every time, because an index holds
+/// an open database and a fresh one would be empty — which is a search that
+/// silently finds nothing. Closed with the app, since it is in memory
+/// ([search](../../../../../docs/technical/runtime/search.md)).
+
+@ProviderFor(searchRepositoryFor)
+final searchRepositoryForProvider = SearchRepositoryForProvider._();
+
+/// How to reach the search index of a space.
+///
+/// One index per space and the same one every time, because an index holds
+/// an open database and a fresh one would be empty — which is a search that
+/// silently finds nothing. Closed with the app, since it is in memory
+/// ([search](../../../../../docs/technical/runtime/search.md)).
+
+final class SearchRepositoryForProvider
+    extends
+        $FunctionalProvider<
+          SearchRepositoryFor,
+          SearchRepositoryFor,
+          SearchRepositoryFor
+        >
+    with $Provider<SearchRepositoryFor> {
+  /// How to reach the search index of a space.
+  ///
+  /// One index per space and the same one every time, because an index holds
+  /// an open database and a fresh one would be empty — which is a search that
+  /// silently finds nothing. Closed with the app, since it is in memory
+  /// ([search](../../../../../docs/technical/runtime/search.md)).
+  SearchRepositoryForProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'searchRepositoryForProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$searchRepositoryForHash();
+
+  @$internal
+  @override
+  $ProviderElement<SearchRepositoryFor> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SearchRepositoryFor create(Ref ref) {
+    return searchRepositoryFor(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SearchRepositoryFor value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SearchRepositoryFor>(value),
+    );
+  }
+}
+
+String _$searchRepositoryForHash() =>
+    r'95c0a90021096ad1ab5a18ece4688e85ad18a853';
+
 /// What splits a document into blocks.
 
 @ProviderFor(blockReader)

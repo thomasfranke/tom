@@ -152,10 +152,7 @@ void main() {
 
     await openIt(tester);
 
-    expect(
-      find.text('aaa1000 · Thomas Franke · 3 days ago'),
-      findsOneWidget,
-    );
+    expect(find.text('aaa1000 · Thomas Franke · 3 days ago'), findsOneWidget);
   });
 
   testWidgets('choosing a branch says so on the control', (

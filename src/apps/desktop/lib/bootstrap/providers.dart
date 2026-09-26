@@ -92,6 +92,33 @@ GitRepositoryFor gitRepositoryFor(Ref ref) {
   );
 }
 
+/// How to reach the search index of a space.
+///
+/// One index per space and the same one every time, because an index holds
+/// an open database and a fresh one would be empty — which is a search that
+/// silently finds nothing. Closed with the app, since it is in memory
+/// ([search](../../../../../docs/technical/runtime/search.md)).
+@Riverpod(keepAlive: true)
+SearchRepositoryFor searchRepositoryFor(Ref ref) {
+  final DocumentDataSource documents = DocumentDataSource(
+    filesystem: ref.watch(filesystemProvider),
+  );
+  final Map<String, SearchDataSource> indexes = <String, SearchDataSource>{};
+  ref.onDispose(() {
+    for (final SearchDataSource held in indexes.values) {
+      held.index.dispose();
+    }
+  });
+  return (SpaceEntity space) => SearchRepositoryImpl(
+    search: indexes.putIfAbsent(
+      space.root,
+      () => SearchDataSource(index: Sqlite3SearchIndexImpl()),
+    ),
+    documents: documents,
+    space: space,
+  );
+}
+
 /// What splits a document into blocks.
 @Riverpod(keepAlive: true)
 BlockReaderPort blockReader(Ref ref) => const MarkdownBlockReaderImpl(
@@ -219,6 +246,25 @@ List<Override> appOverrides = <Override>[
   readVersionProvider.overrideWith(
     (Ref ref) => ReadVersionUseCase(
       gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  indexSpaceProvider.overrideWith(
+    (Ref ref) => IndexSpaceUseCase(
+      spaces: ref.watch(spaceRepositoryProvider),
+      searchFor: ref.watch(searchRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  indexDocumentProvider.overrideWith(
+    (Ref ref) => IndexDocumentUseCase(
+      searchFor: ref.watch(searchRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  searchSpaceProvider.overrideWith(
+    (Ref ref) => SearchSpaceUseCase(
+      searchFor: ref.watch(searchRepositoryForProvider),
       observability: ref.watch(observabilityProvider),
     ),
   ),

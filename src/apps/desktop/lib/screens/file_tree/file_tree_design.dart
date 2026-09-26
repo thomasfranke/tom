@@ -6,7 +6,7 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// The numbers of the visual design's `explorer` component, measured from
 /// the top of the panel; type and radii from
-/// [components.md](../../../../../../docs/technical/design/components.md).
+/// [components](../../../../../../docs/design/components/README.md).
 abstract final class FileTreeDesign {
   /// Panel top to the caption's box.
   static const double captionTop = 18;
@@ -19,9 +19,6 @@ abstract final class FileTreeDesign {
 
   /// The search field's height.
   static const double searchHeight = 28;
-
-  /// Panel edge to the milestone chip beside the search field.
-  static const double chipLeft = TomMetrics.padTight + 158;
 
   /// Panel top to the first row.
   static const double rowsTop = 108;

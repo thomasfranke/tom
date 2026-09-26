@@ -17,6 +17,7 @@ import 'package:tom_desktop/screens/compare/widgets/compare_popover_widget.dart'
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/history/history_panel.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
+import 'package:tom_desktop/screens/search/search_panel.dart';
 import 'package:tom_desktop/screens/shell/status_panel.dart';
 import 'package:tom_ui/tom_ui.dart';
 import 'package:window_manager/window_manager.dart';
@@ -328,6 +329,33 @@ final class TomRobot {
     await settle();
   }
 
+  /// Types [terms] into the search box above the tree.
+  ///
+  /// Tapped first, and pumped: `enterText` sends the text to whatever holds
+  /// the text input, and once a document is open that is the editor — the
+  /// request for the focus needs a frame before the text follows it.
+  Future<void> typesInTheSearch(String terms) async {
+    await tester.tap(_theSearchField);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.enterText(_theSearchField, terms);
+    // Pumped, not settled, for the reason [clickInTheResults] gives: a caret
+    // blinks for as long as the box has the keyboard.
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Clicks the result that shows [name], scoped to the panel because the
+  /// tree names the same file.
+  ///
+  /// Pumped rather than settled: the document it opens arrives in an editor
+  /// that blinks a caret forever once the keyboard has been anywhere, and
+  /// `pumpAndSettle` waits for an animation that never ends. What the click
+  /// did is waited for by the assertion after it.
+  Future<void> clickInTheResults(String name) async {
+    await _waitUntil(() => _showing(_inTheResults(name)));
+    await tester.tap(_inTheResults(name));
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
   // ── What the user sees ────────────────────────────────────────────────
 
   /// Asserts Home is showing, with nothing open.
@@ -369,6 +397,35 @@ final class TomRobot {
       findsNothing,
       reason: '$name should not be in the tree',
     );
+  }
+
+  /// Asserts the search panel found [names], each exactly once.
+  Future<void> seesInTheResults(List<String> names) async {
+    await _waitUntil(() => _showing(_inTheResults(names.first)));
+    for (final String name in names) {
+      expect(
+        _inTheResults(name),
+        findsOneWidget,
+        reason: '$name is not among the results',
+      );
+    }
+  }
+
+  /// Asserts the search panel does not offer [name], once it has answered.
+  Future<void> seesNotInTheResults(String name) async {
+    await _waitUntil(() => !_showing(_inTheResults(name)));
+    expect(
+      _inTheResults(name),
+      findsNothing,
+      reason: '$name should not be among the results',
+    );
+  }
+
+  /// Asserts the search found nothing, in the sentence the product chose.
+  Future<void> seesNoResults() async {
+    const String said = 'No document says that.';
+    await _waitUntil(() => _showing(find.text(said)));
+    expect(find.text(said), findsOneWidget, reason: 'it found something');
   }
 
   /// Asserts the preview is showing a document that says [text], as rich
@@ -490,7 +547,7 @@ final class TomRobot {
   }
 
   /// Asserts the push was refused, in all three sentences the product chose
-  /// (`docs/product/git-workflow/push-pull/doc.md`).
+  /// (`docs/product/git-workflow/push-pull/README.md`).
   Future<void> seesThePushRefused({required int commits}) async {
     final String headline =
         'Someone pushed $commits commit${commits == 1 ? '' : 's'} first.';
@@ -855,6 +912,20 @@ final class TomRobot {
   Finder _inTheTree(String name) => find.descendant(
     of: find.byType(FileTreePanel),
     matching: find.text(name),
+  );
+
+  /// Whatever the search panel shows as [text]; the tree lists the same
+  /// files, and an excerpt is rich text because the words typed are marked.
+  Finder _inTheResults(String text) => find.descendant(
+    of: find.byType(SearchPanel),
+    matching: find.textContaining(text, findRichText: true),
+  );
+
+  /// The search box, scoped to the explorer because the changes panel has a
+  /// field of its own.
+  Finder get _theSearchField => find.descendant(
+    of: find.byType(FileTreePanel),
+    matching: find.byType(TextField),
   );
 
   /// Asserts the refusal screen is showing, for a folder with no repository.

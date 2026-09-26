@@ -29,7 +29,7 @@ dependencies:
 
   # Renders the inline content *inside* a block. Block-level layout and the
   # container around each block are ours, which is what the rendered diff
-  # needs (docs/technical/runtime/documents.md).
+  # needs (docs/technical/runtime/preview.md).
   flutter_markdown_plus: ^1.0.12
 
   # State, and one of only two packages above the pure Dart layers.
@@ -48,6 +48,13 @@ dependencies:
   re_highlight: ^0.0.3
 
   riverpod_annotation: 4.0.2
+
+  # The sqlite library itself, bundled with the app: `tom_infra` holds the
+  # FTS5 index in pure Dart and this is what guarantees a library to open on
+  # every platform, Windows included, where there is no system one.
+  # Superseded by `sqlite3` 3.x, which carries its own through native assets
+  # — a swap for when that is not behind a Flutter flag (stack/platform.md).
+  sqlite3_flutter_libs: ^0.5.42
 
   # The whole graph, because this is the composition root: the one place
   # allowed to see an implementation and hand it to whatever declared the
@@ -71,7 +78,7 @@ dependencies:
     path: ../../packages/ui
 
   # Window control: title, and a minimum size the layout holds together in
-  # (docs/product/workspace/doc.md).
+  # (docs/product/workspace/regions/doc.md).
   window_manager: ^0.5.2
 
 dev_dependencies:

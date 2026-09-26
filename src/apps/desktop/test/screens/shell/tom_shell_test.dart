@@ -44,6 +44,27 @@ void main() {
             observability: _Silent(),
           ),
         ),
+        // The aside's search panel reads the space into its index as soon as
+        // one is open (`test/screens/search/` has the panel itself).
+        indexSpaceProvider.overrideWithValue(
+          const IndexSpaceUseCase(
+            spaces: _NothingInIt(),
+            searchFor: _emptyIndex,
+            observability: _Silent(),
+          ),
+        ),
+        indexDocumentProvider.overrideWithValue(
+          const IndexDocumentUseCase(
+            searchFor: _emptyIndex,
+            observability: _Silent(),
+          ),
+        ),
+        searchSpaceProvider.overrideWithValue(
+          const SearchSpaceUseCase(
+            searchFor: _emptyIndex,
+            observability: _Silent(),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -173,7 +194,7 @@ void main() {
       await pumpShell(tester);
 
       // The extra pixel is the rule between the explorer and the document
-      // area (docs/product/workspace/doc.md).
+      // area (docs/product/workspace/regions/doc.md).
       final Size region = tester.getSize(
         find
             .ancestor(
@@ -339,7 +360,7 @@ void main() {
 
   group('the theme', () {
     testWidgets('both modes render, and differ', (WidgetTester tester) async {
-      // Both modes ship together (docs/technical/design/visual-language.md).
+      // Both modes ship together (docs/design/visual-language/README.md).
       await pumpShell(tester);
       final TomColors light = TomColors.of(
         tester.element(find.byType(TomShell)),
@@ -427,6 +448,31 @@ final class _Clean implements GitRepository {
 }
 
 /// A space that holds nothing, so the explorer has nothing to draw.
+/// The index of a space, which these tests only ever fill with nothing.
+SearchRepository _emptyIndex(SpaceEntity space) => const _Empty();
+
+/// An index that files everything and finds nothing.
+final class _Empty implements SearchRepository {
+  const _Empty();
+
+  @override
+  Future<Result<void, SearchFailure>> index(
+    List<SpaceRelativePathValueObject> paths,
+  ) async => const Success<void, SearchFailure>(null);
+
+  @override
+  Future<Result<void, SearchFailure>> refresh(DocumentEntity document) async =>
+      const Success<void, SearchFailure>(null);
+
+  @override
+  Future<Result<List<SearchHitValueObject>, SearchFailure>> find(
+    String terms, {
+    required int limit,
+  }) async => const Success<List<SearchHitValueObject>, SearchFailure>(
+    <SearchHitValueObject>[],
+  );
+}
+
 final class _NothingInIt implements SpaceRepository {
   const _NothingInIt();
 

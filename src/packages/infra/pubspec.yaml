@@ -29,6 +29,11 @@ dependencies:
 
   meta: ^1.16.0
 
+  # FTS5, for full-text search. It stays with the adapter that uses it: no
+  # sqlite type crosses the contract, and the library itself is the system's
+  # on macOS and Linux and `sqlite3_flutter_libs`' in the app.
+  sqlite3: ^2.9.0
+
   # `tom_core` and nothing else, which is the guarantee (Decision 24): this
   # package cannot name a domain type, because it cannot see the package
   # that holds them.

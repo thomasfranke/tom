@@ -54,6 +54,27 @@ void main() {
             observability: _Silent(),
           ),
         ),
+        // The box above the tree is the search's, and a space that opens
+        // builds its index.
+        indexSpaceProvider.overrideWithValue(
+          IndexSpaceUseCase(
+            spaces: spaces,
+            searchFor: _searchFor,
+            observability: const _Silent(),
+          ),
+        ),
+        indexDocumentProvider.overrideWithValue(
+          const IndexDocumentUseCase(
+            searchFor: _searchFor,
+            observability: _Silent(),
+          ),
+        ),
+        searchSpaceProvider.overrideWithValue(
+          const SearchSpaceUseCase(
+            searchFor: _searchFor,
+            observability: _Silent(),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -98,16 +119,27 @@ void main() {
       tester.widget<Text>(find.text(name)).style!;
 
   group('the panel itself', () {
-    testWidgets('it names itself, and offers search as an M2 control', (
+    testWidgets('it names itself, and offers the search box', (
       WidgetTester tester,
     ) async {
-      // Disabled rather than absent: a control that appears later moves
-      // everything under it.
       await pumpPanel(tester);
 
       expect(find.text('EXPLORER'), findsOneWidget);
       expect(find.text('Search'), findsOneWidget);
-      expect(find.text('M2'), findsOneWidget);
+      expect(find.text('M2'), findsNothing);
+    });
+
+    testWidgets('what is typed in it is what the space is searched for', (
+      WidgetTester tester,
+    ) async {
+      // The box is here and the results are in the aside, one conversation
+      // (`docs/product/search/full-text-search/the-surface/doc.md`).
+      await pumpPanel(tester, space: docs);
+
+      await tester.enterText(find.byType(TextField), 'rendered');
+      await tester.pumpAndSettle();
+
+      expect(container.read(searchProvider).terms, 'rendered');
     });
 
     testWidgets('with no space open it shows nothing else at all', (
@@ -124,7 +156,8 @@ void main() {
     testWidgets('every entry is on screen, folders and files alike', (
       WidgetTester tester,
     ) async {
-      // Everything but `.git/` (docs/product/navigation/file-tree/doc.md).
+      // Everything but `.git/`
+      // (docs/product/navigation/file-tree/what-is-shown/doc.md).
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
 
       await pumpPanel(tester, space: docs);
@@ -183,7 +216,7 @@ void main() {
       WidgetTester tester,
     ) async {
       // Accent and weight both, since colour is never the only signal
-      // (docs/technical/design/visual-language.md).
+      // (docs/design/visual-language/README.md).
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       await pumpPanel(tester, space: docs);
 
@@ -325,7 +358,7 @@ void main() {
       WidgetTester tester,
     ) async {
       // The row asks for a role and never for a mode: one widget, two
-      // themes, two colours (docs/technical/design/visual-language.md).
+      // themes, two colours (docs/design/visual-language/README.md).
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
 
       await pumpPanel(tester, space: docs);
@@ -370,6 +403,31 @@ List<Color> _dots(WidgetTester tester) => tester
 
 /// A repository for any space, since the tree only needs one to exist.
 DocumentRepository _documentsFor(SpaceEntity space) => const _Documents();
+
+/// The index of a space, which this panel only ever types into.
+SearchRepository _searchFor(SpaceEntity space) => const _Search();
+
+/// An index that files everything and finds nothing.
+final class _Search implements SearchRepository {
+  const _Search();
+
+  @override
+  Future<Result<void, SearchFailure>> index(
+    List<SpaceRelativePathValueObject> paths,
+  ) async => const Success<void, SearchFailure>(null);
+
+  @override
+  Future<Result<void, SearchFailure>> refresh(DocumentEntity document) async =>
+      const Success<void, SearchFailure>(null);
+
+  @override
+  Future<Result<List<SearchHitValueObject>, SearchFailure>> find(
+    String terms, {
+    required int limit,
+  }) async => const Success<List<SearchHitValueObject>, SearchFailure>(
+    <SearchHitValueObject>[],
+  );
+}
 
 /// A repository that reads an empty document and writes nowhere.
 final class _Documents implements DocumentRepository {
