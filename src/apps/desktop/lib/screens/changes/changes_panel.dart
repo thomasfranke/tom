@@ -18,7 +18,8 @@ import 'package:tom_ui/tom_ui.dart';
 /// Stage, describe, commit.
 ///
 /// The list is the repository's, not the space's, because a commit records
-/// the index (`docs/product/git-workflow/commit/doc.md`). What git said
+/// the index (`docs/product/git-workflow/commit/the-changes-list/doc.md`).
+/// What git said
 /// lives in the session, which the status bar reads too; the draft lives in
 /// [ChangesNotifier] because nobody else does.
 class ChangesPanel extends ConsumerWidget {
@@ -36,7 +37,8 @@ class ChangesPanel extends ConsumerWidget {
         status?.entries ?? const <StatusEntryValueObject>[];
     // While a push stands refused the banner is the column: the box and the
     // button give way, which is also what keeps the panel inside its height
-    // when it shares the aside (`docs/product/git-workflow/push-pull/doc.md`).
+    // when it shares the aside
+    // (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
     final bool rejected = ref.watch(remoteProvider) is RemoteRejected;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

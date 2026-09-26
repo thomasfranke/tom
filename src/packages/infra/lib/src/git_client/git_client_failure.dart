@@ -25,7 +25,8 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
   /// The path the client was pointed at is inside no git repository.
   ///
   /// The search runs upwards, so nothing encloses the folder at all; TOM never
-  /// runs `git init` for the user (`docs/product/home/doc.md`).
+  /// runs `git init` for the user
+  /// (`docs/product/home/opening-a-space/doc.md`).
   const factory GitClientFailure.notARepository(
     /// The absolute path that was searched for an enclosing repository.
     String path, {
@@ -52,7 +53,7 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
   /// The remote refused a push because it had moved on first.
   ///
   /// Its own variant because the product shows it as its own outcome
-  /// (`docs/product/git-workflow/push-pull/doc.md`).
+  /// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
   const factory GitClientFailure.pushRejected(
     /// What git wrote to stderr, verbatim. For diagnostics — never parsed.
     String stderr, {

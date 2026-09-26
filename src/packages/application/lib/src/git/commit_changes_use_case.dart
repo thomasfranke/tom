@@ -8,7 +8,7 @@ import 'package:tom_domain/tom_domain.dart';
 /// The index recorded as a commit.
 ///
 /// It commits the index, not a selection: whatever is staged goes in, even
-/// outside TOM (`docs/product/git-workflow/commit/doc.md`).
+/// outside TOM (`docs/product/git-workflow/commit/the-changes-list/doc.md`).
 final class CommitChangesUseCase with UseCase {
   /// Creates the use case.
   const CommitChangesUseCase({

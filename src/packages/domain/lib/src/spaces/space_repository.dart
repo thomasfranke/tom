@@ -14,7 +14,7 @@ import 'package:tom_domain/src/spaces/space_failure.dart';
 /// 15](../../../../../../docs/technical/decisions/015-ddd-is-applied-selectively.md)).
 abstract interface class SpaceRepository {
   /// Opens [folder] as a space, finding the repository that encloses it
-  /// (`docs/product/home/doc.md`).
+  /// (`docs/product/home/opening-a-space/doc.md`).
   ///
   /// `SpaceFolderMissing` when nothing is at [folder], which Home offers to
   /// forget; `GitNotARepository` when nothing encloses it, which is explained
@@ -27,7 +27,7 @@ abstract interface class SpaceRepository {
   /// immediately followed by what is inside it and a tree is one walk.
   ///
   /// **`.git/` is not in it and is never descended into**, this layer's
-  /// policy (`docs/product/navigation/file-tree/doc.md`) and what keeps the
+  /// policy (`docs/product/navigation/file-tree/what-is-shown/doc.md`) and what keeps the
   /// listing affordable; every other dotfolder is included. A folder the
   /// machine will not open costs that folder, not the tree; only the space
   /// root failing fails the call. Files of every kind are reported, since

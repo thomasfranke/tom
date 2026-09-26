@@ -13,7 +13,7 @@ import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// The window: explorer, document area, aside and status bar, all at once
-/// and never taken over (`docs/product/workspace/doc.md`).
+/// and never taken over (`docs/product/workspace/regions/doc.md`).
 ///
 /// Names no panel: it asks [PanelRegistry] what belongs in each region and
 /// builds what it is told.

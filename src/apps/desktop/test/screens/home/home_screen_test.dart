@@ -201,7 +201,7 @@ void main() {
       WidgetTester tester,
     ) async {
       // A second list of choices under the button would make the button
-      // look optional (`docs/product/home/mocks/not-a-repository.excalidraw`).
+      // look optional (`design/screens/desktop/home/not-a-repository-light.svg`).
       recents.stored = <RecentSpaceEntity>[remembered];
       spaces.answer = const Failure<SpaceEntity, AppFailure>(
         GitNotARepository('/loose'),

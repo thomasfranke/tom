@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:tom_ui/src/theme/tom_metrics.dart';
 
 /// The diff mark of
-/// [components.md](../../../../../../docs/technical/design/components.md):
+/// [components](../../../../../../docs/design/components/README.md):
 /// a letter on a twenty square, because colour is never the only signal.
 ///
 /// A letter and two colours rather than a meaning, so the changes column and

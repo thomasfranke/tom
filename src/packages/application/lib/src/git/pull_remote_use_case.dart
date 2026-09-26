@@ -8,7 +8,8 @@ import 'package:tom_domain/tom_domain.dart';
 /// The tracked remote's commits merged into the current branch.
 ///
 /// The one remote action that changes files on disk, so it is never a
-/// button's accident (`docs/product/git-workflow/push-pull/doc.md`); a
+/// button's accident
+/// (`docs/product/git-workflow/push-pull/the-controls/doc.md`); a
 /// `GitMergeConflict` is a state to resolve, not an error to report.
 final class PullRemoteUseCase with UseCase {
   /// Creates the use case.

@@ -11,7 +11,7 @@ import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// The panel's caption, and *All* — the staging rule's everything-at-once
-/// half (`docs/product/git-workflow/commit/doc.md`).
+/// half (`docs/product/git-workflow/commit/the-changes-list/doc.md`).
 class ChangesCaptionWidget extends ConsumerWidget {
   /// Creates the caption.
   const ChangesCaptionWidget({

@@ -4,7 +4,7 @@ library;
 import 'package:tom_ui/tom_ui.dart';
 
 /// The numbers the preview is drawn against; type from
-/// [components.md](../../../../../../docs/technical/design/components.md).
+/// [components](../../../../../../docs/design/components/README.md).
 ///
 /// The reading column is a measure, not a pane width, and there are two of
 /// them because beside the source the preview is a companion and alone it
@@ -54,7 +54,7 @@ abstract final class PreviewDesign {
 
   /// The rule down the left of a changed block; wider than a quote's because
   /// it is the second signal after the tint
-  /// (`docs/technical/design/visual-language.md`).
+  /// (`docs/design/visual-language/README.md`).
   static const double diffBar = 4;
 
   /// Block edge to content, inside a changed block's tint.

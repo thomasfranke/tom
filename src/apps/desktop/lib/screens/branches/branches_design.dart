@@ -3,12 +3,12 @@ library;
 
 import 'package:tom_ui/tom_ui.dart';
 
-/// The numbers of the `branch-switcher` wireframe
-/// (`docs/product/git-workflow/branch-switch/mocks/branch-switcher.excalidraw`).
+/// The numbers of the `branch-switcher` board
+/// ([branch-switcher-light.svg](../../../../../../docs/design/screens/desktop/git-branches/branch-switcher-light.svg)).
 ///
-/// The control's x is the one number that is not the wireframe's: the kit
-/// fixes it at 392 on a 1040 canvas, so here it sits [gap] after the space's
-/// name and moves with the left group.
+/// The control's x is the one number that is not the board's: it is fixed
+/// there on a narrower canvas, so here it sits [gap] after the space's name
+/// and moves with the left group.
 abstract final class BranchesDesign {
   /// The control in the top bar.
   static const double controlWidth = 190;

@@ -6,7 +6,7 @@ import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
 /// Whole files moved in and out of the index; there is no hunk-level staging
-/// (`docs/product/git-workflow/commit/doc.md`).
+/// (`docs/product/git-workflow/commit/the-changes-list/doc.md`).
 ///
 /// Both directions in one use case because a row's checkbox is one control.
 final class StageChangesUseCase with UseCase {

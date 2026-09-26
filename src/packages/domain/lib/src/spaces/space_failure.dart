@@ -17,7 +17,7 @@ sealed class SpaceFailure with _$SpaceFailure implements AppFailure {
   ///
   /// Expected rather than exceptional: a removable disk, a network share, a
   /// folder renamed outside TOM. Home offers to forget it
-  /// (`docs/product/home/doc.md`).
+  /// (`docs/product/home/opening-a-space/doc.md`).
   const factory SpaceFailure.folderMissing(
     /// The absolute path the space was opened at.
     String root, {

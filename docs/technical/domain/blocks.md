@@ -1,6 +1,4 @@
-# Blocks
-
-## `BlockValueObject`
+# `BlockValueObject`
 
 **Settled by [Spike B](../decisions/019-blocks-come-from-the-markdown-package.md).**
 A block is *where it is, what it says, and what kind of thing it is* — not a
@@ -37,28 +35,9 @@ footnotes `section` node that corresponds to no lines at all, so a block list
 must tolerate a node with no span. What to do about footnotes is M2's, not
 settled here.
 
-## `DiffBlockValueObject`
-
-The output of `BlockDifferService` and the reason the product exists: a block
-paired with what happened to it. Sealed rather than a block carrying a flag,
-because only one of the four holds two things — `unchanged` · `added` ·
-`removed` each carry one block, and `modified` carries the before and after
-sides, which is what a word-level diff *inside* a block starts from (diff v2).
-
-A removal carries the block from the **old** version, so the preview can
-render a paragraph that is in no file on disk. What it needs to render it —
-the link reference definitions of the version it was written in — comes from
-`DocumentDiffValueObject`, which carries both parsed versions beside the
-blocks and answers `isUnchanged`: the question the preview asks before
-decorating anything.
-
-**How two blocks are paired is
-[Decision 27](../decisions/027-blocks-are-aligned-by-myers-and-paired-by-words.md)**:
-Myers over the block sources, with two of them counting as the same block when
-they share at least half their words. The threshold is the domain's
-(`BlockDifferService.pairingThreshold`); the measure belongs to the capability
-under `BlockAlignerPort`.
+What happens to a block once two versions are compared is
+[`diff-blocks.md`](diff-blocks.md).
 
 ---
 
-*See also: [documents.md](documents.md) · [runtime/documents.md](../runtime/documents.md)*
+*See also: [domain/](README.md) · [documents.md](documents.md) · [runtime/preview.md](../runtime/preview.md)*

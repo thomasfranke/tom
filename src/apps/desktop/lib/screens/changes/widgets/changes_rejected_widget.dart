@@ -11,7 +11,8 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// The remote moved first — said in words, with Pull underneath it.
 ///
-/// The wording is the product's (`docs/product/git-workflow/push-pull/doc.md`):
+/// The wording is the product's
+/// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`):
 /// who got there first, what to do, and that nothing committed is lost.
 class ChangesRejectedWidget extends ConsumerWidget {
   /// Creates the banner.

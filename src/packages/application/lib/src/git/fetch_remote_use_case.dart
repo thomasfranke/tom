@@ -8,7 +8,7 @@ import 'package:tom_domain/tom_domain.dart';
 /// The remote-tracking branches brought up to date, and nothing else.
 ///
 /// It never changes a file on disk, which is what separates it from a pull
-/// (`docs/product/git-workflow/push-pull/doc.md`).
+/// (`docs/product/git-workflow/push-pull/what-each-does/doc.md`).
 final class FetchRemoteUseCase with UseCase {
   /// Creates the use case.
   const FetchRemoteUseCase({required this.gitFor, required this.observability});

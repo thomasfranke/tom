@@ -8,7 +8,8 @@ import 'package:tom_domain/tom_domain.dart';
 /// The current branch's commits sent to its remote.
 ///
 /// `GitPushRejected` is a named failure because somebody has to act on it:
-/// the remedy is a pull (`docs/product/git-workflow/push-pull/doc.md`).
+/// the remedy is a pull
+/// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
 final class PushRemoteUseCase with UseCase {
   /// Creates the use case.
   const PushRemoteUseCase({required this.gitFor, required this.observability});

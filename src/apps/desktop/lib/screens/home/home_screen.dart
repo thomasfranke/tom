@@ -16,9 +16,9 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// Home: open a space, or go back to one.
 ///
-/// The empty state and the refusal, in the wireframes' own words
-/// (`docs/product/home/mocks/`); when code and wireframe disagree the
-/// wireframe is right (`docs/technical/design/README.md`).
+/// The empty state and the refusal, in the boards' own words
+/// (`docs/design/screens/desktop/home/`); when the code and the board
+/// disagree the board is right (`docs/design/README.md`).
 class HomeScreen extends ConsumerWidget {
   /// Creates the screen.
   const HomeScreen({super.key});

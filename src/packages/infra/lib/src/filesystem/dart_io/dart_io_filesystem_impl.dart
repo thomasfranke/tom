@@ -12,7 +12,7 @@ import 'package:tom_infra/tom_infra.dart';
 /// Reads and writes files through `dart:io`'s [File].
 ///
 /// A sandboxed mobile implementation is a sibling folder, not a change to
-/// [Filesystem] (`docs/technical/architecture.md#when-mobile-arrives-phase-3`).
+/// [Filesystem] (`docs/technical/mobile.md`).
 final class DartIoFilesystemImpl implements Filesystem {
   /// Creates the implementation.
   const DartIoFilesystemImpl();

@@ -10,7 +10,7 @@ part 'recent_space_entity.freezed.dart';
 /// Not a `SpaceEntity`: that carries `repositoryRoot`, which means asking git
 /// for every row of a list the user may not click, and this one must survive
 /// its folder going away so Home can offer to forget it
-/// (`docs/product/home/doc.md`).
+/// (`docs/product/home/recent-spaces/doc.md`).
 @freezed
 abstract class RecentSpaceEntity with _$RecentSpaceEntity {
   /// An entry.

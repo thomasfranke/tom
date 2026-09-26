@@ -13,7 +13,7 @@ import 'package:tom_ui/tom_ui.dart';
 /// Fetch and Push, and how far the branch has drifted from its remote.
 ///
 /// Two buttons and never a combined Sync, since that is one name for three
-/// risks (`docs/product/git-workflow/push-pull/doc.md`); Pull is the remedy
+/// risks (`docs/product/git-workflow/push-pull/the-controls/doc.md`); Pull is the remedy
 /// inside the rejection, where the design draws it.
 class ShellRemoteActionsWidget extends ConsumerWidget {
   /// Creates the actions.

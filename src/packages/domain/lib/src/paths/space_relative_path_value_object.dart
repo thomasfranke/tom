@@ -59,6 +59,6 @@ extension type const SpaceRelativePathValueObject._(String value) {
   }
 
   /// Whether this path names a markdown file, the one thing the editor opens
-  /// (`docs/product/navigation/file-tree/doc.md`).
+  /// (`docs/product/navigation/file-tree/what-is-shown/doc.md`).
   bool get isMarkdown => value.toLowerCase().endsWith('.md');
 }

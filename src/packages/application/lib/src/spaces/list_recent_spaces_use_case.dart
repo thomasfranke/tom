@@ -6,7 +6,7 @@ import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
 /// The spaces to offer going back to, most recent first
-/// (`docs/product/home/doc.md`).
+/// (`docs/product/home/recent-spaces/doc.md`).
 ///
 /// Nothing here checks that the folders still exist: a row whose folder went
 /// away is shown, and the product's answer is to offer to forget it.

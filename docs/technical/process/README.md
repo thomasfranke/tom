@@ -9,7 +9,7 @@ live outside the code.
 | [`commands.md`](commands.md) | The `tom` CLI — every command worth knowing, and what `make` is |
 | [`ci.md`](ci.md) | The two levels: what a PR must pass, and what a tag triggers |
 | [`versioning.md`](versioning.md) | What counts as breaking for a desktop app, before and after 1.0, and deprecation |
-| [`repository-settings.md`](repository-settings.md) | Branch and tag protection, Actions policy, the CLA bot — the configuration nobody can review in a diff |
+| [`repository-settings/`](repository-settings/README.md) | Access, branch and tag protection, Actions policy, the CLA bot — the configuration nobody can review in a diff |
 
 The human-facing version of the branch and commit workflow is
 [`CONTRIBUTING.md`](../../../CONTRIBUTING.md); the agent-facing one is the

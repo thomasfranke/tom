@@ -39,7 +39,8 @@ final class SpaceDataSource {
       gitClientFor(folder).repositoryRoot();
 
   /// The one name never descended into, whether a folder or the file a
-  /// worktree or submodule has (`docs/product/navigation/file-tree/doc.md`).
+  /// worktree or submodule has
+  /// (`docs/product/navigation/file-tree/what-is-shown/doc.md`).
   static const String _gitDirectory = '.git';
 
   /// Everything under [root], in tree order: a folder's children follow it.

@@ -14,9 +14,12 @@ Move between branches, or start a new one, and watch the documents update — wi
 
 ## Mocks
 
-- [branch-switcher](mocks/branch-switcher.excalidraw) — switch branches, or start one. Visual design: [light](mocks/branch-switcher-light.svg) · [dark](mocks/branch-switcher-dark.svg).
+The switcher, and each of the three answers it can give.
 
-Two faces of the switcher are built and **not drawn yet**: naming a new branch, and the question about unsaved work.
+- **branch switcher** — the branches, filtered by one box. [light](../../../design/screens/desktop/git-branches/branch-switcher-light.svg) · [dark](../../../design/screens/desktop/git-branches/branch-switcher-dark.svg).
+- **starting a branch** — naming a new one from the current branch. [light](../../../design/screens/desktop/git-branches/branch-switcher-new-branch-light.svg) · [dark](../../../design/screens/desktop/git-branches/branch-switcher-new-branch-dark.svg).
+- **unsaved work** — the question, inside the switcher, naming the document and offering stay. [light](../../../design/screens/desktop/git-branches/branch-switcher-unsaved-work-light.svg) · [dark](../../../design/screens/desktop/git-branches/branch-switcher-unsaved-work-dark.svg).
+- **git refused** — what git said, said where it was asked, with the list still on screen. [light](../../../design/screens/desktop/git-branches/branch-switcher-git-refused-light.svg) · [dark](../../../design/screens/desktop/git-branches/branch-switcher-git-refused-dark.svg).
 
 ---
 

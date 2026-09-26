@@ -27,7 +27,8 @@ abstract interface class GitClient {
   /// The absolute path of the repository enclosing this client's folder.
   ///
   /// Fails with [GitClientNotARepository] when nothing encloses it; TOM never
-  /// creates a repository on the user's behalf (`docs/product/home/doc.md`).
+  /// creates a repository on the user's behalf
+  /// (`docs/product/home/opening-a-space/doc.md`).
   Future<Result<String, GitClientFailure>> repositoryRoot();
 
   /// What differs from `HEAD`, and where the branch stands against its
@@ -62,7 +63,8 @@ abstract interface class GitClient {
 
   /// Adds [paths] to the index, deletions included.
   ///
-  /// Whole files only, never a hunk (`product/git-workflow/commit/doc.md`).
+  /// Whole files only, never a hunk
+  /// (`product/git-workflow/commit/the-changes-list/doc.md`).
   Future<Result<void, GitClientFailure>> stage(List<String> paths);
 
   /// Removes [paths] from the index, leaving the working tree alone.

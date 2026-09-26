@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// The app's colours, by role.
 ///
 /// Roles rather than shades, so a palette change touches no widget ([visual
-/// language](../../../../../../docs/technical/design/visual-language.md)); a
+/// language](../../../../../../docs/design/visual-language/README.md)); a
 /// [ThemeExtension] rather than constants, so no widget asks which mode it
 /// is in.
 @immutable

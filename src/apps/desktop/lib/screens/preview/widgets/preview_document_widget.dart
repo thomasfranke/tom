@@ -12,7 +12,7 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// The document, scrolling as one column of blocks, one [PreviewBlockWidget]
 /// each
-/// ([runtime](../../../../../../../docs/technical/runtime/documents.md)).
+/// ([runtime](../../../../../../../docs/technical/runtime/preview.md)).
 class PreviewDocumentWidget extends StatelessWidget {
   /// Creates the column for [document].
   const PreviewDocumentWidget({
@@ -52,7 +52,7 @@ class PreviewDocumentWidget extends StatelessWidget {
       return const PreviewNoteWidget('This document is empty.');
     }
     // A document that matches `HEAD` is drawn undecorated
-    // (`docs/product/diff/rendered-diff/doc.md`).
+    // (`docs/product/diff/rendered-diff/what-is-compared/doc.md`).
     final DocumentDiffValueObject? changes = (diff?.isUnchanged ?? true)
         ? null
         : diff;

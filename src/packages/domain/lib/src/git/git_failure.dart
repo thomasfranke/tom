@@ -50,7 +50,7 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
   /// The remote refused a push because it had moved on first.
   ///
   /// Its own outcome because pulling is the way out
-  /// (`docs/product/git-workflow/push-pull/doc.md`).
+  /// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
   const factory GitFailure.pushRejected({AppFailure? cause}) = GitPushRejected;
 
   /// A git command ran past the time it was allowed and was killed.
@@ -62,7 +62,8 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
   ///
   /// A new document, one only ever renamed into place, or a repository with
   /// no commits yet: every block is an addition, which is an answer rather
-  /// than a failure to report (`docs/product/diff/rendered-diff/doc.md`).
+  /// than a failure to report
+  /// (`docs/product/diff/rendered-diff/what-is-compared/doc.md`).
   const factory GitFailure.pathNotInRevision(
     /// The path, as the user's repository spells it.
     String path, {

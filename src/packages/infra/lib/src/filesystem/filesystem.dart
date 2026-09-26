@@ -47,7 +47,7 @@ abstract interface class Filesystem {
   /// Whether a directory exists at [path].
   ///
   /// False for a folder that is gone, which Home offers to clean up
-  /// (`docs/product/home/doc.md`); a failure when the machine will not say,
+  /// (`docs/product/home/opening-a-space/doc.md`); a failure when the machine will not say,
   /// which is a different answer.
   Future<Result<bool, FilesystemFailure>> directoryExists(String path);
 

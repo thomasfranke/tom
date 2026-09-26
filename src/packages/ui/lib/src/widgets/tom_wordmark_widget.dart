@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 
 /// TOM, with the O as the commit on the trunk, drawn from the master's own
 /// numbers ([TomMark]) because brand rule 1 says the commit is never redrawn:
-/// [`brand/tom-wordmark-light.svg`](../../../../../../docs/technical/design/brand/tom-wordmark-light.svg).
+/// [`brand/tom-wordmark-light.svg`](../../../../../../docs/design/brand/tom-wordmark-light.svg).
 ///
 /// Painted rather than loaded, since straight lines and a circle do not earn
 /// an SVG dependency; the letters are Sora Bold outlines, needing no font.

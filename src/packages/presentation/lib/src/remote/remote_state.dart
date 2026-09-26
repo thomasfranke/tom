@@ -21,7 +21,8 @@ sealed class RemoteState with _$RemoteState {
   /// The push was refused because the remote moved first.
   ///
   /// Its own state, not a failure among others, because the product answers
-  /// it with a screen (`docs/product/git-workflow/push-pull/doc.md`).
+  /// it with a screen
+  /// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
   const factory RemoteState.rejected() = RemoteRejected;
 
   /// [action] did not finish, for a reason worth showing.

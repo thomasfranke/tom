@@ -22,10 +22,12 @@ object** is wholly what it carries. The naming rule that enforces it is
 
 | File | Types |
 |---|---|
-| [`spaces.md`](spaces.md) | `SpaceEntity`, the two relative-path value objects, `SpaceEntryValueObject`, `SpaceRepository` |
+| [`spaces.md`](spaces.md) | `SpaceEntity`, `SpaceEntryValueObject`, `SpaceRepository` |
+| [`paths.md`](paths.md) | `SpaceRelativePathValueObject`, `RepoRelativePathValueObject` |
 | [`documents.md`](documents.md) | `DocumentEntity`, `ParsedDocumentValueObject`, `DocumentRepository` |
 | [`git.md`](git.md) | `GitStatusValueObject`, `CommitEntity`, `BranchEntity`, `GitRepository` |
-| [`blocks.md`](blocks.md) | `BlockValueObject`, `DiffBlockValueObject` |
+| [`blocks.md`](blocks.md) | `BlockValueObject` |
+| [`diff-blocks.md`](diff-blocks.md) | `DiffBlockValueObject`, and how two blocks are paired |
 
 ## Not settled
 

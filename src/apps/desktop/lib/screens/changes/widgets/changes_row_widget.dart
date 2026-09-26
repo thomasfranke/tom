@@ -15,7 +15,7 @@ import 'package:tom_ui/tom_ui.dart';
 /// One change: what happened, to what, and whether it is going in.
 ///
 /// The checkbox is the staging, whole files and nothing finer
-/// (`docs/product/git-workflow/commit/doc.md`); the path is the
+/// (`docs/product/git-workflow/commit/the-changes-list/doc.md`); the path is the
 /// repository's, not the space's (see `ChangesPanel`).
 class ChangesRowWidget extends ConsumerWidget {
   /// Creates the row for [entry].

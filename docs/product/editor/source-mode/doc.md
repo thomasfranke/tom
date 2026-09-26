@@ -16,8 +16,9 @@ Edit the raw markdown text with a live preview alongside — deliberately not a 
 
 ## Mocks
 
-- [unsaved-changes](mocks/unsaved-changes.excalidraw) — the gap between the buffer and the file on disk. Visual design: [light](mocks/unsaved-changes-light.svg) · [dark](mocks/unsaved-changes-dark.svg).
-- The split view itself is shown in the [shell](../../workspace/mocks/shell.excalidraw) layout.
+- Desktop: **unsaved changes** — the gap between the buffer and the file on disk. [light](../../../design/screens/desktop/editor/unsaved-changes-light.svg) · [dark](../../../design/screens/desktop/editor/unsaved-changes-dark.svg).
+- The split view itself is shown in **shell**. [light](../../../design/screens/desktop/workspace/shell-light.svg) · [dark](../../../design/screens/desktop/workspace/shell-dark.svg).
+- How a removed block is drawn in this pane is [rendered-diff](../../diff/rendered-diff/how-it-is-drawn/doc.md)'s: a seam between two lines, never characters the buffer does not hold.
 
 ---
 

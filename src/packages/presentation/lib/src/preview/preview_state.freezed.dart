@@ -257,7 +257,7 @@ class PreviewReady implements PreviewState {
  final  ParsedDocumentValueObject document;
 /// What it changed against the base, once git has said; null until
 /// then, when the comparison failed, and for a version nobody asked to
-/// compare (`docs/product/diff/rendered-diff/doc.md`).
+/// compare (`docs/product/diff/rendered-diff/what-is-compared/doc.md`).
  final  DocumentDiffValueObject? diff;
 
 /// Create a copy of PreviewState

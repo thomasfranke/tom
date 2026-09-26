@@ -18,7 +18,7 @@ import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
 part 'remote_notifier.g.dart';
 
 /// Fetch, pull and push, each started by somebody and never on its own
-/// (`docs/product/git-workflow/push-pull/doc.md`).
+/// (`docs/product/git-workflow/push-pull/README.md`).
 ///
 /// It reads no git of its own: every action ends in [ChangesNotifier]
 /// re-reading, so what the window believes about the repository has one

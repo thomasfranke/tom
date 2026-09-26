@@ -107,7 +107,8 @@ void main() {
   testWidgets('it offers Fetch and Push, and never a combined Sync', (
     WidgetTester tester,
   ) async {
-    // Three risks, three names (docs/product/git-workflow/push-pull/doc.md).
+    // Three risks, three names
+    // (docs/product/git-workflow/push-pull/the-controls/doc.md).
     await pumpActions(tester, reading: statusOf(ahead: 1));
 
     expect(find.text('Fetch'), findsOneWidget);

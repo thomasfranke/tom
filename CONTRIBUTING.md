@@ -61,6 +61,7 @@ Not to be confused with modules: the repository answers *who has this code*, a f
 
 - **New dependency?** State its license in the PR description. Nothing AGPL/GPL — the project is MIT and must stay relicensable ([Decision 1](docs/technical/decisions/001-license-is-mit.md)).
 - **Behavior changed?** Update the documentation in the same PR. Docs live with the code they describe; that is the whole thesis of this project.
+- **Anything a user can see?** It is designed before it is written. The screen exists as a board in the Penpot file, built from the component library, and both themes are exported into [`docs/design/screens/desktop/<page>/`](docs/design/screens/README.md) in the same PR. A board that no longer matches what shipped is worse than none, because it carries the appearance of authority. Ask in the issue if you do not have Penpot access — a maintainer will draw it.
 - **Architectural change?** Add or revise a file in `docs/technical/decisions/` in the same PR.
 - **The layers stay pure Dart.** Only `tom_desktop` may import Flutter. You do not need to remember this: the pubspecs make the wrong import fail to resolve, and `make test-arch` asserts it ([Decision 14](docs/technical/decisions/014-each-layer-is-its-own-package.md)).
 - **Riverpod only in `presentation/` and `bootstrap/di/`.** Everything below takes its dependencies through constructors ([Decision 7](docs/technical/decisions/007-external-dependencies-behind-contracts.md)).

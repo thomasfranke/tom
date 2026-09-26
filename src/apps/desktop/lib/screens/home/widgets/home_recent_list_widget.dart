@@ -11,7 +11,7 @@ import 'package:tom_ui/tom_ui.dart';
 /// The spaces to go back to, one click each.
 ///
 /// A row whose folder is gone is still drawn: Home offers to forget it
-/// rather than hiding it (`docs/product/home/doc.md`).
+/// rather than hiding it (`docs/product/home/recent-spaces/doc.md`).
 class HomeRecentListWidget extends StatelessWidget {
   /// Creates the list of [recents].
   const HomeRecentListWidget({required this.recents, super.key});

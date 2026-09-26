@@ -36,4 +36,4 @@ document, a folder that cannot be read sends them to another space
 
 ---
 
-*See also: [blocks.md](blocks.md) · [runtime/documents.md](../runtime/documents.md)*
+*See also: [blocks.md](blocks.md) · [runtime/preview.md](../runtime/preview.md)*

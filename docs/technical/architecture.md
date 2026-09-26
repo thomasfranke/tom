@@ -34,48 +34,9 @@ the two packages depend on each other and pub resolves the cycle
 ([Decision 24](decisions/024-a-capability-is-a-folder.md)). What `infra` never
 depends on is `domain`.
 
-## What enforces it
-
-| Mechanism | Catches |
-|---|---|
-| the pubspecs | an import of a package the layer never declared — it does not resolve |
-| `depend_on_referenced_packages: error` | that same import arriving through a *transitive* dependency, which would otherwise compile |
-| `implementation_imports: error` | reaching into another package's `lib/src/` instead of using its barrel |
-| `src/test/integrity/architecture_test.dart` | what no pubspec can express — see below |
-
-The test carries three checks the mechanisms above cannot make:
-
-- a dependency **added to a pubspec**, after which the illegal import is
-  entirely legal;
-- an **SDK library**, which needs no declaration at all. `dart:io` is
-  available to every package by default, so the pubspec graph has nothing to
-  say about a domain entity calling `Process.run`. The test holds a second
-  table — which *capabilities* each layer may import — and scans every `.dart`
-  file under `lib/`, generated code included;
-- a **Flutter package in `dev_dependencies`**, the quiet version of the leak:
-  nothing imports a widget, but the package stops running under `dart test`
-  and framework independence stops being provable.
-
-## When mobile arrives (Phase 3)
-
-`apps/mobile` sits beside `apps/desktop` with its **own screens**, sharing
-`tom_presentation` — which is why that package is pure Dart. Panels do not
-become screens: a layout drawn for a phone is drawn from the job, not ported
-from the desktop. What the two do share is the look — `tom_ui`, the marks and
-the tokens ([Decision 26](decisions/026-the-look-is-a-package.md), which
-revises the "no shared-UI package" this section used to state: the objection
-was to sharing *layout*, and identity is not layout). `tom_infra` grows a
-second implementation per capability (`libgit2/` next to `dart_io/`), chosen
-at the composition root.
-
-## Where the rest is
-
-| Question | Chapter |
-|---|---|
-| What a package looks like inside, and what a name has to say | [`conventions/`](conventions/README.md) |
-| How the layers behave while running | [`runtime/`](runtime/README.md) |
-| What the entities and value objects are | [`domain/`](domain/README.md) |
-| Which external packages are in, and why | [`stack/`](stack/README.md) |
+What makes a violation fail rather than merely be discouraged:
+[`enforcement.md`](enforcement.md). What changes when a second application
+arrives: [`mobile.md`](mobile.md).
 
 ---
 

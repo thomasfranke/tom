@@ -37,7 +37,7 @@ The roadmap asked for 2000+ lines. At **29,637 lines and 1.37MB** — ten times 
 2. **Selection toolbar / context menu** — same shape, via `toolbarController`.
 3. **Line-number gutter** — the one that *is* provided, as `DefaultCodeLineNumber`.
 
-That is the right split for this product: the chrome has to be in TOM's visual language anyway ([design](../design/)), and a package that shipped its own would be something to fight.
+That is the right split for this product: the chrome has to be in TOM's visual language anyway ([design](../../design/README.md)), and a package that shipped its own would be something to fight.
 
 ## Maintenance
 

@@ -27,7 +27,7 @@ sealed class HomeState with _$HomeState {
   /// A folder was picked and could not be opened.
   ///
   /// The failure travels whole because a folder outside a repository is its
-  /// own screen (`docs/product/home/doc.md`); the recents come with it
+  /// own screen (`docs/product/home/recent-spaces/doc.md`); the recents come with it
   /// because the other rows are still there to click.
   const factory HomeState.failed({
     required AppFailure failure,

@@ -12,7 +12,8 @@ import 'package:tom_ui/tom_ui.dart';
 /// One entry, as the design draws it.
 ///
 /// A file the editor cannot open is muted *and* has no hover, because colour
-/// is never the only signal (`docs/product/navigation/file-tree/doc.md`).
+/// is never the only signal
+/// (`docs/product/navigation/file-tree/change-marks/doc.md`).
 class FileTreeRowWidget extends ConsumerWidget {
   /// Creates the row for [row].
   const FileTreeRowWidget({

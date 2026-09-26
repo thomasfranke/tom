@@ -7,7 +7,7 @@ import 'package:tom_ui/src/theme/tom_colors.dart';
 /// The app's theme for [brightness], built by one function from one palette
 /// type so a role cannot be added to one mode and forgotten in the other
 /// ([visual
-/// language](../../../../../../docs/technical/design/visual-language.md)).
+/// language](../../../../../../docs/design/visual-language/README.md)).
 /// `ThemeData` is filled from the same roles, so a stray Material widget
 /// never shows Material's default blue.
 ThemeData tomTheme(Brightness brightness) {

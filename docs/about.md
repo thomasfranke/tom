@@ -18,14 +18,12 @@ that belongs in one of those is in the wrong place.
 
 | | |
 |---|---|
-| [`product/`](product/README.md) | **What each feature must do**, rule by rule, in non-technical language. One folder per feature (`doc.md` + `mocks/`), maintained by stakeholders. The source of truth an implementation is checked against. |
-| [`technical/`](technical/README.md) | **How it is built.** Layers, flows, the domain model, the dependency stack, the development process, the visual system — and the numbered decision log underneath all of it. |
+| [`product/`](product/README.md) | **What each feature must do**, rule by rule, in non-technical language. One folder per feature, maintained by stakeholders. The source of truth an implementation is checked against. |
+| [`technical/`](technical/README.md) | **How it is built.** Layers, flows, the domain model, the dependency stack, the development process — and the numbered decision log underneath all of it. |
+| [`design/`](design/README.md) | **What it looks like.** The colour system, the identity, the control library, and every screen as a board exported from Penpot in both themes. |
 | [`roadmap.md`](roadmap.md) | **What gets built, and in what order.** Phases, spikes, milestones. A plan, so it is the one file here that describes the future rather than the present. |
 
-Two folders and two files, split by audience: `product/` says what each feature
-must do, `technical/` says how it is built, `about.md` is the context above
-both, and `roadmap.md` is the order they arrive in. Everything except the
-roadmap describes the system as it is today.
+Everything except `roadmap.md` describes the system as it is today.
 
 The documentation lives in `docs/` inside the repo itself, as markdown — the
 app should, as soon as possible, be used to edit its own docs.
@@ -92,7 +90,7 @@ The preview is not a convenience for whoever is editing. For anyone who does not
 - Databases / kanban / tasks
 - Our own cloud sync (the Git remote **is** the sync)
 
-> **Not a non-goal: mobile.** iOS and Android are a planned direction, post-1.0 — desktop still comes first, and nothing about the MVP scope changes. See the [roadmap](roadmap.md#phases) and [Decision 8](technical/decisions/008-monorepo-with-pure-dart-core.md), which already reserves the shape (`tom_infra_mobile` + `apps/tom_mobile` over the same pure-Dart core).
+> **Not a non-goal: mobile.** iOS and Android are a planned direction, post-1.0 — desktop still comes first, and nothing about the MVP scope changes. The shape is already reserved: `apps/mobile` with its own screens over the same pure-Dart core, and a second implementation per capability inside `tom_infra` ([technical/mobile.md](technical/mobile.md), [roadmap](roadmap.md#phases)).
 
 ---
 

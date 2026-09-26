@@ -9,10 +9,10 @@ import 'package:tom_desktop/screens/file_tree/widgets/file_tree_caption_widget.d
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_search_widget.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 
-/// The file tree, and the search field that will sit above it in M2.
+/// The file tree, and the search field above it.
 ///
 /// Shows everything the space holds and opens only markdown
-/// (`docs/product/navigation/file-tree/doc.md`); `.git/` is absent because
+/// (`docs/product/navigation/file-tree/what-is-shown/doc.md`); `.git/` is absent because
 /// the walk never descends into it, not because anything here filters.
 /// Layout only — what a click means lives in [FileTreeNotifier].
 class FileTreePanel extends ConsumerWidget {

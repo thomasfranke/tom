@@ -9,7 +9,7 @@ part of 'remote_notifier.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Fetch, pull and push, each started by somebody and never on its own
-/// (`docs/product/git-workflow/push-pull/doc.md`).
+/// (`docs/product/git-workflow/push-pull/README.md`).
 ///
 /// It reads no git of its own: every action ends in [ChangesNotifier]
 /// re-reading, so what the window believes about the repository has one
@@ -19,7 +19,7 @@ part of 'remote_notifier.dart';
 final remoteProvider = RemoteNotifierProvider._();
 
 /// Fetch, pull and push, each started by somebody and never on its own
-/// (`docs/product/git-workflow/push-pull/doc.md`).
+/// (`docs/product/git-workflow/push-pull/README.md`).
 ///
 /// It reads no git of its own: every action ends in [ChangesNotifier]
 /// re-reading, so what the window believes about the repository has one
@@ -27,7 +27,7 @@ final remoteProvider = RemoteNotifierProvider._();
 final class RemoteNotifierProvider
     extends $NotifierProvider<RemoteNotifier, RemoteState> {
   /// Fetch, pull and push, each started by somebody and never on its own
-  /// (`docs/product/git-workflow/push-pull/doc.md`).
+  /// (`docs/product/git-workflow/push-pull/README.md`).
   ///
   /// It reads no git of its own: every action ends in [ChangesNotifier]
   /// re-reading, so what the window believes about the repository has one
@@ -62,7 +62,7 @@ final class RemoteNotifierProvider
 String _$remoteNotifierHash() => r'56dbe29793cafce7437559d16438c945a50ae481';
 
 /// Fetch, pull and push, each started by somebody and never on its own
-/// (`docs/product/git-workflow/push-pull/doc.md`).
+/// (`docs/product/git-workflow/push-pull/README.md`).
 ///
 /// It reads no git of its own: every action ends in [ChangesNotifier]
 /// re-reading, so what the window believes about the repository has one

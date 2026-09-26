@@ -46,7 +46,7 @@ abstract interface class GitRepository {
   });
 
   /// Adds [paths] to the index, whole files only
-  /// (`docs/product/git-workflow/commit/doc.md`).
+  /// (`docs/product/git-workflow/commit/the-changes-list/doc.md`).
   ///
   /// An empty list stages nothing and succeeds.
   Future<Result<void, GitFailure>> stage(
@@ -86,6 +86,6 @@ abstract interface class GitRepository {
   /// Publishes the current branch to its remote.
   ///
   /// Answers `GitPushRejected` when the remote moved first
-  /// (`docs/product/git-workflow/push-pull/doc.md`).
+  /// (`docs/product/git-workflow/push-pull/README.md`).
   Future<Result<void, GitFailure>> push();
 }

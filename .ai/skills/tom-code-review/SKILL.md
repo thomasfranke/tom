@@ -108,7 +108,7 @@ Integration against real git is the project's confidence differentiator — a di
 
 - Behavior changed → the documentation, in the **same PR**. A technical doc **links** to the `docs/product/` chapter that owns a rule and never restates it; a new paragraph in `docs/technical/` that spells out a product rule is a finding.
 - Behavior that contradicts `docs/product/<feature>/doc.md` is a finding even if the code is clean: that file is the source of truth for what a feature does, and its rules are atomic on purpose so they can be checked one by one.
-- User-facing interface changed → that product's mock in `docs/product/<group>/<feature>/mocks/` in the same PR (a mock that no longer matches what shipped is worse than none).
+- User-facing interface changed → the Penpot board edited **and both themes re-exported** into `docs/design/screens/desktop/<page>/` in the same PR, plus the page's PDF if the card changed. A board that no longer matches what shipped is worse than none, because it carries the appearance of authority (rule 13). A control drawn inline instead of placed from the library is the same finding one level down.
 - A question answered in `domain/open-questions.md` → moved into the `domain/` file it belongs to, in the same PR, question deleted.
 - Architectural change → a new file in `docs/technical/decisions/` (Status · Context · Decision · Rationale · Consequences · Revisit when); revising an existing decision is an explicit revision, never an edit in passing.
 - A new dependency → its license stated in the PR, and it is not AGPL/GPL (rule 1). Check it; do not assume. The excluded list in `stack/README.md` is a rule: no `dartz`, no routing package, no HTTP client before layer 3, no `sqflite` on desktop.

@@ -13,7 +13,7 @@ import 'package:tom_ui/tom_ui.dart';
 /// *Commit*, disabled until something is staged and described.
 ///
 /// Disabled rather than refused after the attempt
-/// (`docs/product/git-workflow/commit/doc.md`).
+/// (`docs/product/git-workflow/commit/the-message/doc.md`).
 class ChangesCommitButtonWidget extends ConsumerWidget {
   /// Creates the button, enabled when [canCommit].
   const ChangesCommitButtonWidget({required this.canCommit, super.key});

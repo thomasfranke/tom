@@ -4,7 +4,7 @@
 
 | Package | License | Role |
 |---|---|---|
-| `sqlite3` + `sqlite3_flutter_libs` | MIT | FTS5 for full-text search (the bundled library is built with FTS5) |
+| `sqlite3` + `sqlite3_flutter_libs` | MIT | FTS5 for full-text search — **in use**. The table is in memory, one per open space, so the bundled library is what provides FTS5 and nothing is written to disk ([runtime/search.md](../runtime/search.md)) |
 | `watcher` | BSD-3 | Filesystem watching — external edits are an expected case |
 | `path` | BSD-3 | Cross-platform paths |
 | `dart:io` (`Process`) | SDK | The phase-1 Git integration; zero external dependencies |

@@ -31,7 +31,7 @@ final class DiffDocumentUseCase with UseCase {
   final Observability observability;
 
   /// The default revision, which is what the product means by "what changed"
-  /// (`docs/product/diff/rendered-diff/doc.md`); the branch and commit diff
+  /// (`docs/product/diff/rendered-diff/what-is-compared/doc.md`); the branch and commit diff
   /// passes a branch or a sha instead.
   static const String head = 'HEAD';
 

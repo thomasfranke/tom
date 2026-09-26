@@ -18,19 +18,7 @@ report paths relative to it; navigation, search and the watcher stay within
 `root`. Retrofitting this would touch git, the watcher, the index and wikilink
 resolution at once.
 
-## `SpaceRelativePathValueObject` · `RepoRelativePathValueObject`
-
-The two halves of the split above, as types. `SpaceRelativePathValueObject` is
-what the file tree, the editor, the watcher and the search index speak;
-`RepoRelativePathValueObject` is what git reports and accepts. Both refuse
-`..`, an empty segment, a backslash and a drive letter — one rule, in one
-place — so that joining either onto its root cannot leave it.
-
-`SpaceEntity` is the only converter: `toRepoRelative` prefixes,
-`toSpaceRelative` strips and answers **null** for a path the space does not
-contain. Null is an ordinary answer, not a failure — git reports the whole
-repository, so a status on a space opened at `docs/` routinely names source
-files the tree does not show.
+The two halves of that split, as types, are [`paths.md`](paths.md).
 
 ## `SpaceEntryValueObject`
 
@@ -59,4 +47,4 @@ walking the list once.
 
 ---
 
-*See also: [documents.md](documents.md) · [git.md](git.md)*
+*See also: [domain/](README.md) · [paths.md](paths.md) · [documents.md](documents.md) · [git.md](git.md)*

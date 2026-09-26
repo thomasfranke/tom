@@ -7,7 +7,7 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// A file's state as a letter on a tinted square, never the tint alone
-/// (`docs/technical/design/visual-language.md`).
+/// (`docs/design/visual-language/README.md`).
 ///
 /// The letters are the domain's alphabet, not git's: git's `U` means
 /// unmerged, so an untracked file is `N`.

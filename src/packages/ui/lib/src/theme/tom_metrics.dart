@@ -1,12 +1,12 @@
 /// The shell's fixed dimensions.
 library;
 
-/// What the wireframes fix about the layout.
+/// What the boards fix about the layout.
 ///
-/// Copied under the kit's own names from
-/// [the drawing kit](../../../../../../docs/technical/design/tools/kit.py),
-/// and **when the two disagree the wireframe is right**
-/// (`docs/technical/design/README.md`).
+/// Every number here is measured off a screen in
+/// [`docs/design/screens/`](../../../../../../docs/design/screens/README.md),
+/// and **when the two disagree the board is right** — it is the design of
+/// record, and this class is a transcription of it.
 abstract final class TomMetrics {
   /// Height of the bar above everything: space name and global actions.
   static const double topBar = 52;
@@ -19,7 +19,7 @@ abstract final class TomMetrics {
   static const double modeBar = 36;
 
   /// Width of the explorer, **constant across every screen**
-  /// (`docs/product/workspace/doc.md`).
+  /// (`docs/product/workspace/regions/doc.md`).
   static const double explorer = 220;
 
   /// Width of the git panel.
@@ -44,7 +44,7 @@ abstract final class TomMetrics {
   static const double chromeInset = 4;
 
   /// The square a diff mark is drawn in, one component for the changes
-  /// column and the rendered diff (`docs/technical/design/components.md`).
+  /// column and the rendered diff (`docs/design/components/README.md`).
   static const double mark = 20;
 
   /// The corner radius of a mark, a checkbox, a tab indicator.

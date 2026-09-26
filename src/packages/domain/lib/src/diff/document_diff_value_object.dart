@@ -31,7 +31,8 @@ abstract class DocumentDiffValueObject with _$DocumentDiffValueObject {
   const DocumentDiffValueObject._();
 
   /// Whether the two versions say the same thing; an unchanged document is
-  /// drawn with no diff at all (`docs/product/diff/rendered-diff/doc.md`).
+  /// drawn with no diff at all
+  /// (`docs/product/diff/rendered-diff/what-is-compared/doc.md`).
   bool get isUnchanged =>
       blocks.every((DiffBlockValueObject block) => !block.isChange);
 }

@@ -24,7 +24,7 @@ sealed class PreviewState with _$PreviewState {
 
     /// What it changed against the base, once git has said; null until
     /// then, when the comparison failed, and for a version nobody asked to
-    /// compare (`docs/product/diff/rendered-diff/doc.md`).
+    /// compare (`docs/product/diff/rendered-diff/what-is-compared/doc.md`).
     DocumentDiffValueObject? diff,
   }) = PreviewReady;
 

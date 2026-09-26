@@ -60,7 +60,8 @@ class FileTreeNotifier extends _$FileTreeNotifier {
   /// Opens or closes [entry] — whichever clicking its row means.
   ///
   /// A folder toggles, a markdown file becomes the open document, anything
-  /// else does nothing (`docs/product/navigation/file-tree/doc.md`).
+  /// else does nothing
+  /// (`docs/product/navigation/file-tree/what-is-shown/doc.md`).
   void activate(SpaceEntryValueObject entry) {
     if (entry.type == SpaceEntryTypeEnum.directory) {
       _toggle(entry.path);

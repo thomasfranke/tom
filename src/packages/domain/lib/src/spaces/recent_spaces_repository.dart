@@ -6,7 +6,7 @@ import 'package:tom_domain/src/spaces/recent_space_entity.dart';
 import 'package:tom_domain/src/spaces/space_entity.dart';
 
 /// What the user opened before, so returning is one click
-/// (`docs/product/home/doc.md`).
+/// (`docs/product/home/recent-spaces/doc.md`).
 ///
 /// **Everything here is a convenience**, so no caller stops on it: [Never]
 /// as the failure type is that promise checked, since a `Failure<T, Never>`

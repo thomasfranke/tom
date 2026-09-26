@@ -14,7 +14,7 @@ import 'package:tom_ui/src/widgets/tom_wordmark_widget.dart';
 /// Home's ground: the wordmark's trunk carried to both edges of the screen,
 /// with one cycle over it — a commit climbs writing the log ([commits]),
 /// lands on the O, and rings leave the window; lanes come and go beside it
-/// ([brand.md](../../../../../../docs/technical/design/brand.md), [TomMark]).
+/// ([brand](../../../../../../docs/design/brand/README.md), [TomMark]).
 ///
 /// The geometry is read at paint time off the [TomWordmarkWidget] carrying
 /// [anchorOf]'s key, so a resize moves the ground in the same frame; with no

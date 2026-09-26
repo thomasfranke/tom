@@ -10,7 +10,7 @@ part 'parsed_document_value_object.freezed.dart';
 /// The blocks of a document, and the document scope they need to render.
 ///
 /// A block is rendered on its own
-/// ([runtime](../../../../../../docs/technical/runtime/documents.md)),
+/// ([runtime](../../../../../../docs/technical/runtime/preview.md)),
 /// and the one thing that costs is the document-scoped link definitions.
 @freezed
 abstract class ParsedDocumentValueObject with _$ParsedDocumentValueObject {

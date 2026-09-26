@@ -166,7 +166,7 @@ void main() {
     WidgetTester tester,
   ) async {
     // Colour is never the only signal
-    // (docs/technical/design/visual-language.md).
+    // (docs/design/visual-language/README.md).
     git.reported = statusOf(<StatusEntryValueObject>[
       entry('a.md', FileStateEnum.modified, isStaged: false),
       entry('b.md', FileStateEnum.added, isStaged: false),
@@ -185,7 +185,8 @@ void main() {
   testWidgets('ticking a row stages it, one file at a time', (
     WidgetTester tester,
   ) async {
-    // Whole files, no hunks (docs/product/git-workflow/commit/doc.md).
+    // Whole files, no hunks
+    // (docs/product/git-workflow/commit/the-changes-list/doc.md).
     git.reported = statusOf(<StatusEntryValueObject>[
       entry('docs/index.md', FileStateEnum.modified, isStaged: false),
     ]);
@@ -296,7 +297,7 @@ void main() {
       WidgetTester tester,
     ) async {
       // The wording is the product's
-      // (docs/product/git-workflow/push-pull/doc.md).
+      // (docs/product/git-workflow/push-pull/when-it-fails/doc.md).
       git.reported = statusOf(const <StatusEntryValueObject>[], behind: 3);
       await pumpPanel(tester, space: docs);
 

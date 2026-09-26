@@ -9,7 +9,7 @@ import 'package:tom_infra/src/platform_paths/platform_paths_failure.dart';
 /// A capability like the others ([Decision
 /// 7](../../../../../../docs/technical/decisions/007-external-dependencies-behind-contracts.md));
 /// a sandboxed mobile app is handed its container instead
-/// (`docs/technical/architecture.md#when-mobile-arrives-phase-3`). **Synchronous, where every
+/// (`docs/technical/mobile.md`). **Synchronous, where every
 /// other capability is not**: it reads what the machine told the process at
 /// start, and a `Future` would make the settings wiring async for a string.
 abstract interface class PlatformPaths {

@@ -31,9 +31,11 @@ This chapter is *which* ones are taken.
 
 > Every judgment in this chapter is scoped to the **desktop** app. iOS and
 > Android arrive in Phase 3, post-1.0 ([roadmap](../../roadmap.md#phases)), and
-> get their own stack under `tom_infra_mobile` — `sqflite` and a
-> touch-capable editor become live candidates there, and `re_editor` almost
-> certainly does not travel. Nothing here is a verdict on mobile.
+> get their own implementations inside `tom_infra` — one subfolder per
+> capability ([Decision 24](../decisions/024-a-capability-is-a-folder.md)), so
+> `sqflite` and a touch-capable editor become live candidates there, and
+> `re_editor` almost certainly does not travel. Nothing here is a verdict on
+> mobile.
 
 ## Adding one
 

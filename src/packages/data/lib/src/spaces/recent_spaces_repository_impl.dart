@@ -34,7 +34,8 @@ final class RecentSpacesRepositoryImpl implements RecentSpacesRepository {
 
   /// How many entries are kept, enforced on write.
   ///
-  /// A default, not a product rule: `docs/product/home/doc.md` says only that
+  /// A default, not a product rule: `docs/product/home/recent-spaces/doc.md`
+  /// says only that
   /// recent spaces are offered.
   static const int _limit = 10;
 

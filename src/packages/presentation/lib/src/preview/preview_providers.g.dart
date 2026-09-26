@@ -73,7 +73,7 @@ String _$splitDocumentHash() => r'46bb11a7f94f0107d8e6aaaf1a3dc7207e613d07';
 ///
 /// Beside the preview because the preview draws the answer: the rendered
 /// diff is decoration on the blocks already there
-/// (`docs/product/diff/rendered-diff/doc.md`).
+/// (`docs/product/diff/rendered-diff/how-it-is-drawn/doc.md`).
 
 @ProviderFor(diffDocument)
 final diffDocumentProvider = DiffDocumentProvider._();
@@ -82,7 +82,7 @@ final diffDocumentProvider = DiffDocumentProvider._();
 ///
 /// Beside the preview because the preview draws the answer: the rendered
 /// diff is decoration on the blocks already there
-/// (`docs/product/diff/rendered-diff/doc.md`).
+/// (`docs/product/diff/rendered-diff/how-it-is-drawn/doc.md`).
 
 final class DiffDocumentProvider
     extends
@@ -96,7 +96,7 @@ final class DiffDocumentProvider
   ///
   /// Beside the preview because the preview draws the answer: the rendered
   /// diff is decoration on the blocks already there
-  /// (`docs/product/diff/rendered-diff/doc.md`).
+  /// (`docs/product/diff/rendered-diff/how-it-is-drawn/doc.md`).
   DiffDocumentProvider._()
     : super(
         from: null,

@@ -1,12 +1,12 @@
 /// What the design fixes about the history panel.
 library;
 
-/// The numbers of the `file-history` wireframe
-/// (`docs/product/git-workflow/file-history/mocks/file-history.excalidraw`),
+/// The numbers of the `file-history` board
+/// ([file-history-light.svg](../../../../../../docs/design/screens/desktop/git-history/file-history-light.svg)),
 /// measured from the top of the panel.
 ///
-/// [meta] is the one size that is not the wireframe's: it draws that line
-/// at 13, and the sha, the author and the age do not fit 248 points at 13.
+/// [meta] is the one size that is not the board's: it draws that line at 13,
+/// and the sha, the author and the age do not fit 248 points at 13.
 abstract final class HistoryDesign {
   /// Panel top to the caption's box.
   static const double captionTop = 18;

@@ -20,7 +20,7 @@ SplitDocumentUseCase splitDocument(Ref ref) => throw StateError(
 ///
 /// Beside the preview because the preview draws the answer: the rendered
 /// diff is decoration on the blocks already there
-/// (`docs/product/diff/rendered-diff/doc.md`).
+/// (`docs/product/diff/rendered-diff/how-it-is-drawn/doc.md`).
 @riverpod
 DiffDocumentUseCase diffDocument(Ref ref) => throw StateError(
   'diffDocumentProvider has no default. The composition root overrides it '

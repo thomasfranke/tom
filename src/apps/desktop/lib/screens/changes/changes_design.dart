@@ -3,10 +3,10 @@ library;
 
 import 'package:tom_ui/tom_ui.dart';
 
-/// The numbers of the `committing` wireframe's git column
-/// (`docs/product/git-workflow/commit/mocks/committing-desktop.excalidraw`),
+/// The numbers of the `committing` board's git column
+/// ([committing-light.svg](../../../../../../docs/design/screens/desktop/git-commit/committing-light.svg)),
 /// measured from the top of the panel; type and radii from
-/// [components.md](../../../../../../docs/technical/design/components.md).
+/// [components](../../../../../../docs/design/components/README.md).
 abstract final class ChangesDesign {
   /// Panel top to the caption's box.
   static const double captionTop = 18;

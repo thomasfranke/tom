@@ -9,7 +9,8 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// The rendered diff: the block as drawn, tinted by what happened to it,
-/// with a mark in the gutter (`docs/product/diff/rendered-diff/doc.md`).
+/// with a mark in the gutter
+/// (`docs/product/diff/rendered-diff/how-it-is-drawn/doc.md`).
 ///
 /// An unchanged block is drawn exactly as it was. The letters are this
 /// screen's alphabet, A · R · M: nothing is renamed here, which frees the R

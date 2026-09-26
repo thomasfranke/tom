@@ -200,7 +200,8 @@ final class DartIoGitClientImpl implements GitClient {
       // `--no-rebase`: a bare `git pull` fails on divergent branches unless
       // `pull.rebase` or `pull.ff` is set, and the choice is the product's.
       // Merge, because the app promises that nothing committed is lost and a
-      // rebase can stop halfway (`docs/product/git-workflow/push-pull/doc.md`).
+      // rebase can stop halfway
+      // (`docs/product/git-workflow/push-pull/what-each-does/doc.md`).
       _gitVoid(<String>['pull', '--no-rebase'], limit: networkTimeout);
 
   @override

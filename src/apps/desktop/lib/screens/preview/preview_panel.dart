@@ -12,7 +12,7 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 
 /// The open document, one container per block
-/// ([runtime](../../../../../../docs/technical/runtime/documents.md)).
+/// ([runtime](../../../../../../docs/technical/runtime/preview.md)).
 ///
 /// The container is the app's and carries the diff decoration; what is
 /// inside it is delegated.

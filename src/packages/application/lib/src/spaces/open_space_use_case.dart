@@ -5,7 +5,7 @@ import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 
-/// A folder opened as a space (`docs/product/home/doc.md`).
+/// A folder opened as a space (`docs/product/home/opening-a-space/doc.md`).
 ///
 /// A folder outside any repository answers `GitNotARepository` and a folder
 /// that is gone `SpaceFolderMissing`, because Home sends each somewhere

@@ -82,7 +82,7 @@ class ChangesNotifier extends _$ChangesNotifier {
   );
 
   /// Stages everything git reports, or unstages all of it
-  /// (`docs/product/git-workflow/commit/doc.md`).
+  /// (`docs/product/git-workflow/commit/the-changes-list/doc.md`).
   ///
   /// Built from the status rather than `git add -A`, so what it acts on is
   /// exactly the list that was on screen.

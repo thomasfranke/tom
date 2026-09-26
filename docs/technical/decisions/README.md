@@ -2,7 +2,11 @@
 
 One decision per file, with a declarative name: **`ls` on this folder is the executive summary of the architecture** — you can tell what each decision is without opening a single file. Numbering keeps chronological order and gives a short reference in PRs ("that violates 007").
 
-Internal format (known in the community as an *ADR — Architecture Decision Record*): Status · Context · Decision · Rationale · Consequences · (Revisit when). A new decision is a new file following the pattern; a reversed decision is never deleted — it gets the status "superseded by NNN".
+Internal format (an *ADR — Architecture Decision Record*): Status · Context · Decision · Rationale · Consequences · (Revisit when). A new decision is a new file following the pattern; a reversed decision is never deleted — it gets the status "superseded by NNN".
+
+**One flat, chronologically numbered log**, not one `decisions.md` per subsystem. Several decisions belong to no subsystem at all — 001 is licensing, 004 the business model, 013 the stack — so splitting by subsystem would leave them homeless while destroying both the continuous numbering and the "that violates 007" shorthand a review depends on.
+
+An ADR is the one file here that is **not** split by subject: its sections are facets of one decision, not separate subjects.
 
 ## At a glance
 

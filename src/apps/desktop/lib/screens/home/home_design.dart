@@ -3,8 +3,8 @@ library;
 
 import 'package:tom_ui/tom_ui.dart';
 
-/// The numbers of the drawing that generates `docs/product/home/mocks/`, a
-/// 1440×900 window; when code and drawing disagree the drawing is right.
+/// The numbers of `docs/design/screens/desktop/home/`, a 1440×900 window;
+/// when the code and the board disagree the board is right.
 ///
 /// Everything here is centred or a gap between two things, so the layout
 /// holds at any size.
