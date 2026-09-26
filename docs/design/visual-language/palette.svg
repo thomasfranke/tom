@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="708" height="1032" viewBox="0 0 708 1032" font-family="ui-sans-serif, system-ui, sans-serif">
+<rect x="0" y="0" width="708" height="516" fill="#FAF9F6"/>
+<text x="40" y="46" font-size="21" font-weight="600" fill="#26251F">Light</text>
+<rect x="40" y="70" width="148" height="76" rx="8" fill="#FAF9F6" stroke="#C9C5BB"/>
+<text x="50" y="162" font-size="11" fill="#8B877D">surface  #FAF9F6</text>
+<rect x="200" y="70" width="148" height="76" rx="8" fill="#FFFFFF" stroke="#C9C5BB"/>
+<text x="210" y="162" font-size="11" fill="#8B877D">surface_raised  #FFFFFF</text>
+<rect x="360" y="70" width="148" height="76" rx="8" fill="#F0EEE9" stroke="#C9C5BB"/>
+<text x="370" y="162" font-size="11" fill="#8B877D">surface_sunken  #F0EEE9</text>
+<rect x="520" y="70" width="148" height="76" rx="8" fill="#E2DFD8" stroke="#C9C5BB"/>
+<text x="530" y="162" font-size="11" fill="#8B877D">border  #E2DFD8</text>
+<rect x="40" y="182" width="148" height="76" rx="8" fill="#C9C5BB" stroke="#C9C5BB"/>
+<text x="50" y="274" font-size="11" fill="#8B877D">border_strong  #C9C5BB</text>
+<rect x="200" y="182" width="148" height="76" rx="8" fill="#26251F" stroke="#C9C5BB"/>
+<text x="210" y="274" font-size="11" fill="#8B877D">text_primary  #26251F</text>
+<rect x="360" y="182" width="148" height="76" rx="8" fill="#57544C" stroke="#C9C5BB"/>
+<text x="370" y="274" font-size="11" fill="#8B877D">text_secondary  #57544C</text>
+<rect x="520" y="182" width="148" height="76" rx="8" fill="#8B877D" stroke="#C9C5BB"/>
+<text x="530" y="274" font-size="11" fill="#8B877D">text_muted  #8B877D</text>
+<rect x="40" y="294" width="148" height="76" rx="8" fill="#4C7D6E" stroke="#C9C5BB"/>
+<text x="50" y="386" font-size="11" fill="#8B877D">accent  #4C7D6E</text>
+<rect x="200" y="294" width="148" height="76" rx="8" fill="#E4EEEA" stroke="#C9C5BB"/>
+<text x="210" y="386" font-size="11" fill="#8B877D">accent_soft  #E4EEEA</text>
+<rect x="360" y="294" width="148" height="76" rx="8" fill="#3D7A52" stroke="#C9C5BB"/>
+<text x="370" y="386" font-size="11" fill="#8B877D">added  #3D7A52</text>
+<rect x="520" y="294" width="148" height="76" rx="8" fill="#E6F0E8" stroke="#C9C5BB"/>
+<text x="530" y="386" font-size="11" fill="#8B877D">added_soft  #E6F0E8</text>
+<rect x="40" y="406" width="148" height="76" rx="8" fill="#A24F46" stroke="#C9C5BB"/>
+<text x="50" y="498" font-size="11" fill="#8B877D">removed  #A24F46</text>
+<rect x="200" y="406" width="148" height="76" rx="8" fill="#F6E8E6" stroke="#C9C5BB"/>
+<text x="210" y="498" font-size="11" fill="#8B877D">removed_soft  #F6E8E6</text>
+<rect x="360" y="406" width="148" height="76" rx="8" fill="#8F6F2E" stroke="#C9C5BB"/>
+<text x="370" y="498" font-size="11" fill="#8B877D">modified  #8F6F2E</text>
+<rect x="520" y="406" width="148" height="76" rx="8" fill="#F4EDDF" stroke="#C9C5BB"/>
+<text x="530" y="498" font-size="11" fill="#8B877D">modified_soft  #F4EDDF</text>
+<rect x="0" y="516" width="708" height="516" fill="#1A1917"/>
+<text x="40" y="562" font-size="21" font-weight="600" fill="#ECEAE4">Dark</text>
+<rect x="40" y="586" width="148" height="76" rx="8" fill="#1A1917" stroke="#4C4942"/>
+<text x="50" y="678" font-size="11" fill="#807C74">surface  #1A1917</text>
+<rect x="200" y="586" width="148" height="76" rx="8" fill="#232220" stroke="#4C4942"/>
+<text x="210" y="678" font-size="11" fill="#807C74">surface_raised  #232220</text>
+<rect x="360" y="586" width="148" height="76" rx="8" fill="#131211" stroke="#4C4942"/>
+<text x="370" y="678" font-size="11" fill="#807C74">surface_sunken  #131211</text>
+<rect x="520" y="586" width="148" height="76" rx="8" fill="#34322D" stroke="#4C4942"/>
+<text x="530" y="678" font-size="11" fill="#807C74">border  #34322D</text>
+<rect x="40" y="698" width="148" height="76" rx="8" fill="#4C4942" stroke="#4C4942"/>
+<text x="50" y="790" font-size="11" fill="#807C74">border_strong  #4C4942</text>
+<rect x="200" y="698" width="148" height="76" rx="8" fill="#ECEAE4" stroke="#4C4942"/>
+<text x="210" y="790" font-size="11" fill="#807C74">text_primary  #ECEAE4</text>
+<rect x="360" y="698" width="148" height="76" rx="8" fill="#ADA9A0" stroke="#4C4942"/>
+<text x="370" y="790" font-size="11" fill="#807C74">text_secondary  #ADA9A0</text>
+<rect x="520" y="698" width="148" height="76" rx="8" fill="#807C74" stroke="#4C4942"/>
+<text x="530" y="790" font-size="11" fill="#807C74">text_muted  #807C74</text>
+<rect x="40" y="810" width="148" height="76" rx="8" fill="#84B5A5" stroke="#4C4942"/>
+<text x="50" y="902" font-size="11" fill="#807C74">accent  #84B5A5</text>
+<rect x="200" y="810" width="148" height="76" rx="8" fill="#1E2C28" stroke="#4C4942"/>
+<text x="210" y="902" font-size="11" fill="#807C74">accent_soft  #1E2C28</text>
+<rect x="360" y="810" width="148" height="76" rx="8" fill="#86BC98" stroke="#4C4942"/>
+<text x="370" y="902" font-size="11" fill="#807C74">added  #86BC98</text>
+<rect x="520" y="810" width="148" height="76" rx="8" fill="#1B2820" stroke="#4C4942"/>
+<text x="530" y="902" font-size="11" fill="#807C74">added_soft  #1B2820</text>
+<rect x="40" y="922" width="148" height="76" rx="8" fill="#DA9A92" stroke="#4C4942"/>
+<text x="50" y="1014" font-size="11" fill="#807C74">removed  #DA9A92</text>
+<rect x="200" y="922" width="148" height="76" rx="8" fill="#2C1E1C" stroke="#4C4942"/>
+<text x="210" y="1014" font-size="11" fill="#807C74">removed_soft  #2C1E1C</text>
+<rect x="360" y="922" width="148" height="76" rx="8" fill="#D2B274" stroke="#4C4942"/>
+<text x="370" y="1014" font-size="11" fill="#807C74">modified  #D2B274</text>
+<rect x="520" y="922" width="148" height="76" rx="8" fill="#2A2418" stroke="#4C4942"/>
+<text x="530" y="1014" font-size="11" fill="#807C74">modified_soft  #2A2418</text>
+</svg>
