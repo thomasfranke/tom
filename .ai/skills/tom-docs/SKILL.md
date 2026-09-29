@@ -67,21 +67,29 @@ when no rule can own it — a trap, or the *why* behind a whole chapter — and 
 is **at most three lines**. Same bargain [`tom-comments`](../tom-comments/SKILL.md)
 strikes for a dartdoc: the exception exists, and it is bounded.
 
-## One subject per file, and the file is small
+## One subject per file, and every line earns its place
 
 **Prefer three files and an index over one file with three sections.** An index
 row is cheap; a reader scrolling past two subjects to reach theirs is not, and
 a link into a file is a promise about the whole file — dartdoc points at
 `conventions/errors.md` expecting everything in it to be the rule it means.
 
-Two signals that a file is two files, either one enough:
+The test is the subject, not the length. **A file is two files when it answers
+two questions** — its second `##` is a different subject rather than another
+facet of the same one. "Rules" and "Mocks" are facets. "Rules" and "How the
+index is built" are two files.
 
-- It passes **about 400 words**. That is a signal, not a law: every leaf
-  `doc.md` in this repository is under it, and every file over it is an index or
-  `about.md`/`roadmap.md`.
-- Its second `##` is a different *subject*, not another facet of the same one.
-  "Rules" and "Mocks" are facets. "Rules" and "How the index is built" are two
-  files.
+**A long file is a finding only if it is long for the wrong reason.** Ask which
+of the three it is before touching it:
+
+- *Two subjects wearing one `#`* — split it, and move the inbound links.
+- *Prose* — cut it. A rule with its reason after the em dash says in one line
+  what a paragraph says in five, and a paragraph that is not a rule earns at
+  most three lines.
+- *One subject with many facets* — leave it. `the-controls/doc.md` is 488 words
+  because three buttons have that many rules between them, and splitting the
+  count off the button it sits inside would make a reader open two files to
+  learn one control.
 
 Splitting is not finished when the files exist: the parent index gains a row
 per child, the inbound links move (see *What moves in the same commit*), and

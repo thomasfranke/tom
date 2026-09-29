@@ -1,12 +1,14 @@
 # Skills — TOM
 
-Six skills holding the project's operational conventions, one folder each
+Seven skills holding the project's operational conventions, one folder each
 with a `SKILL.md`. They cover procedure — how work is done here — not product
 or architecture, which live in [`docs/`](../../docs/about.md). `tom-code-review`
 is the one that comes closest to the line: it does not restate the rules, it
 says how a diff is checked against them and which ones the tooling already
 proves. `tom-docs` holds the same position over `docs/` itself: it is the shape
-a doc takes, not a second copy of what the docs say.
+a doc takes, not a second copy of what the docs say, and `tom-testing` the same
+over the suite: the kinds of test live in `conventions/testing.md`, the skill is
+the end-to-end contract that file does not cover.
 
 ## They do not load themselves
 

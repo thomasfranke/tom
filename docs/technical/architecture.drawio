@@ -1,0 +1,499 @@
+<mxfile host="65bd71144e">
+    <diagram id="tom-packages-boundaries" name="Packages · TOM">
+        <mxGraphModel dx="926" dy="257" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1240" pageHeight="1580" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="TOM" style="text;html=1;fontFamily=Helvetica;fontSize=30;fontStyle=1;fontColor=#204d7d;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="24" width="500" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle" value="The packages, and what crosses each boundary" style="text;html=1;fontFamily=Helvetica;fontSize=13;fontColor=#6b7280;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="68" width="700" height="24" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="d0" value="&lt;b style=&quot;font-size:16px&quot;&gt;tom_domain&lt;/b&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#41618a&quot;&gt;&lt;br&gt;The rules. Depends on tom_core and on nothing else.&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#dfeaf6;strokeColor=#204d7d;strokeWidth=2.5;fontColor=#173a60;spacingLeft=20;spacingRight=20;spacingTop=18;" parent="1" vertex="1">
+                    <mxGeometry x="390" y="130" width="320" height="600" as="geometry"/>
+                </mxCell>
+                <mxCell id="d1" value="&lt;b style=&quot;font-size:13px&quot;&gt;Entities · Value Objects&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;The space, the document, the commit and the branch — and the typed paths, the revision and the block. Freezed, or an extension type when the shape is one field (Decision 16).&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#FFFFFF;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=16;spacingRight=16;spacingTop=6;spacingBottom=6;" parent="d0" vertex="1">
+                    <mxGeometry x="20" y="92" width="280" height="124" as="geometry"/>
+                </mxCell>
+                <mxCell id="d2" value="&lt;b style=&quot;font-size:13px&quot;&gt;Repository contracts · Ports&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;What the data layer implements — git, documents, spaces, recent spaces, search — plus the ports the domain reads blocks and alignments through.&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#FFFFFF;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=16;spacingRight=16;spacingTop=6;spacingBottom=6;" parent="d0" vertex="1">
+                    <mxGeometry x="20" y="236" width="280" height="112" as="geometry"/>
+                </mxCell>
+                <mxCell id="d3" value="&lt;b style=&quot;font-size:13px&quot;&gt;Sealed failures&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;One hierarchy per area, sealed inside its own library, so a switch that misses a variant does not compile (Decision 5).&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#FFFFFF;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=16;spacingRight=16;spacingTop=6;spacingBottom=6;" parent="d0" vertex="1">
+                    <mxGeometry x="20" y="368" width="280" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="d4" value="&lt;b style=&quot;font-size:13px&quot;&gt;BlockDifferService&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;The domain service behind the rendered diff: aligns blocks by position, pairs them by word similarity (Decision 27).&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#FFFFFF;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=16;spacingRight=16;spacingTop=6;spacingBottom=6;" parent="d0" vertex="1">
+                    <mxGeometry x="20" y="488" width="280" height="92" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="a0" value="&lt;b style=&quot;font-size:16px&quot;&gt;tom_application&lt;/b&gt;&lt;div style=&quot;font-size:11.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;One use case per product action. Each composes repositories and the domain service over the UseCase mixin, which holds the standardised try/catch: what it catches goes to Observability and comes back as an UnexpectedFailure.&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingLeft=18;spacingRight=18;spacingTop=8;spacingBottom=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="190" width="280" height="200" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="p0" value="&lt;b style=&quot;font-size:16px&quot;&gt;tom_presentation&lt;/b&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;Pure Dart — it cannot reach a widget.&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingLeft=20;spacingRight=20;spacingTop=18;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="480" width="280" height="436" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1" value="&lt;b style=&quot;font-size:13px&quot;&gt;Space session&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;One per open space: the space, the open document, the mode, the git status, the version being read and what it is compared against. Panels derive from it with select (Decision 9).&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=16;spacingRight=16;spacingTop=6;spacingBottom=6;" parent="p0" vertex="1">
+                    <mxGeometry x="20" y="92" width="240" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2" value="&lt;b style=&quot;font-size:13px&quot;&gt;Notifiers&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;One per panel, with an explicit state: initial / loading / data / error. No business logic — it calls a use case and turns the Result into state.&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=16;spacingRight=16;spacingTop=6;spacingBottom=6;" parent="p0" vertex="1">
+                    <mxGeometry x="20" y="256" width="240" height="140" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="t0" value="&lt;b style=&quot;font-size:16px&quot;&gt;tom_data&lt;/b&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;What the domain asked for: obtained, parsed, translated.&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingLeft=20;spacingRight=20;spacingTop=18;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="130" width="380" height="404" as="geometry"/>
+                </mxCell>
+                <mxCell id="t1" value="&lt;b style=&quot;font-size:13px&quot;&gt;Repositories&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;Orchestrate and translate. The one place a technical failure becomes a domain one (Decision 25).&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=14;spacingRight=14;spacingTop=6;spacingBottom=6;" parent="t0" vertex="1">
+                    <mxGeometry x="20" y="96" width="165" height="116" as="geometry"/>
+                </mxCell>
+                <mxCell id="t2" value="&lt;b style=&quot;font-size:13px&quot;&gt;Parsers&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;Read what git printed. They belong to the repository, never to the source.&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=14;spacingRight=14;spacingTop=6;spacingBottom=6;" parent="t0" vertex="1">
+                    <mxGeometry x="195" y="96" width="165" height="116" as="geometry"/>
+                </mxCell>
+                <mxCell id="t3" value="&lt;b style=&quot;font-size:13px&quot;&gt;Data sources&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;Obtain, never interpret: one call per capability method, one instance per space.&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=16;spacingRight=16;spacingTop=6;spacingBottom=6;" parent="t0" vertex="1">
+                    <mxGeometry x="20" y="232" width="340" height="68" as="geometry"/>
+                </mxCell>
+                <mxCell id="t4" value="&lt;b style=&quot;font-size:13px&quot;&gt;DTOs&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;The shapes that cross the capability contracts, declared here because the capability answers with them (Decision 21).&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#FFFFFF;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=16;spacingRight=16;spacingTop=6;spacingBottom=6;" parent="t0" vertex="1">
+                    <mxGeometry x="20" y="316" width="340" height="68" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="i0" value="&lt;b style=&quot;font-size:16px&quot;&gt;tom_infra&lt;/b&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;A capability is a folder: the contract, its failures, and one implementation per dependency, named after it (Decision 24). It never depends on tom_domain — which is what makes the translation above mandatory rather than customary.&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingLeft=20;spacingRight=20;spacingTop=18;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="610" width="380" height="378" as="geometry"/>
+                </mxCell>
+                <mxCell id="i1" value="&lt;b style=&quot;font-size:12px&quot;&gt;git_client/ · dart_io&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#6b7280&quot;&gt;Process.run, one serialized queue per space&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=14;spacingRight=14;spacingTop=4;spacingBottom=4;" parent="i0" vertex="1">
+                    <mxGeometry x="20" y="120" width="165" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="i2" value="&lt;b style=&quot;font-size:12px&quot;&gt;filesystem/ · dart_io&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#6b7280&quot;&gt;reading, writing and walking the space&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=14;spacingRight=14;spacingTop=4;spacingBottom=4;" parent="i0" vertex="1">
+                    <mxGeometry x="195" y="120" width="165" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="i3" value="&lt;b style=&quot;font-size:12px&quot;&gt;markdown_parser/ · markdown&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#6b7280&quot;&gt;the blocks, as spans (Decision 19)&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=14;spacingRight=14;spacingTop=4;spacingBottom=4;" parent="i0" vertex="1">
+                    <mxGeometry x="20" y="182" width="165" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="i4" value="&lt;b style=&quot;font-size:12px&quot;&gt;text_differ/ · diffutil&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#6b7280&quot;&gt;Myers over lists: positions, not verdicts&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=14;spacingRight=14;spacingTop=4;spacingBottom=4;" parent="i0" vertex="1">
+                    <mxGeometry x="195" y="182" width="165" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="i5" value="&lt;b style=&quot;font-size:12px&quot;&gt;search_index/ · sqlite3&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#6b7280&quot;&gt;FTS5 — a cache, rebuilt from the files&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=14;spacingRight=14;spacingTop=4;spacingBottom=4;" parent="i0" vertex="1">
+                    <mxGeometry x="20" y="244" width="165" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="i6" value="&lt;b style=&quot;font-size:12px&quot;&gt;settings/ · json_file&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#6b7280&quot;&gt;the recent spaces and the preferences&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=14;spacingRight=14;spacingTop=4;spacingBottom=4;" parent="i0" vertex="1">
+                    <mxGeometry x="195" y="244" width="165" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="i7" value="&lt;b style=&quot;font-size:12px&quot;&gt;platform_paths/ · dart_io&lt;/b&gt;&lt;span style=&quot;font-size:10px;font-weight:400;color:#6b7280&quot;&gt; — where the app may write on each platform, the only thing below that knows there is more than one&lt;/span&gt;" style="rounded=1;absoluteArcSize=1;arcSize=8;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;spacingLeft=16;spacingRight=16;spacingTop=4;spacingBottom=4;" parent="i0" vertex="1">
+                    <mxGeometry x="20" y="306" width="340" height="52" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="fline" value="— the Flutter line: the packages above run under &lt;i&gt;dart test&lt;/i&gt;, with no binding available —" style="text;html=1;fontFamily=Helvetica;fontSize=11;fontColor=#9199a4;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="940" width="670" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="f1" value="&lt;b style=&quot;font-size:16px&quot;&gt;apps/desktop&lt;/b&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#6b7280&quot;&gt;Flutter&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;The composition root, the shell, and screens/&amp;lt;feature&amp;gt;/ mirroring tom_presentation. Panels are registered through TomModule, never hardcoded — the built-in ones included (Decision 12).&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingLeft=18;spacingRight=18;spacingTop=8;spacingBottom=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="1000" width="280" height="210" as="geometry"/>
+                </mxCell>
+                <mxCell id="f2" value="&lt;b style=&quot;font-size:16px&quot;&gt;tom_ui&lt;/b&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#6b7280&quot;&gt;Flutter&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;The look both applications draw: colour roles, metrics, the brand marks and the shared components. It depends on no package and wires nothing — a screen is the application's, what it is drawn with is not (Decision 26).&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingLeft=20;spacingRight=20;spacingTop=8;spacingBottom=8;" parent="1" vertex="1">
+                    <mxGeometry x="390" y="1000" width="320" height="210" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="env1" value="&lt;b style=&quot;font-size:15px&quot;&gt;The machine&lt;/b&gt;&lt;div style=&quot;font-size:11.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;the user's own git binary&lt;br&gt;the folder they opened · the .md files&lt;br&gt;settings, as JSON under the app-support path&lt;br&gt;the FTS5 index file&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#f5f6f7;strokeColor=#9199a4;strokeWidth=2;fontColor=#565658;spacingLeft=16;spacingRight=16;spacingTop=8;spacingBottom=8;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="1060" width="180" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="env2" value="&lt;b style=&quot;font-size:15px&quot;&gt;Beyond it&lt;/b&gt;&lt;div style=&quot;font-size:11.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;A remote, reached only by the user's own git: their credentials, their SSH keys, their config. TOM implements no authentication, and nothing leaves the machine (Decision 11).&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#efefef;strokeColor=#b9c4d4;strokeWidth=2;dashed=1;dashPattern=6 4;fontColor=#565658;spacingLeft=16;spacingRight=16;spacingTop=8;spacingBottom=8;" parent="1" vertex="1">
+                    <mxGeometry x="980" y="1060" width="180" height="160" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="x1" style="startArrow=blockThin;startFill=1;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="p0" target="a0" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="x2" style="startArrow=blockThin;startFill=1;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.267;entryDx=0;entryDy=0;" parent="1" source="a0" target="d0" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="x3" value="Entities /&lt;br&gt;Domain Failures" style="startArrow=blockThin;startFill=1;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;fontFamily=Helvetica;fontSize=11;fontStyle=1;fontColor=#204d7d;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="t1" target="d2" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="x4" style="startArrow=blockThin;startFill=1;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="t1" target="t3" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="x5" style="startArrow=blockThin;startFill=1;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" parent="1" source="t2" target="t3" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="x6" value="DTO / Capability Failure" style="startArrow=blockThin;startFill=1;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#204d7d;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="t0" target="i0" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="x7" value="stdout · exit code · bytes" style="startArrow=blockThin;startFill=1;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#204d7d;labelBackgroundColor=#FFFFFF;exitX=0.24;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="i0" target="env1" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="x8" value="fetch · push" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=2;endArrow=blockThin;endFill=1;startArrow=blockThin;startFill=1;dashed=1;dashPattern=6 4;fontFamily=Helvetica;fontSize=11;fontColor=#6b7280;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="env1" target="env2" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="x9" value="watch · read" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;fontFamily=Helvetica;fontSize=11;fontStyle=1;fontColor=#204d7d;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="f1" target="p0" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="x10" value="draws with" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;fontFamily=Helvetica;fontSize=11;fontStyle=1;fontColor=#204d7d;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="f1" target="f2" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+                <mxCell id="core" value="&lt;b style=&quot;font-size:15px&quot;&gt;tom_core&lt;/b&gt;&lt;div style=&quot;font-size:11.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;Mechanism, never product vocabulary: Result, the AppFailure marker and the ports every layer needs. The only package all the others are allowed to name.&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingLeft=24;spacingRight=24;spacingTop=10;spacingBottom=10;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="1270" width="1120" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="di" value="&lt;b style=&quot;font-size:15px&quot;&gt;Riverpod · composition, not a layer&lt;/b&gt;&lt;div style=&quot;font-size:11.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;Providers live in tom_presentation and in the composition root, nowhere else (Decision 7). Everything below takes its dependencies through its constructor, which is what makes any of it substitutable in a test. The lifetimes: app (keepAlive), space (a family keyed by the root — the git queue, the watcher, the index, the session), transient (the use cases).&lt;/div&gt;" style="rounded=1;absoluteArcSize=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=middle;align=center;fillColor=#f5f6f7;strokeColor=#9199a4;strokeWidth=1.5;dashed=1;dashPattern=8 5;fontColor=#565658;spacingLeft=24;spacingRight=24;spacingTop=10;spacingBottom=10;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="1410" width="1120" height="110" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="tom-dependencies" name="Dependências · TOM">
+        <mxGraphModel dx="926" dy="257" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1360" pageHeight="1060" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="h1" value="TOM · WHAT EACH PACKAGE MAY DEPEND ON" style="text;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fontColor=#6b7280;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="20" width="480" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="h2" value="the graph the pubspecs declare — a violation does not resolve, rather than being noticed in review" style="text;html=1;fontFamily=Helvetica;fontSize=11.5;fontColor=#9199a4;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="42" width="800" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="g1" value="&lt;b style=&quot;font-size:15px&quot;&gt;apps/desktop&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#9199a4&quot;&gt;Flutter&lt;/div&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;bootstrap/ · screens/&lt;br&gt;one folder per feature&lt;/div&gt;" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingTop=12;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="110" width="200" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="g2" value="&lt;b style=&quot;font-size:15px&quot;&gt;tom_ui&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#9199a4&quot;&gt;Flutter&lt;/div&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;theme/ · widgets/&lt;br&gt;depends on no package&lt;/div&gt;" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingTop=12;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="314" y="110" width="200" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="g3" value="&lt;b style=&quot;font-size:15px&quot;&gt;tom_core&lt;/b&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;Result · AppFailure · Observability&lt;br&gt;&lt;br&gt;Every package above may name it, and it names none of them. Drawn apart because an arrow from each would say nothing an arrow from one does not.&lt;/div&gt;" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingTop=12;spacingLeft=20;spacingRight=20;" parent="1" vertex="1">
+                    <mxGeometry x="846" y="110" width="466" height="120" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="g4" value="&lt;b style=&quot;font-size:16px&quot;&gt;tom_presentation&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#9199a4&quot;&gt;pure Dart&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;one folder per feature&lt;br&gt;a notifier and a state per panel&lt;br&gt;the space session&lt;/div&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#9199a4&quot;&gt;&lt;br&gt;no widget — it cannot see one&lt;/div&gt;" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingTop=14;spacingLeft=16;spacingRight=16;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="300" width="200" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="g5" value="&lt;b style=&quot;font-size:16px&quot;&gt;tom_application&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#9199a4&quot;&gt;pure Dart&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;one use case per product action, grouped by area: git, spaces, documents, diff, search&lt;/div&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#9199a4&quot;&gt;&lt;br&gt;over the UseCase mixin&lt;/div&gt;" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingTop=14;spacingLeft=16;spacingRight=16;" parent="1" vertex="1">
+                    <mxGeometry x="314" y="300" width="200" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="g6" value="&lt;b style=&quot;font-size:19px&quot;&gt;tom_domain&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#5b7ea6&quot;&gt;pure Dart&lt;/div&gt;&lt;div style=&quot;font-size:12.5px;font-weight:400;color:#173a60&quot;&gt;&lt;br&gt;entities · value objects&lt;br&gt;repository contracts · ports&lt;br&gt;sealed failures&lt;br&gt;the diff service&lt;/div&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#1d6b3f&quot;&gt;&lt;br&gt;names no layer at all&lt;/div&gt;" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#dfeaf6;strokeColor=#204d7d;strokeWidth=2;fontColor=#173a60;spacingTop=16;spacingLeft=16;spacingRight=16;" parent="1" vertex="1">
+                    <mxGeometry x="580" y="280" width="200" height="290" as="geometry"/>
+                </mxCell>
+                <mxCell id="g7" value="&lt;b style=&quot;font-size:16px&quot;&gt;tom_data&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#9199a4&quot;&gt;pure Dart&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;a repository per contract&lt;br&gt;a source per capability&lt;br&gt;the parsers and the DTOs&lt;/div&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#9199a4&quot;&gt;&lt;br&gt;where the translation happens&lt;/div&gt;" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingTop=14;spacingLeft=16;spacingRight=16;" parent="1" vertex="1">
+                    <mxGeometry x="846" y="300" width="200" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="g8" value="&lt;b style=&quot;font-size:16px&quot;&gt;tom_infra&lt;/b&gt;&lt;div style=&quot;font-size:10px;font-weight:400;color:#9199a4&quot;&gt;pure Dart&lt;/div&gt;&lt;div style=&quot;font-size:11.5px;font-weight:400;color:#6b7280&quot;&gt;&lt;br&gt;a folder per capability:&lt;br&gt;contract + failures + one impl&lt;br&gt;named after its dependency&lt;/div&gt;&lt;div style=&quot;font-size:11px;font-weight:400;color:#1d6b3f&quot;&gt;&lt;br&gt;cannot name a domain type&lt;/div&gt;" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontFamily=Helvetica;verticalAlign=top;align=center;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=2;fontColor=#204d7d;spacingTop=14;spacingLeft=16;spacingRight=16;" parent="1" vertex="1">
+                    <mxGeometry x="1112" y="300" width="200" height="250" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="ge1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="g1" target="g2" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ge2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="g1" target="g4" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ge3" value="a screen names the entity it draws — the arrow still points downwards" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#a9b6c8;strokeWidth=2;endArrow=blockThin;endFill=1;fontFamily=Helvetica;fontSize=11;fontColor=#6b7280;labelBackgroundColor=#FFFFFF;dashed=1;dashPattern=6 4;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="g1" target="g6" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="198" y="80"/>
+                            <mxPoint x="680" y="80"/>
+                        </Array>
+                        <mxPoint y="-12" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ge4" value="bootstrap/providers.dart — the composition root wires application, data and infra, and is the only file above that names an implementation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#a9b6c8;strokeWidth=2;endArrow=blockThin;endFill=1;fontFamily=Helvetica;fontSize=11;fontColor=#9199a4;labelBackgroundColor=#FFFFFF;dashed=1;dashPattern=6 4;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="g1" target="g8" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="26" y="170"/>
+                            <mxPoint x="26" y="620"/>
+                            <mxPoint x="1212" y="620"/>
+                        </Array>
+                        <mxPoint x="-60" y="-12" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ge5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="g4" target="g5" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ge6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="g5" target="g6" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ge7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="g7" target="g6" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ge8" value="the contracts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;fontFamily=Helvetica;fontSize=10.5;fontColor=#6b7280;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" parent="1" source="g7" target="g8" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ge9" value="the DTOs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#2d67a7;strokeWidth=2;endArrow=blockThin;endFill=1;fontFamily=Helvetica;fontSize=10.5;fontColor=#6b7280;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=1;entryY=0.7;entryDx=0;entryDy=0;" parent="1" source="g8" target="g7" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ge10" value="the one two-way edge: two packages, one layer (Decision 24)" style="text;html=1;fontFamily=Helvetica;fontSize=10.5;fontColor=#9199a4;align=center;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="1000" y="566" width="258" height="30" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="pa0" value="WHAT ENFORCES IT" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fillColor=#f5f6f7;strokeColor=#dcdfe3;dashed=1;dashPattern=4 3;strokeWidth=1.5;fontColor=#9199a4;verticalAlign=top;align=left;spacingLeft=20;spacingTop=10;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="680" width="630" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="pa1" value="&lt;b&gt;the pubspecs&lt;/b&gt; — an import of a package the layer never declared does not resolve" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fillColor=#eef3f9;strokeColor=#d7e0ec;fontColor=#204d7d;align=left;spacingLeft=16;spacingRight=16;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="68" y="718" width="590" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="pa2" value="&lt;b&gt;depend_on_referenced_packages: error&lt;/b&gt; — the same import arriving through a transitive dependency" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fillColor=#eef3f9;strokeColor=#d7e0ec;fontColor=#204d7d;align=left;spacingLeft=16;spacingRight=16;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="68" y="766" width="590" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="pa3" value="&lt;b&gt;implementation_imports: error&lt;/b&gt; — reaching into another package's lib/src/ instead of its barrel" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fillColor=#eef3f9;strokeColor=#d7e0ec;fontColor=#204d7d;align=left;spacingLeft=16;spacingRight=16;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="68" y="814" width="590" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="pa4" value="&lt;b&gt;src/test/integrity/architecture_test.dart&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;color:#6b7280&quot;&gt;what no pubspec can express: a dependency simply added to one, an SDK library like dart:io, a Flutter package in dev_dependencies&lt;/span&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fillColor=#eef3f9;strokeColor=#d7e0ec;fontColor=#204d7d;align=left;spacingLeft=16;spacingRight=16;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="68" y="862" width="590" height="42" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="pb0" value="WHAT THAT BUYS" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fillColor=#f6faf7;strokeColor=#c6ddcd;dashed=1;dashPattern=4 3;strokeWidth=1.5;fontColor=#1d6b3f;verticalAlign=top;align=left;spacingLeft=20;spacingTop=10;" parent="1" vertex="1">
+                    <mxGeometry x="730" y="680" width="582" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="pb1" value="&lt;b&gt;nothing imports upwards&lt;/b&gt;&lt;span style=&quot;color:#6b7280&quot;&gt; — every edge above points at a lower layer&lt;/span&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fillColor=#FFFFFF;strokeColor=#c6ddcd;fontColor=#1d6b3f;align=left;spacingLeft=16;spacingRight=16;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="718" width="542" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="pb2" value="&lt;b&gt;only the composition root sees an implementation&lt;/b&gt;&lt;span style=&quot;color:#6b7280&quot;&gt; — and it only wires&lt;/span&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fillColor=#FFFFFF;strokeColor=#c6ddcd;fontColor=#1d6b3f;align=left;spacingLeft=16;spacingRight=16;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="766" width="542" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="pb3" value="&lt;b&gt;no Flutter below the line&lt;/b&gt;&lt;span style=&quot;color:#6b7280&quot;&gt; — those packages run under dart test, dev_dependencies included&lt;/span&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fillColor=#FFFFFF;strokeColor=#c6ddcd;fontColor=#1d6b3f;align=left;spacingLeft=16;spacingRight=16;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="814" width="542" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="pb4" value="&lt;b&gt;infra cannot name a domain type&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;color:#6b7280&quot;&gt;so turning a technical failure into a domain one is the repository's job by construction, and not by agreement&lt;/span&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fillColor=#FFFFFF;strokeColor=#c6ddcd;fontColor=#1d6b3f;align=left;spacingLeft=16;spacingRight=16;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="862" width="542" height="42" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="lg1" value="" style="endArrow=blockThin;endFill=1;html=1;strokeColor=#2d67a7;strokeWidth=2;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="48" y="958" as="sourcePoint"/>
+                        <mxPoint x="86" y="958" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lg1t" value="rule · the arrow points at the dependency" style="text;html=1;fontFamily=Helvetica;fontSize=11;fontColor=#6b7280;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="98" y="950" width="280" height="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg2" value="" style="endArrow=blockThin;endFill=1;startArrow=blockThin;startFill=1;html=1;strokeColor=#2d67a7;strokeWidth=2;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="420" y="958" as="sourcePoint"/>
+                        <mxPoint x="458" y="958" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lg2t" value="two-way · one layer in two packages" style="text;html=1;fontFamily=Helvetica;fontSize=11;fontColor=#6b7280;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="470" y="950" width="280" height="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg3" value="" style="endArrow=blockThin;endFill=1;html=1;strokeColor=#a9b6c8;strokeWidth=2;dashed=1;dashPattern=6 4;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="792" y="958" as="sourcePoint"/>
+                        <mxPoint x="830" y="958" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lg3t" value="wiring · composition, not a rule" style="text;html=1;fontFamily=Helvetica;fontSize=11;fontColor=#6b7280;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="842" y="950" width="280" height="16" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="foot" value="Folder names are short; package names carry the tom_ prefix, because the folder is only a path while the package name is what every import says.&lt;br&gt;&lt;span style=&quot;color:#9199a4&quot;&gt;The table of who may depend on whom is in docs/technical/architecture.md, and the test that proves it is src/test/integrity/architecture_test.dart. When this drawing and the pubspecs disagree, the pubspecs are right.&lt;/span&gt;" style="text;html=1;fontFamily=Helvetica;fontSize=11;fontColor=#6b7280;align=left;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="992" width="1264" height="48" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="tom-runtime-shell" name="Janela e módulos · TOM">
+        <mxGraphModel dx="926" dy="257" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1360" pageHeight="1120" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="r1" value="TOM · THE WINDOW, THE MODULES AND WHAT THEY REACH" style="text;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fontColor=#6b7280;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="20" width="560" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="r2" value="every panel in the window was registered by a module — the app's own included, which is what keeps the extension point real" style="text;html=1;fontFamily=Helvetica;fontSize=11.5;fontColor=#9199a4;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="42" width="900" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="S1" value="STARTUP" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fillColor=#FFFFFF;strokeColor=#d7e0ec;strokeWidth=1.5;fontColor=#757475;verticalAlign=top;align=left;spacingLeft=20;spacingTop=10;" parent="1" vertex="1">
+                    <mxGeometry x="36" y="80" width="1288" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="s1a" value="&lt;b style=&quot;font-size:12px&quot;&gt;main.dart&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;one line: runTom()&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=12;spacingRight=12;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="118" width="216" height="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="s1b" value="&lt;b style=&quot;font-size:12px&quot;&gt;runTom(modules: […])&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;title and minimum size, then runApp&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=12;spacingRight=12;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="118" width="216" height="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="s1c" value="&lt;b style=&quot;font-size:12px&quot;&gt;the app's module, then the rest&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;each contributes panel descriptors and provider overrides&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#f7fafd;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=12;spacingRight=12;" parent="1" vertex="1">
+                    <mxGeometry x="572" y="118" width="216" height="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="s1d" value="&lt;b style=&quot;font-size:12px&quot;&gt;ProviderScope&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;the registry, the app's wiring, then each module's — the last override wins&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#f7fafd;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=12;spacingRight=12;" parent="1" vertex="1">
+                    <mxGeometry x="834" y="118" width="216" height="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="s1e" value="&lt;b style=&quot;font-size:12px&quot;&gt;Home, then the shell&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;a folder is picked, and the window opens on it&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=12;spacingRight=12;" parent="1" vertex="1">
+                    <mxGeometry x="1096" y="118" width="216" height="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="se1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="s1a" target="s1b" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="se2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="s1b" target="s1c" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="se3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="s1c" target="s1d" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="se4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="s1d" target="s1e" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+                <mxCell id="S2" value="THE SHELL — the regions are a closed set; a panel is registered into one and never hardcoded" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fillColor=#FFFFFF;strokeColor=#d7e0ec;strokeWidth=1.5;fontColor=#757475;verticalAlign=top;align=left;spacingLeft=20;spacingTop=10;" parent="1" vertex="1">
+                    <mxGeometry x="36" y="250" width="1288" height="400" as="geometry"/>
+                </mxCell>
+                <mxCell id="s2top" value="&lt;b style=&quot;font-size:12px&quot;&gt;top bar&lt;/b&gt;&lt;span style=&quot;font-size:10.5px;color:#6b7280&quot;&gt; — the space, the branch switcher, what the document is compared against, and fetch / push / pull. The shell's own, not a panel.&lt;/span&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#f5f6f7;strokeColor=#9199a4;strokeWidth=1.5;fontColor=#565658;verticalAlign=middle;align=left;spacingLeft=18;spacingRight=18;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="296" width="1240" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="s2ex" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;EXPLORER&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the file tree&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;the fixed column the space is navigated in&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="372" width="270" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="s2doc" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;DOCUMENT — side by side, filtered by the mode the bar offers&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#fafbfd;strokeColor=#d7e0ec;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="354" y="372" width="620" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="s2ed" value="&lt;b style=&quot;font-size:12px&quot;&gt;source&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;re_editor · modes: source, split&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="366" y="404" width="290" height="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="s2pv" value="&lt;b style=&quot;font-size:12px&quot;&gt;preview&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;the rendered diff · modes: split, preview&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="676" y="404" width="290" height="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="s2as" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;ASIDE — git, and later search&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#fafbfd;strokeColor=#d7e0ec;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="998" y="372" width="302" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="s2ch" value="&lt;b style=&quot;font-size:12px&quot;&gt;changes&lt;/b&gt;&lt;span style=&quot;font-size:10px;color:#6b7280&quot;&gt; — stage, message, commit&lt;/span&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="1010" y="404" width="278" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="s2hi" value="&lt;b style=&quot;font-size:12px&quot;&gt;history&lt;/b&gt;&lt;span style=&quot;font-size:10px;color:#6b7280&quot;&gt; — this file's commits&lt;/span&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="1010" y="460" width="278" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="s2st" value="&lt;div style=&quot;font-size:9px;color:#9199a4;text-align:left&quot;&gt;STATUS BAR&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;status&lt;/b&gt;&lt;span style=&quot;font-size:10.5px;color:#6b7280&quot;&gt; — the strip that is read and never worked in&lt;/span&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;align=left;spacingLeft=18;spacingRight=18;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="546" width="1240" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="s2note" value="A module adds to a region the shell already has and never invents one; it may override a provider, and it may not degrade what the app already does or need the network to start (Decision 12). Search will be another descriptor, in the aside." style="text;html=1;fontFamily=Helvetica;fontSize=11;fontColor=#9199a4;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="606" width="1240" height="32" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="S3" value="LIFETIMES — what the composition root keeps, and for how long" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fillColor=#FFFFFF;strokeColor=#d7e0ec;strokeWidth=1.5;fontColor=#757475;verticalAlign=top;align=left;spacingLeft=20;spacingTop=10;" parent="1" vertex="1">
+                    <mxGeometry x="36" y="690" width="1288" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="s3a" value="&lt;b style=&quot;font-size:13px&quot;&gt;App · keepAlive&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;color:#6b7280&quot;&gt;&lt;br&gt;the parsers, the diff service, Observability, the settings — one instance for the process&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=18;spacingRight=18;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="730" width="400" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="s3b" value="&lt;b style=&quot;font-size:13px&quot;&gt;Space · a family keyed by the root&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;color:#6b7280&quot;&gt;&lt;br&gt;the git client and its queue, the watcher, the FTS5 index and the session — closing the space disposes of them&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#dfeaf6;strokeColor=#204d7d;strokeWidth=1.5;fontColor=#173a60;verticalAlign=middle;spacingLeft=18;spacingRight=18;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="730" width="400" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="s3c" value="&lt;b style=&quot;font-size:13px&quot;&gt;Transient&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;color:#6b7280&quot;&gt;&lt;br&gt;the use cases — lightweight objects, created where they are used and kept by nobody&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#eef3f9;strokeColor=#a9c0da;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=18;spacingRight=18;" parent="1" vertex="1">
+                    <mxGeometry x="912" y="730" width="400" height="110" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="S4" value="WHAT IT REACHES ON THE MACHINE" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fillColor=#f5f6f7;strokeColor=#dcdfe3;dashed=1;dashPattern=4 3;strokeWidth=1.5;fontColor=#9199a4;verticalAlign=top;align=left;spacingLeft=20;spacingTop=10;" parent="1" vertex="1">
+                    <mxGeometry x="36" y="900" width="1288" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="s4a" value="&lt;b style=&quot;font-size:12px&quot;&gt;the git binary&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;Process.run, through one serialized queue per space: no commit during a checkout&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#9199a4;strokeWidth=1.5;fontColor=#565658;verticalAlign=middle;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="944" width="232" height="98" as="geometry"/>
+                </mxCell>
+                <mxCell id="s4b" value="&lt;b style=&quot;font-size:12px&quot;&gt;the space folder&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;the .md files are the truth; the watcher is paused around every mutation (Decision 10)&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#9199a4;strokeWidth=1.5;fontColor=#565658;verticalAlign=middle;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="306" y="944" width="232" height="98" as="geometry"/>
+                </mxCell>
+                <mxCell id="s4c" value="&lt;b style=&quot;font-size:12px&quot;&gt;settings, as JSON&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;the recent spaces and the preferences, under the platform's app-support path&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#9199a4;strokeWidth=1.5;fontColor=#565658;verticalAlign=middle;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="564" y="944" width="232" height="98" as="geometry"/>
+                </mxCell>
+                <mxCell id="s4d" value="&lt;b style=&quot;font-size:12px&quot;&gt;the FTS5 index&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;a cache and nothing else: corrupted or gone, it is rebuilt by reading the files again&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#9199a4;strokeWidth=1.5;fontColor=#565658;verticalAlign=middle;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="822" y="944" width="232" height="98" as="geometry"/>
+                </mxCell>
+                <mxCell id="s4e" value="&lt;b style=&quot;font-size:12px&quot;&gt;a remote&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;&lt;br&gt;reached only by the user's own git — their credentials, their keys, their config; TOM implements none of it&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#efefef;strokeColor=#b9c4d4;strokeWidth=1.5;dashed=1;dashPattern=5 4;fontColor=#565658;verticalAlign=middle;spacingLeft=14;spacingRight=14;" parent="1" vertex="1">
+                    <mxGeometry x="1080" y="944" width="232" height="98" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="tom-flows" name="Fluxos · TOM">
+        <mxGraphModel dx="926" dy="257" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1360" pageHeight="1110" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="t1" value="TOM · THE FLOWS THAT CROSS EVERY LAYER" style="text;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fontColor=#6b7280;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="20" width="480" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="t2" value="nothing happens in the background — the user opens a folder, commits, or asks what changed; between those, the files on disk are the only source of truth" style="text;html=1;fontFamily=Helvetica;fontSize=11.5;fontColor=#9199a4;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="42" width="980" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="L1" value="1 · OPEN A SPACE" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fillColor=#FFFFFF;strokeColor=#d7e0ec;strokeWidth=1.5;fontColor=#757475;verticalAlign=top;align=left;spacingLeft=20;spacingTop=10;" parent="1" vertex="1">
+                    <mxGeometry x="36" y="80" width="1288" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="a1" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;DESKTOP&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;Home&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;the folder picker&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="124" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="a2" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;PRESENTATION&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the home notifier&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="233" y="124" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="a3" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;APPLICATION&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;open the space&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#f7fafd;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="418" y="124" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="a4" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;DATA&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the space repository&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;translates the failure&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#8aa3bf;strokeWidth=1.5;fontColor=#41618a;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="603" y="124" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="a5" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;DATA&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the space source&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#8aa3bf;strokeWidth=1.5;fontColor=#41618a;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="788" y="124" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="a6" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;INFRA&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;filesystem · git client&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;dart_io&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#8aa3bf;strokeWidth=1.5;fontColor=#41618a;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="973" y="124" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="a7" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;THE MACHINE&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the folder&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;git rev-parse&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#f5f6f7;strokeColor=#9199a4;strokeWidth=1.5;fontColor=#565658;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="1158" y="124" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="ae1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="a1" target="a2" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ae2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="a2" target="a3" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ae3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="a3" target="a4" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ae4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="a4" target="a5" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ae5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="a5" target="a6" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ae6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="a6" target="a7" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="acap" value="the answer is a &lt;b&gt;space entity&lt;/b&gt; carrying its &lt;i&gt;root&lt;/i&gt; and its &lt;i&gt;repository root&lt;/i&gt; separately — a space is a folder, not a repository — and the session opens on it. A folder with no repository is offered &lt;i&gt;git init&lt;/i&gt;, or runs degraded: editing and preview only." style="text;html=1;fontFamily=Helvetica;fontSize=11;fontColor=#6b7280;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="232" width="1260" height="44" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="L2" value="2 · COMMIT" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fillColor=#FFFFFF;strokeColor=#d7e0ec;strokeWidth=1.5;fontColor=#757475;verticalAlign=top;align=left;spacingLeft=20;spacingTop=10;" parent="1" vertex="1">
+                    <mxGeometry x="36" y="340" width="1288" height="280" as="geometry"/>
+                </mxCell>
+                <mxCell id="b1" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;DESKTOP&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the changes panel&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;the message box&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="384" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="b2" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;PRESENTATION&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the changes notifier&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="233" y="384" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="b3" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;APPLICATION&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;stage, then commit&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#f7fafd;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="418" y="384" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="b4" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;DATA&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the git repository&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;and the status parser&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#8aa3bf;strokeWidth=1.5;fontColor=#41618a;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="603" y="384" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="b5" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;DATA&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the git source&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;text, never an entity&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#8aa3bf;strokeWidth=1.5;fontColor=#41618a;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="788" y="384" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="b6" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;INFRA&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the git client&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;the serialized queue&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#8aa3bf;strokeWidth=1.5;fontColor=#41618a;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="973" y="384" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="b7" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;THE MACHINE&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;git add · commit&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;exit code + stderr&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#f5f6f7;strokeColor=#9199a4;strokeWidth=1.5;fontColor=#565658;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="1158" y="384" width="150" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="be1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="b1" target="b2" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="be2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="b2" target="b3" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="be3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="b3" target="b4" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="be4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="b4" target="b5" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="be5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="b5" target="b6" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="be6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="b6" target="b7" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="b8" value="&lt;b style=&quot;font-size:12px&quot;&gt;the watcher goes quiet around the mutation, and one change event is emitted at the end&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;color:#6b7280&quot;&gt;Pause and resume enter the same queue, which is what guarantees the ordering (Decision 10). The session re-reads the status, and every panel derived from it redraws — no scattered invalidation.&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#f5f6f7;strokeColor=#9199a4;strokeWidth=1.5;fontColor=#565658;verticalAlign=middle;align=left;spacingLeft=18;spacingRight=18;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="496" width="1260" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="be7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;dashed=1;dashPattern=5 4;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.85;entryY=0;entryDx=0;entryDy=0;" parent="1" source="b6" target="b8" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="bcap" value="a rejected push keeps the message box's place and says so there; a divergent pull is refused rather than guessed at — git's own words, turned into a domain failure by the repository." style="text;html=1;fontFamily=Helvetica;fontSize=11;fontColor=#6b7280;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="568" width="1260" height="34" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="L3" value="3 · THE RENDERED DIFF — what the product is actually for" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=10.5;fontStyle=1;fillColor=#FFFFFF;strokeColor=#d7e0ec;strokeWidth=1.5;fontColor=#757475;verticalAlign=top;align=left;spacingLeft=20;spacingTop=10;" parent="1" vertex="1">
+                    <mxGeometry x="36" y="660" width="1288" height="340" as="geometry"/>
+                </mxCell>
+                <mxCell id="c1" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;PRESENTATION&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the preview notifier&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;listens to the base, does not watch it&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=12;spacingRight=12;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="704" width="232" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="c2" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;APPLICATION&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;split the document&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#f7fafd;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=12;spacingRight=12;" parent="1" vertex="1">
+                    <mxGeometry x="306" y="704" width="232" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="c3" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;DATA&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the document repository&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;over the markdown source&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#8aa3bf;strokeWidth=1.5;fontColor=#41618a;verticalAlign=middle;spacingLeft=12;spacingRight=12;" parent="1" vertex="1">
+                    <mxGeometry x="564" y="704" width="232" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="c4" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;INFRA&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the markdown parser&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;spans, extended and never wrapped&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#8aa3bf;strokeWidth=1.5;fontColor=#41618a;verticalAlign=middle;spacingLeft=12;spacingRight=12;" parent="1" vertex="1">
+                    <mxGeometry x="822" y="704" width="232" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="c5" value="&lt;div style=&quot;font-size:9px;color:#5b7ea6&quot;&gt;DOMAIN&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the parsed document&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#41618a&quot;&gt;the blocks the preview draws&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#dfeaf6;strokeColor=#204d7d;strokeWidth=1.5;fontColor=#173a60;verticalAlign=middle;spacingLeft=12;spacingRight=12;" parent="1" vertex="1">
+                    <mxGeometry x="1080" y="704" width="232" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="ce1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="c1" target="c2" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ce2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="c2" target="c3" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ce3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="c3" target="c4" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ce4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="c4" target="c5" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+                <mxCell id="d1" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;APPLICATION&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;diff the document&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;the after side arrives parsed&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#f7fafd;strokeColor=#2d67a7;strokeWidth=1.5;fontColor=#204d7d;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="824" width="190" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="d2" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;DATA · INFRA&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the content at a revision&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;git show &amp;lt;rev&amp;gt;:&amp;lt;path&amp;gt;&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#8aa3bf;strokeWidth=1.5;fontColor=#41618a;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="263" y="824" width="190" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="d3" value="&lt;div style=&quot;font-size:9px;color:#5b7ea6&quot;&gt;DOMAIN&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the block reader port&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#41618a&quot;&gt;the before side, as blocks&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#dfeaf6;strokeColor=#204d7d;strokeWidth=1.5;fontColor=#173a60;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="478" y="824" width="190" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="d4" value="&lt;div style=&quot;font-size:9px;color:#5b7ea6&quot;&gt;DOMAIN&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the block differ&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#41618a&quot;&gt;aligns by position, pairs by similarity&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#dfeaf6;strokeColor=#204d7d;strokeWidth=1.5;fontColor=#173a60;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="693" y="824" width="190" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="d5" value="&lt;div style=&quot;font-size:9px;color:#9199a4&quot;&gt;INFRA&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the text differ&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#6b7280&quot;&gt;Myers: the positions only&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#FFFFFF;strokeColor=#8aa3bf;strokeWidth=1.5;fontColor=#41618a;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="908" y="824" width="190" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="d6" value="&lt;div style=&quot;font-size:9px;color:#5b7ea6&quot;&gt;DOMAIN&lt;/div&gt;&lt;b style=&quot;font-size:12px&quot;&gt;the document diff&lt;/b&gt;&lt;div style=&quot;font-size:10px;color:#41618a&quot;&gt;added · removed · changed&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#dfeaf6;strokeColor=#204d7d;strokeWidth=1.5;fontColor=#173a60;verticalAlign=middle;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="1123" y="824" width="190" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="de1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="d1" target="d2" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="de2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="d2" target="d3" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="de3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="d3" target="d4" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="de4" value="a port" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;startArrow=blockThin;startFill=1;fontFamily=Helvetica;fontSize=10;fontColor=#6b7280;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="d4" target="d5" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="de5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9199a4;strokeWidth=1.4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="d5" target="d6" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+                <mxCell id="ccap" value="&lt;b style=&quot;font-size:12px&quot;&gt;the diff is drawn over the formatted document, not beside it&lt;/b&gt;&lt;div style=&quot;font-size:10.5px;color:#6b7280&quot;&gt;What it is compared against lives on the session: HEAD, or a branch or commit the user chose. The compare surface offers the choice and reads no git of its own — the branches are the switcher's reading and the commits are the history panel's — and the preview listens to the base rather than watching it, so another base re-marks the text already on screen instead of parsing it again.&lt;/div&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontFamily=Helvetica;fillColor=#f5f6f7;strokeColor=#9199a4;strokeWidth=1.5;fontColor=#565658;verticalAlign=middle;align=left;spacingLeft=18;spacingRight=18;" parent="1" vertex="1">
+                    <mxGeometry x="48" y="934" width="1260" height="62" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="fn" value="&lt;b&gt;A flow is missing on purpose.&lt;/b&gt; Full-text search exists in domain, application, data and infra — the repository, the use cases and the FTS5 capability — and has no panel yet, so it is not drawn as if a user could reach it.&lt;br&gt;&lt;span style=&quot;color:#9199a4&quot;&gt;An exception never crosses a boundary: every repository method and every use case answers with a Result, and the technical failure becomes a domain one in the repository and nowhere else.&lt;/span&gt;" style="text;html=1;fontFamily=Helvetica;fontSize=11;fontColor=#6b7280;align=left;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="36" y="1024" width="1288" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

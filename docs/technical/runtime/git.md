@@ -10,8 +10,10 @@
    over `status --porcelain=v2`, `log`, `diff`, `add/commit/push/pull`,
    `switch`, and parse the output. Credentials, SSH and config come for free:
    it is the user's own git running. Zero authentication implemented.
-3. **Remote APIs** (post-MVP). Pull requests, reviews, OAuth clone through
-   GitHub/GitLab REST. Only after the core is validated.
+3. **Remote APIs.** Creating a pull request is one request to the host's REST
+   API with a token from the keychain, in M3
+   ([opening a pull request](../../product/git-workflow/pull-request/opening-it/doc.md)).
+   Reviews and OAuth clone are post-MVP, only after the core is validated.
 
 ## One serialized queue per space
 

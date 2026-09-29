@@ -45,7 +45,7 @@ Engineering teams keep their documentation as markdown inside Git repositories, 
 
 1. **Files are the truth.** The app reads and writes `.md` on disk. Any other tool (VS Code, vim, GitHub web) edits the same files without breaking anything. No proprietary database, no proprietary format.
 2. **One source, many views.** Documentation is never copied to be read by a different audience. The developer editing in VS Code, the reviewer reading a rendered diff in a pull request, and the person browsing in TOM are all looking at the same file on disk. A tool that requires a copy has already lost.
-3. **Git is the backbone, not a plugin.** Branch, diff, commit, PR and history are the main UI, not a hidden menu.
+3. **Git is the backbone, not a plugin.** Branch, diff, commit and history are the main UI, not a hidden menu. The pull request is written and opened here, because its description is markdown; reading, reviewing and merging stay the host's ([opening a pull request](product/git-workflow/pull-request/README.md)).
 4. **Local-first and offline-first.** No essential feature depends on the network. Sync is `git push/pull`.
 5. **A deliberately simple editor.** Source mode + preview. WYSIWYG is not a goal (not even later, barring overwhelming demand). GitHub built collaboration without a rich editor.
 6. **Open source (MIT) with a paid edition for convenience.** Individuals never pay; organizations pay for governance and comfort.
@@ -61,7 +61,7 @@ So the answer here is not to hide Git; it is to make the real thing legible. Nam
 - **Maintainer developer** — writes and reviews technical docs; wants documentation on the same lifecycle as the code (PR, review, CI).
 - **Tech lead / staff engineer** — wants visibility: who changed what, when, in which PR; wants to retire Confluence.
 - **The same developer, away from their machine** *(post-MVP)* — on a borrowed laptop with no toolchain, or on a phone, with a decision to record or a review to catch up on. Writing documentation needs a repository, markdown and git; it does not need a development environment. Today the alternative is to note it somewhere else and transcribe it later, which is exactly the copy this project refuses.
-- **Semi-technical collaborator** *(post-MVP)* — a PM or QA who edits a page and proposes the change without knowing what a rebase is; sometimes writing first, so that a feature described by the person who asked for it reaches the repository before the code does. Proposing a change is a branch, a commit and a push with the pull request opened on the host — mechanically the same thing the developer does, with the ceremony removed.
+- **Semi-technical collaborator** *(post-MVP)* — a PM or QA who edits a page and proposes the change without knowing what a rebase is; sometimes writing first, so that a feature described by the person who asked for it reaches the repository before the code does. Proposing a change is a branch, a commit and a push with the pull request opened from here onto the host — mechanically the same thing the developer does, with the ceremony removed.
 
 ## Killer features (the heart of the product)
 

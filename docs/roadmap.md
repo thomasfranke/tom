@@ -5,7 +5,7 @@
 ```
 Phase 0 · Spikes          The two technical unknowns: the editor and the AST
 Phase 1 · MVP (M0–M3)     Build in public; launch with a GIF of the rendered diff
-Phase 2 · Traction        Assisted conflict resolution, section blame
+Phase 2 · Traction        Section blame, resolving a whole list at once
 Phase 3 · Mobile          iOS and Android, post-1.0 (Decision 8 reserves the shape)
 ```
 
@@ -45,6 +45,7 @@ All four run Git through the system binary via `dart:io Process` behind a `GitCl
 
 **M3 — Launch polish**
 
+- [ ] [Pull conflicts, and choosing a side](product/git-workflow/push-pull/when-a-pull-conflicts/doc.md) — a pull that stops in the middle is named, readable and resolvable rather than silent. It brings **killer feature nº 4 forward from Phase 2**, and what pays for that is a simplification: a choice rewrites the buffer from the markers git already wrote, so nothing reads the index's three stages and no resolution model exists. `merge --abort` and reading `MERGE_HEAD` are the only new git; the scan is a domain service beside `BlockDifferService`, and the preview draws the two sides over the block containers it already has. What stays in Phase 2 is resolving a whole list without opening each document
 - [ ] [Wikilinks](product/wikilinks/doc.md) — custom inline syntax over the existing `markdown` pipeline, no new package
 - [ ] [Formatting shortcuts](product/editor/formatting-shortcuts/doc.md) — `re_editor`'s text-manipulation API, no new package
 - [ ] [Export](product/export/doc.md) — PDF/HTML; package not yet chosen — [Decision 13](technical/decisions/013-stack-is-flutter-and-dart.md) notes it's a separate problem in Flutter, budget for it
@@ -54,7 +55,7 @@ All four run Git through the system binary via `dart:io Process` behind a `GitCl
 
 ### Phase 2 — Traction
 
-Backlog, unscoped: assisted conflict resolution, section blame, multiple open spaces, an example space repo for onboarding, themes.
+Backlog, unscoped: section blame, resolving a list of conflicted documents without opening each, multiple open spaces, an example space repo for onboarding, themes.
 
 ### Phase 3 — Mobile
 

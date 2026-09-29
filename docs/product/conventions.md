@@ -12,7 +12,8 @@ docs/product/<group>/<feature>/<aspect>/doc.md
 ```
 
 - One subject per file, and **prefer more files with an index over one file with more sections** — a link into a `doc.md` is a promise about the whole file.
-- A feature past about 400 words is usually several subjects wearing one `#`. It becomes a folder with a `README.md` index and one `doc.md` per subject.
+- **A file is two files when it answers two questions**, not when it passes a word count. A feature that grew several subjects becomes a folder with a `README.md` index and one `doc.md` per subject; one that is simply long because its subject has many rules stays one file.
+- Length is a prompt to look, never a finding on its own: the finding is a second subject, or prose where a rule belongs.
 - **A mobile counterpart is its own file**, not a subsection — [Decision 8](../technical/decisions/008-monorepo-with-pure-dart-core.md) gives mobile its own presentation, so its rules are genuinely different rather than a narrower copy.
 - A feature with no natural group sits directly under `docs/product/`.
 - The screens are not here. They live once, in [`design/screens/`](../design/screens/README.md).

@@ -15,6 +15,7 @@ This chapter is *which* ones are taken.
 | [`markdown-and-diff.md`](markdown-and-diff.md) | The heart: the parser, the block renderer, Myers, the highlighter |
 | [`editor.md`](editor.md) | Source mode — `re_editor` and what it does not ship |
 | [`platform.md`](platform.md) | sqlite/FTS5, the watcher, paths, and the desktop shell |
+| [`fonts.md`](fonts.md) | The three IBM Plex faces, vendored rather than fetched |
 
 ## Deliberately excluded
 
@@ -26,6 +27,7 @@ This chapter is *which* ones are taken.
 | Dio / `http` | There is no HTTP in the MVP; it arrives with layer 3 (remote APIs) when needed |
 | `sqflite` | Mobile-oriented; on desktop, plain `sqlite3` |
 | `shared_preferences` | A Flutter plugin, and settings belong to `tom_infra` — see [`platform.md`](platform.md) |
+| `google_fonts` | Downloads the face at runtime; the app works offline and the files are vendored instead — see [`fonts.md`](fonts.md) |
 
 ## Scope
 
