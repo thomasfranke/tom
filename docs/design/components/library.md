@@ -7,7 +7,7 @@ Penpot, file **TOM**, across three pages:
 | Page | Holds |
 |---|---|
 | `Components - Master` | The masters, in a board called `Masters` |
-| `Components` | The specimens, one row per control, with the Flutter widget named beside it |
+| `Components - Catalogue` | The specimens, one row per control, with the Flutter widget named beside it. **Every master has a row** — a master the catalogue does not show is one nobody can find |
 | [`Foundations`](../foundations/README.md) | The palette and the type scale, and no component at all |
 
 ## Rules
@@ -19,7 +19,7 @@ Penpot, file **TOM**, across three pages:
 - The masters never leave `Components - Master`. Penpot keeps every original as a real shape, so duplicating or moving a page that holds main instances duplicates the components with it.
 - A number that matters belongs in [`components/`](README.md), not only in Penpot — the free plan keeps seven days of history.
 
-What the Penpot API does about all this, and the five traps in it:
+What the Penpot API does about all this, and the traps in it:
 [`penpot-traps.md`](penpot-traps.md).
 
 ---

@@ -5,7 +5,7 @@
 | | Value | Used by |
 |---|---|---|
 | `overlay` | `0 4 12`, `text_primary` at 14% | Menu, dialog, snackbar, FAB |
-| `hairline` | 1px `border` | Card, panels, dividers |
+| `hairline` | 1px `border` | Card, panels, and the edge a column shows in a gutter |
 
 - The shadow colour is `text_primary` at a low opacity, never black.
 - `hairline` is not an elevation — it is what everything else uses instead.

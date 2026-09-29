@@ -4,7 +4,7 @@
 
 | Step | Value | Applied to |
 |---|---|---|
-| `sm` | **4** | Checkbox, status mark, tab indicator |
+| `sm` | **4** | Checkbox, status mark, tab indicator, column field |
 | `md` | **8** | Everything else — button, chip, segmented, text field, search bar, select control, card, menu, dialog, snackbar, FAB |
 | — | *circular* | Switch track, radio, badge, slider track and thumb |
 

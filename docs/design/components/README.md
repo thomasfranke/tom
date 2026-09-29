@@ -10,7 +10,7 @@ dartdoc of the code that implements it ([AGENTS.md](../../../AGENTS.md)).
 | | |
 |---|---|
 | [`library.md`](library.md) | The three Penpot pages, and the rules every master is held to |
-| [`penpot-traps.md`](penpot-traps.md) | What the plugin API does about all that, and the five traps in it |
+| [`penpot-traps.md`](penpot-traps.md) | What the plugin API does about all that, and the traps in it |
 | [`controls.md`](controls.md) | One row per master: widget, size, radius, states |
 | [`unused.md`](unused.md) | The masters no screen asks for, and why they exist |
 | [`color-scheme.md`](color-scheme.md) | The colour roles mapped onto Flutter's `ColorScheme` |
