@@ -9,7 +9,6 @@ import 'package:tom_desktop/screens/changes/widgets/changes_caption_widget.dart'
 import 'package:tom_desktop/screens/changes/widgets/changes_commit_button_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_message_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_note_widget.dart';
-import 'package:tom_desktop/screens/changes/widgets/changes_rejected_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_row_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -35,16 +34,14 @@ class ChangesPanel extends ConsumerWidget {
     final bool isBusy = state is ChangesReady && state.isBusy;
     final List<StatusEntryValueObject> entries =
         status?.entries ?? const <StatusEntryValueObject>[];
-    // While a push stands refused the banner is the column: the box and the
-    // button give way, which is also what keeps the panel inside its height
-    // when it shares the aside
-    // (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
-    final bool rejected = ref.watch(remoteProvider) is RemoteRejected;
+    final int staged = entries
+        .where((StatusEntryValueObject it) => it.isStaged)
+        .length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (rejected) const ChangesRejectedWidget(),
-        const SizedBox(height: ChangesDesign.captionTop),
+        // No gap of its own: the column's switch already leaves one under
+        // itself, and a second would push `All` off the board's line.
         ChangesCaptionWidget(
           allStaged:
               entries.isNotEmpty &&
@@ -65,18 +62,38 @@ class ChangesPanel extends ConsumerWidget {
             padding: const EdgeInsets.only(top: ChangesDesign.stackGap),
             child: ChangesNoteWidget(_explain(refused)),
           ),
-        // Hidden, not emptied: the message is the notifier's and comes back
-        // with the banner.
-        if (!rejected) ...<Widget>[
-          const SizedBox(height: ChangesDesign.stackGap),
-          const ChangesMessageWidget(),
-          const SizedBox(height: ChangesDesign.stackGap),
-          ChangesCommitButtonWidget(
-            canCommit:
-                !isBusy &&
-                state is ChangesReady &&
-                state.message.trim().isNotEmpty &&
-                (status?.hasStagedChanges ?? false),
+        // Never taken away, not even by a refused push: the refusal is a band
+        // above the document and this column keeps working
+        // (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
+        const SizedBox(height: ChangesDesign.stackGap),
+        const ChangesMessageWidget(),
+        const SizedBox(height: ChangesDesign.stackGap),
+        ChangesCommitButtonWidget(
+          canCommit:
+              !isBusy &&
+              state is ChangesReady &&
+              state.message.trim().isNotEmpty &&
+              (status?.hasStagedChanges ?? false),
+          branch: status?.isDetached ?? false ? null : status?.branch,
+        ),
+        // Under the button rather than on it: what is going in is a fact
+        // about the list above, and the button says what it does. Absent
+        // with nothing changed, because `0 of 0` is a line read twice and
+        // ignored (`design/screens/desktop/git-commit/committing-dark.svg`).
+        if (entries.isNotEmpty) ...<Widget>[
+          const SizedBox(height: ChangesDesign.buttonToStaged),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: TomMetrics.padTight,
+            ),
+            child: Text(
+              '$staged of ${entries.length} staged',
+              style: TextStyle(
+                fontSize: ChangesDesign.staged,
+                height: 1.4,
+                color: TomColors.of(context).textSecondary,
+              ),
+            ),
           ),
         ],
         const SizedBox(height: TomMetrics.pad),

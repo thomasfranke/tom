@@ -11,9 +11,13 @@ import 'package:tom_ui/tom_ui.dart';
 ///
 /// The letters are the domain's alphabet, not git's: git's `U` means
 /// unmerged, so an untracked file is `N`.
-class ChangesMarkWidget extends StatelessWidget {
+///
+/// Outside `screens/` because the changes column and the file tree both draw
+/// it, and out of `tom_ui` because it names [FileStateEnum] and that package
+/// depends on nothing ([Decision 26](../../../../../docs/technical/decisions/026-the-look-is-a-package.md)).
+class FileStateMarkWidget extends StatelessWidget {
   /// Creates the mark for [state].
-  const ChangesMarkWidget({required this.state, super.key});
+  const FileStateMarkWidget({required this.state, super.key});
 
   /// What happened to the file.
   final FileStateEnum state;

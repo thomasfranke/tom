@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_design.dart';
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_centred_widget.dart';
+import 'package:tom_desktop/widgets/file_state_mark_widget.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
@@ -31,6 +32,23 @@ class FileTreeRowWidget extends ConsumerWidget {
 
   /// Whether this document has edits the file on disk does not.
   final bool isDirty;
+
+  /// How much of the right edge the name may not reach into.
+  ///
+  /// Whichever mark this row carries: an unsaved dot sits further in than
+  /// git's letter, so it is the one that reserves the most.
+  double get _rightInset {
+    if (isDirty) {
+      return FileTreeDesign.dirtyDotRight + FileTreeDesign.dirtyDot + 8;
+    }
+    if (row.change != null) {
+      return FileTreeDesign.rowInset + TomMetrics.mark + 8;
+    }
+    if (row.holdsChange) {
+      return FileTreeDesign.rowInset + FileTreeDesign.dirtyDot * 2 + 8;
+    }
+    return FileTreeDesign.rowInset;
+  }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -71,11 +89,37 @@ class FileTreeRowWidget extends ConsumerWidget {
         if (row.isFolder)
           FileTreeCentredWidget(
             left: labelLeft - FileTreeDesign.chevronOffset,
-            child: Text(
-              row.isExpanded ? '▾' : '▸',
-              style: fileTreeRowText(
-                size: FileTreeDesign.chevron,
-                color: colors.textMuted,
+            child: TomChevronWidget(
+              isOpen: row.isExpanded,
+              color: colors.textMuted,
+            ),
+          ),
+        // Git's letter, at the right of the row, in the changes column's own
+        // alphabet — the tree and that column never disagree about a file.
+        if (row.change != null)
+          Positioned(
+            right: FileTreeDesign.rowInset,
+            top: 0,
+            height: FileTreeDesign.rowHeight,
+            child: Center(child: FileStateMarkWidget(state: row.change!)),
+          ),
+        // A folder cannot show letters for rows it is not showing, so it
+        // shows that there is something to open.
+        if (row.holdsChange)
+          Positioned(
+            right: FileTreeDesign.rowInset + FileTreeDesign.dirtyDot,
+            top: 0,
+            height: FileTreeDesign.rowHeight,
+            child: Center(
+              child: SizedBox(
+                width: FileTreeDesign.dirtyDot,
+                height: FileTreeDesign.dirtyDot,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colors.textMuted,
+                    shape: BoxShape.circle,
+                  ),
+                ),
               ),
             ),
           ),
@@ -99,11 +143,9 @@ class FileTreeRowWidget extends ConsumerWidget {
           ),
         FileTreeCentredWidget(
           left: labelLeft,
-          // The name stops before the dot: an ellipsis is a smaller loss than
-          // a mark nobody can see.
-          right: isDirty
-              ? FileTreeDesign.dirtyDotRight + FileTreeDesign.dirtyDot + 8
-              : FileTreeDesign.rowInset,
+          // The name stops before whatever is at the right: an ellipsis is a
+          // smaller loss than a mark nobody can see.
+          right: _rightInset,
           child: Text(
             row.entry.name,
             maxLines: 1,

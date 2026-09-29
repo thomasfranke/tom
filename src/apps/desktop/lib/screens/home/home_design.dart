@@ -21,6 +21,10 @@ abstract final class HomeDesign {
   /// Corner radius of a card or a pill.
   static const double cardRadius = 10;
 
+  /// A button's leading glyph to its label, the gap every control in the
+  /// library carries (`docs/design/components/controls.md`).
+  static const double glyphToLabel = 10;
+
   /// The gutter that keeps the column centred despite the milestone chip,
   /// which the design hangs outside the column.
   static const double chipGutter = 30 + TomMetrics.padTight;

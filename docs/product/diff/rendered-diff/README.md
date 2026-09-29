@@ -22,7 +22,7 @@ Both are drawn in split view with the left column closed, so the marks are
 visible in the source and in the preview at once.
 
 - **comparing** — an added, a modified and a struck-through removed block in the preview, the same three in the source with the removed one as a seam. [light](../../../design/screens/desktop/git-diff/comparing-light.svg) · [dark](../../../design/screens/desktop/git-diff/comparing-dark.svg).
-- **diff off** — the same document with the chip off: no marks, and the removed block simply absent. [light](../../../design/screens/desktop/git-diff/diff-off-light.svg) · [dark](../../../design/screens/desktop/git-diff/diff-off-dark.svg).
+- **diff off** — no board. Every screen that is not about the diff already draws the chip off ([turning it off](turning-it-off/doc.md)).
 
 ---
 

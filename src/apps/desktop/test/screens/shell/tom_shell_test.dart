@@ -9,7 +9,9 @@ import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/shell/tom_shell.dart';
+import 'package:tom_desktop/screens/workspace/workspace_grip_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -32,6 +34,15 @@ void main() {
         listSpaceEntriesProvider.overrideWithValue(
           const ListSpaceEntriesUseCase(
             spaces: _NothingInIt(),
+            observability: _Silent(),
+          ),
+        ),
+        // The breadcrumb in the top bar is the menu of recent spaces, so the
+        // shell reads that list as soon as it is on screen
+        // (`test/screens/spaces/` has the menu itself).
+        listRecentSpacesProvider.overrideWithValue(
+          const ListRecentSpacesUseCase(
+            recents: _NoRecents(),
             observability: _Silent(),
           ),
         ),
@@ -135,6 +146,118 @@ void main() {
       expect(find.text('EXPLORER'), findsNothing);
       expect(find.text('SOURCE'), findsNothing);
       expect(find.text('no space open'), findsNothing);
+    });
+  });
+
+  /// Drags the rule beside the left column by [dx].
+  ///
+  /// A gesture by hand rather than `tester.drag`, which compensates for the
+  /// touch slop on behalf of a widget that starts on recognition; the grip
+  /// starts on the pointer going down, and the compensation would land it
+  /// twenty points short.
+  Future<void> dragGrip(WidgetTester tester, double dx) async {
+    final TestGesture gesture = await tester.startGesture(
+      tester.getCenter(find.byType(WorkspaceGripWidget)),
+    );
+    await gesture.moveBy(Offset(dx, 0));
+    await gesture.up();
+    await tester.pumpAndSettle();
+  }
+
+  group('the left column is the reader’s width', () {
+    testWidgets('it opens at the width the tree reads well at', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, modules: <TomModule>[const CoreModuleImpl()]);
+
+      expect(
+        tester.getSize(find.byType(FileTreePanel)).width,
+        TomMetrics.explorer,
+      );
+    });
+
+    testWidgets('dragging the rule beside it widens it', (
+      WidgetTester tester,
+    ) async {
+      // Somebody reading search results widens it
+      // (`docs/product/workspace/regions/doc.md`).
+      await pumpShell(tester, modules: <TomModule>[const CoreModuleImpl()]);
+
+      await dragGrip(tester, 60);
+
+      expect(
+        tester.getSize(find.byType(FileTreePanel)).width,
+        TomMetrics.explorer + 60,
+      );
+    });
+
+    testWidgets('and it cannot be dragged narrower than it can be read', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, modules: <TomModule>[const CoreModuleImpl()]);
+
+      await dragGrip(tester, -400);
+
+      expect(
+        tester.getSize(find.byType(FileTreePanel)).width,
+        WorkspaceNotifier.narrowest,
+      );
+    });
+  });
+
+  group('the right column shows one panel at a time', () {
+    testWidgets('the switch names every panel registered into it', (
+      WidgetTester tester,
+    ) async {
+      // It names none of them itself: the segments are the registered
+      // titles, so a third module is a third segment
+      // (`docs/product/workspace/columns/doc.md`).
+      await pumpShell(tester, modules: <TomModule>[const CoreModuleImpl()]);
+
+      expect(find.text('Git'), findsOneWidget);
+      expect(find.text('History'), findsOneWidget);
+    });
+
+    testWidgets('the first is showing, and the other one is not', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, modules: <TomModule>[const CoreModuleImpl()]);
+
+      expect(find.text('No space is open.'), findsOneWidget);
+      expect(
+        find.text('Open a document to see what changed it.'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('choosing the other one puts it on screen instead', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, modules: <TomModule>[const CoreModuleImpl()]);
+
+      await tester.tap(find.text('History'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Open a document to see what changed it.'),
+        findsOneWidget,
+      );
+      expect(find.text('No space is open.'), findsNothing);
+    });
+
+    testWidgets('one panel alone needs no switch', (WidgetTester tester) async {
+      await pumpShell(
+        tester,
+        modules: <TomModule>[
+          _Module(<PanelDescriptor>[
+            panelSaying('TASKS', placement: PanelPlacementEnum.aside),
+          ]),
+        ],
+      );
+
+      // The panel is drawn; its title is not, because a control with one
+      // choice says nothing the panel does not already say.
+      expect(find.text('TASKS'), findsOneWidget);
     });
   });
 
@@ -471,6 +594,23 @@ final class _Empty implements SearchRepository {
   }) async => const Success<List<SearchHitValueObject>, SearchFailure>(
     <SearchHitValueObject>[],
   );
+}
+
+/// A recent list with nothing in it; these tests are about the chrome.
+final class _NoRecents implements RecentSpacesRepository {
+  const _NoRecents();
+
+  @override
+  Future<Result<List<RecentSpaceEntity>, Never>> list() async =>
+      const Success<List<RecentSpaceEntity>, Never>(<RecentSpaceEntity>[]);
+
+  @override
+  Future<Result<void, Never>> remember(SpaceEntity space) async =>
+      const Success<void, Never>(null);
+
+  @override
+  Future<Result<void, Never>> forget(String root) async =>
+      const Success<void, Never>(null);
 }
 
 final class _NothingInIt implements SpaceRepository {

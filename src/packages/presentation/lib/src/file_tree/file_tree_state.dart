@@ -4,6 +4,7 @@ library;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/src/file_tree/file_tree_changes.dart';
 import 'package:tom_presentation/src/file_tree/file_tree_row.dart';
 
 part 'file_tree_state.freezed.dart';
@@ -38,6 +39,18 @@ sealed class FileTreeState with _$FileTreeState {
 
 /// What the panel draws: the entries minus what a closed folder hides.
 extension FileTreeRows on FileTreeReady {
+  /// The visible rows, with what git says about each.
+  ///
+  /// The marks are derived here rather than stored, because what git said
+  /// lives on the space session and a second copy is a second answer
+  /// ([Decision 9](../../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).
+  List<FileTreeRow> rowsWith(FileTreeChanges changes) => <FileTreeRow>[
+    for (final FileTreeRow row in rows)
+      row.isFolder
+          ? row.copyWith(holdsChange: changes.holdsChange(row.entry.path))
+          : row.copyWith(change: changes.stateOf(row.entry.path)),
+  ];
+
   /// The visible rows, in order, top-level first.
   ///
   /// A getter rather than a cached copy that can disagree. Hiding a closed

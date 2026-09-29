@@ -26,6 +26,17 @@ abstract class FileTreeRow with _$FileTreeRow {
     /// Whether this is a folder whose contents are showing; false for a
     /// file.
     required bool isExpanded,
+
+    /// What git says happened to this file, or null when it says nothing.
+    ///
+    /// Always null for a folder: a folder is not in a state, it contains
+    /// files that are ([holdsChange]).
+    FileStateEnum? change,
+
+    /// Whether this folder contains a changed file, at any depth.
+    ///
+    /// Always false for a file, which carries [change] instead.
+    @Default(false) bool holdsChange,
   }) = _FileTreeRow;
 
   const FileTreeRow._();

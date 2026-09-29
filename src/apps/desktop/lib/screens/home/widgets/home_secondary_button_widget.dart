@@ -9,16 +9,26 @@ import 'package:tom_ui/tom_ui.dart';
 /// A way forward that is not open yet; always disabled, the chip beside it
 /// says when.
 class HomeSecondaryButtonWidget extends StatelessWidget {
-  /// Creates a disabled button saying [label].
-  const HomeSecondaryButtonWidget({required this.label, super.key});
+  /// Creates a disabled button saying [label], led by [glyph].
+  const HomeSecondaryButtonWidget({
+    required this.label,
+    required this.glyph,
+    super.key,
+  });
 
   /// What it says.
   final String label;
 
+  /// The 16-unit glyph before the label
+  /// (`docs/design/screens/desktop/home/empty-state-dark.svg`).
+  final TomGlyphEnum glyph;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(StringProperty('label', label));
+    properties
+      ..add(StringProperty('label', label))
+      ..add(EnumProperty<TomGlyphEnum>('glyph', glyph));
   }
 
   @override
@@ -35,7 +45,14 @@ class HomeSecondaryButtonWidget extends StatelessWidget {
         ),
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
       ),
-      child: Text(label),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          TomGlyphWidget(glyph: glyph, color: colors.textMuted),
+          const SizedBox(width: HomeDesign.glyphToLabel),
+          Flexible(child: Text(label, textAlign: TextAlign.center)),
+        ],
+      ),
     );
   }
 }

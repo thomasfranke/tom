@@ -56,7 +56,7 @@ final class PreviewNotifierProvider
   }
 }
 
-String _$previewNotifierHash() => r'd6ae5d8c63017ee82c12966c8f057ddc32a8bc92';
+String _$previewNotifierHash() => r'3f1a46c3eb573bec29f36b8c22bf0377d7f13518';
 
 /// Renders the editor's buffer, never the disk — or, for an opened history
 /// entry, the version git holds (`docs/product/editor/source-mode/doc.md`).

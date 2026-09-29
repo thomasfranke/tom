@@ -15,8 +15,11 @@ import 'package:tom_ui/tom_ui.dart';
 ///
 /// A popover anchored to its trigger, the pattern the branch switcher set
 /// ([Decision 6](../../../../../../docs/technical/decisions/006-no-navigation-package.md)).
-/// It draws nothing with no document open: a base is per document, because
-/// the comparison is scoped to one file (`docs/product/diff/branch-diff/doc.md`).
+/// **The base is the space's, not the document's** — it lives on the session
+/// and outlives whatever is open, so clicking the next file keeps the
+/// comparison (`docs/product/diff/branch-diff/doc.md`). What is scoped to one
+/// file is where the diff is *drawn*; the control draws nothing with no
+/// document open because there is nothing on screen to measure.
 class CompareControlWidget extends ConsumerStatefulWidget {
   /// Creates the control.
   const CompareControlWidget({super.key});
@@ -52,11 +55,13 @@ class _CompareControlWidgetState extends ConsumerState<CompareControlWidget> {
         }
       },
     );
-    final ({bool hasDocument, RevisionValueObject? base}) showing = ref.watch(
+    final ({bool hasDocument, RevisionValueObject? base, bool marking})
+    showing = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => (
           hasDocument: session?.openDocument != null,
           base: session?.comparingAgainst,
+          marking: session?.showingDiff ?? true,
         ),
       ),
     );
@@ -80,7 +85,11 @@ class _CompareControlWidgetState extends ConsumerState<CompareControlWidget> {
             child: ComparePopoverWidget(onDismissed: _close),
           ),
         ),
-        child: _TriggerWidget(base: showing.base, onPressed: _portal.toggle),
+        child: _TriggerWidget(
+          base: showing.base,
+          isMarking: showing.marking,
+          onPressed: _portal.toggle,
+        ),
       ),
     );
   }
@@ -88,9 +97,17 @@ class _CompareControlWidgetState extends ConsumerState<CompareControlWidget> {
 
 /// The control in the bar: what is being compared against, or the offer to.
 class _TriggerWidget extends StatelessWidget {
-  const _TriggerWidget({required this.base, required this.onPressed});
+  const _TriggerWidget({
+    required this.base,
+    required this.isMarking,
+    required this.onPressed,
+  });
 
   final RevisionValueObject? base;
+
+  /// Whether the preview is drawing what changed.
+  final bool isMarking;
+
   final VoidCallback onPressed;
 
   @override
@@ -98,33 +115,68 @@ class _TriggerWidget extends StatelessWidget {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty<RevisionValueObject?>('base', base))
+      ..add(DiagnosticsProperty<bool>('isMarking', isMarking))
       ..add(ObjectFlagProperty<VoidCallback>.has('onPressed', onPressed));
   }
 
   @override
   Widget build(BuildContext context) {
     final TomColors colors = TomColors.of(context);
-    // The chosen base is emphasised and the offer is not: one is a state
-    // somebody put the window in, the other is a control nobody has used.
+    // The base is named beside the chip, not inside it: the chip is 62 points
+    // wide and a branch name is not
+    // (`design/screens/desktop/git-diff/comparing-dark.svg`).
+    // The chip is lit while the marks are being drawn, and the name beside it
+    // only while there is a base to name.
     final bool chosen = base != null;
-    return TextButton(
-      onPressed: onPressed,
-      style: TextButton.styleFrom(
-        foregroundColor: chosen ? colors.accent : colors.textMuted,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        textStyle: TextStyle(
-          fontSize: CompareDesign.label,
-          height: 1.4,
-          fontWeight: chosen ? FontWeight.w600 : FontWeight.w400,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (chosen && isMarking) ...<Widget>[
+          // Flexible so the ellipsis it asks for can actually happen: in a
+          // row that sizes to its children, a name simply grows.
+          Flexible(
+            child: Text(
+              compareLabelOf(base),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: CompareDesign.label,
+                height: 1.4,
+                fontWeight: FontWeight.w600,
+                color: colors.added,
+              ),
+            ),
+          ),
+          const SizedBox(width: CompareDesign.chipGap),
+        ],
+        SizedBox(
+          width: CompareDesign.chipWidth,
+          height: CompareDesign.chipHeight,
+          child: Material(
+            color: isMarking ? colors.addedSoft : Colors.transparent,
+            shape: RoundedRectangleBorder(
+              side: BorderSide(
+                color: isMarking ? colors.added : colors.borderStrong,
+              ),
+              borderRadius: BorderRadius.circular(CompareDesign.chipRadius),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onPressed,
+              child: Center(
+                child: Text(
+                  'Diff',
+                  style: TextStyle(
+                    fontSize: CompareDesign.label,
+                    height: 1.4,
+                    color: isMarking ? colors.added : colors.textMuted,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
-      ),
-      child: Text(
-        compareLabelOf(base),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      ],
     );
   }
 }

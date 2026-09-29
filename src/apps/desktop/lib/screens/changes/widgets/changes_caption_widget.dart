@@ -38,48 +38,34 @@ class ChangesCaptionWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: TomMetrics.pad),
+      padding: const EdgeInsets.symmetric(horizontal: TomMetrics.padTight),
       child: Row(
         children: <Widget>[
-          // Expanded rather than followed by a spacer: a module may put a
-          // second panel in the aside, and a caption that cannot give way
-          // overflows the day one does.
-          Expanded(
-            child: Text(
-              'CHANGES',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: ChangesDesign.caption,
-                height: 1.4,
-                letterSpacing: 1.2,
-                fontWeight: FontWeight.w600,
-                color: colors.textMuted,
-              ),
-            ),
-          ),
+          // No caption: the column's switch names the panel now, and a word
+          // that repeats the raised segment above it says nothing
+          // (`docs/product/workspace/columns/doc.md`).
+          const Spacer(),
           Text(
             'All',
             style: TextStyle(
-              fontSize: ChangesDesign.row,
+              fontSize: ChangesDesign.all,
               height: 1.4,
               color: colors.textSecondary,
             ),
           ),
           const SizedBox(width: 8),
-          SizedBox(
-            width: ChangesDesign.mark,
-            height: ChangesDesign.mark,
-            child: Checkbox(
-              value: allStaged,
-              onChanged: isBusy
-                  ? null
-                  : (bool? staged) => unawaited(
-                      ref
-                          .read(changesProvider.notifier)
-                          .setAllStaged(staged: staged ?? false),
-                    ),
-            ),
+          TomCheckWidget(
+            // Pinned right, where the column's margin is
+            // (`git-commit/committing-dark.svg`).
+            alignment: Alignment.centerRight,
+            isChecked: allStaged,
+            onChanged: isBusy
+                ? null
+                : (bool staged) => unawaited(
+                    ref
+                        .read(changesProvider.notifier)
+                        .setAllStaged(staged: staged),
+                  ),
           ),
         ],
       ),

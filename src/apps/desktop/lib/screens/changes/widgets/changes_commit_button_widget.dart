@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/screens/changes/changes_design.dart';
+import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
@@ -15,16 +16,30 @@ import 'package:tom_ui/tom_ui.dart';
 /// Disabled rather than refused after the attempt
 /// (`docs/product/git-workflow/commit/the-message/doc.md`).
 class ChangesCommitButtonWidget extends ConsumerWidget {
-  /// Creates the button, enabled when [canCommit].
-  const ChangesCommitButtonWidget({required this.canCommit, super.key});
+  /// Creates the button, enabled when [canCommit], for [branch].
+  const ChangesCommitButtonWidget({
+    required this.canCommit,
+    this.branch,
+    super.key,
+  });
 
   /// Whether something is staged and described.
   final bool canCommit;
 
+  /// Where the commit is going, named on the button itself.
+  ///
+  /// Null on a detached `HEAD` or before git has answered, and then the
+  /// button says only what it does: a commit that names no branch is the one
+  /// this product refuses anyway
+  /// (`docs/product/git-workflow/commit/the-message/doc.md`).
+  final BranchNameValueObject? branch;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<bool>('canCommit', canCommit));
+    properties
+      ..add(DiagnosticsProperty<bool>('canCommit', canCommit))
+      ..add(DiagnosticsProperty<BranchNameValueObject?>('branch', branch));
   }
 
   @override
@@ -47,12 +62,20 @@ class ChangesCommitButtonWidget extends ConsumerWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(ChangesDesign.radius),
             ),
+            // Smaller than a Home button's 15: a branch name has to fit
+            // inside a column, and the board shrank the label rather than
+            // drop the name
+            // (`design/screens/desktop/git-commit/committing-dark.svg`).
             textStyle: const TextStyle(
-              fontSize: 15,
+              fontSize: ChangesDesign.button,
               fontWeight: FontWeight.w600,
             ),
           ),
-          child: const Text('Commit'),
+          child: Text(
+            branch == null ? 'Commit' : 'Commit to ${branch!.value}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ),
     );

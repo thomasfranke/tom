@@ -11,16 +11,25 @@ import 'package:tom_presentation/tom_presentation.dart';
 
 /// The tree itself, or the one line that explains why there is none.
 class FileTreeBodyWidget extends StatelessWidget {
-  /// Creates the body for [state].
-  const FileTreeBodyWidget({required this.state, super.key});
+  /// Creates the body for [state], marked by [changes].
+  const FileTreeBodyWidget({
+    required this.state,
+    this.changes = const FileTreeChanges.none(),
+    super.key,
+  });
 
   /// What the file tree is showing.
   final FileTreeState state;
 
+  /// What git says about the rows, by path.
+  final FileTreeChanges changes;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<FileTreeState>('state', state));
+    properties
+      ..add(DiagnosticsProperty<FileTreeState>('state', state))
+      ..add(DiagnosticsProperty<FileTreeChanges>('changes', changes));
   }
 
   @override
@@ -31,7 +40,9 @@ class FileTreeBodyWidget extends StatelessWidget {
     FileTreeFailed(failure: final AppFailure failure) => FileTreeNoteWidget(
       _explain(failure),
     ),
-    final FileTreeReady ready => FileTreeRowsWidget(rows: ready.rows),
+    final FileTreeReady ready => FileTreeRowsWidget(
+      rows: ready.rowsWith(changes),
+    ),
   };
 
   /// What to say about a space folder that could not be read; an unreadable

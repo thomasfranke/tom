@@ -28,32 +28,12 @@ class HistoryPanel extends ConsumerWidget {
         (SpaceSessionState? session) => session?.readingVersion,
       ),
     );
-    final TomColors colors = TomColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const SizedBox(height: HistoryDesign.captionTop),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: TomMetrics.pad),
-          child: Text(
-            'HISTORY',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: HistoryDesign.caption,
-              height: 1.4,
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.w600,
-              color: colors.textMuted,
-            ),
-          ),
-        ),
-        const SizedBox(
-          height:
-              HistoryDesign.entriesTop -
-              HistoryDesign.captionTop -
-              HistoryDesign.caption * 1.4,
-        ),
+        // No caption and no gap of its own: the column's switch names the
+        // panel now and already leaves the space under itself
+        // (`docs/product/workspace/columns/doc.md`).
         Expanded(child: _body(state, reading)),
         if (state case HistoryReady(
           commits: final List<CommitEntity> all,

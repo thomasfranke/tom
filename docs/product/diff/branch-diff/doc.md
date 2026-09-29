@@ -20,7 +20,7 @@ Compare a file between two branches, or between two commits, the same rendered w
 ## Mocks
 
 - Desktop: **comparing** — split view, the marks in both panes, and the base named inside the chip at the end of the bar. [light](../../../design/screens/desktop/git-diff/comparing-light.svg) · [dark](../../../design/screens/desktop/git-diff/comparing-dark.svg).
-- Turning the decoration off is [rendered-diff](../rendered-diff/turning-it-off/doc.md)'s **diff off**, drawn on the same page.
+- Turning the decoration off is [rendered-diff](../rendered-diff/turning-it-off/doc.md)'s, and it has no board of its own.
 - It is the one screen that was built before its board existed, which is what [AGENTS.md](../../../../AGENTS.md) rule 13 now prevents.
 
 ---

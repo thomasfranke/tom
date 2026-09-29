@@ -32,6 +32,20 @@ abstract final class CompareDesign {
   static const double radius = BranchesDesign.radius;
 
   /// A branch's name, and a commit's subject.
+  /// The chip at the end of the bar, measured off
+  /// `design/screens/desktop/git-diff/comparing-dark.svg`.
+  static const double chipWidth = 62;
+
+  /// The chip's height, which matches the mode control's track.
+  static const double chipHeight = 26;
+
+  /// The chip's corner.
+  static const double chipRadius = 6;
+
+  /// Between the base's name and the chip.
+  static const double chipGap = 12;
+
+  /// The chip's text, and the popover's rows.
   static const double label = 13;
 
   /// What the surface says about itself, and a commit's second line.

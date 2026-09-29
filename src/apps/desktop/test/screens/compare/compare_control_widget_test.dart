@@ -106,7 +106,7 @@ void main() {
 
   /// Opens the popover.
   Future<void> openIt(WidgetTester tester) async {
-    await tester.tap(find.text('Compare against…'));
+    await tester.tap(find.text('Diff'));
     await tester.pumpAndSettle();
   }
 
@@ -120,7 +120,7 @@ void main() {
     // file — there is nothing to compare before one is chosen.
     await pumpControl(tester);
 
-    expect(find.text('Compare against…'), findsNothing);
+    expect(find.text('Diff'), findsNothing);
   });
 
   testWidgets('with a document open it offers to compare', (
@@ -128,7 +128,7 @@ void main() {
   ) async {
     await pumpControl(tester, document: index);
 
-    expect(find.text('Compare against…'), findsOneWidget);
+    expect(find.text('Diff'), findsOneWidget);
   });
 
   testWidgets('it lists the branches and the document\'s commits', (
@@ -247,7 +247,7 @@ void main() {
 
     await tester.tap(find.text('main'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Compared to main'));
+    await tester.tap(find.text('Diff'));
     await tester.pumpAndSettle();
 
     expect(find.text('Compare against the last commit'), findsOneWidget);
@@ -260,14 +260,72 @@ void main() {
     await openIt(tester);
     await tester.tap(find.text('main'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Compared to main'));
+    await tester.tap(find.text('Diff'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Compare against the last commit'));
     await tester.pumpAndSettle();
 
     expect(base(), isNull);
-    expect(find.text('Compare against…'), findsOneWidget);
+    expect(find.text('Diff'), findsOneWidget);
+  });
+
+  group('turning the marks off', () {
+    testWidgets('a space opens with them on', (WidgetTester tester) async {
+      await pumpControl(tester, document: index);
+
+      expect(container.read(spaceSessionProvider)?.showingDiff, isTrue);
+    });
+
+    testWidgets('the row switches them off, and back on', (
+      WidgetTester tester,
+    ) async {
+      await pumpControl(tester, document: index);
+      await openIt(tester);
+
+      await tester.tap(find.text('Stop marking what changed'));
+      await tester.pumpAndSettle();
+      expect(container.read(spaceSessionProvider)?.showingDiff, isFalse);
+
+      await openIt(tester);
+      await tester.tap(find.text('Mark what changed'));
+      await tester.pumpAndSettle();
+      expect(container.read(spaceSessionProvider)?.showingDiff, isTrue);
+    });
+
+    testWidgets('the base is kept, so turning them on compares the same', (
+      WidgetTester tester,
+    ) async {
+      // Off is a reading position, not a comparison
+      // (`diff/rendered-diff/turning-it-off/doc.md`).
+      await pumpControl(tester, document: index);
+      await openIt(tester);
+      await tester.tap(find.text('main'));
+      await tester.pumpAndSettle();
+
+      await openIt(tester);
+      await tester.tap(find.text('Stop marking what changed'));
+      await tester.pumpAndSettle();
+
+      expect(base(), isNotNull, reason: 'the base outlives the marks');
+    });
+
+    testWidgets('with them off the base is not named beside the chip', (
+      WidgetTester tester,
+    ) async {
+      await pumpControl(tester, document: index);
+      await openIt(tester);
+      await tester.tap(find.text('main'));
+      await tester.pumpAndSettle();
+      expect(find.text('Compared to main'), findsOneWidget);
+
+      await openIt(tester);
+      await tester.tap(find.text('Stop marking what changed'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Compared to main'), findsNothing);
+      expect(find.text('Diff'), findsOneWidget, reason: 'the chip stays');
+    });
   });
 
   testWidgets('Escape closes it and keeps nothing', (

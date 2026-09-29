@@ -85,16 +85,18 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('it names itself, and says so with no document open', (
+  testWidgets('with no document open it says so, and names itself no more', (
     WidgetTester tester,
   ) async {
+    // The column's switch names the panel now
+    // (`docs/product/workspace/columns/doc.md`).
     await pumpPanel(tester);
 
-    expect(find.text('HISTORY'), findsOneWidget);
     expect(
       find.text('Open a document to see what changed it.'),
       findsOneWidget,
     );
+    expect(find.text('HISTORY'), findsNothing);
   });
 
   testWidgets('every commit git reports is an entry, in its order', (

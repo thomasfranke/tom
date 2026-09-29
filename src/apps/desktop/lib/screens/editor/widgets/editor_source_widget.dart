@@ -32,6 +32,13 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
       CodeLineEditingController.fromText(_opened);
   final CodeScrollController _scroll = CodeScrollController();
 
+  /// The text this pane last sent to the buffer.
+  ///
+  /// What comes back equal to it is this pane's own keystroke echoing; what
+  /// differs was written by somebody else — a replacement, a branch switch,
+  /// a discarded edit — and belongs on screen.
+  late String _pushed = _opened;
+
   /// The buffer as it stands the moment this is mounted.
   String get _opened => switch (ref.read(editorProvider)) {
     EditorReady(source: final String source) => source,
@@ -47,16 +54,18 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // A clean buffer that differs from what is on screen was read off the
-    // disk by something else (a branch switch, a discarded edit), so the
-    // pane follows it. Typing leaves the buffer dirty and a save leaves it
-    // equal, so neither lands here.
+    // A buffer this pane did not write is one somebody else did — a
+    // replacement, a branch switch, a discarded edit — so the pane follows
+    // it whether or not it is dirty. Assigning the text is revocable in
+    // `re_editor`, which is what makes ⌘Z put a replacement back
+    // (`docs/product/search/replacing/doc.md`).
     ref.listen<EditorState>(editorProvider, (
       EditorState? previous,
       EditorState next,
     ) {
       if (next case EditorReady(source: final String source)) {
-        if (!next.isDirty && _controller.text != source) {
+        if (source != _pushed && _controller.text != source) {
+          _pushed = source;
           _controller.text = source;
         }
       }
@@ -79,14 +88,43 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
       },
       // Prose, not code: a paragraph off the right edge cannot be read.
       wordWrap: true,
-      // The caption's and the preview's gutter: the two panes are one rhythm.
-      padding: const EdgeInsets.symmetric(horizontal: TomMetrics.pad),
-      onChanged: (CodeLineEditingValue value) =>
-          ref.read(editorProvider.notifier).edit(_controller.text),
+      // Right-aligned in a column of its own so the first character of source
+      // is at the same place whatever the document's length — the package
+      // otherwise sizes the column to the digits it happens to be showing.
+      indicatorBuilder:
+          (
+            BuildContext context,
+            CodeLineEditingController controller,
+            CodeChunkController chunks,
+            CodeIndicatorValueNotifier notifier,
+          ) => SizedBox(
+            width: EditorDesign.numbers,
+            child: Align(
+              alignment: Alignment.topRight,
+              child: DefaultCodeLineNumber(
+                controller: controller,
+                notifier: notifier,
+                textStyle: _numberStyle(colors.textMuted),
+                // The line with the caret is brighter and never bigger: a
+                // number that grows moves the column the rest sit in.
+                focusedTextStyle: _numberStyle(colors.textSecondary),
+              ),
+            ),
+          ),
+      // Left of the code only: the line numbers are the pane's left inset,
+      // and the boards put the first character ten past them.
+      padding: const EdgeInsets.only(
+        left: EditorDesign.numbersToCode,
+        right: TomMetrics.pad,
+      ),
+      onChanged: (CodeLineEditingValue value) {
+        _pushed = _controller.text;
+        ref.read(editorProvider.notifier).edit(_pushed);
+      },
       style: CodeEditorStyle(
         fontSize: EditorDesign.code,
         fontHeight: EditorDesign.codeHeight,
-        fontFamily: 'Menlo',
+        fontFamily: TomFonts.mono,
         textColor: colors.textPrimary,
         backgroundColor: colors.surface,
         cursorColor: colors.accent,
@@ -102,6 +140,17 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
       ),
     );
   }
+
+  /// A line number in [ink], on the line the source itself stands on.
+  static TextStyle _numberStyle(Color ink) => TextStyle(
+    fontSize: EditorDesign.lineNumber,
+    // The source's line box, not its own: the two columns have to keep step
+    // or the numbers drift away from the lines they count.
+    height:
+        EditorDesign.code * EditorDesign.codeHeight / EditorDesign.lineNumber,
+    fontFamily: TomFonts.mono,
+    color: ink,
+  );
 
   /// Writes the buffer to disk.
   void _save() => unawaited(ref.read(editorProvider.notifier).save());

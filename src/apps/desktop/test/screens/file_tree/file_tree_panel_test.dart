@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
+import 'package:tom_desktop/screens/file_tree/widgets/file_tree_body_widget.dart';
+import 'package:tom_desktop/widgets/file_state_mark_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -188,13 +190,24 @@ void main() {
     ) async {
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
 
+      /// Which way the tree's own chevron is pointing — the column carries a
+      /// second one, left of the search box, which opens the replace field.
+      bool pointsDown() => tester
+          .widget<TomChevronWidget>(
+            find.descendant(
+              of: find.byType(FileTreeBodyWidget),
+              matching: find.byType(TomChevronWidget),
+            ),
+          )
+          .isOpen;
+
       await pumpPanel(tester, space: docs);
-      expect(find.text('▾'), findsOneWidget);
+      expect(pointsDown(), isTrue);
 
       await tester.tap(find.text('guides'));
       await tester.pumpAndSettle();
 
-      expect(find.text('▸'), findsOneWidget);
+      expect(pointsDown(), isFalse);
       expect(find.text('writing.md'), findsNothing);
     });
 
@@ -248,6 +261,77 @@ void main() {
         tester.element(find.byType(FileTreePanel)),
       );
       expect(_dots(tester), <Color>[colors.modified]);
+    });
+
+    testWidgets('a changed file carries git\'s letter, and its folder a dot', (
+      WidgetTester tester,
+    ) async {
+      // The tree and the changes column share one alphabet, so a file says
+      // the same thing in both (`navigation/file-tree/change-marks/doc.md`).
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+      expect(find.text('M'), findsNothing);
+
+      container
+          .read(spaceSessionProvider.notifier)
+          .observe(
+            GitStatusValueObject(
+              branch: BranchNameValueObject('main'),
+              upstream: null,
+              ahead: 0,
+              behind: 0,
+              isDetached: false,
+              entries: <StatusEntryValueObject>[
+                StatusEntryValueObject(
+                  // Repository-relative: the space is opened at `docs/`.
+                  path: RepoRelativePathValueObject('docs/guides/writing.md'),
+                  state: FileStateEnum.modified,
+                  isStaged: false,
+                ),
+              ],
+            ),
+          );
+      await tester.pumpAndSettle();
+
+      expect(find.text('M'), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text('M'),
+          matching: find.byType(FileStateMarkWidget),
+        ),
+        findsOneWidget,
+        reason: 'the letter is the component, not a Text the tree drew',
+      );
+    });
+
+    testWidgets('a change outside the space marks nothing in the tree', (
+      WidgetTester tester,
+    ) async {
+      // Git reports the whole repository; this space is `docs/` alone.
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+
+      container
+          .read(spaceSessionProvider.notifier)
+          .observe(
+            GitStatusValueObject(
+              branch: BranchNameValueObject('main'),
+              upstream: null,
+              ahead: 0,
+              behind: 0,
+              isDetached: false,
+              entries: <StatusEntryValueObject>[
+                StatusEntryValueObject(
+                  path: RepoRelativePathValueObject('lib/main.dart'),
+                  state: FileStateEnum.modified,
+                  isStaged: false,
+                ),
+              ],
+            ),
+          );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FileStateMarkWidget), findsNothing);
     });
 
     testWidgets('a file the editor cannot open is muted and does not react', (

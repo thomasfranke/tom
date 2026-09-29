@@ -83,16 +83,26 @@ bool get _hasWindow =>
         'AutomatedTestWidgetsFlutterBinding';
 
 /// The application widget, mountable by a test without a window.
-class TomApp extends StatelessWidget {
+class TomApp extends ConsumerWidget {
   /// Creates the application.
   const TomApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) => MaterialApp(
     title: 'TOM',
     debugShowCheckedModeBanner: false,
     theme: tomTheme(Brightness.light),
     darkTheme: tomTheme(Brightness.dark),
+    // The platform's until somebody says otherwise, and then theirs — the
+    // control is in the top bar with the column toggles
+    // (`docs/product/workspace/columns/doc.md`).
+    themeMode: switch (ref.watch(
+      workspaceProvider.select((WorkspaceState it) => it.theme),
+    )) {
+      ThemeChoiceEnum.system => ThemeMode.system,
+      ThemeChoiceEnum.light => ThemeMode.light,
+      ThemeChoiceEnum.dark => ThemeMode.dark,
+    },
     home: const _WindowContents(),
   );
 }

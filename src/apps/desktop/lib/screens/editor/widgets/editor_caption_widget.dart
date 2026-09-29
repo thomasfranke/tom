@@ -12,7 +12,12 @@ class EditorCaptionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: TomMetrics.pad),
+    // Lined up with the line numbers rather than with the pane, which is
+    // what the boards draw.
+    padding: const EdgeInsets.only(
+      left: EditorDesign.gutter,
+      right: TomMetrics.pad,
+    ),
     child: Text(
       'SOURCE',
       style: TextStyle(

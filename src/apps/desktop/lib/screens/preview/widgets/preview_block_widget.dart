@@ -169,7 +169,11 @@ class PreviewBlockWidget extends ConsumerWidget {
     bool struckThrough,
   ) {
     final TextDecoration? gone = _gone(struckThrough);
+    // The prose is the serif and the headings are not: the document is the
+    // one place somebody reads rather than operates, and the headings belong
+    // to the interface's voice (`docs/design/foundations/README.md`).
     final TextStyle prose = TextStyle(
+      fontFamily: TomFonts.serif,
       fontSize: body,
       height: PreviewDesign.bodyHeight,
       color: colors.textPrimary,
@@ -240,7 +244,7 @@ class PreviewBlockWidget extends ConsumerWidget {
   /// fence reads the sheet's `code` nowhere.
   static TextStyle _codeStyle(TomColors colors, bool struckThrough) =>
       TextStyle(
-        fontFamily: 'Menlo',
+        fontFamily: TomFonts.mono,
         fontSize: PreviewDesign.code,
         height: 1.6,
         color: colors.textPrimary,

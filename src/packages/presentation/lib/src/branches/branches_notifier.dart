@@ -208,8 +208,17 @@ class BranchesNotifier extends _$BranchesNotifier {
     }
     // The status first (the branch just changed), then the folder the
     // checkout rewrote, then the buffer still showing the old branch's text.
+    // Checked between each rather than after the three: the popover puts
+    // itself away the moment the branch changes, and a notifier disposed
+    // mid-refresh has no `Ref` left to read the next one with.
     await ref.read(changesProvider.notifier).refresh();
+    if (!ref.mounted) {
+      return;
+    }
     await ref.read(fileTreeProvider.notifier).refresh();
+    if (!ref.mounted) {
+      return;
+    }
     await ref.read(editorProvider.notifier).reload();
     if (!ref.mounted) {
       return;

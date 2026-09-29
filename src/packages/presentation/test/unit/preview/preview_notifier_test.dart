@@ -485,6 +485,54 @@ void main() {
       expect(blocks.asked.length, parses, reason: 'it re-read the document');
     });
 
+    test(
+      'turned off, the document is published with no marks at all',
+      () async {
+        start();
+        show(docs, writing);
+        await settle();
+        await settle();
+        expect(diffOf(), isNotNull);
+        final int parses = blocks.asked.length;
+
+        container.read(spaceSessionProvider.notifier).decorate(showing: false);
+        await settle();
+        await settle();
+
+        expect(diffOf(), isNull, reason: 'the marks were left on screen');
+        expect(
+          blocks.asked.length,
+          parses,
+          reason: 'it re-read the document to stop marking it',
+        );
+      },
+    );
+
+    test('turned on again it marks against the base it had', () async {
+      // Off is a reading position, not a comparison
+      // (`docs/product/diff/rendered-diff/turning-it-off/doc.md`).
+      start();
+      show(docs, writing);
+      await settle();
+      await settle();
+      container
+          .read(spaceSessionProvider.notifier)
+          .compare(RevisionValueObject.commit(_earlier));
+      await settle();
+      await settle();
+      final String chosen = git.revisionsAsked.last;
+
+      container.read(spaceSessionProvider.notifier).decorate(showing: false);
+      await settle();
+      await settle();
+      container.read(spaceSessionProvider.notifier).decorate(showing: true);
+      await settle();
+      await settle();
+
+      expect(diffOf(), isNotNull);
+      expect(git.revisionsAsked.last, chosen, reason: 'the base was forgotten');
+    });
+
     test('a version being read is compared when a base was chosen', () async {
       // Two commits, which is the other half of this item: the past is
       // compared only when somebody asks.

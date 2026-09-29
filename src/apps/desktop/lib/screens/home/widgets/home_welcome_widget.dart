@@ -57,6 +57,7 @@ class HomeWelcomeWidget extends ConsumerWidget {
         const SizedBox(height: HomeDesign.taglineToChoose),
         HomePrimaryButtonWidget(
           label: 'Choose folder…',
+          glyph: TomGlyphEnum.folder,
           onPressed: () => chooseFolder(ref),
         ),
         const SizedBox(height: HomeDesign.chooseToClone),
@@ -69,7 +70,10 @@ class HomeWelcomeWidget extends ConsumerWidget {
             SizedBox(width: HomeDesign.chipGutter),
             Tooltip(
               message: 'Cloning arrives in M3',
-              child: HomeSecondaryButtonWidget(label: 'Clone from URL'),
+              child: HomeSecondaryButtonWidget(
+                label: 'Clone from URL',
+                glyph: TomGlyphEnum.link,
+              ),
             ),
             SizedBox(width: TomMetrics.padTight),
             MilestoneChipWidget(label: 'M3'),

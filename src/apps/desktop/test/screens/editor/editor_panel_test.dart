@@ -132,6 +132,28 @@ void main() {
     expect(container.read(editorProvider).isDirty, isTrue);
   });
 
+  testWidgets('a buffer written by something else reaches the pane', (
+    WidgetTester tester,
+  ) async {
+    // A replacement writes the buffer while it is dirty, and the pane must
+    // follow it: a pane showing the old text would put it back on the next
+    // keystroke. **Undoing it is not driveable here** — the editor wraps
+    // this controller in a delegate and the undo history is the delegate's,
+    // so ⌘Z is the end-to-end scenario's
+    // (`docs/product/search/replacing/doc.md`).
+    documents.content = 'a palette here\n';
+    await pumpEditor(tester, document: writing);
+    await type(tester, 'a palette here, edited\n');
+
+    container.read(editorProvider.notifier).edit('a swatch here, edited\n');
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
+      'a swatch here, edited\n',
+    );
+  });
+
   testWidgets('the save shortcut is answered, not left to do nothing', (
     WidgetTester tester,
   ) async {

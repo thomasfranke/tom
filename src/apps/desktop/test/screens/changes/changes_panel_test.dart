@@ -5,6 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/changes/changes_panel.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_commit_button_widget.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_message_widget.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_row_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -127,13 +130,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('it names itself, and says so when nothing is open', (
+  testWidgets('with nothing open it says so, and names itself no more', (
     WidgetTester tester,
   ) async {
+    // The column's switch names the panel now, so a caption here would
+    // repeat the raised segment (`docs/product/workspace/columns/doc.md`).
     await pumpPanel(tester);
 
-    expect(find.text('CHANGES'), findsOneWidget);
     expect(find.text('No space is open.'), findsOneWidget);
+    expect(find.text('CHANGES'), findsNothing);
   });
 
   testWidgets('a clean tree says so rather than looking broken', (
@@ -160,6 +165,61 @@ void main() {
     expect(find.text('index.md'), findsOneWidget);
     expect(find.text('main.dart'), findsOneWidget);
     expect(find.text('notes.md'), findsOneWidget);
+  });
+
+  testWidgets('a row names the folder under the file, two doc.md apart', (
+    WidgetTester tester,
+  ) async {
+    // The board draws the row as two lines, and this repository is full of
+    // files that share a name
+    // (`design/screens/desktop/git-commit/committing-dark.svg`).
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry(
+        'docs/product/commit/doc.md',
+        FileStateEnum.modified,
+        isStaged: false,
+      ),
+      entry('notes.md', FileStateEnum.untracked, isStaged: false),
+    ]);
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('docs/product/commit'), findsOneWidget);
+    // Nothing under a file at the repository's own root: there is no folder
+    // to name, and an empty line still takes one. Two texts in that row is
+    // the mark's letter and the name, and no third.
+    expect(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text('notes.md'),
+          matching: find.byType(ChangesRowWidget),
+        ),
+        matching: find.byType(Text),
+      ),
+      findsNWidgets(2),
+    );
+  });
+
+  testWidgets('and the count under the button says what is going in', (
+    WidgetTester tester,
+  ) async {
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry('a.md', FileStateEnum.modified, isStaged: true),
+      entry('b.md', FileStateEnum.modified, isStaged: true),
+      entry('c.md', FileStateEnum.modified, isStaged: false),
+    ]);
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('2 of 3 staged'), findsOneWidget);
+  });
+
+  testWidgets('the button names the branch the commit is going onto', (
+    WidgetTester tester,
+  ) async {
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('Commit to main'), findsOneWidget);
   });
 
   testWidgets('each row says what happened with a letter, not a colour only', (
@@ -192,7 +252,7 @@ void main() {
     ]);
     await pumpPanel(tester, space: docs);
 
-    await tester.tap(find.byType(Checkbox).last);
+    await tester.tap(find.byType(TomCheckWidget).last);
     await tester.pumpAndSettle();
 
     expect(git.staged.single.value, 'docs/index.md');
@@ -265,7 +325,7 @@ void main() {
     await pumpPanel(tester, space: docs);
     git.writeFailure = const GitOperationFailed();
 
-    await tester.tap(find.byType(Checkbox).last);
+    await tester.tap(find.byType(TomCheckWidget).last);
     await tester.pumpAndSettle();
 
     expect(find.text('Git could not do that.'), findsOneWidget);
@@ -285,66 +345,22 @@ void main() {
     );
   });
 
-  group('a push the remote refused', () {
-    /// Pushes, having git refuse it, and lets the panel settle.
-    Future<void> pushAndBeRefused(WidgetTester tester) async {
-      git.writeFailure = const GitPushRejected();
-      await container.read(remoteProvider.notifier).push();
-      await tester.pumpAndSettle();
-    }
+  testWidgets('a push standing refused does not take this column away', (
+    WidgetTester tester,
+  ) async {
+    // The refusal is a band above the document
+    // (docs/product/git-workflow/push-pull/when-it-fails/doc.md); the box and
+    // the button stay, because another commit is still a thing to do.
+    git.reported = statusOf(const <StatusEntryValueObject>[], behind: 3);
+    await pumpPanel(tester, space: docs);
+    git.writeFailure = const GitPushRejected();
 
-    testWidgets('says who got there first, and that nothing was lost', (
-      WidgetTester tester,
-    ) async {
-      // The wording is the product's
-      // (docs/product/git-workflow/push-pull/when-it-fails/doc.md).
-      git.reported = statusOf(const <StatusEntryValueObject>[], behind: 3);
-      await pumpPanel(tester, space: docs);
+    await container.read(remoteProvider.notifier).push();
+    await tester.pumpAndSettle();
 
-      await pushAndBeRefused(tester);
-
-      expect(find.text('Someone pushed 3 commits first.'), findsOneWidget);
-      expect(
-        find.text(
-          'Pull them, then push again. Nothing you committed has been lost.',
-        ),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('offers Pull as the remedy, right there', (
-      WidgetTester tester,
-    ) async {
-      // Not a fourth button in the chrome: it belongs beside the news.
-      await pumpPanel(tester, space: docs);
-      await pushAndBeRefused(tester);
-
-      await tester.tap(find.text('Pull'));
-      await tester.pumpAndSettle();
-
-      expect(git.pulled, 1);
-    });
-
-    testWidgets('is absent until there is one', (WidgetTester tester) async {
-      await pumpPanel(tester, space: docs);
-
-      expect(find.text('Pull'), findsNothing);
-      expect(find.textContaining('pushed'), findsNothing);
-    });
-
-    testWidgets('and the panel still fits the height it shares', (
-      WidgetTester tester,
-    ) async {
-      // About half the window when the aside stacks two panels, and the
-      // banner is tall: the box and the button give way rather than overflow.
-      git.reported = statusOf(const <StatusEntryValueObject>[], behind: 3);
-      await pumpPanel(tester, space: docs, height: 378);
-
-      await pushAndBeRefused(tester);
-
-      expect(tester.takeException(), isNull);
-      expect(find.text('Someone pushed 3 commits first.'), findsOneWidget);
-    });
+    expect(find.byType(ChangesMessageWidget), findsOneWidget);
+    expect(find.byType(ChangesCommitButtonWidget), findsOneWidget);
+    expect(find.textContaining('pushed'), findsNothing);
   });
 
   testWidgets('both modes render, and differ', (WidgetTester tester) async {

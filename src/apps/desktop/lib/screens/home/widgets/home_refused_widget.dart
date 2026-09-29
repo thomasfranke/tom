@@ -86,7 +86,7 @@ class HomeRefusedWidget extends ConsumerWidget {
               child: SelectableText(
                 path,
                 style: TextStyle(
-                  fontFamily: 'Menlo',
+                  fontFamily: TomFonts.mono,
                   fontSize: 13.5,
                   height: HomeDesign.pathLine / 13.5,
                   color: colors.textSecondary,

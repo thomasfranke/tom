@@ -28,6 +28,10 @@ void main() {
       Step('with nothing open there is nothing to ask about', (
         TomRobot robot,
       ) async {
+        // The right column shows one panel at a time, so the history is
+        // chosen rather than found (`docs/product/workspace/columns/doc.md`).
+        await robot.showsTheGitPanel('History');
+
         await robot.seesInTheHistory(<String>[
           'Open a document to see what changed it.',
         ]);
@@ -79,6 +83,7 @@ void main() {
         await robot.launchWindowed(pickFolder: withHistory.root);
         await robot.chooseFolder();
         await robot.seesTheShell();
+        await robot.showsTheGitPanel('History');
         await robot.clickInTheTree('index.md');
 
         await robot.seesInThePreview('as the working copy has it');

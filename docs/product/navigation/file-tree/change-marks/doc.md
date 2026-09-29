@@ -6,7 +6,8 @@ What the tree says about a file git has something to say about.
 
 ## Rules
 
-- **A changed file carries its letter at the right of its row**, in the same alphabet the changes column uses: `M` modified, `A` added, `R` removed, `N` untracked.
+- **A changed file carries its letter at the right of its row**, in the same alphabet the changes column uses: `M` modified, `A` added, `R` removed, `N` untracked, `C` conflicted.
+- **`C` outranks every other letter.** A document git stopped a merge on is not also "modified": it is the one that has to be dealt with before anything else means anything.
 - The tree and the [changes list](../../../git-workflow/commit/the-changes-list/doc.md) never disagree about what happened to a file.
 - **The letter is the signal, not the colour.** A row's name keeps its own colour, so the mark never competes with the open document's highlight and two kinds of change are never told apart by hue alone.
 - **A folder carries a dot when something inside it changed**, whatever the change is. A folder cannot show letters for files it is not showing, and opening it is what says which.

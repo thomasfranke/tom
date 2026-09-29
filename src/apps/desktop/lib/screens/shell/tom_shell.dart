@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
+import 'package:tom_desktop/screens/remote/remote_band_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_mode_bar_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_region_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_status_bar_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_top_bar_widget.dart';
+import 'package:tom_desktop/screens/workspace/workspace_grip_widget.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
@@ -42,6 +44,19 @@ class TomShell extends ConsumerWidget {
     final DocumentModeEnum mode = readingVersion
         ? DocumentModeEnum.preview
         : chosen;
+    // A hidden column is a column, not a mode: the document area takes the
+    // room and nothing else moves (`docs/product/workspace/columns/doc.md`).
+    final bool showingExplorer = ref.watch(
+      workspaceProvider.select((WorkspaceState it) => it.showingExplorer),
+    );
+    final bool showingAside = ref.watch(
+      workspaceProvider.select((WorkspaceState it) => it.showingAside),
+    );
+    final double explorerWidth =
+        ref.watch(
+          workspaceProvider.select((WorkspaceState it) => it.explorerWidth),
+        ) ??
+        TomMetrics.explorer;
     final TomColors colors = TomColors.of(context);
     return Scaffold(
       backgroundColor: colors.surface,
@@ -50,40 +65,77 @@ class TomShell extends ConsumerWidget {
           const ShellTopBarWidget(),
           Divider(height: 1, color: colors.border),
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Stack(
               children: <Widget>[
-                ShellRegionWidget(
-                  placement: PanelPlacementEnum.explorer,
-                  registry: registry,
-                  width: TomMetrics.explorer,
-                ),
-                Expanded(
-                  child: Column(
-                    children: <Widget>[
-                      // The bar belongs to the document area: the explorer
-                      // and the aside are not in a mode.
-                      if (registry
-                          .at(PanelPlacementEnum.document)
-                          .isNotEmpty) ...<Widget>[
-                        const ShellModeBarWidget(),
-                        Divider(height: 1, color: colors.border),
-                      ],
-                      Expanded(
-                        child: ShellRegionWidget(
-                          placement: PanelPlacementEnum.document,
-                          registry: registry,
-                          mode: mode,
-                        ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    if (showingExplorer)
+                      ShellRegionWidget(
+                        placement: PanelPlacementEnum.explorer,
+                        registry: registry,
+                        width: explorerWidth,
                       ),
-                    ],
+                    Expanded(
+                      child: Column(
+                        children: <Widget>[
+                          // The bar belongs to the document area: the explorer
+                          // and the aside are not in a mode.
+                          if (registry
+                              .at(PanelPlacementEnum.document)
+                              .isNotEmpty) ...<Widget>[
+                            // The columns' widths, because the mode control is
+                            // centred on the window rather than on this bar.
+                            ShellModeBarWidget(
+                              leftInset:
+                                  showingExplorer &&
+                                      registry
+                                          .at(PanelPlacementEnum.explorer)
+                                          .isNotEmpty
+                                  ? explorerWidth
+                                  : 0,
+                              rightInset:
+                                  showingAside &&
+                                      registry
+                                          .at(PanelPlacementEnum.aside)
+                                          .isNotEmpty
+                                  ? TomMetrics.git
+                                  : 0,
+                            ),
+                            Divider(height: 1, color: colors.border),
+                          ],
+                          // News from git spans the document area and pushes
+                          // the document down, rather than living in a
+                          // column (`docs/product/workspace/feedback/doc.md`).
+                          const RemoteBandWidget(),
+                          Expanded(
+                            child: ShellRegionWidget(
+                              placement: PanelPlacementEnum.document,
+                              registry: registry,
+                              mode: mode,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (showingAside)
+                      ShellRegionWidget(
+                        placement: PanelPlacementEnum.aside,
+                        registry: registry,
+                        width: TomMetrics.git,
+                      ),
+                  ],
+                ),
+                // Over the rule rather than in the row, so grabbing it costs
+                // the layout nothing: the column is the board's width and
+                // the hairline is still one point.
+                if (showingExplorer)
+                  Positioned(
+                    left: explorerWidth - WorkspaceGripWidget.grip / 2,
+                    top: 0,
+                    bottom: 0,
+                    child: WorkspaceGripWidget(width: explorerWidth),
                   ),
-                ),
-                ShellRegionWidget(
-                  placement: PanelPlacementEnum.aside,
-                  registry: registry,
-                  width: TomMetrics.git,
-                ),
               ],
             ),
           ),

@@ -60,14 +60,23 @@ class PreviewNotifier extends _$PreviewNotifier {
     // out again over the blocks already on screen. **The git reading is in
     // here because a commit is what makes a marked document clean** — it
     // moves `HEAD` without touching a character of the buffer.
-    ref.listen<({RevisionValueObject? base, GitStatusValueObject? git})>(
+    ref.listen<
+      ({RevisionValueObject? base, GitStatusValueObject? git, bool showing})
+    >(
       spaceSessionProvider.select(
-        (SpaceSessionState? session) =>
-            (base: session?.comparingAgainst, git: session?.git),
+        (SpaceSessionState? session) => (
+          base: session?.comparingAgainst,
+          git: session?.git,
+          // Switching the marks off re-marks the text on screen rather than
+          // reading the document again.
+          showing: session?.showingDiff ?? true,
+        ),
       ),
       (
-        ({RevisionValueObject? base, GitStatusValueObject? git})? _,
-        ({RevisionValueObject? base, GitStatusValueObject? git}) _,
+        ({RevisionValueObject? base, GitStatusValueObject? git, bool showing})?
+        _,
+        ({RevisionValueObject? base, GitStatusValueObject? git, bool showing})
+        _,
       ) => unawaited(_recompare()),
     );
     final SpaceSessionState? session = ref.read(spaceSessionProvider);
@@ -229,6 +238,12 @@ class PreviewNotifier extends _$PreviewNotifier {
   ) async {
     final SpaceSessionState? session = ref.read(spaceSessionProvider);
     if (session == null) {
+      return null;
+    }
+    // Turned off is undecorated, which is also how a removed block leaves
+    // the column: the marks were the only reason it was being drawn
+    // (`docs/product/diff/rendered-diff/turning-it-off/doc.md`).
+    if (!session.showingDiff) {
       return null;
     }
     final RevisionValueObject? base = session.comparingAgainst;

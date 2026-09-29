@@ -127,7 +127,9 @@ class _TriggerWidget extends StatelessWidget {
                 ),
               ),
             ),
-            Text('▾', style: TextStyle(fontSize: 9, color: colors.textMuted)),
+            // The one chevron, at the trailing edge of a select control
+            // (`docs/design/components/controls.md`).
+            TomChevronWidget(isOpen: true, color: colors.textMuted),
           ],
         ),
       ),

@@ -15,7 +15,10 @@ abstract final class ChangesDesign {
   static const double rowsTop = 48;
 
   /// The pitch between rows, also the list's item extent.
-  static const double rowPitch = 42;
+  ///
+  /// A row is two lines — the name and the folder it is in — so it is taller
+  /// than a row that only names a file.
+  static const double rowPitch = 48;
 
   /// The row's box, shorter than the pitch.
   static const double rowHeight = 34;
@@ -38,9 +41,24 @@ abstract final class ChangesDesign {
   /// The panel's caption.
   static const double caption = 10;
 
-  /// A row's label, and the "All" beside the caption.
-  static const double row = 13;
+  /// A row's first line: the file's own name.
+  static const double row = 12.5;
+
+  /// A row's second line: the folder that name is in.
+  static const double folder = 10.5;
+
+  /// The "All" beside the caption, which is not a row and not its size.
+  static const double all = 12;
 
   /// The message box's text.
   static const double message = 13;
+
+  /// The commit button's label, which carries a branch name.
+  static const double button = 12.5;
+
+  /// The line under the button, counting what is staged.
+  static const double staged = 11;
+
+  /// The button to the line under it.
+  static const double buttonToStaged = 10;
 }

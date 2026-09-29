@@ -6,7 +6,7 @@ The first screen anyone sees: open a space, or start one from a remote URL.
 
 | | |
 |---|---|
-| [`opening-a-space/`](opening-a-space/doc.md) | The three ways in, and the one way it fails |
+| [`opening-a-space/`](opening-a-space/doc.md) | The three ways in, and what a folder without a repository does instead |
 | [`recent-spaces/`](recent-spaces/doc.md) | What a row names, and forgetting one |
 | [`cloning/`](cloning/doc.md) | Pasting a URL, and what it says while it works |
 | [`the-brand-block/`](the-brand-block/doc.md) | The wordmark over the commit trunk |
@@ -14,11 +14,15 @@ The first screen anyone sees: open a space, or start one from a remote URL.
 ## Mocks
 
 - **empty state** — no space open: the wordmark over the trunk, opening a folder, and what was open before. [light](../../design/screens/desktop/home/empty-state-light.svg) · [dark](../../design/screens/desktop/home/empty-state-dark.svg).
-- **not a Git repository** — the one way opening a folder fails. [light](../../design/screens/desktop/home/not-a-repository-light.svg) · [dark](../../design/screens/desktop/home/not-a-repository-dark.svg).
+Home refuses nothing, so it has no failure screen. A folder git knows nothing
+about opens like any other, and the right column is what says so
+([without a repository](../workspace/without-a-repository/doc.md)).
 
-Home has no theme toggle drawn — the control lives with the
-[column toggles](../workspace/columns/doc.md) in the workspace bar, which Home
-does not have, and whether it gains one is open.
+Home's bar is otherwise empty and still carries the
+[preferences](../preferences/the-popover/doc.md) button — the language the app
+speaks is chosen before a space is open, and the theme is inside the same
+popover. ~~Home has no theme toggle and whether it gains one is open~~: it does
+not, because that control no longer exists anywhere.
 
 ## Mobile
 

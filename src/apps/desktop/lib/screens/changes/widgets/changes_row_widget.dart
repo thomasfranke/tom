@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/screens/changes/changes_design.dart';
-import 'package:tom_desktop/screens/changes/widgets/changes_mark_widget.dart';
+import 'package:tom_desktop/widgets/file_state_mark_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -48,37 +48,53 @@ class ChangesRowWidget extends ConsumerWidget {
         height: ChangesDesign.rowHeight,
         child: Row(
           children: <Widget>[
-            SizedBox(
-              width: ChangesDesign.mark,
-              height: ChangesDesign.mark,
-              child: Checkbox(
-                value: entry.isStaged,
-                onChanged: isBusy
-                    ? null
-                    : (bool? staged) => unawaited(
-                        ref
-                            .read(changesProvider.notifier)
-                            .setStaged(entry.path, staged ?? false),
-                      ),
-              ),
+            TomCheckWidget(
+              isChecked: entry.isStaged,
+              onChanged: isBusy
+                  ? null
+                  : (bool staged) => unawaited(
+                      ref
+                          .read(changesProvider.notifier)
+                          .setStaged(entry.path, staged),
+                    ),
             ),
             const SizedBox(width: 10),
-            ChangesMarkWidget(state: entry.state),
+            FileStateMarkWidget(state: entry.state),
             const SizedBox(width: 10),
             Expanded(
               child: Tooltip(
                 message: entry.path.value,
-                child: Text(
-                  // The name alone, with the path in the tooltip: the column
-                  // is narrow and the name is what is being looked for.
-                  entry.path.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: ChangesDesign.row,
-                    height: 1.4,
-                    color: colors.textPrimary,
-                  ),
+                // The name, then the folder under it: two files called
+                // `doc.md` are the normal case in this repository, and a
+                // column of them says nothing until the folder is there
+                // (`design/screens/desktop/git-commit/committing-dark.svg`).
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      entry.path.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: ChangesDesign.row,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    if (_folder case final String folder when folder.isNotEmpty)
+                      Text(
+                        folder,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: ChangesDesign.folder,
+                          height: 1.4,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -86,5 +102,11 @@ class ChangesRowWidget extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// The folder the file is in, or empty at the repository's own root.
+  String get _folder {
+    final int cut = entry.path.value.lastIndexOf('/');
+    return cut < 0 ? '' : entry.path.value.substring(0, cut);
   }
 }

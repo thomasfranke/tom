@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/screens/compare/compare_control_widget.dart';
 import 'package:tom_desktop/screens/history/history_words.dart';
+import 'package:tom_desktop/screens/shell/widgets/shell_mode_control_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -16,24 +17,37 @@ import 'package:tom_ui/tom_ui.dart';
 /// and still names none, because what it writes is the mode and the
 /// descriptor says which panels that includes.
 class ShellModeBarWidget extends ConsumerWidget {
-  /// Creates the bar.
-  const ShellModeBarWidget({super.key});
+  /// Creates the bar, inset by the columns beside it.
+  const ShellModeBarWidget({
+    this.leftInset = 0,
+    this.rightInset = 0,
+    super.key,
+  });
 
-  /// Left edge to the first tab, and the gap between two of them.
+  /// How wide the column to the left of this bar is, or 0 when it is closed.
   ///
-  /// A gap rather than the wireframe's pitch of 80, which is this plus a
-  /// word: a fixed column would clip the longest label when the font changes.
+  /// Handed in because the control is centred on the **window**, not on this
+  /// bar: it must not move when a column opens
+  /// (`docs/product/workspace/columns/doc.md`).
+  final double leftInset;
+
+  /// How wide the column to the right is, or 0 when it is closed.
+  final double rightInset;
+
+  /// Left edge to the first thing in the bar, and the gap between two of them.
   static const double _inset = 28;
   static const double _gap = 32;
 
-  /// The rule under the current tab, as wide as its label.
-  static const double _ruleHeight = 2;
-
-  /// Label to rule.
-  static const double _ruleGap = 5;
-
   /// The dot that says the buffer and the file disagree.
   static const double _dot = 8;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DoubleProperty('leftInset', leftInset))
+      ..add(DoubleProperty('rightInset', rightInset));
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,28 +59,45 @@ class ShellModeBarWidget extends ConsumerWidget {
     if (reading != null) {
       return _VersionBarWidget(commit: reading);
     }
-    final DocumentModeEnum mode =
-        ref.watch(
-          spaceSessionProvider.select(
-            (SpaceSessionState? session) => session?.mode,
-          ),
-        ) ??
-        DocumentModeEnum.split;
+    // Where the window's centre falls inside this bar, which is what the
+    // control is centred on.
+    final double centre = MediaQuery.sizeOf(context).width / 2 - leftInset;
+    // What is left of the bar to the right of that control. Without it the
+    // group at the right grows leftwards into the modes and draws over them:
+    // a long branch name is longer than the room there happens to be.
+    final double room =
+        MediaQuery.sizeOf(context).width -
+        leftInset -
+        rightInset -
+        (centre + ShellModeControlWidget.trackWidth / 2) -
+        TomMetrics.pad -
+        _gap;
     return SizedBox(
       height: TomMetrics.modeBar,
-      child: Row(
+      child: Stack(
         children: <Widget>[
-          const SizedBox(width: _inset),
-          for (final DocumentModeEnum each in DocumentModeEnum.values)
-            Padding(
-              padding: const EdgeInsets.only(right: _gap),
-              child: _ModeTabWidget(mode: each, isCurrent: each == mode),
+          Positioned(
+            left: centre - ShellModeControlWidget.trackWidth / 2,
+            top: 0,
+            bottom: 0,
+            child: const Center(child: ShellModeControlWidget()),
+          ),
+          Positioned(
+            right: TomMetrics.pad,
+            top: 0,
+            bottom: 0,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: room > 0 ? room : 0),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Flexible(child: CompareControlWidget()),
+                  SizedBox(width: _gap),
+                  _UnsavedMarkWidget(),
+                ],
+              ),
             ),
-          const Spacer(),
-          const CompareControlWidget(),
-          const SizedBox(width: _gap),
-          const _UnsavedMarkWidget(),
-          const SizedBox(width: TomMetrics.pad),
+          ),
         ],
       ),
     );
@@ -133,65 +164,6 @@ class _VersionBarWidget extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// One mode, as a tab.
-class _ModeTabWidget extends ConsumerWidget {
-  const _ModeTabWidget({required this.mode, required this.isCurrent});
-
-  final DocumentModeEnum mode;
-  final bool isCurrent;
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(EnumProperty<DocumentModeEnum>('mode', mode))
-      ..add(DiagnosticsProperty<bool>('isCurrent', isCurrent));
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final TomColors colors = TomColors.of(context);
-    return InkWell(
-      onTap: () => ref.read(spaceSessionProvider.notifier).look(mode),
-      // The tab is exactly its label wide, so the rule under it is too.
-      child: IntrinsicWidth(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              _labels[mode]!,
-              maxLines: 1,
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.4,
-                fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
-                color: isCurrent ? colors.textPrimary : colors.textMuted,
-              ),
-            ),
-            const SizedBox(height: ShellModeBarWidget._ruleGap),
-            // The rule and the weight say the same thing: colour is never the
-            // only signal.
-            SizedBox(
-              height: ShellModeBarWidget._ruleHeight,
-              child: isCurrent ? ColoredBox(color: colors.accent) : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// What each mode is called on screen.
-  static const Map<DocumentModeEnum, String> _labels =
-      <DocumentModeEnum, String>{
-        DocumentModeEnum.source: 'Source',
-        DocumentModeEnum.split: 'Split',
-        DocumentModeEnum.preview: 'Preview',
-      };
 }
 
 /// The gap between the buffer and the file, named where the editing happens.

@@ -76,6 +76,11 @@ class _ContentsWidget extends ConsumerWidget {
         (SpaceSessionState? session) => session?.comparingAgainst,
       ),
     );
+    final bool showing = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) => session?.showingDiff ?? true,
+      ),
+    );
     if (state is! CompareReady) {
       return const _NoteWidget('Open a document to compare it.');
     }
@@ -127,16 +132,24 @@ class _ContentsWidget extends ConsumerWidget {
                 ],
               ),
             ),
-          if (base != null) ...<Widget>[
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Divider(height: 1, thickness: 1, color: colors.border),
-            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Divider(height: 1, thickness: 1, color: colors.border),
+          ),
+          if (base != null)
             _RowButtonWidget(
               label: 'Compare against the last commit',
               onPressed: ref.read(compareProvider.notifier).stop,
             ),
-          ],
+          // The marks go, the base stays: turning them on again brings back
+          // what was being compared
+          // (`docs/product/diff/rendered-diff/turning-it-off/doc.md`).
+          _RowButtonWidget(
+            label: showing ? 'Stop marking what changed' : 'Mark what changed',
+            onPressed: () => ref
+                .read(spaceSessionProvider.notifier)
+                .decorate(showing: !showing),
+          ),
         ],
       ),
     );

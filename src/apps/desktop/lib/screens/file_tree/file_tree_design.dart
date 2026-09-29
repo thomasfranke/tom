@@ -14,8 +14,18 @@ abstract final class FileTreeDesign {
   /// Panel top to the search field.
   static const double searchTop = 48;
 
-  /// The search field's width.
-  static const double searchWidth = 148;
+  /// The margin each side of the column's controls.
+  ///
+  /// The field and the scope control both run edge to edge inside it, so
+  /// they follow the column as it is dragged
+  /// (`design/screens/desktop/search/searching-every-document-dark.svg`).
+  static const double controlInset = 16;
+
+  /// The box the chevron beside the field is drawn in.
+  static const double chevronBox = 16;
+
+  /// Chevron to field.
+  static const double chevronGap = 4;
 
   /// The search field's height.
   static const double searchHeight = 28;
@@ -59,8 +69,11 @@ abstract final class FileTreeDesign {
   /// A row's label.
   static const double row = 13;
 
-  /// A folder's chevron.
-  static const double chevron = 9;
+  /// A folder's chevron, the box it is drawn in.
+  ///
+  /// 16 everywhere it appears, which is the icon set's own grid
+  /// (`docs/product/navigation/file-tree/order-and-shape/doc.md`).
+  static const double chevron = 16;
 }
 
 /// The row's type, centred on its own line.
