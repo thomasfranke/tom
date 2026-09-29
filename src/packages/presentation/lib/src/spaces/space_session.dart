@@ -58,5 +58,15 @@ abstract class SpaceSessionState with _$SpaceSessionState {
     /// a branch is done one file at a time, and a base that reset on every
     /// click would make that a chore (`docs/product/diff/branch-diff/doc.md`).
     RevisionValueObject? comparingAgainst,
+
+    /// Whether the preview decorates what changed, which it does until
+    /// somebody turns it off.
+    ///
+    /// Here rather than in the preview because the chip that switches it is
+    /// in the bar and the marks are in the panel, and one of them has to
+    /// hold the answer. Off is a reading position, not a comparison: what is
+    /// compared is still [comparingAgainst], and turning the marks back on
+    /// brings the same base back (`docs/product/diff/rendered-diff/turning-it-off/doc.md`).
+    @Default(true) bool showingDiff,
   }) = _SpaceSessionState;
 }

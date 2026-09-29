@@ -44,7 +44,15 @@ mixin _$SpaceSessionState {
 /// compared. It survives opening another document on purpose — comparing
 /// a branch is done one file at a time, and a base that reset on every
 /// click would make that a chore (`docs/product/diff/branch-diff/doc.md`).
- RevisionValueObject? get comparingAgainst;
+ RevisionValueObject? get comparingAgainst;/// Whether the preview decorates what changed, which it does until
+/// somebody turns it off.
+///
+/// Here rather than in the preview because the chip that switches it is
+/// in the bar and the marks are in the panel, and one of them has to
+/// hold the answer. Off is a reading position, not a comparison: what is
+/// compared is still [comparingAgainst], and turning the marks back on
+/// brings the same base back (`docs/product/diff/rendered-diff/turning-it-off/doc.md`).
+ bool get showingDiff;
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -55,16 +63,16 @@ $SpaceSessionStateCopyWith<SpaceSessionState> get copyWith => _$SpaceSessionStat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion)&&(identical(other.comparingAgainst, comparingAgainst) || other.comparingAgainst == comparingAgainst));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion)&&(identical(other.comparingAgainst, comparingAgainst) || other.comparingAgainst == comparingAgainst)&&(identical(other.showingDiff, showingDiff) || other.showingDiff == showingDiff));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,space,openDocument,mode,git,readingVersion,comparingAgainst);
+int get hashCode => Object.hash(runtimeType,space,openDocument,mode,git,readingVersion,comparingAgainst,showingDiff);
 
 @override
 String toString() {
-  return 'SpaceSessionState(space: $space, openDocument: $openDocument, mode: $mode, git: $git, readingVersion: $readingVersion, comparingAgainst: $comparingAgainst)';
+  return 'SpaceSessionState(space: $space, openDocument: $openDocument, mode: $mode, git: $git, readingVersion: $readingVersion, comparingAgainst: $comparingAgainst, showingDiff: $showingDiff)';
 }
 
 
@@ -75,7 +83,7 @@ abstract mixin class $SpaceSessionStateCopyWith<$Res>  {
   factory $SpaceSessionStateCopyWith(SpaceSessionState value, $Res Function(SpaceSessionState) _then) = _$SpaceSessionStateCopyWithImpl;
 @useResult
 $Res call({
- SpaceEntity space, SpaceRelativePathValueObject? openDocument, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion, RevisionValueObject? comparingAgainst
+ SpaceEntity space, SpaceRelativePathValueObject? openDocument, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion, RevisionValueObject? comparingAgainst, bool showingDiff
 });
 
 
@@ -92,7 +100,7 @@ class _$SpaceSessionStateCopyWithImpl<$Res>
 
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? space = null,Object? openDocument = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,Object? comparingAgainst = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? space = null,Object? openDocument = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,Object? comparingAgainst = freezed,Object? showingDiff = null,}) {
   return _then(_self.copyWith(
 space: null == space ? _self.space : space // ignore: cast_nullable_to_non_nullable
 as SpaceEntity,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
@@ -100,7 +108,8 @@ as SpaceRelativePathValueObject?,mode: null == mode ? _self.mode : mode // ignor
 as DocumentModeEnum,git: freezed == git ? _self.git : git // ignore: cast_nullable_to_non_nullable
 as GitStatusValueObject?,readingVersion: freezed == readingVersion ? _self.readingVersion : readingVersion // ignore: cast_nullable_to_non_nullable
 as CommitEntity?,comparingAgainst: freezed == comparingAgainst ? _self.comparingAgainst : comparingAgainst // ignore: cast_nullable_to_non_nullable
-as RevisionValueObject?,
+as RevisionValueObject?,showingDiff: null == showingDiff ? _self.showingDiff : showingDiff // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 /// Create a copy of SpaceSessionState
@@ -230,10 +239,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  RevisionValueObject? comparingAgainst)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  RevisionValueObject? comparingAgainst,  bool showingDiff)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SpaceSessionState() when $default != null:
-return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst);case _:
+return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst,_that.showingDiff);case _:
   return orElse();
 
 }
@@ -251,10 +260,10 @@ return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readin
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  RevisionValueObject? comparingAgainst)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  RevisionValueObject? comparingAgainst,  bool showingDiff)  $default,) {final _that = this;
 switch (_that) {
 case _SpaceSessionState():
-return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst);case _:
+return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst,_that.showingDiff);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -271,10 +280,10 @@ return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readin
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  RevisionValueObject? comparingAgainst)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  RevisionValueObject? comparingAgainst,  bool showingDiff)?  $default,) {final _that = this;
 switch (_that) {
 case _SpaceSessionState() when $default != null:
-return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst);case _:
+return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst,_that.showingDiff);case _:
   return null;
 
 }
@@ -286,7 +295,7 @@ return $default(_that.space,_that.openDocument,_that.mode,_that.git,_that.readin
 
 
 class _SpaceSessionState implements SpaceSessionState {
-  const _SpaceSessionState({required this.space, this.openDocument, this.mode = DocumentModeEnum.split, this.git, this.readingVersion, this.comparingAgainst});
+  const _SpaceSessionState({required this.space, this.openDocument, this.mode = DocumentModeEnum.split, this.git, this.readingVersion, this.comparingAgainst, this.showingDiff = true});
   
 
 /// The folder the user opened, and the repository that encloses it.
@@ -325,6 +334,15 @@ class _SpaceSessionState implements SpaceSessionState {
 /// a branch is done one file at a time, and a base that reset on every
 /// click would make that a chore (`docs/product/diff/branch-diff/doc.md`).
 @override final  RevisionValueObject? comparingAgainst;
+/// Whether the preview decorates what changed, which it does until
+/// somebody turns it off.
+///
+/// Here rather than in the preview because the chip that switches it is
+/// in the bar and the marks are in the panel, and one of them has to
+/// hold the answer. Off is a reading position, not a comparison: what is
+/// compared is still [comparingAgainst], and turning the marks back on
+/// brings the same base back (`docs/product/diff/rendered-diff/turning-it-off/doc.md`).
+@override@JsonKey() final  bool showingDiff;
 
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
@@ -336,16 +354,16 @@ _$SpaceSessionStateCopyWith<_SpaceSessionState> get copyWith => __$SpaceSessionS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion)&&(identical(other.comparingAgainst, comparingAgainst) || other.comparingAgainst == comparingAgainst));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion)&&(identical(other.comparingAgainst, comparingAgainst) || other.comparingAgainst == comparingAgainst)&&(identical(other.showingDiff, showingDiff) || other.showingDiff == showingDiff));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,space,openDocument,mode,git,readingVersion,comparingAgainst);
+int get hashCode => Object.hash(runtimeType,space,openDocument,mode,git,readingVersion,comparingAgainst,showingDiff);
 
 @override
 String toString() {
-  return 'SpaceSessionState(space: $space, openDocument: $openDocument, mode: $mode, git: $git, readingVersion: $readingVersion, comparingAgainst: $comparingAgainst)';
+  return 'SpaceSessionState(space: $space, openDocument: $openDocument, mode: $mode, git: $git, readingVersion: $readingVersion, comparingAgainst: $comparingAgainst, showingDiff: $showingDiff)';
 }
 
 
@@ -356,7 +374,7 @@ abstract mixin class _$SpaceSessionStateCopyWith<$Res> implements $SpaceSessionS
   factory _$SpaceSessionStateCopyWith(_SpaceSessionState value, $Res Function(_SpaceSessionState) _then) = __$SpaceSessionStateCopyWithImpl;
 @override @useResult
 $Res call({
- SpaceEntity space, SpaceRelativePathValueObject? openDocument, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion, RevisionValueObject? comparingAgainst
+ SpaceEntity space, SpaceRelativePathValueObject? openDocument, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion, RevisionValueObject? comparingAgainst, bool showingDiff
 });
 
 
@@ -373,7 +391,7 @@ class __$SpaceSessionStateCopyWithImpl<$Res>
 
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? space = null,Object? openDocument = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,Object? comparingAgainst = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? space = null,Object? openDocument = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,Object? comparingAgainst = freezed,Object? showingDiff = null,}) {
   return _then(_SpaceSessionState(
 space: null == space ? _self.space : space // ignore: cast_nullable_to_non_nullable
 as SpaceEntity,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
@@ -381,7 +399,8 @@ as SpaceRelativePathValueObject?,mode: null == mode ? _self.mode : mode // ignor
 as DocumentModeEnum,git: freezed == git ? _self.git : git // ignore: cast_nullable_to_non_nullable
 as GitStatusValueObject?,readingVersion: freezed == readingVersion ? _self.readingVersion : readingVersion // ignore: cast_nullable_to_non_nullable
 as CommitEntity?,comparingAgainst: freezed == comparingAgainst ? _self.comparingAgainst : comparingAgainst // ignore: cast_nullable_to_non_nullable
-as RevisionValueObject?,
+as RevisionValueObject?,showingDiff: null == showingDiff ? _self.showingDiff : showingDiff // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

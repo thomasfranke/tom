@@ -23,14 +23,15 @@ abstract interface class SpaceRepository {
   /// git, and Home switches over both vocabularies.
   Future<Result<SpaceEntity, AppFailure>> open(String folder);
 
-  /// Everything [space] holds, depth first and sorted, so a folder is
-  /// immediately followed by what is inside it and a tree is one walk.
+  /// Everything [space] holds, depth first and **folders before files at
+  /// every level**, so a tree is one walk
+  /// (`docs/product/navigation/file-tree/order-and-shape/doc.md`).
   ///
   /// **`.git/` is not in it and is never descended into**, this layer's
-  /// policy (`docs/product/navigation/file-tree/what-is-shown/doc.md`) and what keeps the
-  /// listing affordable; every other dotfolder is included. A folder the
-  /// machine will not open costs that folder, not the tree; only the space
-  /// root failing fails the call. Files of every kind are reported, since
+  /// policy (`docs/product/navigation/file-tree/what-is-shown/doc.md`) and
+  /// what keeps the listing affordable. A folder the machine will not open
+  /// costs that folder, not the tree; only the space root failing fails the
+  /// call, and every kind of file is reported since
   /// `SpaceEntryValueObject.isDocument` answers what the editor opens.
   Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
     SpaceEntity space,

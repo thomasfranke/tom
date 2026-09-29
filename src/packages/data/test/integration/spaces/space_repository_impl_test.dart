@@ -202,5 +202,43 @@ void main() {
         <String>['guide.md'],
       );
     });
+
+    test('folders come before files, at every level', () async {
+      // A folder is a place to go and a file is a thing to open, so the two
+      // never interleave — which sorting by path alone would do
+      // (`docs/product/navigation/file-tree/order-and-shape/doc.md`).
+      final String repoPath = '$base/ordered';
+      initRepository(repoPath);
+      File('$repoPath/about.md').writeAsStringSync('a');
+      File('$repoPath/zebra.md').writeAsStringSync('z');
+      Directory('$repoPath/guides').createSync();
+      File('$repoPath/guides/writing.md').writeAsStringSync('w');
+      Directory('$repoPath/guides/deep').createSync();
+      File('$repoPath/guides/deep/note.md').writeAsStringSync('n');
+      Directory('$repoPath/adr').createSync();
+      File('$repoPath/adr/001.md').writeAsStringSync('1');
+
+      final SpaceEntity space = valueOf(await repository.open(repoPath));
+      final List<SpaceEntryValueObject> entries = valueOf(
+        await repository.entries(space),
+      );
+
+      expect(
+        entries.map((SpaceEntryValueObject entry) => entry.path.value),
+        <String>[
+          // Top level: the two folders by name, then the two files by name.
+          'adr',
+          'adr/001.md',
+          'guides',
+          // Inside `guides`, the same rule again: `deep/` before `writing.md`,
+          // which sorting by path would have reversed.
+          'guides/deep',
+          'guides/deep/note.md',
+          'guides/writing.md',
+          'about.md',
+          'zebra.md',
+        ],
+      );
+    });
   });
 }

@@ -57,7 +57,7 @@ final class SpaceSessionNotifierProvider
 }
 
 String _$spaceSessionNotifierHash() =>
-    r'672deeb74f54b51b753cd484fa2cac12bc7cb66d';
+    r'd310553517f2a5bbd9142bd1115d47e0cb7e8588';
 
 /// The open space, or null while the window shows Home ([Decision
 /// 9](../../../../../../docs/technical/decisions/009-space-session-is-single-source-of-truth.md)).

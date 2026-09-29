@@ -24,6 +24,12 @@ class SpaceSessionNotifier extends _$SpaceSessionNotifier {
   /// names a file inside *a* space, and the new one may not hold it.
   void open(SpaceEntity space) => state = SpaceSessionState(space: space);
 
+  /// Leaves the space, which is what puts Home back on the window.
+  ///
+  /// No space is the whole of it: the window draws Home on a null session,
+  /// so nothing else has to be told (`docs/product/workspace/leaving-a-space/doc.md`).
+  void close() => state = null;
+
   /// Shows the working copy of [document]; nothing with no space open.
   ///
   /// A commit is a version *of one file*, so the version being read never
@@ -66,6 +72,17 @@ class SpaceSessionNotifier extends _$SpaceSessionNotifier {
   void look(DocumentModeEnum mode) {
     if (state case final SpaceSessionState session) {
       state = session.copyWith(mode: mode);
+    }
+  }
+
+  /// Draws what changed, or stops drawing it.
+  ///
+  /// The base is left alone: turning the marks off is a reading position,
+  /// and turning them on again brings back what was being compared
+  /// (`docs/product/diff/rendered-diff/turning-it-off/doc.md`).
+  void decorate({required bool showing}) {
+    if (state case final SpaceSessionState session) {
+      state = session.copyWith(showingDiff: showing);
     }
   }
 }

@@ -77,9 +77,11 @@ final class SpaceDataSource {
     )) {
       return isRoot ? Failure<void, FilesystemFailure>(failure) : _walked;
     }
-    for (final FilesystemEntryDto entry
-        in (listed as Success<List<FilesystemEntryDto>, FilesystemFailure>)
-            .value) {
+    final List<FilesystemEntryDto> here =
+        (listed as Success<List<FilesystemEntryDto>, FilesystemFailure>).value
+            .toList()
+          ..sort(_foldersFirst);
+    for (final FilesystemEntryDto entry in here) {
       if (_lastSegmentOf(entry.path) == _gitDirectory) {
         continue;
       }
@@ -89,6 +91,23 @@ final class SpaceDataSource {
       }
     }
     return _walked;
+  }
+
+  /// Folders before files, then by name.
+  ///
+  /// The capability sorts by path alone, which interleaves the two — this is
+  /// the tree's own order, and it belongs to the layer that already carries
+  /// the tree's policy
+  /// (`docs/product/navigation/file-tree/order-and-shape/doc.md`).
+  static int _foldersFirst(FilesystemEntryDto a, FilesystemEntryDto b) {
+    final bool aIsFolder = a.type == FilesystemEntryTypeEnum.directory;
+    final bool bIsFolder = b.type == FilesystemEntryTypeEnum.directory;
+    if (aIsFolder != bIsFolder) {
+      return aIsFolder ? -1 : 1;
+    }
+    return _lastSegmentOf(
+      a.path,
+    ).toLowerCase().compareTo(_lastSegmentOf(b.path).toLowerCase());
   }
 
   /// The only success a walk has.

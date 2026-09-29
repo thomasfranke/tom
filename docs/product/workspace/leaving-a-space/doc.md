@@ -2,7 +2,7 @@
 
 Closing the space, or switching to another one, without going through Home.
 
-**Status:** Planned · Milestone M0
+**Status:** Shipped · Milestone M0
 
 ## Rules
 
@@ -10,6 +10,8 @@ Closing the space, or switching to another one, without going through Home.
 - Closing a space returns to the opening screen.
 - Switching to another space from the same menu skips that trip — going Home only to pick a folder is a step with nothing in it.
 - **Closing with an unsaved buffer asks first**, naming the document, and offers stay beside save and discard. It is the same question a [branch switch](../../git-workflow/branch-switch/doc.md) asks, because the thing at risk is the same: an edit that never reached the disk.
+- **More than one unsaved document changes the words, not the flow.** The question counts them instead of naming one and the actions say `all`; it is the same screen, so there is no second one to draw.
+- **The question is a `Dialog`, centred over a scrim** — not a popover hanging off the breadcrumb that opened it. A question that blocks the window is not a menu, and [closing a tab](../../editor/tabs/doc.md) asks the same one about a single document.
 
 ## Mocks
 
