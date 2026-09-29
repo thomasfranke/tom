@@ -2,7 +2,7 @@
 
 Where the search lives, and what a result looks like.
 
-**Status:** Planned · Milestone M2 — see [known-divergence](../known-divergence/doc.md)
+**Status:** Shipped · Milestone M2
 
 ## Rules
 

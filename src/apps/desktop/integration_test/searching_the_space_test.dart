@@ -22,12 +22,10 @@ void main() {
         await robot.chooseFolder();
         await robot.seesTheShell();
       }),
-      Step('with nothing typed the panel says where the box is', (
+      Step('with nothing typed the column is still the tree', (
         TomRobot robot,
       ) async {
-        await robot.seesInTheResults(<String>[
-          'Type above the tree to search this space.',
-        ]);
+        await robot.seesInTheTree(<String>['index.md']);
       }),
       Step('a word only the text says finds the documents that say it', (
         TomRobot robot,

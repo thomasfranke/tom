@@ -9,7 +9,6 @@ Find a document by its contents, not just its file name, across the whole space.
 | [`what-is-searched/`](what-is-searched/doc.md) | The scope, the index behind it, and what typing means |
 | [`the-surface/`](the-surface/doc.md) | Where it lives, the scope control, and what a result looks like |
 | [`staying-current/`](staying-current/doc.md) | When a document becomes searchable |
-| [`known-divergence/`](known-divergence/doc.md) | What shipped, against what the boards say |
 
 ## Mocks
 

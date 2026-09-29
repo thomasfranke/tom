@@ -208,6 +208,200 @@ void main() {
 
     expect(state(), isA<SearchFailed>());
   });
+
+  group('asking about the open document', () {
+    /// Opens a document and puts [source] in the buffer, the way typing does.
+    Future<void> typing(String source) async {
+      container.read(spaceSessionProvider.notifier)
+        ..open(docs)
+        ..show(index);
+      start();
+      await settle();
+      container.read(editorProvider.notifier).edit(source);
+      await settle();
+    }
+
+    SearchReady ready() => state() as SearchReady;
+
+    test('a space opens asking about the whole space', () async {
+      container.read(spaceSessionProvider.notifier).open(docs);
+      start();
+      await settle();
+
+      expect(ready().scope, SearchScopeEnum.wholeSpace);
+    });
+
+    test(
+      'scoped to the file, the buffer answers and no index is asked',
+      () async {
+        await typing('a palette and a palette');
+        await notifier().scopeTo(SearchScopeEnum.thisFile);
+        final int before = search.asked.length;
+
+        await notifier().type('palette');
+
+        expect(ready().occurrences.length, 2);
+        expect(
+          search.asked.length,
+          before,
+          reason: 'the index was asked about the open buffer',
+        );
+      },
+    );
+
+    test('typing in the document finds the occurrences again', () async {
+      // The rule the design rests on: positions are never carried across an
+      // edit (`docs/product/search/in-the-document/doc.md`).
+      await typing('a palette');
+      await notifier().scopeTo(SearchScopeEnum.thisFile);
+      await notifier().type('palette');
+      expect(ready().occurrences.single.start, 2);
+
+      container.read(editorProvider.notifier).edit('XXXX a palette');
+      await settle();
+
+      expect(
+        ready().occurrences.single.start,
+        7,
+        reason: 'the occurrence was carried rather than found again',
+      );
+    });
+
+    test('the scope survives a new question', () async {
+      await typing('a palette');
+      await notifier().scopeTo(SearchScopeEnum.thisFile);
+
+      await notifier().type('palette');
+
+      expect(ready().scope, SearchScopeEnum.thisFile);
+    });
+  });
+
+  group('replacing', () {
+    Future<void> asking(String source, String terms) async {
+      container.read(spaceSessionProvider.notifier)
+        ..open(docs)
+        ..show(index);
+      start();
+      await settle();
+      container.read(editorProvider.notifier).edit(source);
+      await settle();
+      await container
+          .read(searchProvider.notifier)
+          .scopeTo(SearchScopeEnum.thisFile);
+      await container.read(searchProvider.notifier).type(terms);
+    }
+
+    String buffer() => (container.read(editorProvider) as EditorReady).source;
+
+    test('one occurrence is replaced in the buffer', () async {
+      await asking('tools/palette.py', 'palette');
+      container.read(searchProvider.notifier).replaceWith('swatch');
+
+      container
+          .read(searchProvider.notifier)
+          .replaceOne((state() as SearchReady).occurrences.single);
+      await settle();
+
+      expect(buffer(), 'tools/swatch.py');
+    });
+
+    test('every occurrence goes at once', () async {
+      await asking('a palette and a palette', 'palette');
+      container.read(searchProvider.notifier).replaceWith('swatch');
+
+      container.read(searchProvider.notifier).replaceEvery();
+      await settle();
+
+      expect(buffer(), 'a swatch and a swatch');
+    });
+
+    test('a stale occurrence is dropped, and nothing is written', () async {
+      await asking('a palette', 'palette');
+      container.read(searchProvider.notifier).replaceWith('swatch');
+      final OccurrenceValueObject stale =
+          (state() as SearchReady).occurrences.single;
+
+      // The buffer moves without the notifier being told, which is what a
+      // race looks like from here.
+      container.read(editorProvider.notifier).edit('completely different');
+      await settle();
+
+      container.read(searchProvider.notifier).replaceOne(stale);
+      await settle();
+
+      expect(buffer(), 'completely different');
+      expect((state() as SearchReady).occurrences, isEmpty);
+    });
+
+    test('the first occurrence is the current one', () async {
+      await asking('a palette and a palette', 'palette');
+
+      expect((state() as SearchReady).current, 0);
+    });
+
+    test('the pointer moving down the list points at another', () async {
+      await asking('a palette and a palette', 'palette');
+
+      container.read(searchProvider.notifier).focusOn(1);
+
+      expect((state() as SearchReady).current, 1);
+    });
+
+    test('one the list does not hold is not pointed at', () async {
+      await asking('a palette', 'palette');
+
+      container.read(searchProvider.notifier).focusOn(7);
+
+      expect((state() as SearchReady).current, 0);
+    });
+
+    test('skipping the current one leaves the next in its place', () async {
+      await asking('a palette and a palette and a palette', 'palette');
+      container.read(searchProvider.notifier).focusOn(2);
+
+      container
+          .read(searchProvider.notifier)
+          .dismiss((state() as SearchReady).occurrences.last);
+      await settle();
+
+      final SearchReady after = state() as SearchReady;
+      expect(after.occurrences.length, 2);
+      expect(
+        after.current,
+        1,
+        reason: 'clamped into the shorter list, not reset to its top',
+      );
+    });
+
+    test(
+      'opening the second box moves the question to the open file',
+      () async {
+        // Replacing has no meaning against the index, so asking for it is
+        // asking about the buffer (`docs/product/search/replacing/doc.md`).
+        await asking('a palette', 'palette');
+        await container
+            .read(searchProvider.notifier)
+            .scopeTo(SearchScopeEnum.wholeSpace);
+
+        container.read(searchProvider.notifier).showReplacing(showing: true);
+        await settle();
+
+        expect((state() as SearchReady).scope, SearchScopeEnum.thisFile);
+        expect((state() as SearchReady).isReplacing, isTrue);
+      },
+    );
+
+    test('a new question starts at its own first hit', () async {
+      await asking('a palette and a palette', 'palette');
+      container.read(searchProvider.notifier).focusOn(1);
+
+      await container.read(searchProvider.notifier).type('a');
+      await settle();
+
+      expect((state() as SearchReady).current, 0);
+    });
+  });
 }
 
 /// The search of one space, answering what the test set.

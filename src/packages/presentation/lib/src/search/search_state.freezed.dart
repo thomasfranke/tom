@@ -125,13 +125,13 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  idle,TResult Function( String terms)?  indexing,TResult Function( String terms,  List<SearchHitValueObject> hits)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  idle,TResult Function( String terms)?  indexing,TResult Function( String terms,  List<SearchHitValueObject> hits,  SearchScopeEnum scope,  String replacement,  bool isReplacing,  List<OccurrenceValueObject> occurrences,  int current)?  ready,TResult Function( AppFailure failure,  String terms)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case SearchIdle() when idle != null:
 return idle();case SearchIndexing() when indexing != null:
 return indexing(_that.terms);case SearchReady() when ready != null:
-return ready(_that.terms,_that.hits);case SearchFailed() when failed != null:
-return failed(_that.failure);case _:
+return ready(_that.terms,_that.hits,_that.scope,_that.replacement,_that.isReplacing,_that.occurrences,_that.current);case SearchFailed() when failed != null:
+return failed(_that.failure,_that.terms);case _:
   return orElse();
 
 }
@@ -149,13 +149,13 @@ return failed(_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  idle,required TResult Function( String terms)  indexing,required TResult Function( String terms,  List<SearchHitValueObject> hits)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  idle,required TResult Function( String terms)  indexing,required TResult Function( String terms,  List<SearchHitValueObject> hits,  SearchScopeEnum scope,  String replacement,  bool isReplacing,  List<OccurrenceValueObject> occurrences,  int current)  ready,required TResult Function( AppFailure failure,  String terms)  failed,}) {final _that = this;
 switch (_that) {
 case SearchIdle():
 return idle();case SearchIndexing():
 return indexing(_that.terms);case SearchReady():
-return ready(_that.terms,_that.hits);case SearchFailed():
-return failed(_that.failure);}
+return ready(_that.terms,_that.hits,_that.scope,_that.replacement,_that.isReplacing,_that.occurrences,_that.current);case SearchFailed():
+return failed(_that.failure,_that.terms);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -169,13 +169,13 @@ return failed(_that.failure);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  idle,TResult? Function( String terms)?  indexing,TResult? Function( String terms,  List<SearchHitValueObject> hits)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  idle,TResult? Function( String terms)?  indexing,TResult? Function( String terms,  List<SearchHitValueObject> hits,  SearchScopeEnum scope,  String replacement,  bool isReplacing,  List<OccurrenceValueObject> occurrences,  int current)?  ready,TResult? Function( AppFailure failure,  String terms)?  failed,}) {final _that = this;
 switch (_that) {
 case SearchIdle() when idle != null:
 return idle();case SearchIndexing() when indexing != null:
 return indexing(_that.terms);case SearchReady() when ready != null:
-return ready(_that.terms,_that.hits);case SearchFailed() when failed != null:
-return failed(_that.failure);case _:
+return ready(_that.terms,_that.hits,_that.scope,_that.replacement,_that.isReplacing,_that.occurrences,_that.current);case SearchFailed() when failed != null:
+return failed(_that.failure,_that.terms);case _:
   return null;
 
 }
@@ -286,7 +286,7 @@ as String,
 
 
 class SearchReady extends SearchState {
-  const SearchReady({this.terms = '', final  List<SearchHitValueObject> hits = const <SearchHitValueObject>[]}): _hits = hits,super._();
+  const SearchReady({this.terms = '', final  List<SearchHitValueObject> hits = const <SearchHitValueObject>[], this.scope = SearchScopeEnum.wholeSpace, this.replacement = '', this.isReplacing = false, final  List<OccurrenceValueObject> occurrences = const <OccurrenceValueObject>[], this.current = 0}): _hits = hits,_occurrences = occurrences,super._();
   
 
 /// What is in the box; empty means nothing has been asked for.
@@ -300,6 +300,39 @@ class SearchReady extends SearchState {
   return EqualUnmodifiableListView(_hits);
 }
 
+/// Which of the two the box is asking about.
+@JsonKey() final  SearchScopeEnum scope;
+/// What a replacement would put in place of [terms]; empty deletes.
+@JsonKey() final  String replacement;
+/// Whether the second box is showing.
+///
+/// Revealed rather than always there, because replacing is the rarer
+/// half and a box nobody uses is a box in the way of the results
+/// (`docs/product/search/replacing/doc.md`).
+@JsonKey() final  bool isReplacing;
+/// Where [terms] is in the open buffer, for [SearchScopeEnum.thisFile].
+///
+/// Recomputed whenever the buffer changes rather than carried across an
+/// edit: a position found before a keystroke has moved
+/// (`docs/product/search/in-the-document/doc.md`).
+ final  List<OccurrenceValueObject> _occurrences;
+/// Where [terms] is in the open buffer, for [SearchScopeEnum.thisFile].
+///
+/// Recomputed whenever the buffer changes rather than carried across an
+/// edit: a position found before a keystroke has moved
+/// (`docs/product/search/in-the-document/doc.md`).
+@JsonKey() List<OccurrenceValueObject> get occurrences {
+  if (_occurrences is EqualUnmodifiableListView) return _occurrences;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_occurrences);
+}
+
+/// Which occurrence is the current one, by position in the list above.
+///
+/// One of them always is, and it is the first until somebody points at
+/// another: the row carries the actions, so a list with no current row
+/// is a list nothing can be done to.
+@JsonKey() final  int current;
 
 /// Create a copy of SearchState
 /// with the given fields replaced by the non-null parameter values.
@@ -311,16 +344,16 @@ $SearchReadyCopyWith<SearchReady> get copyWith => _$SearchReadyCopyWithImpl<Sear
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchReady&&(identical(other.terms, terms) || other.terms == terms)&&const DeepCollectionEquality().equals(other._hits, _hits));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchReady&&(identical(other.terms, terms) || other.terms == terms)&&const DeepCollectionEquality().equals(other._hits, _hits)&&(identical(other.scope, scope) || other.scope == scope)&&(identical(other.replacement, replacement) || other.replacement == replacement)&&(identical(other.isReplacing, isReplacing) || other.isReplacing == isReplacing)&&const DeepCollectionEquality().equals(other._occurrences, _occurrences)&&(identical(other.current, current) || other.current == current));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,terms,const DeepCollectionEquality().hash(_hits));
+int get hashCode => Object.hash(runtimeType,terms,const DeepCollectionEquality().hash(_hits),scope,replacement,isReplacing,const DeepCollectionEquality().hash(_occurrences),current);
 
 @override
 String toString() {
-  return 'SearchState.ready(terms: $terms, hits: $hits)';
+  return 'SearchState.ready(terms: $terms, hits: $hits, scope: $scope, replacement: $replacement, isReplacing: $isReplacing, occurrences: $occurrences, current: $current)';
 }
 
 
@@ -331,7 +364,7 @@ abstract mixin class $SearchReadyCopyWith<$Res> implements $SearchStateCopyWith<
   factory $SearchReadyCopyWith(SearchReady value, $Res Function(SearchReady) _then) = _$SearchReadyCopyWithImpl;
 @useResult
 $Res call({
- String terms, List<SearchHitValueObject> hits
+ String terms, List<SearchHitValueObject> hits, SearchScopeEnum scope, String replacement, bool isReplacing, List<OccurrenceValueObject> occurrences, int current
 });
 
 
@@ -348,11 +381,16 @@ class _$SearchReadyCopyWithImpl<$Res>
 
 /// Create a copy of SearchState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? terms = null,Object? hits = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? terms = null,Object? hits = null,Object? scope = null,Object? replacement = null,Object? isReplacing = null,Object? occurrences = null,Object? current = null,}) {
   return _then(SearchReady(
 terms: null == terms ? _self.terms : terms // ignore: cast_nullable_to_non_nullable
 as String,hits: null == hits ? _self._hits : hits // ignore: cast_nullable_to_non_nullable
-as List<SearchHitValueObject>,
+as List<SearchHitValueObject>,scope: null == scope ? _self.scope : scope // ignore: cast_nullable_to_non_nullable
+as SearchScopeEnum,replacement: null == replacement ? _self.replacement : replacement // ignore: cast_nullable_to_non_nullable
+as String,isReplacing: null == isReplacing ? _self.isReplacing : isReplacing // ignore: cast_nullable_to_non_nullable
+as bool,occurrences: null == occurrences ? _self._occurrences : occurrences // ignore: cast_nullable_to_non_nullable
+as List<OccurrenceValueObject>,current: null == current ? _self.current : current // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
@@ -363,10 +401,11 @@ as List<SearchHitValueObject>,
 
 
 class SearchFailed extends SearchState {
-  const SearchFailed(this.failure): super._();
+  const SearchFailed(this.failure, {this.terms = ''}): super._();
   
 
  final  AppFailure failure;
+@JsonKey() final  String terms;
 
 /// Create a copy of SearchState
 /// with the given fields replaced by the non-null parameter values.
@@ -378,16 +417,16 @@ $SearchFailedCopyWith<SearchFailed> get copyWith => _$SearchFailedCopyWithImpl<S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchFailed&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchFailed&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.terms, terms) || other.terms == terms));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,failure);
+int get hashCode => Object.hash(runtimeType,failure,terms);
 
 @override
 String toString() {
-  return 'SearchState.failed(failure: $failure)';
+  return 'SearchState.failed(failure: $failure, terms: $terms)';
 }
 
 
@@ -398,7 +437,7 @@ abstract mixin class $SearchFailedCopyWith<$Res> implements $SearchStateCopyWith
   factory $SearchFailedCopyWith(SearchFailed value, $Res Function(SearchFailed) _then) = _$SearchFailedCopyWithImpl;
 @useResult
 $Res call({
- AppFailure failure
+ AppFailure failure, String terms
 });
 
 
@@ -415,10 +454,11 @@ class _$SearchFailedCopyWithImpl<$Res>
 
 /// Create a copy of SearchState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? failure = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? failure = null,Object? terms = null,}) {
   return _then(SearchFailed(
 null == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as AppFailure,
+as AppFailure,terms: null == terms ? _self.terms : terms // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

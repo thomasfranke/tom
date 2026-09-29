@@ -55,12 +55,9 @@ class SearchHitWidget extends ConsumerWidget {
           onTap: () => ref.read(searchProvider.notifier).open(hit),
           borderRadius: BorderRadius.circular(SearchDesign.radius),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              SearchDesign.hitPad,
-              SearchDesign.hitTop,
-              SearchDesign.hitPad,
-              SearchDesign.hitBottom,
-            ),
+            padding: const EdgeInsets.symmetric(
+              vertical: SearchDesign.hitTop,
+            ).copyWith(bottom: SearchDesign.hitBottom),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -70,19 +67,19 @@ class SearchHitWidget extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: SearchDesign.name,
-                    height: 1.4,
-                    fontWeight: FontWeight.w500,
+                    height: 1.2,
+                    fontWeight: FontWeight.w600,
                     color: colors.textPrimary,
                   ),
                 ),
+                const SizedBox(height: SearchDesign.nameGap),
                 Text(
                   _folder,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: SearchDesign.path,
-                    height: 1.4,
-                    fontFamily: 'Menlo',
+                    height: 1.2,
                     color: colors.textMuted,
                   ),
                 ),
@@ -96,11 +93,11 @@ class SearchHitWidget extends ConsumerWidget {
                       ))
                         TextSpan(
                           text: run.text,
+                          // Colour alone, no bolder cut: the accent is what
+                          // marks a word, and two signals at 12 points crowd
+                          // a line already full of them.
                           style: run.marked
-                              ? TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: colors.accent,
-                                )
+                              ? TextStyle(color: colors.accent)
                               : null,
                         ),
                     ],
@@ -109,7 +106,7 @@ class SearchHitWidget extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: SearchDesign.excerpt,
-                    height: 1.4,
+                    height: 1.2,
                     color: colors.textSecondary,
                   ),
                 ),

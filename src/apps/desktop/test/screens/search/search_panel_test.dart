@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
-import 'package:tom_desktop/screens/search/search_panel.dart';
+import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
+import 'package:tom_desktop/screens/search/search_design.dart';
+import 'package:tom_desktop/screens/search/search_field_widget.dart';
 import 'package:tom_desktop/screens/search/widgets/search_hit_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -37,6 +39,14 @@ void main() {
     // is still scheduling its disposal, a timer the test framework fails on.
     container = ProviderContainer(
       overrides: <Override>[
+        // The column draws the tree when nothing is typed, so it walks the
+        // space even in a test about the search.
+        listSpaceEntriesProvider.overrideWithValue(
+          ListSpaceEntriesUseCase(
+            spaces: _Spaces(),
+            observability: const _Silent(),
+          ),
+        ),
         indexSpaceProvider.overrideWithValue(
           IndexSpaceUseCase(
             spaces: _Spaces(),
@@ -86,7 +96,7 @@ void main() {
             body: Row(
               children: <Widget>[
                 Expanded(child: SizedBox.shrink()),
-                SizedBox(width: TomMetrics.git, child: SearchPanel()),
+                SizedBox(width: TomMetrics.explorer, child: FileTreePanel()),
               ],
             ),
           ),
@@ -102,13 +112,46 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('it names itself, and says so with no space open', (
+  testWidgets('with nothing typed the column is the tree, not the search', (
     WidgetTester tester,
   ) async {
-    await pumpPanel(tester);
+    // The results replace the tree while there is a question, and the tree
+    // is what the column is for the rest of the time
+    // (`docs/product/search/full-text-search/the-surface/doc.md`).
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('EXPLORER'), findsOneWidget);
+    expect(find.text('SEARCH'), findsNothing);
+  });
+
+  testWidgets('the box is the same height empty as it is full', (
+    WidgetTester tester,
+  ) async {
+    // A dense field paints its border around what is inside it, so the box
+    // used to lose seven points the moment it had nothing in it — and a
+    // six-point radius on a box that short reads as a pill.
+    await pumpPanel(tester, space: docs);
+    final Finder box = find.descendant(
+      of: find.byType(SearchFieldWidget),
+      matching: find.byType(TomFieldBoxWidget),
+    );
+
+    final double empty = tester.getSize(box).height;
+    await type(tester, 'rendered');
+
+    expect(empty, SearchDesign.boxHeight);
+    expect(tester.getSize(box).height, SearchDesign.boxHeight);
+  });
+
+  testWidgets('typing turns the column over to the search', (
+    WidgetTester tester,
+  ) async {
+    await pumpPanel(tester, space: docs);
+
+    await type(tester, 'rendered');
 
     expect(find.text('SEARCH'), findsOneWidget);
-    expect(find.text('No space is open.'), findsOneWidget);
+    expect(find.text('EXPLORER'), findsNothing);
   });
 
   testWidgets('a space that has not been read yet says it is reading', (
@@ -117,21 +160,11 @@ void main() {
     search.holds = true;
 
     await pumpPanel(tester, space: docs);
+    await type(tester, 'rendered');
 
     expect(find.text('Reading the space…'), findsOneWidget);
     search.release();
     await tester.pumpAndSettle();
-  });
-
-  testWidgets('with nothing typed it says where the box is', (
-    WidgetTester tester,
-  ) async {
-    await pumpPanel(tester, space: docs);
-
-    expect(
-      find.text('Type above the tree to search this space.'),
-      findsOneWidget,
-    );
   });
 
   testWidgets('a hit is the file, the folder it is in, and the excerpt', (
@@ -230,6 +263,9 @@ void main() {
     search.indexFailure = const SearchIndexCorrupted();
 
     await pumpPanel(tester, space: docs);
+    // Said where the answer would have been, which is the column once there
+    // is a question in it.
+    await type(tester, 'rendered');
 
     expect(
       find.text(
@@ -249,11 +285,18 @@ List<String> _marked(WidgetTester tester) {
       matching: find.byType(RichText),
     ),
   )) {
+    // The excerpt is the hit's only text built out of runs; the name and the
+    // folder are one span each, and each of those carries a colour too.
+    if (text.text case TextSpan(children: null)) {
+      continue;
+    }
     text.text.visitChildren((InlineSpan span) {
+      // A marked run is the one carrying a colour of its own — the accent,
+      // and nothing else: the board marks with colour alone.
       if (span case TextSpan(
         text: final String? content,
-        style: TextStyle(fontWeight: FontWeight.w600),
-      ) when content != null) {
+        style: TextStyle(color: final Color? colour),
+      ) when content != null && colour != null) {
         marked.add(content);
       }
       return true;

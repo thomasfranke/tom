@@ -9,7 +9,7 @@ part of 'search_notifier.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Indexes the space when it opens, answers the box, and opens what is
-/// clicked (`docs/product/search/full-text-search/doc.md`).
+/// clicked (`docs/product/search/full-text-search/the-surface/doc.md`).
 ///
 /// One notifier for two surfaces — the field above the file tree and the
 /// results in the aside — because they are one conversation, and the index
@@ -19,7 +19,7 @@ part of 'search_notifier.dart';
 final searchProvider = SearchNotifierProvider._();
 
 /// Indexes the space when it opens, answers the box, and opens what is
-/// clicked (`docs/product/search/full-text-search/doc.md`).
+/// clicked (`docs/product/search/full-text-search/the-surface/doc.md`).
 ///
 /// One notifier for two surfaces — the field above the file tree and the
 /// results in the aside — because they are one conversation, and the index
@@ -27,7 +27,7 @@ final searchProvider = SearchNotifierProvider._();
 final class SearchNotifierProvider
     extends $NotifierProvider<SearchNotifier, SearchState> {
   /// Indexes the space when it opens, answers the box, and opens what is
-  /// clicked (`docs/product/search/full-text-search/doc.md`).
+  /// clicked (`docs/product/search/full-text-search/the-surface/doc.md`).
   ///
   /// One notifier for two surfaces — the field above the file tree and the
   /// results in the aside — because they are one conversation, and the index
@@ -59,10 +59,10 @@ final class SearchNotifierProvider
   }
 }
 
-String _$searchNotifierHash() => r'9febad37225ec36a3c8ca0723569db2c47171a47';
+String _$searchNotifierHash() => r'dedcde6586173859aebccaa11df17f4fbdc6f90e';
 
 /// Indexes the space when it opens, answers the box, and opens what is
-/// clicked (`docs/product/search/full-text-search/doc.md`).
+/// clicked (`docs/product/search/full-text-search/the-surface/doc.md`).
 ///
 /// One notifier for two surfaces — the field above the file tree and the
 /// results in the aside — because they are one conversation, and the index
