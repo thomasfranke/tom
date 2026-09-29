@@ -15,10 +15,17 @@ import 'package:tom_desktop/screens/changes/changes_panel.dart';
 import 'package:tom_desktop/screens/compare/compare_control_widget.dart';
 import 'package:tom_desktop/screens/compare/widgets/compare_popover_widget.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
+import 'package:tom_desktop/screens/file_tree/widgets/file_tree_body_widget.dart';
 import 'package:tom_desktop/screens/history/history_panel.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
-import 'package:tom_desktop/screens/search/search_panel.dart';
+import 'package:tom_desktop/screens/search/search_boxes.dart';
+import 'package:tom_desktop/screens/search/search_field_widget.dart';
+import 'package:tom_desktop/screens/search/search_occurrences_panel.dart';
+import 'package:tom_desktop/screens/search/search_results_panel.dart';
 import 'package:tom_desktop/screens/shell/status_panel.dart';
+import 'package:tom_desktop/screens/spaces/space_menu_control_widget.dart';
+import 'package:tom_desktop/screens/spaces/widgets/space_menu_popover_widget.dart';
+import 'package:tom_desktop/screens/workspace/workspace_grip_widget.dart';
 import 'package:tom_ui/tom_ui.dart';
 import 'package:window_manager/window_manager.dart';
 import 'e2e_module_impl.dart';
@@ -212,13 +219,13 @@ final class TomRobot {
       of: find
           .ancestor(of: _inTheChanges(name), matching: find.byType(Row))
           .first,
-      matching: find.byType(Checkbox),
+      matching: find.byType(TomCheckWidget),
     );
     await tester.tap(box());
     // Waited for, not settled: staging runs git and re-reads it, and nothing
     // animates meanwhile.
     await _waitUntil(
-      () => _showing(box()) && tester.widget<Checkbox>(box()).value == true,
+      () => _showing(box()) && tester.widget<TomCheckWidget>(box()).isChecked,
     );
     await settle();
   }
@@ -248,12 +255,12 @@ final class TomRobot {
   Future<void> stagesEverything() async {
     final Finder all = find.descendant(
       of: find.ancestor(of: find.text('All'), matching: find.byType(Row)).first,
-      matching: find.byType(Checkbox),
+      matching: find.byType(TomCheckWidget),
     );
     await _waitUntil(() => _showing(all));
     await tester.tap(all);
     await _waitUntil(
-      () => _showing(all) && tester.widget<Checkbox>(all).value == true,
+      () => _showing(all) && tester.widget<TomCheckWidget>(all).isChecked,
     );
     await settle();
   }
@@ -319,6 +326,25 @@ final class TomRobot {
     await settle();
   }
 
+  /// Presses the platform's own undo shortcut, in the editor.
+  ///
+  /// The editor's own, not a control of ours: a replacement is written into
+  /// the buffer the way a keystroke is, so it walks back like any other edit
+  /// (`docs/product/search/replacing/doc.md`).
+  Future<void> undoes() async {
+    await tester.tap(find.byType(CodeEditor));
+    await tester.pump(const Duration(milliseconds: 200));
+    final LogicalKeyboardKey modifier = Platform.isMacOS
+        ? LogicalKeyboardKey.meta
+        : LogicalKeyboardKey.control;
+    await tester.sendKeyDownEvent(modifier);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(modifier);
+    // Pumped, not settled: the editor blinks a caret once it has had the
+    // keyboard, and `pumpAndSettle` waits on an animation that never ends.
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
   /// Clicks the row of the file tree that shows [name], scoped to the
   /// explorer because the top bar names the space's folder too.
   Future<void> clickInTheTree(String name) async {
@@ -341,6 +367,144 @@ final class TomRobot {
     // Pumped, not settled, for the reason [clickInTheResults] gives: a caret
     // blinks for as long as the box has the keyboard.
     await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts each of [texts] is somewhere on screen.
+  ///
+  /// Unscoped on purpose, for the window's own chrome: a control in the bar
+  /// belongs to no panel, so there is no panel to scope it to.
+  Future<void> seesOnScreen(List<String> texts) async {
+    await _waitUntil(() => _showing(find.text(texts.first)));
+    for (final String text in texts) {
+      expect(find.text(text), findsWidgets, reason: '$text is not on screen');
+    }
+  }
+
+  /// Asserts [text] is not.
+  Future<void> seesNotOnScreen(String text) async {
+    await _waitUntil(() => !_showing(find.text(text)));
+    expect(find.text(text), findsNothing, reason: '$text should not be shown');
+  }
+
+  /// Drags the rule beside the left column by [dx], widening it.
+  ///
+  /// A gesture by hand rather than `drag`, which compensates for the touch
+  /// slop on behalf of a widget that starts on recognition; the grip starts
+  /// on the pointer going down.
+  Future<void> widensTheExplorer(double dx) async {
+    final TestGesture gesture = await tester.startGesture(
+      tester.getCenter(find.byType(WorkspaceGripWidget)),
+    );
+    await gesture.moveBy(Offset(dx, 0));
+    await gesture.up();
+    await settle();
+  }
+
+  /// Hides a column, or brings it back, by its control in the top bar.
+  Future<void> togglesTheColumn(String tooltip) async {
+    await tester.tap(find.byTooltip(tooltip));
+    await settle();
+  }
+
+  /// Shows the right column's panel called [name].
+  Future<void> showsTheGitPanel(String name) async {
+    await tester.tap(find.text(name));
+    await settle();
+  }
+
+  /// Opens the breadcrumb's menu of spaces.
+  Future<void> opensTheSpaceMenu() async {
+    await tester.tap(find.byType(SpaceMenuControlWidget));
+    await settle();
+  }
+
+  /// Leaves the space, from that menu.
+  Future<void> closesTheSpace() async {
+    await tester.tap(_saying('Close space'));
+    await settle();
+  }
+
+  /// Goes straight to the space called [name], from that menu.
+  ///
+  /// By the row's name exactly, because the path under it holds the name
+  /// too and a loose match finds both.
+  Future<void> opensFromTheSpaceMenu(String name) async {
+    await _waitUntil(() => _showing(_saying(name)));
+    await tester.tap(_saying(name));
+    await settle();
+  }
+
+  /// Answers the question the menu asks about an unsaved buffer.
+  Future<void> answersTheUnsavedQuestion(String label) async {
+    await _waitUntil(() => _showing(_saying(label)));
+    await tester.tap(_saying(label));
+    await settle();
+  }
+
+  /// Asserts the menu shows each of [texts].
+  Future<void> seesInTheSpaceMenu(List<String> texts) async {
+    await _waitUntil(() => _showing(_inTheSpaceMenu(texts.first)));
+    for (final String text in texts) {
+      expect(
+        _inTheSpaceMenu(text),
+        findsWidgets,
+        reason: '$text is not in the space menu',
+      );
+    }
+  }
+
+  /// Asks about the open document rather than the whole space.
+  Future<void> searchesTheOpenFile() async {
+    await tester.tap(find.text('This file'));
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Opens the second box, the one that says what the words become.
+  Future<void> opensTheReplacement() async {
+    await tester.tap(find.byTooltip('Replace'));
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Types [text] into that second box.
+  Future<void> typesTheReplacement(String text) async {
+    await tester.tap(_theReplacementField);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.enterText(_theReplacementField, text);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Replaces the occurrence the pointer is on.
+  Future<void> replacesTheCurrentOne() async {
+    await tester.tap(find.byTooltip('Replace this one').first);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Replaces every occurrence at once.
+  Future<void> replacesEveryOne() async {
+    await tester.tap(find.text('Replace all'));
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts the occurrence list shows each of [texts].
+  Future<void> seesInTheOccurrences(List<String> texts) async {
+    await _waitUntil(() => _showing(_inTheOccurrences(texts.first)));
+    for (final String text in texts) {
+      expect(
+        _inTheOccurrences(text),
+        findsWidgets,
+        reason: '$text is not among the occurrences',
+      );
+    }
+  }
+
+  /// Asserts the occurrence list does not show [text].
+  Future<void> seesNotInTheOccurrences(String text) async {
+    await _waitUntil(() => !_showing(_inTheOccurrences(text)));
+    expect(
+      _inTheOccurrences(text),
+      findsNothing,
+      reason: '$text should not be among the occurrences',
+    );
   }
 
   /// Clicks the result that shows [name], scoped to the panel because the
@@ -700,9 +864,10 @@ final class TomRobot {
 
   /// Opens the surface that chooses what the document is compared against.
   Future<void> opensTheComparison() async {
+    // The `Diff` chip is the trigger; the base's name beside it is a label.
     final Finder control = find.descendant(
       of: find.byType(CompareControlWidget),
-      matching: find.byType(TextButton),
+      matching: find.text('Diff'),
     );
     await _waitUntil(() => _showing(control));
     await tester.tap(control);
@@ -739,9 +904,18 @@ final class TomRobot {
     );
   }
 
-  /// Asserts the bar is back to offering a comparison rather than naming one.
+  /// Asserts the bar names no base, which is the working tree against `HEAD`.
+  ///
+  /// The chip stays; what goes is the name beside it.
   Future<void> seesTheDefaultComparison() async {
-    await _waitUntil(() => _showing(find.text('Compare against…')));
+    await _waitUntil(
+      () => !_showing(
+        find.descendant(
+          of: find.byType(CompareControlWidget),
+          matching: find.textContaining('Compared to'),
+        ),
+      ),
+    );
     expect(find.textContaining('Compared to'), findsNothing);
   }
 
@@ -865,17 +1039,30 @@ final class TomRobot {
     );
   }
 
-  /// Every round mark the file tree is drawing.
+  /// The unsaved marks the file tree is drawing.
+  ///
+  /// Round **and** in `modified`: the tree draws a second dot on a folder
+  /// that holds a change, in another role, and counting shape alone made an
+  /// unsaved document look like two
+  /// (`docs/product/navigation/file-tree/change-marks/doc.md`). Scoped to
+  /// the body, since the search box above it is round too.
   Iterable<BoxDecoration> _marksInTheTree() => tester
       .widgetList<DecoratedBox>(
         find.descendant(
-          of: find.byType(FileTreePanel),
+          of: find.byType(FileTreeBodyWidget),
           matching: find.byType(DecoratedBox),
         ),
       )
       .map((DecoratedBox box) => box.decoration)
       .whereType<BoxDecoration>()
-      .where((BoxDecoration it) => it.shape == BoxShape.circle);
+      .where(
+        (BoxDecoration it) =>
+            it.shape == BoxShape.circle &&
+            // Either palette: the app follows the platform's theme and the
+            // runner's is not this harness's to decide.
+            (it.color == TomColors.dark.modified ||
+                it.color == TomColors.light.modified),
+      );
 
   /// Asserts nothing is waiting to be written.
   Future<void> seesNothingUnsaved(String path) async {
@@ -917,16 +1104,45 @@ final class TomRobot {
   /// Whatever the search panel shows as [text]; the tree lists the same
   /// files, and an excerpt is rich text because the words typed are marked.
   Finder _inTheResults(String text) => find.descendant(
-    of: find.byType(SearchPanel),
+    of: find.byType(SearchResultsPanel),
     matching: find.textContaining(text, findRichText: true),
   );
 
-  /// The search box, scoped to the explorer because the changes panel has a
-  /// field of its own.
+  /// What the breadcrumb's menu says, scoped to the surface it opens — the
+  /// bar behind it names the same space.
+  Finder _inTheSpaceMenu(String text) => find.descendant(
+    of: find.byType(SpaceMenuPopoverWidget),
+    matching: find.textContaining(text, findRichText: true),
+  );
+
+  /// One thing the menu says, word for word.
+  Finder _saying(String text) => find.descendant(
+    of: find.byType(SpaceMenuPopoverWidget),
+    matching: find.text(text),
+  );
+
+  /// What an occurrence's row says, scoped to the list in the open document.
+  Finder _inTheOccurrences(String text) => find.descendant(
+    of: find.byType(SearchOccurrencesPanel),
+    matching: find.textContaining(text, findRichText: true),
+  );
+
+  /// The search box, scoped to its own widget because the changes panel has a
+  /// field of its own — and the column itself has a second one once the
+  /// replacement is open.
   Finder get _theSearchField => find.descendant(
-    of: find.byType(FileTreePanel),
+    of: find.byType(SearchFieldWidget),
     matching: find.byType(TextField),
   );
+
+  /// The replacement box: the second field of the pair, in the order the
+  /// column stacks them.
+  Finder get _theReplacementField => find
+      .descendant(
+        of: find.byType(SearchBoxes),
+        matching: find.byType(TextField),
+      )
+      .last;
 
   /// Asserts the refusal screen is showing, for a folder with no repository.
   Future<void> seesNotARepository(String folder) async {

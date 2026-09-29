@@ -124,9 +124,7 @@ Future<int> runScenario(
 /// The frames are the evidence and the video a convenience: ffmpeg is not
 /// something this repository asks anybody to install.
 Future<void> _film(Scenario scenario, String stamp, String outcome) async {
-  final directory = Directory(
-    '${repoRoot().path}/$evidenceDirectory/${_slug(scenario.name)}',
-  );
+  final directory = Directory('${repoRoot().path}/${_folderOf(scenario)}');
   if (!directory.existsSync()) return;
   // This run's frames and not the folder's: runs accumulate here.
   final frames = directory
@@ -160,6 +158,13 @@ Future<void> _film(Scenario scenario, String stamp, String outcome) async {
     // No ffmpeg on this machine; the frames are still there.
   }
 }
+
+/// Where [scenario]'s runs live, relative to the repository: its group's
+/// folder holding its own, so the evidence is read the way the suite is
+/// listed. It has to agree with `integration_test/support/evidence.dart`,
+/// which is what creates the folder.
+String _folderOf(Scenario scenario) =>
+    '$evidenceDirectory/${_slug(scenario.group)}/${_slug(scenario.name)}';
 
 /// [name] as a path, the way `integration_test/support/evidence.dart` spells
 /// it: the app writes the folder and this reads it.
@@ -199,7 +204,7 @@ String _keep(
 /// two of them share, with the stamp keeping runs apart and the outcome
 /// readable from a listing.
 String _logPath(Scenario scenario, String stamp, String outcome) =>
-    '$evidenceDirectory/${_slug(scenario.name)}/$stamp-$outcome.log';
+    '${_folderOf(scenario)}/$stamp-$outcome.log';
 
 /// When a run started, to the second, as every file it writes spells it.
 ///

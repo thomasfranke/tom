@@ -8,8 +8,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Where the evidence of every scenario goes: one folder per scenario, every
-/// run of it stamped.
+/// Where the evidence of every scenario goes: one folder per group holding
+/// one folder per scenario, every run of it stamped.
 const String evidenceDirectory = '.e2e-evidence';
 
 /// The frames of one run, written as they happen.
@@ -20,12 +20,16 @@ const String evidenceDirectory = '.e2e-evidence';
 /// meant to reproduce it.
 final class Evidence {
   /// Starts recording [scenario].
-  Evidence(this.scenario, {required this.tester}) {
+  Evidence(this.scenario, {required this.group, required this.tester}) {
     directory.createSync(recursive: true);
   }
 
   /// The scenario being recorded, by the name it declares.
   final String scenario;
+
+  /// The heading it is listed under, which is the folder its own sits in:
+  /// the evidence reads like the suite is read, `search/` beside `home/`.
+  final String group;
 
   /// What is driving the app, and what holds the render tree.
   final WidgetTester tester;
@@ -47,9 +51,11 @@ final class Evidence {
     const String.fromEnvironment('TOM_E2E_STAMP'),
   );
 
-  /// Where this scenario's runs live.
-  Directory get directory =>
-      Directory('${_repositoryRoot()}/$evidenceDirectory/${slugOf(scenario)}');
+  /// Where this scenario's runs live: under its group's folder.
+  Directory get directory => Directory(
+    '${_repositoryRoot()}/$evidenceDirectory/'
+    '${slugOf(group)}/${slugOf(scenario)}',
+  );
 
   /// Writes what is on screen now, named after the [step] it is inside.
   ///

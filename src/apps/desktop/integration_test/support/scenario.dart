@@ -76,7 +76,7 @@ void scenario(
     if (store.existsSync()) {
       store.deleteSync();
     }
-    final Evidence evidence = Evidence(name, tester: tester);
+    final Evidence evidence = Evidence(name, group: group, tester: tester);
     final TomRobot robot = TomRobot(
       tester,
       settingsPath: settingsPath,
