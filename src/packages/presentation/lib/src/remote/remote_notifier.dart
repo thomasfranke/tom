@@ -91,6 +91,11 @@ class RemoteNotifier extends _$RemoteNotifier {
     // Even after a rejected push: `git push` can update some refs and
     // refuse others.
     await ref.read(changesProvider.notifier).refresh();
+    // Checked between the two: a notifier disposed while the first was
+    // running has no `Ref` left to read the second with.
+    if (!ref.mounted) {
+      return;
+    }
     // A pull writes to the working tree, and TOM knows it did, so the tree
     // is walked again rather than left describing a folder that is gone.
     if (action == RemoteActionEnum.pull) {

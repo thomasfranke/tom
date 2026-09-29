@@ -62,6 +62,42 @@ void main() {
     expect(observability.captured, isEmpty);
   });
 
+  test('a detached HEAD is refused, and nothing is committed', () async {
+    git.detached = true;
+
+    final Result<void, AppFailure> result = await committing().commit(
+      docs,
+      'docs: say what changed',
+    );
+
+    expect(
+      (result as Failure<void, AppFailure>).failure,
+      const GitDetachedHead(),
+    );
+    expect(git.messages, isEmpty, reason: 'git was never asked to commit');
+    expect(observability.captured, isEmpty, reason: 'a policy is not a fault');
+  });
+
+  test(
+    'a status git could not read is passed through, not swallowed',
+    () async {
+      git.statusAnswer = const Failure<GitStatusValueObject, GitFailure>(
+        GitOperationFailed(),
+      );
+
+      final Result<void, AppFailure> result = await committing().commit(
+        docs,
+        'docs: say what changed',
+      );
+
+      expect(
+        (result as Failure<void, AppFailure>).failure,
+        const GitOperationFailed(),
+      );
+      expect(git.messages, isEmpty);
+    },
+  );
+
   test('an exception never escapes the use case, and is reported', () async {
     git.throws = true;
 
@@ -81,7 +117,9 @@ void main() {
 /// Git, remembering the messages it was asked to commit.
 final class _Git implements GitRepository {
   Result<void, GitFailure>? answer;
+  Result<GitStatusValueObject, GitFailure>? statusAnswer;
   bool throws = false;
+  bool detached = false;
 
   final List<String> messages = <String>[];
 
@@ -95,7 +133,17 @@ final class _Git implements GitRepository {
 
   @override
   Future<Result<GitStatusValueObject, GitFailure>> status() async =>
-      throw UnimplementedError();
+      statusAnswer ??
+      Success<GitStatusValueObject, GitFailure>(
+        GitStatusValueObject(
+          branch: detached ? null : BranchNameValueObject('main'),
+          upstream: null,
+          ahead: 0,
+          behind: 0,
+          entries: const <StatusEntryValueObject>[],
+          isDetached: detached,
+        ),
+      );
 
   @override
   Future<Result<List<CommitEntity>, GitFailure>> history({
