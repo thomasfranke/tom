@@ -18,8 +18,24 @@ abstract final class TomMetrics {
   /// whether the buffer has reached the disk.
   static const double modeBar = 36;
 
-  /// Width of the explorer, **constant across every screen**
-  /// (`docs/product/workspace/regions/doc.md`).
+  /// Height of the band that carries news from git, above the document.
+  ///
+  /// The mode bar's height, because the two stack and a band taller than the
+  /// chrome it sits under reads as a dialog
+  /// (`docs/design/components/controls.md`).
+  static const double noticeBand = 36;
+
+  /// Chrome edge to the first thing written on it.
+  ///
+  /// The mode bar's own inset, shared so the band's sentence starts on the
+  /// same column as the mode control above it.
+  static const double barInset = 28;
+
+  /// The width the left column **opens at**, not the width it keeps.
+  ///
+  /// The reader drags it, so this is a starting point rather than a constant
+  /// (`docs/product/workspace/regions/doc.md`) — 220 is where the tree reads
+  /// well, and search results are why somebody widens it.
   static const double explorer = 220;
 
   /// Width of the git panel.
@@ -49,6 +65,12 @@ abstract final class TomMetrics {
 
   /// The corner radius of a mark, a checkbox, a tab indicator.
   static const double radiusTight = 4;
+
+  /// The corner radius of everything else
+  /// (`docs/design/components/radius.md`).
+  ///
+  /// Two steps and a shape, so a third value is drift rather than a choice.
+  static const double radius = 8;
 
   /// The smallest window the layout still holds together in.
   ///

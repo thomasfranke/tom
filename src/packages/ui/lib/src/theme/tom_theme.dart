@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:tom_ui/src/theme/tom_colors.dart';
+import 'package:tom_ui/src/theme/tom_fonts.dart';
 
 /// The app's theme for [brightness], built by one function from one palette
 /// type so a role cannot be added to one mode and forgotten in the other
@@ -30,6 +31,9 @@ ThemeData tomTheme(Brightness brightness) {
     useMaterial3: true,
     brightness: brightness,
     colorScheme: scheme,
+    // The interface face, set once: every widget that states no family gets
+    // it, which is what keeps a stray Text from shipping the platform's own.
+    fontFamily: TomFonts.sans,
     scaffoldBackgroundColor: colors.surface,
     dividerTheme: DividerThemeData(
       color: colors.border,
