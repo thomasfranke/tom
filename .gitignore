@@ -10,6 +10,7 @@
 .history
 .svn/
 .swiftpm/
+**/xcshareddata/swiftpm/Package.resolved
 *.db
 *.db-shm
 migrate_working_dir/
@@ -178,3 +179,4 @@ app.*.symbols
 # Everything each run of each scenario printed, beside the pictures of the
 # same run — the log is the timeline and the frames are what it was looking
 # at, so they live together under .e2e-evidence/ above.
+docs/design/TOM.penpot
