@@ -19,24 +19,23 @@ Does `DocumentEntity` hold `content` for the whole session, or read on demand?
 Decide against a real 5k-line file once the editor runs. Related: what the
 entity looks like while dirty.
 
-## `Wikilink` → **M3**
+## Conflicted state → decide in **M3**
 
-Not modelled yet. Open: how a link resolves (relative to the space? a filename
-anywhere in it? heading anchors?), and what happens when the target does not
-exist.
-
-## Conflicted state → post-MVP
-
-`GitStatusValueObject` already reports conflicted paths, but assisted
-resolution needs a richer model — per-block sides, the choice made. Deferred
-until the feature is built.
+`GitStatusValueObject` already reports conflicted paths. What is still open is
+the region: the two sides as spans of the document's own text, and whether the
+choice a reader makes is a value the model carries or only an edit to the
+buffer. The product says the latter
+([the conflicted document](../../product/editor/conflicted-document/doc.md)),
+which is why no `Resolution` is drawn here yet.
 
 ## How this gets filled in
 
 By evidence, not by a design session: **Spike B** answered `BlockValueObject`
 ([Decision 19](../decisions/019-blocks-come-from-the-markdown-package.md));
 **M0** answers document loading and dirty state; **M2** refines `DiffBlock`;
-**M3** brings `Wikilink`; the conflict model waits for post-MVP.
+**M3** answered `Wikilink`
+([Decision 28](../decisions/028-a-wikilink-resolves-by-name-inside-the-space.md),
+now [wikilinks.md](wikilinks.md)); **M3** answers the conflict region too.
 
 When a milestone or spike answers a question, move it from here into the file
 it belongs to, in the same PR that implements it, and delete the question. The

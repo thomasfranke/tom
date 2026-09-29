@@ -28,11 +28,12 @@ object** is wholly what it carries. The naming rule that enforces it is
 | [`git.md`](git.md) | `GitStatusValueObject`, `CommitEntity`, `BranchEntity`, `GitRepository` |
 | [`blocks.md`](blocks.md) | `BlockValueObject` |
 | [`diff-blocks.md`](diff-blocks.md) | `DiffBlockValueObject`, and how two blocks are paired |
+| [`wikilinks.md`](wikilinks.md) | `WikilinkValueObject`, `WikilinkTargetValueObject`, `WikilinkResolverService` |
 
 ## Not settled
 
 [`open-questions.md`](open-questions.md) — space configuration, document
-loading, `Wikilink`, the conflict model, and how each one gets answered.
+loading, the conflict model, and how each one gets answered.
 
 ---
 
