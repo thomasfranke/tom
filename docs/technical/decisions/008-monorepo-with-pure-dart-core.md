@@ -1,10 +1,10 @@
 # Decision 8 — Monorepo with a build boundary between core and app
 
-**Status:** partly superseded by [Decision 14](014-each-layer-is-its-own-package.md)
+**Status:** partly superseded by [Decision 14](014-each-layer-is-its-own-package.md) and [Decision 24](024-a-capability-is-a-folder.md)
 
-> **What changed.** The monorepo, the pub workspace and the pure Dart core all stand. What Decision 14 revises is *how many* boundaries there are: this decision drew one, between pure Dart and Flutter, and left the layers as folders. There is now one package per layer, so the layering is enforced by the pubspecs rather than by convention.
+> **What changed.** The monorepo, the pub workspace and the pure Dart core all stand. Decision 14 revises *how many* boundaries there are: this decision drew one, between pure Dart and Flutter, and left the layers as folders; there is now one package per layer, enforced by the pubspecs rather than by convention. Decision 24 revises how a *platform* is added: by an implementation subfolder inside a capability, not by a package of its own.
 >
-> Read this file for the reasoning about monorepo versus multi-repo and about mobile, which is unaffected. Read Decision 14 for the package graph as it actually is.
+> Read this file for the reasoning about monorepo versus multi-repo, and about why mobile is a bounded cost. Read Decision 14 for the package graph as it actually is, and Decision 24 for the shape of `tom_infra`.
 
 ## Decision
 
@@ -32,16 +32,28 @@ Every phase-1 infrastructure implementation is pure Dart: `Process.run` (git), `
 
 ## Projected evolution (with explicit triggers)
 
+> **Revised.** The graph and the mobile row below named `tom_infra_desktop`,
+> `tom_infra_mobile` and `apps/tom_mobile` — a package per platform.
+> [Decision 24](024-a-capability-is-a-folder.md) made a capability a *folder*
+> with one subfolder per implementation, so a second platform adds a subfolder
+> beside `dart_io/`, not a package beside `tom_infra`. The application is
+> `tom_mobile`, under `apps/mobile`. What did **not** change is the reasoning: mobile is a second
+> infrastructure and a second presentation over the same pure Dart layers, and
+> that is what keeps Phase 3 from being a rewrite.
+
 ```
 Projected end state:
 
-apps/desktop ──────────┬──> the pure Dart layers <┬────── apps/mobile
-        └──> packages/tom_infra_desktop ──> core └──> packages/tom_infra_mobile
+apps/desktop ──┬──> the pure Dart layers <──┬── apps/mobile
+               └──> tom_infra ⇄ tom_data ───┘
+                      git_client/
+                        dart_io/      ← desktop: the system binary
+                        libgit2/      ← mobile: FFI, sandbox, keychain
 ```
 
 | Trigger | Action |
 |---|---|
-| A second platform (mobile) started — **planned for Phase 3, post-1.0** | Extract `tom_infra_desktop` (git via CLI, free filesystem); create `tom_infra_mobile` (libgit2/FFI, sandbox, keychain) and `apps/tom_mobile` (its own presentation — panels do not become screens) |
+| A second platform (mobile) started — **planned for Phase 3, post-1.0** | Add an implementation subfolder per capability that differs (git via FFI, a sandboxed filesystem, the keychain) and `apps/mobile` with its own presentation — panels do not become screens. The contract each one fulfils does not move |
 | 3+ packages in the workspace | Adopt **Melos** (batch command runner across packages: tests, codegen, diff-based filtering in CI) |
 | `tom_core` published on pub.dev | Melos versioning + changelog from Conventional Commits |
 
@@ -54,6 +66,6 @@ apps/desktop ──────────┬──> the pure Dart layers <┬�
 
 ## Consequences
 
-- Contracts consumed by the app (domain repositories) and implemented by infrastructure all live in the core — the dependency direction is always app → core, never the reverse.
+- ~~Contracts consumed by the app and implemented by infrastructure all live in the core~~ — the layers became packages ([Decision 14](014-each-layer-is-its-own-package.md)) and each capability's contract now sits beside its adapters in `tom_infra` ([Decision 24](024-a-capability-is-a-folder.md)). The dependency direction the sentence was about is unchanged.
 - Flutter shell packages (`window_manager`, `file_selector`, `url_launcher`, `shared_preferences`, `re_editor`, `sqlite3_flutter_libs`) are declared only in `tom_desktop`.
 - Refactors crossing the core/app boundary are possible in a single PR/commit (the monorepo's advantage over multi-repo).
