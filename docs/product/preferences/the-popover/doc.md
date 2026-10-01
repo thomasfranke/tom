@@ -2,7 +2,7 @@
 
 Where preferences are reached from, and what opening them looks like.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3
 
 ## Rules
 

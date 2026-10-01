@@ -40,6 +40,9 @@ An ADR is the one file here that is **not** split by subject: its sections are f
 | [026](026-the-look-is-a-package.md) | The look is a package both applications draw from; the screens are each application's own |
 | [027](027-blocks-are-aligned-by-myers-and-paired-by-words.md) | Blocks are aligned by Myers over `diffutil_dart`, and paired as rewrites by word overlap |
 | [028](028-a-wikilink-resolves-by-name-inside-the-space.md) | A wikilink resolves by name inside the space, and says so when it cannot |
+| [029](029-the-assistant-is-the-users-own.md) | **Draft.** The assistant is the user's own — one contract, the user's endpoint and credential, nothing shipped or proxied |
+| [030](030-export-renders-the-preview-not-the-file.md) | **Draft.** Export renders the AST the preview already holds, through one capability with a folder per format |
+| [031](031-where-a-footnotes-text-goes.md) | A footnote's marker stays in the prose and its text goes to the foot; the number is the document's |
 
 ---
 

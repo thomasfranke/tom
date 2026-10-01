@@ -2,7 +2,7 @@
 
 Get a document out of the app as PDF or HTML — free, always, for every user.
 
-**Status:** Planned · Milestone M3
+**Status:** Planned · Milestone M3 — the package question is answered in draft ([Decision 30](../../technical/decisions/030-export-renders-the-preview-not-the-file.md)); the screen is not drawn
 
 ## Rules
 

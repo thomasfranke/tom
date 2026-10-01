@@ -11,6 +11,7 @@ from what is here.
 | [`conventions.md`](conventions.md) | Naming, the page split, what a board may and may not carry |
 | [`measurements.md`](measurements.md) | The numbers every board shares, and the two the reader controls |
 | [`not-drawn-yet.md`](not-drawn-yet.md) | What has no board, and why |
+| [`divergences.md`](divergences.md) | Where the app draws something other than the board |
 | [`desktop/`](desktop/) | The boards themselves, one folder per Penpot page |
 
 ```

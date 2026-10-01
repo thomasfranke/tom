@@ -2,7 +2,7 @@
 
 What the right column shows between the press and the answer.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3
 
 ## Rules
 

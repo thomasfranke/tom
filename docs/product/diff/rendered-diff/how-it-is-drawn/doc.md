@@ -10,6 +10,7 @@ What a marked block looks like, in each pane.
 - **A removed block is still rendered**, struck through, where it used to be. Reading what was deleted is the point of showing it at all.
 - **In split view both panes are marked.** Which pane somebody is looking at is not a statement about whether they want to see the change.
 - **In the source pane a removed block is a seam, not text.** It is not in the buffer, so drawing it there would put characters in front of somebody that typing cannot reach; a mark between the two lines it used to sit between says the same thing truthfully.
+- **The tint starts 44 from the pane's edge**, before the line numbers and under them, which is what the diff boards draw — `git-conflict/` put it at 80 and that board is the one to correct.
 
 The letters come from the same alphabet as the changes column and the
 [file tree](../../../navigation/file-tree/change-marks/doc.md), and the mark is the

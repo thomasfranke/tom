@@ -27,11 +27,9 @@ The hazard of rendering blocks in isolation
 ([Decision 19](../decisions/019-blocks-come-from-the-markdown-package.md)):
 
 - **Reference links survive.** The parser's `linkReferences` map travels with the blocks and the output is identical.
-- **Footnotes do not.** `[^ref]` in an isolated block renders as literal text, because its definition is a different block.
+- **Footnotes survive by being drawn rather than parsed again.** The marker is the number the *document* gave that note, so a block cannot work it out alone — it is handed one ([Decision 31](../decisions/031-where-a-footnotes-text-goes.md)). The notes themselves are the one container that is not a block: assembled from definitions written all over the document, under a rule at its foot.
 
 Every other construct in this repository's 848 blocks renders identically alone.
-What the preview does about footnotes is M2's, and there is a failing case
-waiting for it.
 
 ---
 

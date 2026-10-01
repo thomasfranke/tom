@@ -2,7 +2,7 @@
 
 Three preferences, and the rule that keeps a fourth from arriving casually.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3 — the language is stored and nothing reads it yet, which is the work it implies rather than contains
 
 ## Rules
 

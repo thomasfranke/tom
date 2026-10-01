@@ -26,14 +26,15 @@ measurable (0–3% over a plain parse for the whole document), so a block that
 needs rendering is parsed then, with the document's link reference map in
 scope.
 
-**One construct does not survive isolation: footnotes.** A block carrying
-`[^ref]` renders it as literal text, because the definition is another block
-and the reference map does not carry it. Reference links do survive, because
-`linkReferences` can travel with the block
-([`ParsedDocumentValueObject`](documents.md)). The parser also synthesises a
-footnotes `section` node that corresponds to no lines at all, so a block list
-must tolerate a node with no span. What to do about footnotes is M2's, not
-settled here.
+**One construct is not a block at all: a footnote.** Its two halves are in
+different blocks, and the definition is in none — the parser moves it into a
+`section` it synthesises, which corresponds to no lines and so has no span.
+So the document carries the notes beside the blocks
+([`ParsedDocumentValueObject`](documents.md)): label, text, and the **number**,
+which is the order they are first cited in and which no block can see for
+itself ([Decision 31](../decisions/031-where-a-footnotes-text-goes.md)).
+Reference links survive differently, by travelling as the lines that declared
+them and being parsed again with the block.
 
 What happens to a block once two versions are compared is
 [`diff-blocks.md`](diff-blocks.md).

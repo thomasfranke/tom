@@ -2,7 +2,7 @@
 
 Three buttons, and where the numbers live.
 
-**Status:** Planned · Milestone M1
+**Status:** Shipped · Milestone M3 — the three moved out of the top bar and into the column's foot
 
 ## Rules
 

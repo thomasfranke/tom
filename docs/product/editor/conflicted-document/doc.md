@@ -2,11 +2,12 @@
 
 A document holding both sides of a merge, in source and in preview.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3
 
 ## Rules
 
 - **In source, the conflict is what git wrote.** `<<<<<<< HEAD`, `=======` and `>>>>>>>` stay on screen as real, selectable text; the two sides are tinted and nothing replaces them. Somebody who resolves conflicts in a terminal has to recognise what they are looking at.
+- **The gutter carries the letter, as it does for a changed block.** `C` beside the line the region opens on, left of the line numbers, in the alphabet the tree and the changes list already use ([how a change is drawn](../../diff/rendered-diff/how-it-is-drawn/doc.md)).
 - **In preview, the conflict is the two sides with the choice.** The region becomes two groups labelled `Current Change` and `Incoming Change`, rendered as markdown over the block containers the preview already draws, and no marker ever appears here.
 - **The words are VS Code's, deliberately.** ~~`Yours` and `Theirs`~~ read as ownership, and in a merge neither side is anybody's property; more to the point, whoever resolves conflicts here has resolved them there, and a second vocabulary for the same four buttons is a second thing to learn.
 - **Every mode stays open.** The preview is the easier way to read a conflict, not a mode the app switches anybody into, and not one it takes away.

@@ -2,7 +2,7 @@
 
 One file, in a format the user can read, and a button that opens it.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3 — except the button that opens the file, which is drawn and dim until there is a tab strip to open it into
 
 ## Rules
 

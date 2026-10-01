@@ -9,7 +9,8 @@ variant — unless the number is one of the two the reader controls.
 ## The shell
 
 - **Every board draws the shell the same way**: one container per column, each with its own 1px `border` edge and `surface_raised` fill, running under the bars and off both sides of the window so no edge frames the frame.
-- **The only line left on screen is the one in a gutter**, and it carries the [`Column grip`](../components/controls.md). A closed column contributes no container and keeps its grip at the window's edge; a board that still draws a full-height hairline is stale.
+- **A gutter is 8 wide**, with the hairline at its far edge and the grip's dots three in from its near one. A closed column contributes no container and keeps its gutter at the window's edge; a board that still draws a full-height hairline against a column is stale.
+- **The two bars are 52 and 32, rule included.** A bar drawn to its height with a divider under it is a point taller than the board, and everything below it is a point low for the rest of the window.
 
 ## The column's foot
 
@@ -23,6 +24,7 @@ variant — unless the number is one of the two the reader controls.
 
 ## The row above the document
 
+- **It is a `surface_sunken` strip 36 tall, the width of the document container** — which is what makes the toolbar's `surface_raised` tiles read as buttons rather than as glyphs on the page.
 - **It is measured from the pane, not from the window.** The `Diff` chip's right edge sits **9** inside the document container's right edge, and `Source · Split · Preview` ends **24** before the chip begins — so both travel when a column opens.
 - **With the formatting bar hidden the modes go to the window's centre instead**, where they line up with the branch control directly above ([formatting shortcuts](../../product/editor/formatting-shortcuts/doc.md)).
 
