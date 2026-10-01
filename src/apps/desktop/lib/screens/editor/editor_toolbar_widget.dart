@@ -25,15 +25,13 @@ typedef ToolbarEntry = ({
 ///
 /// At the screen's top level rather than in its `widgets/`, because the row
 /// that mounts it is the shell's: a screen's `widgets/` are readable from
-/// that screen only, and this is the editor's control drawn elsewhere — the
-/// same shape as the compare chip.
+/// that screen only, and this is the editor's control drawn elsewhere.
 ///
 /// **Seventeen**, because a button for four of the cases teaches that the
 /// other cases are not supported. None is ever dropped: the set needs 632
 /// points and a row with the git column open has 598, so the **last group
-/// collapses into a `⋯`** rather than scrolling out of reach. The thirteen
-/// that stay keep the x every board draws them at, which is why the group
-/// that gives way is the last one and not the widest.
+/// collapses into a `⋯`** rather than scrolling out of reach, which keeps
+/// the thirteen that stay at the x every board draws them at.
 class EditorToolbarWidget extends ConsumerWidget {
   /// Creates the bar.
   const EditorToolbarWidget({super.key});

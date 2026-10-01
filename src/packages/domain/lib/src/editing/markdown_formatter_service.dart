@@ -8,15 +8,13 @@ import 'package:tom_domain/src/editing/formatted_source_value_object.dart';
 ///
 /// A domain service because the rule belongs to no document in particular,
 /// and it carries no port: rewriting a string is logic, not a capability.
-/// **What it writes is the literal syntax** — there is no intermediate
-/// format and the source stays the truth
+/// What it writes is the literal syntax, so the source stays the truth
 /// (`docs/product/editor/formatting-shortcuts/doc.md`).
 ///
-/// Fifteen commands, three shapes. A **wrap** puts marks on both sides of
-/// the selection, a **prefix** puts them at the head of every line it
-/// touches, and an **insert** drops a template at the caret. The first two
-/// toggle: pressing bold on bold text takes the marks off, which is the only
-/// way a button can be pressed twice without lying.
+/// Fifteen commands, three shapes: a **wrap** puts marks on both sides of
+/// the selection, a **prefix** at the head of every line it touches, an
+/// **insert** drops a template at the caret. The first two toggle, which is
+/// the only way a button can be pressed twice without lying.
 final class MarkdownFormatterService {
   /// Creates the formatter.
   const MarkdownFormatterService();

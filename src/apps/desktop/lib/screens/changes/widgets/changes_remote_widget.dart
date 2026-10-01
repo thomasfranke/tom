@@ -19,10 +19,8 @@ import 'package:tom_ui/tom_ui.dart';
 /// is the same fact twice
 /// (`docs/product/git-workflow/push-pull/the-controls/doc.md`).
 ///
-/// **`Pull` is a button of its own.** Keeping it only inside the rejection
-/// meant the one way to catch up was to be refused first; the band still
-/// offers it inline, which is the answer to what just happened rather than
-/// the action available at any time.
+/// **`Pull` is a button of its own**, since keeping it only inside the
+/// rejection meant the one way to catch up was to be refused first.
 class ChangesRemoteWidget extends ConsumerWidget {
   /// Creates the three.
   const ChangesRemoteWidget({super.key});
