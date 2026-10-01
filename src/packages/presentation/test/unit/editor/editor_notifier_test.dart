@@ -180,6 +180,59 @@ void main() {
     });
   });
 
+  group('the selection and the formatting bar', () {
+    test('moving the selection leaves the buffer clean', () async {
+      start();
+      show(docs, writing);
+      await settle();
+
+      container.read(editorProvider.notifier).select(2, 12);
+
+      expect(ready().selectionStart, 2);
+      expect(ready().selectionEnd, 12);
+      expect(container.read(editorProvider).isDirty, isFalse);
+    });
+
+    test('the same selection again changes nothing', () async {
+      start();
+      show(docs, writing);
+      await settle();
+      container.read(editorProvider.notifier).select(2, 12);
+      final EditorReady before = ready();
+
+      container.read(editorProvider.notifier).select(2, 12);
+
+      expect(identical(ready(), before), isTrue);
+    });
+
+    test('a command formats the selection and keeps it selected', () async {
+      start();
+      show(docs, writing);
+      await settle();
+      container.read(editorProvider.notifier)
+        ..select(2, 12)
+        ..format(FormatCommandEnum.bold);
+
+      expect(ready().source, '# **writing.md**\n');
+      expect(
+        ready().source.substring(ready().selectionStart, ready().selectionEnd),
+        'writing.md',
+      );
+      expect(container.read(editorProvider).isDirty, isTrue);
+      expect(documents.written, isEmpty);
+    });
+
+    test('with no buffer there is nothing to format', () {
+      start();
+
+      container.read(editorProvider.notifier)
+        ..select(0, 1)
+        ..format(FormatCommandEnum.bold);
+
+      expect(container.read(editorProvider), isA<EditorEmpty>());
+    });
+  });
+
   test('choosing another document starts another buffer', () async {
     start();
     show(docs, writing);

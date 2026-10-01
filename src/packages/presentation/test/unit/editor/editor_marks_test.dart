@@ -117,6 +117,52 @@ void main() {
     );
   });
 
+  test('a span is its lines, its mark and what it draws', () {
+    const EditorMarkSpan block = EditorMarkSpan.block(
+      from: 2,
+      to: 4,
+      mark: EditorMarkEnum.modified,
+    );
+
+    expect(
+      block,
+      const EditorMarkSpan.block(from: 2, to: 4, mark: EditorMarkEnum.modified),
+    );
+    expect(
+      block.hashCode,
+      const EditorMarkSpan.block(
+        from: 2,
+        to: 4,
+        mark: EditorMarkEnum.modified,
+      ).hashCode,
+    );
+    expect(
+      block,
+      isNot(
+        const EditorMarkSpan.tint(
+          from: 2,
+          to: 4,
+          mark: EditorMarkEnum.modified,
+        ),
+      ),
+    );
+    expect(
+      block,
+      isNot(const EditorMarkSpan.letter(2, EditorMarkEnum.modified)),
+    );
+    expect(block.toString(), contains('2..4'));
+    expect(
+      EditorMarks.ofConflicts(
+        conflicted,
+        const ConflictScannerService().scan(conflicted),
+      ).hashCode,
+      EditorMarks.ofConflicts(
+        conflicted,
+        const ConflictScannerService().scan(conflicted),
+      ).hashCode,
+    );
+  });
+
   test('the mark lands on the line the markers open on', () async {
     await open(writing, conflicted);
 

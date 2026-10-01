@@ -75,6 +75,12 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        abortPullProvider.overrideWithValue(
+          AbortPullUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
         // A pull writes to the working tree, so it walks the tree again —
         // which means a test that pulls needs a folder to walk.
         listSpaceEntriesProvider.overrideWithValue(
@@ -199,6 +205,52 @@ void main() {
     expect(remote(), isA<RemoteIdle>());
   });
 
+  group('abort', () {
+    test('with no space open nothing reaches git', () async {
+      container.listen<RemoteState>(remoteProvider, (_, _) {});
+
+      await container.read(remoteProvider.notifier).abort();
+
+      expect(git.aborted, 0);
+    });
+
+    test('it undoes the merge and re-reads where the branch stands', () async {
+      await open();
+      git.reported = statusOf(behind: 3);
+
+      await container.read(remoteProvider.notifier).abort();
+
+      expect(git.aborted, 1);
+      expect(observed()?.behind, 3);
+      expect(remote(), isA<RemoteIdle>());
+    });
+
+    test('a refused abort is said as the pull failing', () async {
+      await open();
+      git.abortAnswer = const Failure<void, GitFailure>(GitOperationFailed());
+
+      await container.read(remoteProvider.notifier).abort();
+
+      final RemoteFailed failed = remote() as RemoteFailed;
+      expect(failed.action, RemoteActionEnum.pull);
+      expect(failed.failure, const GitOperationFailed());
+    });
+
+    test('not while a request to the remote is out', () async {
+      await open();
+      git.holdUp = true;
+      final Future<void> fetching = container
+          .read(remoteProvider.notifier)
+          .fetch();
+
+      await container.read(remoteProvider.notifier).abort();
+      expect(git.aborted, 0);
+
+      git.release();
+      await fetching;
+    });
+  });
+
   test('another space starts with nothing said about the last one', () async {
     await open();
     git.answer = const Failure<void, GitFailure>(GitPushRejected());
@@ -226,9 +278,13 @@ final class _Git implements GitRepository {
   GitStatusValueObject? reported;
   Result<void, GitFailure>? answer;
 
+  /// What undoing the merge answers; success when left out.
+  Result<void, GitFailure>? abortAnswer;
+
   int fetched = 0;
   int pulled = 0;
   int pushed = 0;
+  int aborted = 0;
 
   /// Whether a remote action should wait to be let go.
   bool holdUp = false;
@@ -269,6 +325,12 @@ final class _Git implements GitRepository {
   Future<Result<void, GitFailure>> push() {
     pushed++;
     return _done();
+  }
+
+  @override
+  Future<Result<void, GitFailure>> abortMerge() async {
+    aborted++;
+    return abortAnswer ?? const Success<void, GitFailure>(null);
   }
 
   @override

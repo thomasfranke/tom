@@ -132,4 +132,40 @@ void main() {
     expect(changes.stateOf(at('e.md')), FileStateEnum.untracked);
     expect(changes.stateOf(at('f.md')), FileStateEnum.conflicted);
   });
+
+  test('a row carries the letter on a file and the dot on its folder', () {
+    final FileTreeReady tree =
+        FileTreeState.ready(
+              entries: <SpaceEntryValueObject>[
+                SpaceEntryValueObject(
+                  path: at('guides'),
+                  type: SpaceEntryTypeEnum.directory,
+                ),
+                SpaceEntryValueObject(
+                  path: at('guides/writing.md'),
+                  type: SpaceEntryTypeEnum.file,
+                ),
+                SpaceEntryValueObject(
+                  path: at('index.md'),
+                  type: SpaceEntryTypeEnum.file,
+                ),
+              ],
+              collapsed: const <SpaceRelativePathValueObject>{},
+            )
+            as FileTreeReady;
+
+    final List<FileTreeRow> rows = tree.rowsWith(
+      FileTreeChanges.of(
+        wholeRepo,
+        statusOf(<String, FileStateEnum>{
+          'guides/writing.md': FileStateEnum.modified,
+        }),
+      ),
+    );
+
+    expect(rows[0].holdsChange, isTrue);
+    expect(rows[0].change, isNull);
+    expect(rows[1].change, FileStateEnum.modified);
+    expect(rows[2].change, isNull);
+  });
 }

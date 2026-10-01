@@ -209,6 +209,41 @@ void main() {
     expect(state(), isA<SearchFailed>());
   });
 
+  test('a broken index still takes what is typed', () async {
+    search.indexFailure = const SearchIndexCorrupted();
+    container.read(spaceSessionProvider.notifier).open(docs);
+    start();
+    await settle();
+
+    await notifier().type('rendered');
+
+    expect(state(), isA<SearchFailed>());
+    expect(state().terms, 'rendered');
+    expect(search.asked, isEmpty);
+  });
+
+  test('a question the index cannot answer says so, and keeps it', () async {
+    container.read(spaceSessionProvider.notifier).open(docs);
+    start();
+    await settle();
+    search.findFailure = const SearchIndexCorrupted();
+
+    await notifier().type('rendered');
+
+    expect((state() as SearchFailed).failure, const SearchIndexCorrupted());
+    expect(state().terms, 'rendered');
+  });
+
+  test('with no space open typing asks nothing', () async {
+    start();
+
+    await notifier().type('rendered');
+
+    expect(state(), isA<SearchIdle>());
+    expect(state().terms, isEmpty);
+    expect(search.asked, isEmpty);
+  });
+
   group('asking about the open document', () {
     /// Opens a document and puts [source] in the buffer, the way typing does.
     Future<void> typing(String source) async {
@@ -412,6 +447,9 @@ final class _Search implements SearchRepository {
   List<SearchHitValueObject> hits = <SearchHitValueObject>[];
   SearchFailure? indexFailure;
 
+  /// What a question is answered with instead of hits, when set.
+  SearchFailure? findFailure;
+
   /// Whether a search waits to be [release]d, for the stale-answer case.
   bool holds = false;
 
@@ -453,6 +491,10 @@ final class _Search implements SearchRepository {
       final Completer<void> held = Completer<void>();
       _waiting.add(held.complete);
       await held.future;
+    }
+    final SearchFailure? failure = findFailure;
+    if (failure != null) {
+      return Failure<List<SearchHitValueObject>, SearchFailure>(failure);
     }
     return Success<List<SearchHitValueObject>, SearchFailure>(
       echoes
