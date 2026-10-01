@@ -1,0 +1,5 @@
+{
+  "summary": "A repository opened at its own root",
+  "description": "The other shape of a space, where root and repositoryRoot are the same folder and there is no prefix to add to a path.",
+  "commit": "notes: start"
+}

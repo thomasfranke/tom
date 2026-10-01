@@ -8,7 +8,7 @@ repository: https://github.com/thomasfranke/tom
 
 # The product version. Every package moves in lockstep with this number — none
 # is published separately, so independent versioning would be bookkeeping with
-# no reader. Releases are tags; see docs/versioning.md.
+# no reader. Releases are tags; see docs/technical/process/versioning.md.
 version: 0.1.0
 
 environment:
@@ -18,8 +18,50 @@ resolution: workspace
 
 dependencies:
   cupertino_icons: ^1.0.8
+
+  # The native "open folder" dialog. A Flutter plugin, so it can only live
+  # here — which is why nothing below takes a folder from anywhere but its
+  # own arguments.
+  file_selector: ^1.1.0
+
   flutter:
     sdk: flutter
+
+  # Renders the inline content *inside* a block. Block-level layout and the
+  # container around each block are ours, which is what the rendered diff
+  # needs (docs/technical/runtime/preview.md).
+  flutter_markdown_plus: ^1.0.12
+
+  # State, and one of only two packages above the pure Dart layers.
+  # Riverpod lives in presentation and here, never below (Decision 7).
+  # Pinned exactly because `riverpod_annotation` pins the runtime it
+  # generates against: the pair moves together or not at all.
+  flutter_riverpod: 3.2.1
+
+  # Not a second parser: it is the type `flutter_markdown_plus` takes its
+  # extension points in, the way `re_highlight` is the type its highlighter
+  # takes. The parse that produces blocks is the `markdown_parser`
+  # capability's, behind its contract (Decision 7); what is here is one
+  # inline syntax that draws a footnote's marker.
+  markdown: ^7.3.1
+
+  # Source mode. Measured against the fallback and kept: 4.4ms build p50
+  # while typing a 2853-line document, against a plain TextField's 38.8ms
+  # (Decision 18).
+  re_editor: ^0.10.0
+
+  # Syntax highlighting for the code blocks in the preview — the same
+  # package `re_editor` brings for source mode (Decision 18).
+  re_highlight: ^0.0.3
+
+  riverpod_annotation: 4.0.2
+
+  # The sqlite library itself, bundled with the app: `tom_infra` holds the
+  # FTS5 index in pure Dart and this is what guarantees a library to open on
+  # every platform, Windows included, where there is no system one.
+  # Superseded by `sqlite3` 3.x, which carries its own through native assets
+  # — a swap for when that is not behind a Flutter flag (stack/platform.md).
+  sqlite3_flutter_libs: ^0.5.42
 
   # The whole graph, because this is the composition root: the one place
   # allowed to see an implementation and hand it to whatever declared the
@@ -37,10 +79,34 @@ dependencies:
   tom_presentation:
     path: ../../packages/presentation
 
+  # The look, shared with tom_mobile: colour roles, metrics, the marks and the
+  # components. A screen is this application's; what it is drawn with is not.
+  tom_ui:
+    path: ../../packages/ui
+
+  # Window control: title, and a minimum size the layout holds together in
+  # (docs/product/workspace/regions/doc.md).
+  window_manager: ^0.5.2
+
 dev_dependencies:
+  # Codegen for the providers below. Pinned exactly, like every other
+  # generator here: a build tool that moves on its own produces a diff
+  # nobody wrote.
+  build_runner: ^2.15.1
+
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
+
+  # The binding the end-to-end scenarios run under. `flutter test` alone
+  # runs in a fake-async zone where real file I/O and a real `Process.run`
+  # never complete, so an app that reads folders and drives git can only be
+  # driven on a device — which is what this provides.
+  integration_test:
+    sdk: flutter
+
+  riverpod_generator: 4.0.3
+
 
 flutter:
   uses-material-design: true

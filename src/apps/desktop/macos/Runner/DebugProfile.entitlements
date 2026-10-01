@@ -2,8 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- TOM drives the user's own git binary (Decision 2), against folders
+	     anywhere on their disk (a space is a folder, not a repository). The
+	     App Sandbox forbids all of it: it cannot execute /usr/bin/git, read
+	     ~/.gitconfig or reach the SSH keys the user's git authenticates
+	     with. Sandboxing would mean implementing authentication, which the
+	     product deliberately does not do.
+
+	     The cost is the Mac App Store, which the roadmap had already given
+	     up: macOS ships as a dmg (M3). -->
 	<key>com.apple.security.app-sandbox</key>
-	<true/>
+	<false/>
 	<key>com.apple.security.cs.allow-jit</key>
 	<true/>
 	<key>com.apple.security.network.server</key>

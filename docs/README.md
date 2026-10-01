@@ -1,46 +1,26 @@
-# TOM — Team-Oriented Markdown
+# Documentation
 
-> **A Git client specialized in documentation.** Your markdown files, your Git repository, and a UI that makes that workflow pleasant for an entire team — no mandatory cloud, no lock-in, no subscription.
+The corpus, split by audience. `about.md` is the shared context above the fork
+and `roadmap.md` is the order things arrive in; the four chapters answer one
+question each.
 
-## Documentation map
-
-Five folders, one question each, plus the decision log that cuts across them.
-
-| Folder | Answers | Contents |
-|---|---|---|
-| [products/](products/) | what each feature must do, for stakeholders | [convention](products/README.md) — one folder per feature: `doc.md` (non-technical rules) + `mocks/` |
-| [product/](product/) | what is being built, and why | [product](product/product.md) · [roadmap](product/roadmap.md) |
-| [architecture/](architecture/) | how it is built | [layers](architecture/layers.md) · [flows](architecture/flows.md) · [domain model](architecture/domain-model.md) · [dependencies](architecture/dependencies.md) |
-| [design/](design/) | what the composite screens and the visual system look like | [wireframes](design/README.md) · [visual language](design/visual-language.md) |
-| [process/](process/) | how the work is done | [setup](process/setup.md) · [versioning](process/versioning.md) · [repository settings](process/repository-settings.md) |
-| [decisions/](decisions/) | what was settled, and why | ADRs, one per file, declaratively named |
-
-`docs/products/` is the one folder meant to be edited by stakeholders, not just engineers: it is the living source of truth for app behaviour, kept current as the app evolves, and is what code should be checked against. `product/` stays the "why" — vision, personas, non-goals — one level above any single feature. `decisions/` sits outside all of them on purpose: 001 is about licensing, 004 about the business model, 013 about the stack. They belong to no single folder, and keeping the log flat is the ADR convention.
-
-## Decisions at a glance
-
-| # | Decision |
+| | |
 |---|---|
-| [001](decisions/001-license-is-mit.md) | License is MIT |
-| [002](decisions/002-git-via-system-binary.md) | Git through the system binary (libgit2 later) |
-| [003](decisions/003-editor-is-source-plus-preview.md) | The editor is source + preview; no WYSIWYG |
-| [004](decisions/004-business-model-is-open-core.md) | The business model is open-core |
-| [005](decisions/005-errors-use-result-with-sealed-classes.md) | Errors use Result with sealed classes; no dartz |
-| [006](decisions/006-no-navigation-package.md) | No navigation package |
-| [007](decisions/007-external-dependencies-behind-contracts.md) | External dependencies isolated behind contracts |
-| [008](decisions/008-monorepo-with-pure-dart-core.md) | Monorepo with a pure Dart core *(partly superseded by 014)* |
-| [009](decisions/009-space-session-is-single-source-of-truth.md) | The space session is the single source of truth |
-| [010](decisions/010-watcher-and-git-cooperate-by-protocol.md) | The watcher and git cooperate by an explicit protocol |
-| [011](decisions/011-telemetry-is-opt-in.md) | Telemetry is opt-in, no-op by default |
-| [012](decisions/012-shell-is-extensible-via-compile-time-modules.md) | The shell is extensible through compile-time modules |
-| [013](decisions/013-stack-is-flutter-and-dart.md) | The stack is Flutter and Dart |
-| [014](decisions/014-each-layer-is-its-own-package.md) | Each layer is its own package |
-| [015](decisions/015-ddd-is-applied-selectively.md) | DDD is applied selectively |
+| [`about.md`](about.md) | What the project *is* — the bet, the principles, the personas, the non-goals. Read it first |
+| [`product/`](product/README.md) | What each feature must **do**, in non-technical language. Maintained by stakeholders |
+| [`technical/`](technical/README.md) | How it is **built** — the architecture, the conventions, the runtime, the decisions |
+| [`design/`](design/README.md) | What it **looks like** — the colour roles, the components, every screen as a board |
+| [`roadmap.md`](roadmap.md) | Spikes, phases and milestones, in order. There is no task queue beside it |
 
-## Where the code is
+**One subject per file, and every folder's `README.md` is its index.** How a
+doc is shaped, and where a given sentence belongs:
+[`product/conventions.md`](product/conventions.md) and the
+[`tom-docs`](../.ai/skills/tom-docs/SKILL.md) skill.
 
-The Dart workspace lives in [`src/`](../src/), so this folder and the licence lead the repository root rather than build files. Seven packages, one per layer; `make help` from the root lists every command.
+**The canonical form of a rule is the dartdoc of the code that implements it.**
+This chapter states the rule, the code shows it; when the two disagree, the
+code is right and the doc is a bug.
 
 ---
 
-*This documentation lives in `docs/` inside the repo itself, as markdown — the app should, as soon as possible, be used to edit its own docs.*
+*See also: [AGENTS.md](../AGENTS.md) · [CONTRIBUTING.md](../CONTRIBUTING.md)*

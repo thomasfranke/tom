@@ -8,61 +8,84 @@ part 'git_failure.freezed.dart';
 
 /// A git operation that did not complete, as the product talks about it.
 ///
-/// Domain vocabulary, not technical: infrastructure reports what the process
-/// did — an exit code, a stderr — and `tom_data` translates that into one of
-/// the variants below. The package graph is what keeps the translation honest:
-/// `tom_infra` depends only on `tom_core`, so it cannot name a [GitFailure]
-/// even by accident, and skipping the translation does not compile.
-///
-/// `sealed`, so a `switch` over it is exhaustive — in an app where new git
-/// failure modes are discovered continuously, that turns "I forgot this case"
-/// from a silent bug into a compile error. Freezed generates the variants'
-/// `==`/`hashCode` (element-wise for [MergeConflict.conflictedFiles]), which
-/// is what used to be hand-written here.
+/// **Nothing here is a machine's words**: a variant carries only what goes
+/// on screen, and the command, stderr and exit code travel in
+/// [AppFailure.cause]. A variant is as specific as the product's answer to it
+/// and no more; `sealed`, so a `switch` over it is exhaustive.
 @freezed
 sealed class GitFailure with _$GitFailure implements AppFailure {
   /// No `git` executable was found on the PATH.
   ///
-  /// Recoverable only by the user: TOM drives the system binary (Decision 2),
-  /// so there is nothing to fall back to.
-  const factory GitFailure.notInstalled() = GitNotInstalled;
+  /// Only the user can fix it: TOM drives the system binary (Decision 2).
+  const factory GitFailure.notInstalled({AppFailure? cause}) = GitNotInstalled;
 
   /// The folder the user opened is not inside a Git repository.
   ///
-  /// A space is a folder, not a repository, so this is a state to offer to
-  /// fix (`git init`), not an error to report.
+  /// A state to offer to fix, not an error to report.
   const factory GitFailure.notARepository(
     /// The absolute path that was searched for an enclosing repository.
-    String path,
-  ) = NotARepository;
+    String path, {
+    AppFailure? cause,
+  }) = GitNotARepository;
 
   /// A merge, pull or rebase stopped with conflicts.
   const factory GitFailure.mergeConflict(
     /// Paths left conflicted, relative to the repository root.
-    List<String> conflictedFiles,
-  ) = MergeConflict;
+    ///
+    /// Handed over, not copied (see `GitStatusValueObject.entries`).
+    List<String> conflictedFiles, {
+    AppFailure? cause,
+  }) = GitMergeConflict;
+
+  /// Staging was refused because a document still holds a conflict marker.
+  ///
+  /// This product's rule, not git's: git will record a marker somebody
+  /// staged, and `<<<<<<<` committed into documentation is read by everyone
+  /// who opens the file next
+  /// (`docs/product/git-workflow/push-pull/when-a-pull-conflicts/doc.md`).
+  const factory GitFailure.conflictMarkersPresent(
+    /// The documents still holding one, so the refusal can name them.
+    List<String> paths, {
+    AppFailure? cause,
+  }) = GitConflictMarkersPresent;
 
   /// The remote refused the credentials, or asked for some TOM cannot supply.
-  const factory GitFailure.authenticationFailed() = AuthenticationFailed;
+  const factory GitFailure.authenticationFailed({AppFailure? cause}) =
+      GitAuthenticationFailed;
 
   /// HEAD points at a commit rather than a branch.
   ///
-  /// Committing from here is legal in git and almost never what a
-  /// documentation author meant, so it is surfaced rather than silently
-  /// allowed.
-  const factory GitFailure.detachedHead() = DetachedHead;
+  /// Legal in git and almost never what a documentation author meant, so it
+  /// is surfaced rather than silently allowed.
+  const factory GitFailure.detachedHead({AppFailure? cause}) = GitDetachedHead;
 
-  /// A git command failed in a way the product has no vocabulary for.
+  /// The remote refused a push because it had moved on first.
   ///
-  /// The typed fallback: unexpected, but still a `GitFailure` rather than an
-  /// exception, so the guarantee that nothing throws across a boundary holds
-  /// without having to enumerate every way git can fail up front. A variant
-  /// promoted out of here is a variant that earned a name.
-  const factory GitFailure.commandFailed(
-    /// The command as it was run, for the "details" disclosure in the UI.
-    String command,
+  /// Its own outcome because pulling is the way out
+  /// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
+  const factory GitFailure.pushRejected({AppFailure? cause}) = GitPushRejected;
 
-    /// What git wrote to stderr, verbatim.
-    String stderr,
-  ) = GitCommandFailed;
+  /// A git command ran past the time it was allowed and was killed.
+  ///
+  /// Which command is in [cause]; the product says "this took too long".
+  const factory GitFailure.timedOut({AppFailure? cause}) = GitTimedOut;
+
+  /// The document has no version at that revision.
+  ///
+  /// A new document, one only ever renamed into place, or a repository with
+  /// no commits yet: every block is an addition, which is an answer rather
+  /// than a failure to report
+  /// (`docs/product/diff/rendered-diff/what-is-compared/doc.md`).
+  const factory GitFailure.pathNotInRevision(
+    /// The path, as the user's repository spells it.
+    String path, {
+    AppFailure? cause,
+  }) = GitPathNotInRevision;
+
+  /// Git failed in a way the product has no vocabulary for.
+  ///
+  /// The typed fallback, carrying nothing but [cause]; a variant promoted out
+  /// of here is one that earned its own sentence on screen.
+  const factory GitFailure.operationFailed({AppFailure? cause}) =
+      GitOperationFailed;
 }

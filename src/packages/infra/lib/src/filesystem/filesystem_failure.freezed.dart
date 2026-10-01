@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 mixin _$FilesystemFailure {
 
 /// The path that was asked for.
- String get path;
+ String get path; AppFailure? get cause;
 /// Create a copy of FilesystemFailure
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -26,16 +26,16 @@ $FilesystemFailureCopyWith<FilesystemFailure> get copyWith => _$FilesystemFailur
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FilesystemFailure&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FilesystemFailure&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,path);
+int get hashCode => Object.hash(runtimeType,path,cause);
 
 @override
 String toString() {
-  return 'FilesystemFailure(path: $path)';
+  return 'FilesystemFailure(path: $path, cause: $cause)';
 }
 
 
@@ -46,7 +46,7 @@ abstract mixin class $FilesystemFailureCopyWith<$Res>  {
   factory $FilesystemFailureCopyWith(FilesystemFailure value, $Res Function(FilesystemFailure) _then) = _$FilesystemFailureCopyWithImpl;
 @useResult
 $Res call({
- String path
+ String path, AppFailure? cause
 });
 
 
@@ -63,10 +63,11 @@ class _$FilesystemFailureCopyWithImpl<$Res>
 
 /// Create a copy of FilesystemFailure
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? path = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? path = null,Object? cause = freezed,}) {
   return _then(_self.copyWith(
 path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 
@@ -87,12 +88,13 @@ extension FilesystemFailurePatterns on FilesystemFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FilesystemEntryNotFound value)?  entryNotFound,TResult Function( FilesystemAccessDenied value)?  accessDenied,TResult Function( FilesystemOperationFailed value)?  operationFailed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FilesystemEntryNotFound value)?  entryNotFound,TResult Function( FilesystemAccessDenied value)?  accessDenied,TResult Function( FilesystemNotUtf8 value)?  notUtf8,TResult Function( FilesystemOperationFailed value)?  operationFailed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
 return entryNotFound(_that);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that);case FilesystemOperationFailed() when operationFailed != null:
+return accessDenied(_that);case FilesystemNotUtf8() when notUtf8 != null:
+return notUtf8(_that);case FilesystemOperationFailed() when operationFailed != null:
 return operationFailed(_that);case _:
   return orElse();
 
@@ -111,12 +113,13 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FilesystemEntryNotFound value)  entryNotFound,required TResult Function( FilesystemAccessDenied value)  accessDenied,required TResult Function( FilesystemOperationFailed value)  operationFailed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FilesystemEntryNotFound value)  entryNotFound,required TResult Function( FilesystemAccessDenied value)  accessDenied,required TResult Function( FilesystemNotUtf8 value)  notUtf8,required TResult Function( FilesystemOperationFailed value)  operationFailed,}){
 final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound():
 return entryNotFound(_that);case FilesystemAccessDenied():
-return accessDenied(_that);case FilesystemOperationFailed():
+return accessDenied(_that);case FilesystemNotUtf8():
+return notUtf8(_that);case FilesystemOperationFailed():
 return operationFailed(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -131,12 +134,13 @@ return operationFailed(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FilesystemEntryNotFound value)?  entryNotFound,TResult? Function( FilesystemAccessDenied value)?  accessDenied,TResult? Function( FilesystemOperationFailed value)?  operationFailed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FilesystemEntryNotFound value)?  entryNotFound,TResult? Function( FilesystemAccessDenied value)?  accessDenied,TResult? Function( FilesystemNotUtf8 value)?  notUtf8,TResult? Function( FilesystemOperationFailed value)?  operationFailed,}){
 final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
 return entryNotFound(_that);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that);case FilesystemOperationFailed() when operationFailed != null:
+return accessDenied(_that);case FilesystemNotUtf8() when notUtf8 != null:
+return notUtf8(_that);case FilesystemOperationFailed() when operationFailed != null:
 return operationFailed(_that);case _:
   return null;
 
@@ -154,12 +158,13 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path)?  entryNotFound,TResult Function( String path)?  accessDenied,TResult Function( String path,  String description)?  operationFailed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  AppFailure? cause)?  entryNotFound,TResult Function( String path,  AppFailure? cause)?  accessDenied,TResult Function( String path,  AppFailure? cause)?  notUtf8,TResult Function( String path,  String description,  AppFailure? cause)?  operationFailed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
-return entryNotFound(_that.path);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that.path);case FilesystemOperationFailed() when operationFailed != null:
-return operationFailed(_that.path,_that.description);case _:
+return entryNotFound(_that.path,_that.cause);case FilesystemAccessDenied() when accessDenied != null:
+return accessDenied(_that.path,_that.cause);case FilesystemNotUtf8() when notUtf8 != null:
+return notUtf8(_that.path,_that.cause);case FilesystemOperationFailed() when operationFailed != null:
+return operationFailed(_that.path,_that.description,_that.cause);case _:
   return orElse();
 
 }
@@ -177,12 +182,13 @@ return operationFailed(_that.path,_that.description);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path)  entryNotFound,required TResult Function( String path)  accessDenied,required TResult Function( String path,  String description)  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  AppFailure? cause)  entryNotFound,required TResult Function( String path,  AppFailure? cause)  accessDenied,required TResult Function( String path,  AppFailure? cause)  notUtf8,required TResult Function( String path,  String description,  AppFailure? cause)  operationFailed,}) {final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound():
-return entryNotFound(_that.path);case FilesystemAccessDenied():
-return accessDenied(_that.path);case FilesystemOperationFailed():
-return operationFailed(_that.path,_that.description);}
+return entryNotFound(_that.path,_that.cause);case FilesystemAccessDenied():
+return accessDenied(_that.path,_that.cause);case FilesystemNotUtf8():
+return notUtf8(_that.path,_that.cause);case FilesystemOperationFailed():
+return operationFailed(_that.path,_that.description,_that.cause);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -196,12 +202,13 @@ return operationFailed(_that.path,_that.description);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path)?  entryNotFound,TResult? Function( String path)?  accessDenied,TResult? Function( String path,  String description)?  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  AppFailure? cause)?  entryNotFound,TResult? Function( String path,  AppFailure? cause)?  accessDenied,TResult? Function( String path,  AppFailure? cause)?  notUtf8,TResult? Function( String path,  String description,  AppFailure? cause)?  operationFailed,}) {final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
-return entryNotFound(_that.path);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that.path);case FilesystemOperationFailed() when operationFailed != null:
-return operationFailed(_that.path,_that.description);case _:
+return entryNotFound(_that.path,_that.cause);case FilesystemAccessDenied() when accessDenied != null:
+return accessDenied(_that.path,_that.cause);case FilesystemNotUtf8() when notUtf8 != null:
+return notUtf8(_that.path,_that.cause);case FilesystemOperationFailed() when operationFailed != null:
+return operationFailed(_that.path,_that.description,_that.cause);case _:
   return null;
 
 }
@@ -213,11 +220,12 @@ return operationFailed(_that.path,_that.description);case _:
 
 
 class FilesystemEntryNotFound implements FilesystemFailure {
-  const FilesystemEntryNotFound(this.path);
+  const FilesystemEntryNotFound(this.path, {this.cause});
   
 
 /// The path that was asked for.
 @override final  String path;
+@override final  AppFailure? cause;
 
 /// Create a copy of FilesystemFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -229,16 +237,16 @@ $FilesystemEntryNotFoundCopyWith<FilesystemEntryNotFound> get copyWith => _$File
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FilesystemEntryNotFound&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FilesystemEntryNotFound&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,path);
+int get hashCode => Object.hash(runtimeType,path,cause);
 
 @override
 String toString() {
-  return 'FilesystemFailure.entryNotFound(path: $path)';
+  return 'FilesystemFailure.entryNotFound(path: $path, cause: $cause)';
 }
 
 
@@ -249,7 +257,7 @@ abstract mixin class $FilesystemEntryNotFoundCopyWith<$Res> implements $Filesyst
   factory $FilesystemEntryNotFoundCopyWith(FilesystemEntryNotFound value, $Res Function(FilesystemEntryNotFound) _then) = _$FilesystemEntryNotFoundCopyWithImpl;
 @override @useResult
 $Res call({
- String path
+ String path, AppFailure? cause
 });
 
 
@@ -266,10 +274,11 @@ class _$FilesystemEntryNotFoundCopyWithImpl<$Res>
 
 /// Create a copy of FilesystemFailure
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
   return _then(FilesystemEntryNotFound(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 
@@ -280,11 +289,12 @@ as String,
 
 
 class FilesystemAccessDenied implements FilesystemFailure {
-  const FilesystemAccessDenied(this.path);
+  const FilesystemAccessDenied(this.path, {this.cause});
   
 
 /// The path the operation was denied on.
 @override final  String path;
+@override final  AppFailure? cause;
 
 /// Create a copy of FilesystemFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -296,16 +306,16 @@ $FilesystemAccessDeniedCopyWith<FilesystemAccessDenied> get copyWith => _$Filesy
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FilesystemAccessDenied&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FilesystemAccessDenied&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,path);
+int get hashCode => Object.hash(runtimeType,path,cause);
 
 @override
 String toString() {
-  return 'FilesystemFailure.accessDenied(path: $path)';
+  return 'FilesystemFailure.accessDenied(path: $path, cause: $cause)';
 }
 
 
@@ -316,7 +326,7 @@ abstract mixin class $FilesystemAccessDeniedCopyWith<$Res> implements $Filesyste
   factory $FilesystemAccessDeniedCopyWith(FilesystemAccessDenied value, $Res Function(FilesystemAccessDenied) _then) = _$FilesystemAccessDeniedCopyWithImpl;
 @override @useResult
 $Res call({
- String path
+ String path, AppFailure? cause
 });
 
 
@@ -333,10 +343,80 @@ class _$FilesystemAccessDeniedCopyWithImpl<$Res>
 
 /// Create a copy of FilesystemFailure
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
   return _then(FilesystemAccessDenied(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class FilesystemNotUtf8 implements FilesystemFailure {
+  const FilesystemNotUtf8(this.path, {this.cause});
+  
+
+/// The path whose bytes could not be decoded.
+@override final  String path;
+@override final  AppFailure? cause;
+
+/// Create a copy of FilesystemFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$FilesystemNotUtf8CopyWith<FilesystemNotUtf8> get copyWith => _$FilesystemNotUtf8CopyWithImpl<FilesystemNotUtf8>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FilesystemNotUtf8&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,path,cause);
+
+@override
+String toString() {
+  return 'FilesystemFailure.notUtf8(path: $path, cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $FilesystemNotUtf8CopyWith<$Res> implements $FilesystemFailureCopyWith<$Res> {
+  factory $FilesystemNotUtf8CopyWith(FilesystemNotUtf8 value, $Res Function(FilesystemNotUtf8) _then) = _$FilesystemNotUtf8CopyWithImpl;
+@override @useResult
+$Res call({
+ String path, AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$FilesystemNotUtf8CopyWithImpl<$Res>
+    implements $FilesystemNotUtf8CopyWith<$Res> {
+  _$FilesystemNotUtf8CopyWithImpl(this._self, this._then);
+
+  final FilesystemNotUtf8 _self;
+  final $Res Function(FilesystemNotUtf8) _then;
+
+/// Create a copy of FilesystemFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
+  return _then(FilesystemNotUtf8(
+null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 
@@ -347,13 +427,14 @@ as String,
 
 
 class FilesystemOperationFailed implements FilesystemFailure {
-  const FilesystemOperationFailed(this.path, this.description);
+  const FilesystemOperationFailed(this.path, this.description, {this.cause});
   
 
 /// The path the operation was attempted on.
 @override final  String path;
-/// What `dart:io` reported, verbatim. For diagnostics — never parsed.
+/// What the machine reported, verbatim. For diagnostics — never parsed.
  final  String description;
+@override final  AppFailure? cause;
 
 /// Create a copy of FilesystemFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -365,16 +446,16 @@ $FilesystemOperationFailedCopyWith<FilesystemOperationFailed> get copyWith => _$
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FilesystemOperationFailed&&(identical(other.path, path) || other.path == path)&&(identical(other.description, description) || other.description == description));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FilesystemOperationFailed&&(identical(other.path, path) || other.path == path)&&(identical(other.description, description) || other.description == description)&&(identical(other.cause, cause) || other.cause == cause));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,path,description);
+int get hashCode => Object.hash(runtimeType,path,description,cause);
 
 @override
 String toString() {
-  return 'FilesystemFailure.operationFailed(path: $path, description: $description)';
+  return 'FilesystemFailure.operationFailed(path: $path, description: $description, cause: $cause)';
 }
 
 
@@ -385,7 +466,7 @@ abstract mixin class $FilesystemOperationFailedCopyWith<$Res> implements $Filesy
   factory $FilesystemOperationFailedCopyWith(FilesystemOperationFailed value, $Res Function(FilesystemOperationFailed) _then) = _$FilesystemOperationFailedCopyWithImpl;
 @override @useResult
 $Res call({
- String path, String description
+ String path, String description, AppFailure? cause
 });
 
 
@@ -402,11 +483,12 @@ class _$FilesystemOperationFailedCopyWithImpl<$Res>
 
 /// Create a copy of FilesystemFailure
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? description = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? description = null,Object? cause = freezed,}) {
   return _then(FilesystemOperationFailed(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
   ));
 }
 

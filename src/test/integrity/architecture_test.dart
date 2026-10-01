@@ -1,18 +1,6 @@
-/// The layer graph, checked against what the code and the pubspecs declare.
-///
-/// The package boundaries already make an illegal `package:` import fail to
-/// compile. This test covers the three failures the compiler cannot see:
-///
-///   * a dependency **added to a pubspec**, after which the illegal import
-///     compiles perfectly well;
-///   * an SDK library — `dart:io` needs no declaration, so nothing stops a
-///     pure layer spawning a process or opening a file;
-///   * a Flutter package arriving through `dev_dependencies`, after which the
-///     package no longer runs under `dart test` at all.
-///
-/// A diagram in the docs would catch none of them. This does.
-///
-///     dart test test/architecture_test.dart
+/// The layer graph, checked for the three leaks the compiler cannot see: a
+/// dependency added to a pubspec, an SDK library that needs no declaration,
+/// and Flutter arriving through `dev_dependencies`.
 library;
 
 import 'dart:io';
@@ -20,18 +8,20 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
-/// What each package may depend on.
-///
-/// Declaring *fewer* is fine — a layer that has not needed one of these yet is
-/// not a problem. Declaring anything absent from this map is the failure being
-/// guarded against.
+/// What each package may depend on. Declaring fewer is fine; declaring
+/// anything absent from this map is the failure guarded against.
 const Map<String, Set<String>> graph = <String, Set<String>>{
   'tom_core': <String>{},
   'tom_domain': <String>{'tom_core'},
   'tom_application': <String>{'tom_core', 'tom_domain'},
-  'tom_infra': <String>{'tom_core'},
+  // One layer in two packages that depend on each other on purpose
+  // (Decision 24); what `tom_infra` may not have is `tom_domain`, which is
+  // the whole guarantee.
   'tom_data': <String>{'tom_core', 'tom_domain', 'tom_infra'},
+  'tom_infra': <String>{'tom_core', 'tom_data'},
   'tom_presentation': <String>{'tom_core', 'tom_domain', 'tom_application'},
+  // Depends on nothing, which is what makes the look shareable (Decision 26).
+  'tom_ui': <String>{},
   'tom_desktop': <String>{
     'tom_core',
     'tom_domain',
@@ -39,28 +29,30 @@ const Map<String, Set<String>> graph = <String, Set<String>>{
     'tom_infra',
     'tom_data',
     'tom_presentation',
+    'tom_ui',
   },
-  // Reserved skeleton for Phase 3 (docs/product/roadmap.md). No infra/data
-  // yet — those are platform-specific and arrive with the mobile-specific
-  // implementations of the contracts tom_infra defines for desktop.
+  // Reserved for Phase 3 (docs/roadmap.md); its infra and data arrive with
+  // the mobile implementations of the contracts.
   'tom_mobile': <String>{
     'tom_core',
     'tom_domain',
     'tom_application',
     'tom_presentation',
+    'tom_ui',
   },
 };
 
+/// What each package may depend on to test only, on top of [graph].
+///
+/// Empty since Decision 24, and kept so the next exception has somewhere to
+/// be declared and a test below proving `lib/` never uses it.
+const Map<String, Set<String>> testOnlyGraph = <String, Set<String>>{};
+
 /// Libraries each package may not import, whatever its pubspec says.
 ///
-/// The pubspec answers *which packages* a layer may reach; this answers *which
-/// capabilities*. They are different questions: `dart:io` ships with the SDK
-/// and is available to everything by default, so without this table a domain
-/// entity can run `Process.run` and every other mechanism stays green.
-///
-/// `tom_infra` is where the process, the socket and the file belong — that is
-/// the whole job of the package. `tom_desktop` is the composition root and is
-/// deliberately unconstrained.
+/// The pubspec answers which *packages* a layer may reach; this answers
+/// which *capabilities*, since `dart:io` needs no declaration and a domain
+/// entity could otherwise run `Process.run` with every other check green.
 const Map<String, Set<String>> forbiddenImports = <String, Set<String>>{
   'tom_core': <String>{
     'dart:io',
@@ -83,15 +75,16 @@ const Map<String, Set<String>> forbiddenImports = <String, Set<String>>{
   'tom_data': <String>{'dart:io', 'dart:ffi', 'package:flutter'},
   'tom_presentation': <String>{'dart:io', 'dart:ffi', 'package:flutter'},
   'tom_infra': <String>{'package:flutter'},
+  // A component that reads a file cannot be drawn on the other platform.
+  'tom_ui': <String>{'dart:io', 'dart:ffi', 'dart:isolate'},
   'tom_desktop': <String>{},
   'tom_mobile': <String>{},
 };
 
 /// Packages that drag Flutter in, in any dependency section.
 ///
-/// `flutter_test` in a pure package's `dev_dependencies` is the quiet version
-/// of the failure: nothing imports a widget, but the package can no longer run
-/// under `dart test`, and framework independence stops being provable.
+/// `flutter_test` in a pure package's `dev_dependencies` is the quiet
+/// failure: nothing imports a widget, but `dart test` no longer runs.
 const Set<String> flutterPackages = <String>{
   'flutter',
   'flutter_test',
@@ -100,8 +93,16 @@ const Set<String> flutterPackages = <String>{
   'integration_test',
 };
 
-/// The composition roots — the only packages allowed to know Flutter exists.
+/// The composition roots — the packages that wire an application together.
+///
+/// The end-to-end harness is not a third: it runs inside the app's own
+/// native runner, and a second runner drifts into a configuration nobody
+/// ships, so the scenarios live in `apps/desktop/integration_test/`.
 const Set<String> compositionRoots = <String>{'tom_desktop', 'tom_mobile'};
+
+/// The packages allowed to know Flutter exists: the roots plus `tom_ui`,
+/// which draws for both applications and wires nothing (Decision 26).
+const Set<String> framework = <String>{...compositionRoots, 'tom_ui'};
 
 /// An `import` or `export`, with the URI it names.
 final RegExp directive = RegExp(
@@ -116,18 +117,20 @@ void main() {
 
   setUpAll(() {
     workspace = findWorkspaceRoot();
-    for (final String group in <String>['packages', 'apps']) {
-      final Directory dir = Directory('${workspace.path}/$group');
-      for (final Directory entry in dir.listSync().whereType<Directory>()) {
-        final File file = File('${entry.path}/pubspec.yaml');
-        if (!file.existsSync()) {
-          continue;
-        }
-        final YamlMap doc = loadYaml(file.readAsStringSync()) as YamlMap;
-        final String name = doc['name'] as String;
-        pubspecs[name] = doc;
-        directories[name] = entry;
+    for (final Directory entry in <Directory>[
+      for (final String group in <String>['packages', 'apps'])
+        ...Directory(
+          '${workspace.path}/$group',
+        ).listSync().whereType<Directory>(),
+    ]) {
+      final File file = File('${entry.path}/pubspec.yaml');
+      if (!file.existsSync()) {
+        continue;
       }
+      final YamlMap doc = loadYaml(file.readAsStringSync()) as YamlMap;
+      final String name = doc['name'] as String;
+      pubspecs[name] = doc;
+      directories[name] = entry;
     }
   });
 
@@ -153,23 +156,70 @@ void main() {
     );
   });
 
+  /// The `tom_` packages [package] names in [section].
+  Set<String> siblingsIn(String package, String section) => declared(
+    package,
+    section,
+  ).where((String d) => d.startsWith('tom_')).toSet();
+
   group('dependency direction', () {
     graph.forEach((String package, Set<String> allowed) {
       final String expectation = allowed.isEmpty
           ? 'nothing'
           : allowed.join(', ');
       test('$package depends on $expectation', () {
-        final Set<String> siblings = allDependenciesOf(
-          package,
-        ).where((String d) => d.startsWith('tom_')).toSet();
-
         expect(
-          siblings.difference(allowed),
+          siblingsIn(package, 'dependencies').difference(allowed),
           isEmpty,
           reason:
               '$package declares a dependency it is not allowed to have. If '
               'the layering genuinely changed, change it here first and say '
-              'why in docs/architecture/layers.md.',
+              'why in docs/technical/architecture.md.',
+        );
+      });
+
+      final Set<String> forTests = <String>{
+        ...allowed,
+        ...?testOnlyGraph[package],
+      };
+      test('$package tests against ${forTests.join(', ')}', () {
+        expect(
+          siblingsIn(package, 'dev_dependencies').difference(forTests),
+          isEmpty,
+          reason:
+              "$package's tests reach a package the layer graph does not "
+              'allow. A dev dependency is a smaller admission than a real '
+              'one, but it is still one: add it to testOnlyGraph with the '
+              'reason, or stop using it.',
+        );
+      });
+    });
+  });
+
+  group('a test-only dependency stays out of the build', () {
+    testOnlyGraph.forEach((String package, Set<String> testOnly) {
+      test('$package does not import ${testOnly.join(', ')} from lib/', () {
+        final List<String> offences = <String>[
+          for (final File file in dartFilesIn(directories[package]!))
+            for (final RegExpMatch match in directive.allMatches(
+              file.readAsStringSync(),
+            ))
+              if (testOnly.any(
+                (String banned) =>
+                    match.group(1)!.startsWith('package:$banned/'),
+              ))
+                '${file.path.replaceFirst('${workspace.path}/', '')} imports '
+                    '${match.group(1)}',
+        ];
+
+        expect(
+          offences,
+          isEmpty,
+          reason:
+              'A package $package is only allowed to *test* against reached '
+              'its lib/. That is the layer graph inverted, and the pubspec '
+              'cannot catch it — the dependency is declared, just for the '
+              'other half of the package.',
         );
       });
     });
@@ -177,24 +227,24 @@ void main() {
 
   group('framework isolation', () {
     for (final String package in graph.keys) {
-      final bool isRoot = compositionRoots.contains(package);
+      final bool draws = framework.contains(package);
 
       test(
-        isRoot
-            ? '$package is a composition root with Flutter'
+        draws
+            ? '$package is a Flutter package and says so'
             : '$package declares no Flutter package, not even to test',
         () {
           final Set<String> flutter = allDependenciesOf(
             package,
           ).intersection(flutterPackages);
 
-          if (isRoot) {
+          if (draws) {
             expect(
               flutter,
               contains('flutter'),
               reason:
-                  '$package is a composition root; it is meant to have '
-                  'Flutter.',
+                  '$package draws — a composition root or the shared look; '
+                  'it is meant to have Flutter.',
             );
           } else {
             expect(
@@ -252,6 +302,54 @@ void main() {
     });
   });
 
+  test("a screen's own widgets stay its own", () {
+    // Privacy in Dart is per file, so a screen's widgets split into files
+    // are public and the statement lives here: `screens/<a>/widgets/` is
+    // readable from `screens/<a>/` only, and what two screens both draw
+    // belongs in `tom_ui` (Decision 26).
+    final RegExp owned = RegExp(
+      r'package:tom_desktop/screens/([a-z_]+)/widgets/',
+    );
+    final List<String> offences = <String>[];
+
+    for (final String package in compositionRoots) {
+      final Directory? directory = directories[package];
+      if (directory == null) {
+        continue;
+      }
+      for (final File file in <File>[
+        ...dartFilesIn(directory),
+        ...dartFilesUnder(Directory('${directory.path}/test')),
+      ]) {
+        final String path = file.path.replaceFirst('${workspace.path}/', '');
+        for (final RegExpMatch match in directive.allMatches(
+          file.readAsStringSync(),
+        )) {
+          final RegExpMatch? owner = owned.firstMatch(match.group(1)!);
+          if (owner == null) {
+            continue;
+          }
+          final String belongsTo = owner.group(1)!;
+          if (!file.path.contains('/screens/$belongsTo/')) {
+            offences.add('$path imports ${match.group(1)}');
+          }
+        }
+      }
+    }
+
+    expect(
+      offences,
+      isEmpty,
+      reason:
+          "A screen reached into another screen's widgets. A widget two "
+          "screens both draw is not either one's — move it to packages/ui "
+          'and let both import it from there.',
+    );
+  });
+
+  // The naming and shape rules live in `tom rules`
+  // (`tool/src/commands/rules.dart`); this file is about the graph.
+
   test('nothing overrides a dependency', () {
     final List<String> overriding = <String>[
       for (final MapEntry<String, YamlMap> entry in pubspecs.entries)
@@ -276,26 +374,21 @@ void main() {
   });
 }
 
-/// Every `.dart` file under a package's `lib/`, generated ones included.
-///
-/// Generated code is scanned on purpose: an annotation that generates a
-/// `package:flutter` import in a pure package is exactly the kind of leak that
-/// arrives without anyone writing the import.
-Iterable<File> dartFilesIn(Directory package) {
-  final Directory lib = Directory('${package.path}/lib');
-  if (!lib.existsSync()) {
-    return const <File>[];
-  }
-  return lib
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((File file) => file.path.endsWith('.dart'));
-}
+/// Every `.dart` file under a package's `lib/`, generated ones included,
+/// since a generated `package:flutter` import is the leak nobody writes.
+Iterable<File> dartFilesIn(Directory package) =>
+    dartFilesUnder(Directory('${package.path}/lib'));
 
-/// The `src/` directory, found from wherever the test was started.
-///
-/// `dart test` from `src/`, from a single package, or `make test` from the
-/// repository root all have to reach the same place.
+/// Every `.dart` file under [directory], or nothing when it is not there.
+Iterable<File> dartFilesUnder(Directory directory) => directory.existsSync()
+    ? directory
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((File file) => file.path.endsWith('.dart'))
+    : const <File>[];
+
+/// The `src/` directory, found from wherever the test was started — `src/`,
+/// a single package, or the repository root.
 Directory findWorkspaceRoot() {
   bool isWorkspace(Directory dir) {
     final File pubspec = File('${dir.path}/pubspec.yaml');

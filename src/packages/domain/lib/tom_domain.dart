@@ -1,10 +1,60 @@
-/// Entities, value objects, failures, repository contracts and domain services.
-/// Knows no framework, no git, no disk.
-///
-/// Nothing outside `lib/src/` is importable from another package, so this file
-/// is the whole public surface.
+/// The product's vocabulary: entities, value objects, failures, contracts and
+/// domain services, knowing no framework, no git, no disk.
 library;
 
+export 'src/diff/block_aligner_port.dart';
+export 'src/diff/block_differ_service.dart';
+export 'src/diff/diff_block_value_object.dart';
+export 'src/diff/document_diff_value_object.dart';
+export 'src/diff/sequence_edit_kind_enum.dart';
+export 'src/diff/sequence_edit_value_object.dart';
+export 'src/documents/block_kind_enum.dart';
+export 'src/documents/block_reader_port.dart';
+export 'src/documents/block_value_object.dart';
+export 'src/documents/document_entity.dart';
 export 'src/documents/document_failure.dart';
+export 'src/documents/document_repository.dart';
+export 'src/documents/document_repository_for.dart';
+export 'src/documents/footnote_value_object.dart';
+export 'src/documents/parsed_document_value_object.dart';
+export 'src/editing/format_command_enum.dart';
+export 'src/editing/formatted_source_value_object.dart';
+export 'src/editing/markdown_formatter_service.dart';
+export 'src/git/author_value_object.dart';
+export 'src/git/branch_entity.dart';
+export 'src/git/branch_name_value_object.dart';
+export 'src/git/commit_date_value_object.dart';
+export 'src/git/commit_entity.dart';
+export 'src/git/commit_sha_value_object.dart';
+export 'src/git/file_state_enum.dart';
 export 'src/git/git_failure.dart';
+export 'src/git/git_repository.dart';
+export 'src/git/git_repository_for.dart';
+export 'src/git/git_status_value_object.dart';
+export 'src/git/revision_value_object.dart';
+export 'src/git/status_entry_value_object.dart';
+export 'src/merge/conflict_region_value_object.dart';
+export 'src/merge/conflict_scanner_service.dart';
+export 'src/merge/merge_state_value_object.dart';
+export 'src/paths/repo_relative_path_value_object.dart';
+export 'src/paths/space_relative_path_value_object.dart';
+export 'src/preferences/language_enum.dart';
+export 'src/preferences/preferences_repository.dart';
+export 'src/preferences/preferences_value_object.dart';
+export 'src/preferences/theme_choice_enum.dart';
+export 'src/search/document_search_service.dart';
+export 'src/search/occurrence_value_object.dart';
 export 'src/search/search_failure.dart';
+export 'src/search/search_hit_value_object.dart';
+export 'src/search/search_repository.dart';
+export 'src/search/search_repository_for.dart';
+export 'src/spaces/recent_space_entity.dart';
+export 'src/spaces/recent_spaces_repository.dart';
+export 'src/spaces/space_entity.dart';
+export 'src/spaces/space_entry_type_enum.dart';
+export 'src/spaces/space_entry_value_object.dart';
+export 'src/spaces/space_failure.dart';
+export 'src/spaces/space_repository.dart';
+export 'src/wikilinks/wikilink_resolver_service.dart';
+export 'src/wikilinks/wikilink_target_value_object.dart';
+export 'src/wikilinks/wikilink_value_object.dart';

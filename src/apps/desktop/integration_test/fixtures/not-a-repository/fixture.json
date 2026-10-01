@@ -1,0 +1,5 @@
+{
+  "summary": "A folder outside any repository",
+  "description": "What Home refuses, by name and with an explanation. It is staged in the system temporary directory rather than under .e2e/, because git looks upward: a folder inside this project is inside a repository, and the app would open it — correctly, and uselessly for this test.",
+  "outsideTheProject": true
+}

@@ -2,9 +2,9 @@
 
     python3 docs/design/tools/palette.py
 
-Emits ../palette.svg (swatches, both modes) and checks every text pairing
-against WCAG AA. Wireframes deliberately carry none of this — these values
-are for the app, and this file is where they are decided.
+Emits ../visual-language/palette.svg (swatches, both modes) and checks every
+text pairing against WCAG AA. The values are for the app, and this file is
+where they are decided.
 """
 
 import os
@@ -129,5 +129,5 @@ if __name__ == "__main__":
         print(f"{mode:5}  {fg + '/' + bg:{width}}  {r:5.2f}  need {need}  "
               f"{'ok' if passed else 'FAIL'}")
     here = os.path.dirname(os.path.abspath(__file__))
-    swatch_svg(os.path.join(os.path.dirname(here), "palette.svg"))
+    swatch_svg(os.path.join(os.path.dirname(here), "visual-language", "palette.svg"))
     print("\nall pairings pass" if ok else "\nCONTRAST FAILURES ABOVE")

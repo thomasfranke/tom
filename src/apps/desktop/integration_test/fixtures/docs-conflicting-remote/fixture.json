@@ -1,0 +1,24 @@
+{
+  "summary": "A docs folder whose remote rewrote the same line",
+  "description": "The one situation a pull cannot mend on its own. Both sides changed the same line of the same file, so `git pull` stops mid-merge and writes both versions into the working tree with its markers between them. Everything around that line is untouched on purpose — a conflict that swallowed the whole file would prove nothing about drawing a *region*, and the paragraphs before and after are what the preview has to keep showing while the markers are cut out of it.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "remote": {
+    "theirs": [
+      {
+        "message": "docs: M2 closes with search",
+        "write": {
+          "docs/roadmap.md": "# Roadmap\n\n## Phase 1 — MVP\n\nThe line both sides rewrote is the one below this paragraph, and it is the\nonly one they touched.\n\nM2 closes with full-text search.\n\n## Phase 2\n\nEverything after here is untouched by either side, which is what makes the\nconflict a region rather than the whole file.\n"
+        }
+      }
+    ],
+    "mine": [
+      {
+        "message": "docs: M2 closes with replace",
+        "write": {
+          "docs/roadmap.md": "# Roadmap\n\n## Phase 1 — MVP\n\nThe line both sides rewrote is the one below this paragraph, and it is the\nonly one they touched.\n\nM2 closes with search and replace.\n\n## Phase 2\n\nEverything after here is untouched by either side, which is what makes the\nconflict a region rather than the whole file.\n"
+        }
+      }
+    ]
+  }
+}

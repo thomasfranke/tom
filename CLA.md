@@ -1,6 +1,6 @@
 # Contributor License Agreement
 
-> **Draft — not yet legally reviewed.** This document is adapted from the Apache Individual Contributor License Agreement v2.0. Before the first external pull request is accepted, it must be reviewed by a lawyer and the two placeholders below (`{PROJECT OWNER}` and `{JURISDICTION}`) must be filled in. See [Decision 1](docs/decisions/001-license-is-mit.md).
+> **Draft — not yet legally reviewed.** This document is adapted from the Apache Individual Contributor License Agreement v2.0. Before the first external pull request is accepted, it must be reviewed by a lawyer and the two placeholders below (`{PROJECT OWNER}` and `{JURISDICTION}`) must be filled in. See [Decision 1](docs/technical/decisions/001-license-is-mit.md).
 
 ## Plain-language summary
 

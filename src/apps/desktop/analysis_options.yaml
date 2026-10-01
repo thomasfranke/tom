@@ -1,3 +1,10 @@
 include:
   - package:flutter_lints/flutter.yaml
   - ../../analysis_options.yaml
+
+analyzer:
+  exclude:
+    # The end-to-end mock is content, not code: a folder the app is pointed
+    # at, holding a token non-markdown file or two so a space is a *part* of
+    # a repository rather than all of it. Analysing it would lint a fixture.
+    - integration_test/fixtures/**

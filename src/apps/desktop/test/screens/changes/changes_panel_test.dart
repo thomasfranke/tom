@@ -1,0 +1,600 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:tom_application/tom_application.dart';
+import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/screens/changes/changes_panel.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_commit_button_widget.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_message_widget.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_row_widget.dart';
+import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/tom_presentation.dart';
+import 'package:tom_ui/tom_ui.dart';
+
+/// The commit button, not the Push beside it: the column now holds two
+/// filled buttons, and `byType` would find both.
+final Finder commitButton = find.ancestor(
+  of: find.textContaining('Commit'),
+  matching: find.byType(FilledButton),
+);
+
+void main() {
+  late _Git git;
+  late ProviderContainer container;
+
+  final SpaceEntity docs = SpaceEntity(
+    root: '/code/app/docs',
+    repositoryRoot: '/code/app',
+    name: 'docs',
+  );
+
+  StatusEntryValueObject entry(
+    String path,
+    FileStateEnum state, {
+    required bool isStaged,
+  }) => StatusEntryValueObject(
+    path: RepoRelativePathValueObject(path),
+    state: state,
+    isStaged: isStaged,
+  );
+
+  GitStatusValueObject statusOf(
+    List<StatusEntryValueObject> entries, {
+    int behind = 0,
+  }) => GitStatusValueObject(
+    branch: BranchNameValueObject('main'),
+    upstream: null,
+    ahead: 0,
+    behind: behind,
+    entries: entries,
+    isDetached: false,
+  );
+
+  setUp(() {
+    git = _Git()..reported = statusOf(const <StatusEntryValueObject>[]);
+    container = ProviderContainer(
+      overrides: <Override>[
+        readGitStatusProvider.overrideWithValue(
+          ReadGitStatusUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
+        readMergeStateProvider.overrideWithValue(
+          ReadMergeStateUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
+        stageChangesProvider.overrideWithValue(
+          StageChangesUseCase(
+            gitFor: (SpaceEntity space) => git,
+            documentsFor: (SpaceEntity space) => const _NoDocuments(),
+            observability: const _Silent(),
+          ),
+        ),
+        commitChangesProvider.overrideWithValue(
+          CommitChangesUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
+        // A refused push puts its remedy on this column, so the remote
+        // actions are wired though the panel offers none of them.
+        pushRemoteProvider.overrideWithValue(
+          PushRemoteUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
+        pullRemoteProvider.overrideWithValue(
+          PullRemoteUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
+        // A pull rewrites the working tree and walks it again, so a test
+        // that pulls needs a folder to walk.
+        listSpaceEntriesProvider.overrideWithValue(
+          const ListSpaceEntriesUseCase(
+            spaces: _NothingInIt(),
+            observability: _Silent(),
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+  });
+
+  /// Mounts the panel at the shell's width with [space] open, at [height]
+  /// when it shares the aside with another.
+  Future<void> pumpPanel(
+    WidgetTester tester, {
+    SpaceEntity? space,
+    double? height,
+  }) async {
+    tester.view
+      ..physicalSize = const Size(1280, 800)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    if (space != null) {
+      container.read(spaceSessionProvider.notifier).open(space);
+    }
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: tomTheme(Brightness.light),
+          home: Scaffold(
+            body: Row(
+              children: <Widget>[
+                const Expanded(child: SizedBox.shrink()),
+                SizedBox(
+                  width: TomMetrics.git,
+                  height: height,
+                  child: const ChangesPanel(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('with nothing open it says so, and names itself no more', (
+    WidgetTester tester,
+  ) async {
+    // The column's switch names the panel now, so a caption here would
+    // repeat the raised segment (`docs/product/workspace/columns/doc.md`).
+    await pumpPanel(tester);
+
+    expect(find.text('No space is open.'), findsOneWidget);
+    expect(find.text('CHANGES'), findsNothing);
+  });
+
+  testWidgets('a clean tree says so rather than looking broken', (
+    WidgetTester tester,
+  ) async {
+    await pumpPanel(tester, space: docs);
+
+    expect(
+      find.text('Nothing has changed since the last commit.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('every change git reports is a row', (WidgetTester tester) async {
+    // The repository's changes, not the space's: a commit records the index.
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry('docs/index.md', FileStateEnum.modified, isStaged: true),
+      entry('lib/main.dart', FileStateEnum.added, isStaged: false),
+      entry('notes.md', FileStateEnum.untracked, isStaged: false),
+    ]);
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('index.md'), findsOneWidget);
+    expect(find.text('main.dart'), findsOneWidget);
+    expect(find.text('notes.md'), findsOneWidget);
+  });
+
+  testWidgets('a row names the folder under the file, two doc.md apart', (
+    WidgetTester tester,
+  ) async {
+    // The board draws the row as two lines, and this repository is full of
+    // files that share a name
+    // (`design/screens/desktop/git-commit/committing-dark.svg`).
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry(
+        'docs/product/commit/doc.md',
+        FileStateEnum.modified,
+        isStaged: false,
+      ),
+      entry('notes.md', FileStateEnum.untracked, isStaged: false),
+    ]);
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('docs/product/commit'), findsOneWidget);
+    // Nothing under a file at the repository's own root: there is no folder
+    // to name, and an empty line still takes one. Two texts in that row is
+    // the mark's letter and the name, and no third.
+    expect(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text('notes.md'),
+          matching: find.byType(ChangesRowWidget),
+        ),
+        matching: find.byType(Text),
+      ),
+      findsNWidgets(2),
+    );
+  });
+
+  testWidgets('and the count under the button says what is going in', (
+    WidgetTester tester,
+  ) async {
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry('a.md', FileStateEnum.modified, isStaged: true),
+      entry('b.md', FileStateEnum.modified, isStaged: true),
+      entry('c.md', FileStateEnum.modified, isStaged: false),
+    ]);
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('2 of 3 staged'), findsOneWidget);
+  });
+
+  testWidgets('the button names the branch the commit is going onto', (
+    WidgetTester tester,
+  ) async {
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('Commit to main'), findsOneWidget);
+  });
+
+  testWidgets('each row says what happened with a letter, not a colour only', (
+    WidgetTester tester,
+  ) async {
+    // Colour is never the only signal
+    // (docs/design/visual-language/README.md).
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry('a.md', FileStateEnum.modified, isStaged: false),
+      entry('b.md', FileStateEnum.added, isStaged: false),
+      entry('c.md', FileStateEnum.deleted, isStaged: false),
+      entry('d.md', FileStateEnum.untracked, isStaged: false),
+    ]);
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('M'), findsOneWidget);
+    expect(find.text('A'), findsOneWidget);
+    expect(find.text('D'), findsOneWidget);
+    expect(find.text('N'), findsOneWidget);
+  });
+
+  testWidgets('ticking a row stages it, one file at a time', (
+    WidgetTester tester,
+  ) async {
+    // Whole files, no hunks
+    // (docs/product/git-workflow/commit/the-changes-list/doc.md).
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry('docs/index.md', FileStateEnum.modified, isStaged: false),
+    ]);
+    await pumpPanel(tester, space: docs);
+
+    await tester.tap(find.byType(TomCheckWidget).last);
+    await tester.pumpAndSettle();
+
+    expect(git.staged.single.value, 'docs/index.md');
+  });
+
+  group('the commit button', () {
+    setUp(
+      () => git.reported = statusOf(<StatusEntryValueObject>[
+        entry('docs/index.md', FileStateEnum.modified, isStaged: true),
+      ]),
+    );
+
+    /// Whether *Commit* can be pressed.
+    bool isEnabled(WidgetTester tester) =>
+        tester.widget<FilledButton>(commitButton).onPressed != null;
+
+    testWidgets('is disabled until there is a message', (
+      WidgetTester tester,
+    ) async {
+      await pumpPanel(tester, space: docs);
+
+      expect(isEnabled(tester), isFalse);
+    });
+
+    testWidgets('is disabled with nothing staged, however good the message', (
+      WidgetTester tester,
+    ) async {
+      git.reported = statusOf(<StatusEntryValueObject>[
+        entry('docs/index.md', FileStateEnum.modified, isStaged: false),
+      ]);
+      await pumpPanel(tester, space: docs);
+
+      await tester.enterText(find.byType(TextField), 'docs: say it');
+      await tester.pumpAndSettle();
+
+      expect(isEnabled(tester), isFalse);
+    });
+
+    testWidgets('commits what is staged, and empties the box', (
+      WidgetTester tester,
+    ) async {
+      await pumpPanel(tester, space: docs);
+      await tester.enterText(find.byType(TextField), 'docs: say it');
+      await tester.pumpAndSettle();
+      expect(isEnabled(tester), isTrue);
+      git.reported = statusOf(const <StatusEntryValueObject>[]);
+
+      await tester.tap(commitButton);
+      await tester.pumpAndSettle();
+
+      expect(git.messages, <String>['docs: say it']);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        isEmpty,
+      );
+      expect(
+        find.text('Nothing has changed since the last commit.'),
+        findsOneWidget,
+      );
+    });
+  });
+
+  testWidgets('a refused operation says so without losing the list', (
+    WidgetTester tester,
+  ) async {
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry('docs/index.md', FileStateEnum.modified, isStaged: false),
+    ]);
+    await pumpPanel(tester, space: docs);
+    git.writeFailure = const GitOperationFailed();
+
+    await tester.tap(find.byType(TomCheckWidget).last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Git could not do that.'), findsOneWidget);
+    expect(find.text('index.md'), findsOneWidget);
+  });
+
+  testWidgets('a folder outside a repository is named as that', (
+    WidgetTester tester,
+  ) async {
+    git.statusFailure = const GitNotARepository('/code/app');
+
+    await pumpPanel(tester, space: docs);
+
+    expect(
+      find.text('That folder is not inside a Git repository.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a push standing refused does not take this column away', (
+    WidgetTester tester,
+  ) async {
+    // The refusal is a band above the document
+    // (docs/product/git-workflow/push-pull/when-it-fails/doc.md); the box and
+    // the button stay, because another commit is still a thing to do.
+    git.reported = statusOf(const <StatusEntryValueObject>[], behind: 3);
+    await pumpPanel(tester, space: docs);
+    git.writeFailure = const GitPushRejected();
+
+    await container.read(remoteProvider.notifier).push();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ChangesMessageWidget), findsOneWidget);
+    expect(find.byType(ChangesCommitButtonWidget), findsOneWidget);
+    expect(find.textContaining('pushed'), findsNothing);
+  });
+
+  testWidgets('both modes render, and differ', (WidgetTester tester) async {
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry('docs/index.md', FileStateEnum.modified, isStaged: false),
+    ]);
+    await pumpPanel(tester, space: docs);
+    final TomColors light = TomColors.of(
+      tester.element(find.byType(ChangesPanel)),
+    );
+
+    expect(light.modified, isNot(light.added));
+  });
+
+  testWidgets('a merge still holding conflicts counts what is left, not what '
+      'is staged', (WidgetTester tester) async {
+    git
+      ..reported = statusOf(<StatusEntryValueObject>[
+        entry('docs/roadmap.md', FileStateEnum.conflicted, isStaged: false),
+        entry('docs/guide.md', FileStateEnum.conflicted, isStaged: false),
+      ])
+      ..merge = const MergeStateValueObject(
+        inProgress: true,
+        message: "Merge branch 'main'",
+      );
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('2 documents to resolve'), findsOneWidget);
+    expect(find.text('0 of 2 staged'), findsNothing);
+  });
+
+  testWidgets('one left to resolve is said in the singular', (
+    WidgetTester tester,
+  ) async {
+    git
+      ..reported = statusOf(<StatusEntryValueObject>[
+        entry('docs/roadmap.md', FileStateEnum.conflicted, isStaged: false),
+      ])
+      ..merge = const MergeStateValueObject(
+        inProgress: true,
+        message: "Merge branch 'main'",
+      );
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('1 document to resolve'), findsOneWidget);
+  });
+
+  // Concluding the merge is a commit, and it cannot be made while a document
+  // still holds a marker — so the button is dim rather than refusing after
+  // the press (`design/screens/desktop/git-conflict/conflict-in-source-light.svg`).
+  testWidgets('the commit is unavailable while anything is unresolved', (
+    WidgetTester tester,
+  ) async {
+    git
+      ..reported = statusOf(<StatusEntryValueObject>[
+        entry('docs/roadmap.md', FileStateEnum.conflicted, isStaged: true),
+      ])
+      ..merge = const MergeStateValueObject(
+        inProgress: true,
+        message: "Merge branch 'main'",
+      );
+
+    await pumpPanel(tester, space: docs);
+    await tester.enterText(find.byType(TextField).first, 'merge it');
+    await tester.pump();
+
+    expect(tester.widget<FilledButton>(commitButton).onPressed, isNull);
+  });
+
+  testWidgets('the staged count comes back once nothing is conflicted', (
+    WidgetTester tester,
+  ) async {
+    git
+      ..reported = statusOf(<StatusEntryValueObject>[
+        entry('docs/roadmap.md', FileStateEnum.modified, isStaged: true),
+      ])
+      ..merge = const MergeStateValueObject(
+        inProgress: true,
+        message: "Merge branch 'main'",
+      );
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('1 of 1 staged'), findsOneWidget);
+    expect(find.textContaining('to resolve'), findsNothing);
+  });
+}
+
+/// Git, answering what the test set and remembering what it was asked.
+final class _Git implements GitRepository {
+  /// What git is taken to say about a merge; no merge unless a test says so.
+  MergeStateValueObject merge = MergeStateValueObject.none;
+
+  GitStatusValueObject? reported;
+  GitFailure? statusFailure;
+  GitFailure? writeFailure;
+
+  final List<RepoRelativePathValueObject> staged =
+      <RepoRelativePathValueObject>[];
+  final List<String> messages = <String>[];
+
+  /// How many times the rejection's remedy was taken.
+  int pulled = 0;
+
+  Result<void, GitFailure> _done() => writeFailure == null
+      ? const Success<void, GitFailure>(null)
+      : Failure<void, GitFailure>(writeFailure!);
+
+  @override
+  Future<Result<GitStatusValueObject, GitFailure>> status() async =>
+      statusFailure == null
+      ? Success<GitStatusValueObject, GitFailure>(reported!)
+      : Failure<GitStatusValueObject, GitFailure>(statusFailure!);
+
+  @override
+  Future<Result<void, GitFailure>> stage(
+    List<RepoRelativePathValueObject> paths,
+  ) async {
+    staged.addAll(paths);
+    return _done();
+  }
+
+  @override
+  Future<Result<void, GitFailure>> unstage(
+    List<RepoRelativePathValueObject> paths,
+  ) async => _done();
+
+  @override
+  Future<Result<void, GitFailure>> commit(String message) async {
+    messages.add(message);
+    return _done();
+  }
+
+  @override
+  Future<Result<List<CommitEntity>, GitFailure>> history({
+    RepoRelativePathValueObject? path,
+    int? limit,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Result<List<BranchEntity>, GitFailure>> branches() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<String, GitFailure>> contentAt({
+    required String revision,
+    required RepoRelativePathValueObject path,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> createBranch(
+    BranchNameValueObject name,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> switchBranch(
+    BranchNameValueObject name,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> fetch() async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> pull() async {
+    pulled++;
+    return const Success<void, GitFailure>(null);
+  }
+
+  @override
+  Future<Result<void, GitFailure>> push() async => _done();
+
+  @override
+  Future<Result<MergeStateValueObject, GitFailure>> mergeState() async =>
+      Success<MergeStateValueObject, GitFailure>(merge);
+
+  @override
+  Future<Result<void, GitFailure>> abortMerge() async =>
+      throw UnimplementedError();
+}
+
+/// A space that holds nothing, so the tree has nothing to draw.
+final class _NothingInIt implements SpaceRepository {
+  const _NothingInIt();
+
+  @override
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async => const Success<List<SpaceEntryValueObject>, SpaceFailure>(
+    <SpaceEntryValueObject>[],
+  );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// The no-op observability, which is also the shipping default.
+final class _Silent implements Observability {
+  const _Silent();
+
+  @override
+  Future<void> capture(
+    Object error,
+    StackTrace stackTrace, {
+    required String layer,
+  }) async {}
+}
+
+/// Documents nothing can be read from, so the marker check finds nothing to
+/// refuse and staging behaves as it did before the check existed.
+final class _NoDocuments implements DocumentRepository {
+  const _NoDocuments();
+
+  @override
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
+  ) async =>
+      Failure<DocumentEntity, DocumentFailure>(DocumentNotFound(path.value));
+
+  @override
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
+      throw UnimplementedError();
+}

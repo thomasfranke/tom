@@ -1,0 +1,27 @@
+# Markdown preview
+
+Render the document as formatted output, not raw text — the primary way anyone who does not edit will ever see it.
+
+**Status:** Planned · Milestone M0 (desktop) · Exploratory, Phase 3 post-1.0 (mobile)
+
+## Rules — desktop
+
+- The preview renders headings, lists, tables, code blocks (with syntax highlighting), local images and links.
+- The preview is a first-class reading mode on its own, not just a companion to editing — a document can be opened preview-only. With the pane to itself it is set wider and larger than beside the source: reading is not a lesser mode ([source mode](../source-mode/doc.md) is where the three modes are described).
+- **With the preview alone there is no caret, so the formatting buttons have nothing to act on.** The row keeps undo and redo — which still work on the buffer behind it — and drops the rest. The row itself stays, because a row that comes and goes moves the document under the reader ([formatting shortcuts](../formatting-shortcuts/doc.md)).
+- Rendering quality is treated as product work, not polish: what shows up here is what an audience that never opens the source will judge.
+
+## Rules — mobile ("reading")
+
+- Reading is full-bleed: no split view, no permanent side panel — this is the primary job on a phone, not a companion mode.
+- Editing from this screen is not available yet. Editing on touch is an open design question, not just a port of the desktop editor ([roadmap](../../../roadmap.md#phases)).
+
+## Mocks
+
+- Desktop: **reading** — preview only, the default for whoever does not edit. [light](../../../design/screens/desktop/editor/reading-light.svg) · [dark](../../../design/screens/desktop/editor/reading-dark.svg).
+- Desktop, alongside source: shown in **shell**. [light](../../../design/screens/desktop/workspace/shell-light.svg) · [dark](../../../design/screens/desktop/workspace/shell-dark.svg).
+- Mobile: not drawn. Phase 3.
+
+---
+
+*See also: [about.md](../../../about.md) · [roadmap.md](../../../roadmap.md)*

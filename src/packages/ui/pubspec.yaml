@@ -1,0 +1,54 @@
+name: tom_ui
+description: >-
+  The look: colour roles, metrics, the brand marks and the components both
+  applications draw. Flutter, and deliberately nothing else — it holds no
+  state, reaches no contract, and knows no screen.
+publish_to: none
+repository: https://github.com/thomasfranke/tom
+
+# The product version. Every package moves in lockstep with this number — none
+# is published separately, so independent versioning would be bookkeeping with
+# no reader. Releases are tags; see docs/technical/process/versioning.md.
+version: 0.1.0
+
+environment:
+  sdk: ^3.12.0
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+# The three faces every board is drawn in, vendored rather than fetched at
+# runtime: the app works offline and nothing about it reaches the network
+# (docs/technical/stack/fonts.md). Only the cuts the boards use are here.
+flutter:
+  fonts:
+    - family: IBMPlexSans
+      fonts:
+        - asset: fonts/IBMPlexSans-Regular.ttf
+          weight: 400
+        - asset: fonts/IBMPlexSans-Medium.ttf
+          weight: 500
+        - asset: fonts/IBMPlexSans-SemiBold.ttf
+          weight: 600
+        - asset: fonts/IBMPlexSans-Bold.ttf
+          weight: 700
+    - family: IBMPlexMono
+      fonts:
+        - asset: fonts/IBMPlexMono-Regular.ttf
+          weight: 400
+        - asset: fonts/IBMPlexMono-SemiBold.ttf
+          weight: 600
+    - family: IBMPlexSerif
+      fonts:
+        - asset: fonts/IBMPlexSerif-Regular.ttf
+          weight: 400
+        - asset: fonts/IBMPlexSerif-SemiBold.ttf
+          weight: 600

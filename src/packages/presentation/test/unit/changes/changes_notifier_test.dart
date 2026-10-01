@@ -1,0 +1,492 @@
+import 'package:riverpod/misc.dart';
+import 'package:riverpod/riverpod.dart';
+import 'package:test/test.dart';
+import 'package:tom_application/tom_application.dart';
+import 'package:tom_core/tom_core.dart';
+import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/tom_presentation.dart';
+
+void main() {
+  late _Git git;
+  late ProviderContainer container;
+
+  final SpaceEntity docs = SpaceEntity(
+    root: '/code/app/docs',
+    repositoryRoot: '/code/app',
+    name: 'docs',
+  );
+  final RepoRelativePathValueObject writing = RepoRelativePathValueObject(
+    'docs/guides/writing.md',
+  );
+  final RepoRelativePathValueObject index = RepoRelativePathValueObject(
+    'docs/index.md',
+  );
+
+  StatusEntryValueObject entry(
+    RepoRelativePathValueObject path, {
+    required bool isStaged,
+  }) => StatusEntryValueObject(
+    path: path,
+    state: FileStateEnum.modified,
+    isStaged: isStaged,
+  );
+
+  GitStatusValueObject statusOf(List<StatusEntryValueObject> entries) =>
+      GitStatusValueObject(
+        branch: BranchNameValueObject('main'),
+        upstream: BranchNameValueObject('origin/main'),
+        ahead: 0,
+        behind: 0,
+        entries: entries,
+        isDetached: false,
+      );
+
+  setUp(() {
+    git = _Git()
+      ..reported = statusOf(<StatusEntryValueObject>[
+        entry(writing, isStaged: false),
+        entry(index, isStaged: false),
+      ]);
+    container = ProviderContainer(
+      overrides: <Override>[
+        readGitStatusProvider.overrideWithValue(
+          ReadGitStatusUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
+        readMergeStateProvider.overrideWithValue(
+          ReadMergeStateUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
+        stageChangesProvider.overrideWithValue(
+          StageChangesUseCase(
+            gitFor: (SpaceEntity space) => git,
+            documentsFor: (SpaceEntity space) => const _NoDocuments(),
+            observability: const _Silent(),
+          ),
+        ),
+        commitChangesProvider.overrideWithValue(
+          CommitChangesUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+  });
+
+  /// Starts the panel, and answers its first state.
+  ChangesState start() {
+    container.listen<ChangesState>(changesProvider, (_, _) {});
+    return container.read(changesProvider);
+  }
+
+  /// Everything scheduled, run.
+  Future<void> settle() => Future<void>.delayed(Duration.zero);
+
+  /// What the whole window knows about git.
+  GitStatusValueObject? observed() => container.read(spaceSessionProvider)?.git;
+
+  ChangesReady ready() => container.read(changesProvider) as ChangesReady;
+
+  test('with no space open there is nothing to report on', () async {
+    expect(start(), isA<ChangesInitial>());
+    await settle();
+
+    expect(git.asked, 0);
+  });
+
+  test('opening a space asks git, and the session gets the answer', () async {
+    start();
+    container.read(spaceSessionProvider.notifier).open(docs);
+
+    expect(container.read(changesProvider), isA<ChangesLoading>());
+    await settle();
+
+    expect(container.read(changesProvider), isA<ChangesReady>());
+    expect(observed()?.branch, BranchNameValueObject('main'));
+    expect(observed()?.entries, hasLength(2));
+  });
+
+  test('a repository that will not answer clears the session too', () async {
+    git.statusFailure = const GitNotARepository('/code/app');
+    start();
+    container.read(spaceSessionProvider.notifier).open(docs);
+    await settle();
+
+    expect(
+      (container.read(changesProvider) as ChangesFailed).failure,
+      const GitNotARepository('/code/app'),
+    );
+    expect(observed(), isNull);
+  });
+
+  group('a pull that stopped mid-merge', () {
+    /// The status a conflicted pull leaves: two documents marked C.
+    void conflicted() {
+      git
+        ..reported = statusOf(<StatusEntryValueObject>[
+          StatusEntryValueObject(
+            path: writing,
+            state: FileStateEnum.conflicted,
+            isStaged: false,
+          ),
+          StatusEntryValueObject(
+            path: index,
+            state: FileStateEnum.conflicted,
+            isStaged: false,
+          ),
+        ])
+        ..merge = const MergeStateValueObject(
+          inProgress: true,
+          message: "Merge branch 'main' into feat/rendered-diff",
+        );
+    }
+
+    test('the merge lands on the session beside the status', () async {
+      conflicted();
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      expect(container.read(spaceSessionProvider)?.merge?.inProgress, isTrue);
+    });
+
+    test(
+      'the documents still to resolve are counted from the status',
+      () async {
+        conflicted();
+        start();
+        container.read(spaceSessionProvider.notifier).open(docs);
+        await settle();
+
+        final SpaceSessionState session = container.read(spaceSessionProvider)!;
+        expect(session.toResolve, hasLength(2));
+        expect(session.isResolvingMerge, isTrue);
+      },
+    );
+
+    test('the message box starts from the draft git wrote', () async {
+      conflicted();
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      expect(ready().message, "Merge branch 'main' into feat/rendered-diff");
+    });
+
+    // A sentence somebody is typing is theirs: a merge arriving must not
+    // replace it, which is the same rule that keeps a reload from emptying
+    // the box.
+    test('a draft being typed is never replaced by it', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+      container
+          .read(changesProvider.notifier)
+          .describe('docs: my own sentence');
+      conflicted();
+
+      await container.read(changesProvider.notifier).setAllStaged(staged: true);
+      await settle();
+
+      expect(ready().message, 'docs: my own sentence');
+    });
+
+    test(
+      'a repository at rest leaves the box empty and the session clear',
+      () async {
+        start();
+        container.read(spaceSessionProvider.notifier).open(docs);
+        await settle();
+
+        final SpaceSessionState session = container.read(spaceSessionProvider)!;
+        expect(session.merge?.inProgress, isFalse);
+        expect(session.isResolvingMerge, isFalse);
+        expect(session.toResolve, isEmpty);
+        expect(ready().message, isEmpty);
+      },
+    );
+  });
+
+  group('staging', () {
+    test('a row goes into the index, and git is read again', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+      git.reported = statusOf(<StatusEntryValueObject>[
+        entry(writing, isStaged: true),
+        entry(index, isStaged: false),
+      ]);
+
+      await container.read(changesProvider.notifier).setStaged(writing, true);
+
+      expect(git.staged, <RepoRelativePathValueObject>[writing]);
+      expect(observed()?.entries.first.isStaged, isTrue);
+    });
+
+    test('and comes back out again', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      await container.read(changesProvider.notifier).setStaged(writing, false);
+
+      expect(git.unstaged, <RepoRelativePathValueObject>[writing]);
+    });
+
+    test('all stages only what is not staged yet', () async {
+      git.reported = statusOf(<StatusEntryValueObject>[
+        entry(writing, isStaged: true),
+        entry(index, isStaged: false),
+      ]);
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      await container.read(changesProvider.notifier).setAllStaged(staged: true);
+
+      expect(git.staged, <RepoRelativePathValueObject>[index]);
+    });
+
+    test('and none takes back only what is staged', () async {
+      git.reported = statusOf(<StatusEntryValueObject>[
+        entry(writing, isStaged: true),
+        entry(index, isStaged: false),
+      ]);
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      await container
+          .read(changesProvider.notifier)
+          .setAllStaged(staged: false);
+
+      expect(git.unstaged, <RepoRelativePathValueObject>[writing]);
+    });
+
+    test('with no space open it does nothing at all', () async {
+      start();
+
+      await container.read(changesProvider.notifier).setAllStaged(staged: true);
+
+      expect(git.staged, isEmpty);
+      expect(git.unstaged, isEmpty);
+    });
+
+    test('a refusal keeps the panel usable and says what happened', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+      git.writeFailure = const GitOperationFailed();
+
+      await container.read(changesProvider.notifier).setStaged(writing, true);
+
+      expect(ready().failure, const GitOperationFailed());
+      expect(ready().isBusy, isFalse);
+    });
+
+    test('the message being typed survives the re-read', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+      container.read(changesProvider.notifier).describe('docs: rewrite');
+
+      await container.read(changesProvider.notifier).setStaged(writing, true);
+
+      expect(ready().message, 'docs: rewrite');
+    });
+
+    test('a message typed while git was busy is not thrown away', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      final Future<void> staging = container
+          .read(changesProvider.notifier)
+          .setStaged(writing, true);
+      container.read(changesProvider.notifier).describe('docs: typed during');
+      await staging;
+
+      expect(ready().message, 'docs: typed during');
+    });
+  });
+
+  group('committing', () {
+    Future<void> describeAndCommit(String message) async {
+      container.read(changesProvider.notifier).describe(message);
+      await container.read(changesProvider.notifier).commit();
+    }
+
+    test('it records the message and empties the box', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+      git.reported = statusOf(const <StatusEntryValueObject>[]);
+
+      await describeAndCommit('docs: say what changed');
+
+      expect(git.messages, <String>['docs: say what changed']);
+      expect(ready().message, '');
+      expect(observed()?.entries, isEmpty);
+    });
+
+    test('a blank message commits nothing', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      await describeAndCommit('   ');
+
+      expect(git.messages, isEmpty);
+    });
+
+    test('the message is trimmed on its way to git', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      await describeAndCommit('  docs: say what changed\n');
+
+      expect(git.messages, <String>['docs: say what changed']);
+    });
+
+    test('a commit that failed keeps the sentence somebody wrote', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+      git.writeFailure = const GitOperationFailed();
+
+      await describeAndCommit('docs: say what changed');
+
+      expect(ready().message, 'docs: say what changed');
+      expect(ready().failure, const GitOperationFailed());
+    });
+  });
+}
+
+/// Git, answering what the test set and remembering what it was asked.
+final class _Git implements GitRepository {
+  /// What git is taken to say about a merge; no merge unless a test says so.
+  MergeStateValueObject merge = MergeStateValueObject.none;
+
+  GitStatusValueObject? reported;
+  GitFailure? statusFailure;
+  GitFailure? writeFailure;
+
+  int asked = 0;
+  final List<RepoRelativePathValueObject> staged =
+      <RepoRelativePathValueObject>[];
+  final List<RepoRelativePathValueObject> unstaged =
+      <RepoRelativePathValueObject>[];
+  final List<String> messages = <String>[];
+
+  Result<void, GitFailure> _done() => writeFailure == null
+      ? const Success<void, GitFailure>(null)
+      : Failure<void, GitFailure>(writeFailure!);
+
+  @override
+  Future<Result<GitStatusValueObject, GitFailure>> status() async {
+    asked++;
+    return statusFailure == null
+        ? Success<GitStatusValueObject, GitFailure>(reported!)
+        : Failure<GitStatusValueObject, GitFailure>(statusFailure!);
+  }
+
+  @override
+  Future<Result<void, GitFailure>> stage(
+    List<RepoRelativePathValueObject> paths,
+  ) async {
+    staged.addAll(paths);
+    return _done();
+  }
+
+  @override
+  Future<Result<void, GitFailure>> unstage(
+    List<RepoRelativePathValueObject> paths,
+  ) async {
+    unstaged.addAll(paths);
+    return _done();
+  }
+
+  @override
+  Future<Result<void, GitFailure>> commit(String message) async {
+    messages.add(message);
+    return _done();
+  }
+
+  @override
+  Future<Result<List<CommitEntity>, GitFailure>> history({
+    RepoRelativePathValueObject? path,
+    int? limit,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Result<List<BranchEntity>, GitFailure>> branches() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<String, GitFailure>> contentAt({
+    required String revision,
+    required RepoRelativePathValueObject path,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> createBranch(
+    BranchNameValueObject name,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> switchBranch(
+    BranchNameValueObject name,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> fetch() async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> pull() async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> push() async => throw UnimplementedError();
+
+  @override
+  Future<Result<MergeStateValueObject, GitFailure>> mergeState() async =>
+      Success<MergeStateValueObject, GitFailure>(merge);
+
+  @override
+  Future<Result<void, GitFailure>> abortMerge() async =>
+      throw UnimplementedError();
+}
+
+/// The no-op observability, which is also the shipping default.
+final class _Silent implements Observability {
+  const _Silent();
+
+  @override
+  Future<void> capture(
+    Object error,
+    StackTrace stackTrace, {
+    required String layer,
+  }) async {}
+}
+
+/// Documents nothing can be read from, so the marker check finds nothing to
+/// refuse and staging behaves as it did before the check existed.
+final class _NoDocuments implements DocumentRepository {
+  const _NoDocuments();
+
+  @override
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
+  ) async =>
+      Failure<DocumentEntity, DocumentFailure>(DocumentNotFound(path.value));
+
+  @override
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
+      throw UnimplementedError();
+}

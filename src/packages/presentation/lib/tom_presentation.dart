@@ -1,6 +1,51 @@
-/// UI state: the space session, notifiers and view models. Pure Dart — it
-/// cannot import Flutter.
-///
-/// Nothing outside `lib/src/` is importable from another package, so this
-/// file is the whole public surface.
+/// UI state — the space session, notifiers and view models — as pure Dart
+/// that cannot import Flutter.
 library;
+
+export 'src/branches/branches_notifier.dart';
+export 'src/branches/branches_providers.dart';
+export 'src/branches/branches_state.dart';
+export 'src/changes/changes_notifier.dart';
+export 'src/changes/changes_providers.dart';
+export 'src/changes/changes_state.dart';
+export 'src/compare/compare_notifier.dart';
+export 'src/compare/compare_state.dart';
+export 'src/editor/editor_mark_enum.dart';
+export 'src/editor/editor_mark_span.dart';
+export 'src/editor/editor_marks.dart';
+export 'src/editor/editor_notifier.dart';
+export 'src/editor/editor_providers.dart';
+export 'src/editor/editor_state.dart';
+export 'src/file_tree/file_tree_changes.dart';
+export 'src/file_tree/file_tree_notifier.dart';
+export 'src/file_tree/file_tree_providers.dart';
+export 'src/file_tree/file_tree_row.dart';
+export 'src/file_tree/file_tree_state.dart';
+export 'src/history/history_notifier.dart';
+export 'src/history/history_providers.dart';
+export 'src/history/history_state.dart';
+export 'src/home/home_notifier.dart';
+export 'src/home/home_providers.dart';
+export 'src/home/home_state.dart';
+export 'src/preferences/preferences_notifier.dart';
+export 'src/preferences/preferences_providers.dart';
+export 'src/preview/preview_notifier.dart';
+export 'src/preview/preview_providers.dart';
+export 'src/preview/preview_segment.dart';
+export 'src/preview/preview_state.dart';
+export 'src/remote/remote_action_enum.dart';
+export 'src/remote/remote_notifier.dart';
+export 'src/remote/remote_providers.dart';
+export 'src/remote/remote_state.dart';
+export 'src/search/search_notifier.dart';
+export 'src/search/search_providers.dart';
+export 'src/search/search_scope_enum.dart';
+export 'src/search/search_state.dart';
+export 'src/spaces/document_mode_enum.dart';
+export 'src/spaces/space_departure.dart';
+export 'src/spaces/space_menu_notifier.dart';
+export 'src/spaces/space_menu_state.dart';
+export 'src/spaces/space_session.dart';
+export 'src/spaces/space_session_notifier.dart';
+export 'src/workspace/workspace_notifier.dart';
+export 'src/workspace/workspace_state.dart';

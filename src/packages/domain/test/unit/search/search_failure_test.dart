@@ -6,16 +6,16 @@ void main() {
     // The reason the hierarchy is sealed: this compiles with no default
     // branch, so a new variant breaks every switch that has to handle it.
     String headline(SearchFailure failure) => switch (failure) {
-      IndexCorrupted() => 'Index corrupted',
+      SearchIndexCorrupted() => 'Index corrupted',
     };
 
     test('every variant has a headline, with no default branch', () {
-      expect(headline(const IndexCorrupted()), 'Index corrupted');
+      expect(headline(const SearchIndexCorrupted()), 'Index corrupted');
     });
   });
 
-  test('IndexCorrupted is a value with no data to compare', () {
-    expect(const IndexCorrupted(), const IndexCorrupted());
-    expect(const IndexCorrupted(), isA<SearchFailure>());
+  test('SearchIndexCorrupted is a value with no data to compare', () {
+    expect(const SearchIndexCorrupted(), const SearchIndexCorrupted());
+    expect(const SearchIndexCorrupted(), isA<SearchFailure>());
   });
 }

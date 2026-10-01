@@ -1,0 +1,348 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:re_editor/re_editor.dart';
+import 'package:tom_application/tom_application.dart';
+import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/screens/editor/editor_panel.dart';
+import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/tom_presentation.dart';
+import 'package:tom_ui/tom_ui.dart';
+
+void main() {
+  late _Documents documents;
+  late ProviderContainer container;
+
+  final SpaceEntity docs = SpaceEntity(
+    root: '/code/app/docs',
+    repositoryRoot: '/code/app',
+    name: 'docs',
+  );
+  final SpaceRelativePathValueObject writing = SpaceRelativePathValueObject(
+    'guides/writing.md',
+  );
+  final SpaceRelativePathValueObject index = SpaceRelativePathValueObject(
+    'index.md',
+  );
+
+  setUp(() {
+    documents = _Documents();
+    container = ProviderContainer(
+      overrides: <Override>[
+        readDocumentProvider.overrideWithValue(
+          ReadDocumentUseCase(
+            documentsFor: (SpaceEntity space) => documents,
+            observability: const _Silent(),
+          ),
+        ),
+        saveDocumentProvider.overrideWithValue(
+          SaveDocumentUseCase(
+            documentsFor: (SpaceEntity space) => documents,
+            observability: const _Silent(),
+          ),
+        ),
+        // The preview's three: with no conflict the marks are the diff's,
+        // and the diff is the preview's reading. Git here has no earlier
+        // version of anything, so the fall-through is *no marks*.
+        splitDocumentProvider.overrideWithValue(
+          SplitDocumentUseCase(
+            blocks: _Blocks(),
+            observability: const _Silent(),
+          ),
+        ),
+        readVersionProvider.overrideWithValue(
+          ReadVersionUseCase(
+            gitFor: (SpaceEntity space) => _Git(),
+            observability: const _Silent(),
+          ),
+        ),
+        diffDocumentProvider.overrideWithValue(
+          DiffDocumentUseCase(
+            gitFor: (SpaceEntity space) => _Git(),
+            blocks: _Blocks(),
+            differ: BlockDifferService(aligner: _Aligner()),
+            observability: const _Silent(),
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+  });
+
+  /// Mounts the panel, with [document] open when one is given.
+  Future<void> pumpEditor(
+    WidgetTester tester, {
+    SpaceRelativePathValueObject? document,
+  }) async {
+    tester.view
+      ..physicalSize = const Size(1280, 800)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    if (document != null) {
+      container.read(spaceSessionProvider.notifier)
+        ..open(docs)
+        ..show(document);
+    }
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: tomTheme(Brightness.light),
+          home: const Scaffold(body: EditorPanel()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('it says so when nothing is open, and names itself not at all', (
+    WidgetTester tester,
+  ) async {
+    // No caption: no board draws one over either pane, and the mode control
+    // above already says which is which.
+    await pumpEditor(tester);
+
+    expect(find.text('SOURCE'), findsNothing);
+    expect(find.text('Choose a document in the explorer.'), findsOneWidget);
+  });
+
+  testWidgets('an open document is put in an editor, source and all', (
+    WidgetTester tester,
+  ) async {
+    // The file's own markdown: there is no WYSIWYG (Decision 3).
+    documents.content = '# Title\n\nProse.\n';
+
+    await pumpEditor(tester, document: writing);
+
+    expect(find.byType(CodeEditor), findsOneWidget);
+    expect(
+      tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
+      '# Title\n\nProse.\n',
+    );
+  });
+
+  testWidgets('a document that is gone is named as that', (
+    WidgetTester tester,
+  ) async {
+    documents.answer = Failure<DocumentEntity, DocumentFailure>(
+      DocumentNotFound(writing.value),
+    );
+
+    await pumpEditor(tester, document: writing);
+
+    expect(find.byType(CodeEditor), findsNothing);
+    expect(find.text('That document is no longer there.'), findsOneWidget);
+  });
+
+  /// Everything the edit scheduled, run.
+  ///
+  /// The preview debounces, and the gutter's marks are its diff — so an edit
+  /// here starts a timer that outlives the tree unless it is pumped past.
+  Future<void> settleTyping(WidgetTester tester) async {
+    await tester.pumpAndSettle();
+    await tester.pump(PreviewNotifier.settle * 2);
+  }
+
+  /// Types [source] into the editor on screen.
+  ///
+  /// The long pump is not padding: a shown cursor schedules a blink the
+  /// package never cancels, and a timer outliving the tree fails the test.
+  Future<void> type(WidgetTester tester, String source) async {
+    tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text =
+        source;
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+
+  testWidgets('typing in the editor reaches the buffer', (
+    WidgetTester tester,
+  ) async {
+    documents.content = '# Title\n';
+    await pumpEditor(tester, document: writing);
+
+    await type(tester, '# Typed\n');
+
+    expect((container.read(editorProvider) as EditorReady).source, '# Typed\n');
+    expect(container.read(editorProvider).isDirty, isTrue);
+  });
+
+  testWidgets('a buffer written by something else reaches the pane', (
+    WidgetTester tester,
+  ) async {
+    // A replacement writes the buffer while it is dirty, and the pane must
+    // follow it: a pane showing the old text would put it back on the next
+    // keystroke. **Undoing it is not driveable here** — the editor wraps
+    // this controller in a delegate and the undo history is the delegate's,
+    // so ⌘Z is the end-to-end scenario's
+    // (`docs/product/search/replacing/doc.md`).
+    documents.content = 'a palette here\n';
+    await pumpEditor(tester, document: writing);
+    await type(tester, 'a palette here, edited\n');
+
+    container.read(editorProvider.notifier).edit('a swatch here, edited\n');
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
+      'a swatch here, edited\n',
+    );
+  });
+
+  testWidgets('the save shortcut is answered, not left to do nothing', (
+    WidgetTester tester,
+  ) async {
+    // The key press is not driveable here: the package installs no
+    // shortcuts on the platform a widget test reports, decided once in a
+    // lazy top-level final, so ⌘S would prove nothing. The keystroke is the
+    // end-to-end scenario's; this checks what it reaches.
+    documents.content = '# Title\n';
+    await pumpEditor(tester, document: writing);
+
+    expect(
+      tester
+          .widget<CodeEditor>(find.byType(CodeEditor))
+          .shortcutOverrideActions,
+      contains(CodeShortcutSaveIntent),
+    );
+  });
+
+  testWidgets('another document gets another editor, not the same one', (
+    WidgetTester tester,
+  ) async {
+    // A controller carried across would carry its undo history with it, and
+    // ⌘Z would walk back into a file that is no longer on screen.
+    documents.content = '# Title\n';
+    await pumpEditor(tester, document: writing);
+    final CodeLineEditingController first = tester
+        .widget<CodeEditor>(find.byType(CodeEditor))
+        .controller!;
+
+    documents.content = '# Other\n';
+    container.read(spaceSessionProvider.notifier).show(index);
+    await tester.pumpAndSettle();
+
+    final CodeLineEditingController second = tester
+        .widget<CodeEditor>(find.byType(CodeEditor))
+        .controller!;
+    expect(identical(first, second), isFalse);
+    expect(second.text, '# Other\n');
+  });
+
+  testWidgets('the same document read again reaches the pane', (
+    WidgetTester tester,
+  ) async {
+    // A branch switch re-reads the same path, so the controller's key
+    // cannot catch it and the pane would keep the old branch's text
+    // (`docs/product/git-workflow/branch-switch/doc.md`).
+    documents.content = '# On main\n';
+    await pumpEditor(tester, document: writing);
+    container.read(editorProvider.notifier).edit('typed, never saved');
+    await settleTyping(tester);
+
+    documents.content = '# On the other branch\n';
+    await container.read(editorProvider.notifier).reload();
+    await settleTyping(tester);
+
+    expect(
+      tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
+      '# On the other branch\n',
+    );
+  });
+
+  testWidgets('and typing is never overwritten by one', (
+    WidgetTester tester,
+  ) async {
+    // A buffer that differs from the disk is the user's; nothing re-seeds
+    // the controller under their cursor.
+    documents.content = '# On main\n';
+    await pumpEditor(tester, document: writing);
+
+    container.read(editorProvider.notifier).edit('half a sentence');
+    await settleTyping(tester);
+
+    expect(
+      tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
+      '# On main\n',
+      reason: 'the pane re-seeded itself while the buffer was dirty',
+    );
+  });
+}
+
+/// A reader that splits nothing: one heading block, whatever it is given.
+final class _Blocks implements BlockReaderPort {
+  @override
+  Future<Result<ParsedDocumentValueObject, DocumentFailure>> read(
+    DocumentEntity document,
+  ) async => Success<ParsedDocumentValueObject, DocumentFailure>(
+    ParsedDocumentValueObject(
+      document: document,
+      blocks: <BlockValueObject>[
+        BlockValueObject(
+          startLine: 0,
+          endLine: 0,
+          source: document.content.trimRight(),
+          kind: BlockKindEnum.heading,
+        ),
+      ],
+      linkDefinitions: '',
+    ),
+  );
+}
+
+/// Git with no earlier version of anything, so no comparison is possible.
+final class _Git implements GitRepository {
+  @override
+  Future<Result<String, GitFailure>> contentAt({
+    required String revision,
+    required RepoRelativePathValueObject path,
+  }) async => Failure<String, GitFailure>(GitPathNotInRevision(path.value));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// An aligner nothing asks, because nothing gets that far here.
+final class _Aligner implements BlockAlignerPort {
+  @override
+  Future<Result<List<SequenceEditValueObject>, DocumentFailure>> align(
+    ParsedDocumentValueObject before,
+    ParsedDocumentValueObject after, {
+    required double threshold,
+  }) async => const Success<List<SequenceEditValueObject>, DocumentFailure>(
+    <SequenceEditValueObject>[],
+  );
+}
+
+/// A repository answering with whatever content the test set.
+final class _Documents implements DocumentRepository {
+  String content = '';
+  Result<DocumentEntity, DocumentFailure>? answer;
+  final List<DocumentEntity> written = <DocumentEntity>[];
+
+  @override
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
+  ) async =>
+      answer ??
+      Success<DocumentEntity, DocumentFailure>(
+        DocumentEntity(path: path, content: content),
+      );
+
+  @override
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async {
+    written.add(document);
+    return const Success<void, DocumentFailure>(null);
+  }
+}
+
+/// The no-op observability, which is also the shipping default.
+final class _Silent implements Observability {
+  const _Silent();
+
+  @override
+  Future<void> capture(
+    Object error,
+    StackTrace stackTrace, {
+    required String layer,
+  }) async {}
+}

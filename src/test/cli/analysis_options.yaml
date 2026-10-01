@@ -1,0 +1,14 @@
+# The workspace's rules, minus the one that cannot apply here.
+#
+# `always_use_package_imports` is right everywhere else: across eight packages,
+# seeing which one a symbol came from matters more than a short path. These
+# tests import the CLI, and the CLI is not a package — it holds no pubspec on
+# purpose, because a tool that resolves the workspace cannot require the
+# workspace to be resolved before it runs. A relative path is the only spelling
+# that exists for it.
+include: ../../analysis_options.yaml
+
+linter:
+  rules:
+    always_use_package_imports: false
+    prefer_relative_imports: false

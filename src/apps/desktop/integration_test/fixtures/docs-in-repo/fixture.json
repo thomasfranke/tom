@@ -1,0 +1,12 @@
+{
+  "summary": "A docs folder inside a code repository",
+  "description": "The normal case, and the one a path bug shows up in: the user opens docs/ and git runs against the repository above it. Committed history, one modified file and one untracked file, so status has something to say.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "untracked": [
+    "docs/untracked.md"
+  ],
+  "uncommitted": {
+    "docs/guides/writing.md": "\nOne line added, uncommitted.\n"
+  }
+}

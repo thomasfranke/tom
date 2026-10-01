@@ -1,0 +1,30 @@
+{
+  "summary": "A docs folder whose remote moved on without it",
+  "description": "The situation push/pull exists for, and the only one a rejection can be tested in: two commits were pushed by somebody else and one was made here and never published. Nothing has fetched yet, so the app starts out not knowing it is behind — which is what gives Fetch something to discover and Push something to be refused for. The two sides write different files on purpose, so the pull that mends it merges cleanly.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "remote": {
+    "theirs": [
+      {
+        "message": "docs: add the review checklist",
+        "write": {
+          "docs/reviewing.md": "# Reviewing\n\nSomebody else wrote this and pushed it first.\n"
+        }
+      },
+      {
+        "message": "docs: note who approves what",
+        "write": {
+          "docs/approvals.md": "# Approvals\n\nAlso theirs, also already pushed.\n"
+        }
+      }
+    ],
+    "mine": [
+      {
+        "message": "docs: start the release notes",
+        "write": {
+          "docs/release-notes.md": "# Release notes\n\nCommitted here, never published.\n"
+        }
+      }
+    ]
+  }
+}
