@@ -242,9 +242,14 @@ Future<int> _run(List<String> args) async {
     return 0;
   }
 
-  // The root screen as static text, reviewable from a pipe, a diff or a test.
+  // A screen as static text, reviewable from a pipe, a diff or a test.
+  //
+  // `--preview` alone is the root; `--preview e2e` is the groups screen,
+  // which is the other one long enough to be worth looking at without
+  // driving the menu by hand.
   if (args.contains('--preview')) {
-    stdout.writeln(_rootFrame(columns: 96).join('\n'));
+    final which = args.where((word) => word != '--preview').toList();
+    stdout.writeln(_previewFrame(which).join('\n'));
     return 0;
   }
 
@@ -258,6 +263,31 @@ Future<int> _run(List<String> args) async {
   }
 
   return _browse();
+}
+
+/// One screen as static lines: the root, the e2e groups, or one group.
+///
+/// `--preview` alone is the root; `--preview e2e` is the groups screen and
+/// `--preview e2e <group>` one group's, which are the other two long enough
+/// to be worth reading without driving the menu by hand.
+List<String> _previewFrame(List<String> which) {
+  if (which.isEmpty || which.first != 'e2e') return _rootFrame(columns: 96);
+  final scenarios = discoverScenarios();
+  final group = which.skip(1).join(' ');
+  final groups = _groupsOf(scenarios);
+  return composeFrame<String>(
+    title: _title,
+    titleSuffix: _subtitle,
+    section: group.isEmpty
+        ? 'End-to-end'
+        : 'End-to-end ${Layout.crumbSeparator} $group',
+    prompt: group.isEmpty ? 'Which ones?' : 'Which one?',
+    items: group.isEmpty
+        ? e2eGroupItems(scenarios)
+        : e2eScenarioItems(groups[group] ?? const <Scenario>[]),
+    selected: 0,
+    columns: 96,
+  );
 }
 
 /// The interactive loop: pick a command, run it, come back to its screen.
@@ -644,12 +674,16 @@ Future<List<String>?> _askE2e(Terminal terminal, List<String> carried) async {
   return _askScenario(terminal, section: section);
 }
 
-/// Asks which scenario to run, or what to do with the environment.
+/// Asks which group of scenarios to open, or what to do with the environment.
 ///
-/// Each row says when it last passed and on which version, since "checked
-/// since?" is what the list is read for; one that never ran is listed without
-/// a date rather than hidden. The environment sits at the bottom because
-/// preparing it only matters once someone is about to run something.
+/// **Two screens rather than one list.** The suite grows a scenario at a
+/// time and a single list grows with it until it runs off the window; a
+/// group is the unit somebody thinks in anyway ("the git ones"), so it is
+/// the unit the first screen offers. Backing out of the second returns
+/// here, the way codegen's two screens do.
+///
+/// The environment sits at the bottom because preparing it only matters once
+/// someone is about to run something.
 Future<List<String>?> _askScenario(
   Terminal terminal, {
   required String section,
@@ -659,89 +693,82 @@ Future<List<String>?> _askScenario(
     stdout.writeln('No scenarios under $scenarioDirectory yet.');
     return null;
   }
+  while (true) {
+    final chosen = await showMenu<String>(
+      terminal,
+      title: _title,
+      titleSuffix: _subtitle,
+      section: section,
+      prompt: 'Which ones?',
+      items: e2eGroupItems(scenarios),
+    );
+    if (chosen == null) return null;
+    if (!chosen.startsWith(_groupPrefix)) return <String>[chosen];
+
+    final group = chosen.substring(_groupPrefix.length);
+    final scenario = await _askScenarioInGroup(
+      terminal,
+      section: '$section ${Layout.crumbSeparator} $group',
+      group: _groupsOf(scenarios)[group] ?? const <Scenario>[],
+    );
+    // Backing out of a group comes back to the groups rather than leaving
+    // the screen, which is what makes two screens cheaper than one list.
+    if (scenario != null) return <String>[scenario];
+  }
+}
+
+/// The rows of the groups screen.
+///
+/// A function of its own so `tom --preview e2e` can render the screen with
+/// no terminal attached, the way the root screen already is.
+List<MenuItem<String>> e2eGroupItems(List<Scenario> scenarios) {
   final results = readResults();
   final prepared = environmentIsPrepared();
-  final groups = <String, List<Scenario>>{};
-  for (final scenario in scenarios) {
-    groups.putIfAbsent(scenario.group, () => <Scenario>[]).add(scenario);
-  }
+  final groups = _groupsOf(scenarios);
 
   // Rows that need the environment are shown and not selectable rather than
   // hidden: the list is also how someone learns what exists.
   final blocked = scenarios.where((s) => s.needsEnvironment).length;
   final runnable = !prepared ? scenarios.length - blocked : scenarios.length;
 
-  final items = <MenuItem<String>>[
-    if (runnable == 0)
-      MenuItem<String>.disabled(
-        'All of them',
-        detail: blockedNote,
-        detailColor: palette.rowDisabled,
-        description:
-            'Nothing can run until the environment is built — Prepare, at '
-            'the bottom of this screen.',
-      )
-    else
-      MenuItem<String>(
-        'All of them',
-        _allTargets,
-        emphasized: true,
-        description: prepared
-            ? 'Runs every scenario, one at a time — each launches the app, '
-                  'and the next cannot start while the last window is still '
-                  'there.'
-            : 'Runs the $runnable that do not need the environment.',
-      ),
-    const MenuItem<String>.rule(),
-  ];
-  for (final entry in groups.entries) {
-    items.add(MenuItem<String>.section(entry.key));
-    for (final scenario in entry.value) {
-      final result = results[scenario.name];
-      final result_ = result == null
-          ? 'never run'
-          : '${result.passed ? '\u2713' : '\u2718'} '
-                '${describeWhen(result.when)} \u00b7 v${result.version} '
-                '\u00b7 ${describeElapsed(result.elapsed)}';
-      // Grey for never run: "it passed" and "it ran" are different claims.
-      final resultColor = result == null
-          ? palette.rowDisabled
-          : (result.passed ? palette.ok : palette.fail);
-      if (scenario.needsEnvironment && !prepared) {
-        items.add(
-          MenuItem<String>.disabled(
-            scenario.name,
-            detail: blockedNote,
-            detailColor: palette.rowDisabled,
-            description:
-                '${scenario.describe} — it reads the prepared folders, so '
-                'build them first with Prepare.',
-          ),
-        );
-      } else {
-        items.add(
-          MenuItem<String>(
-            scenario.name,
-            scenario.name,
-            detail: result_,
-            detailColor: resultColor,
-            description: scenario.describe,
-          ),
-        );
-      }
-    }
-  }
-  items
-    ..add(const MenuItem<String>.rule())
-    ..add(
+  return <MenuItem<String>>[
+      if (runnable == 0)
+        MenuItem<String>.disabled(
+          'All of them',
+          detail: blockedNote,
+          detailColor: palette.rowDisabled,
+          description:
+              'Nothing can run until the environment is built — Prepare, at '
+              'the bottom of this screen.',
+        )
+      else
+        MenuItem<String>(
+          'All of them',
+          _allTargets,
+          emphasized: true,
+          description: prepared
+              ? 'Runs every scenario, one at a time — each launches the app, '
+                    'and the next cannot start while the last window is still '
+                    'there.'
+              : 'Runs the $runnable that do not need the environment.',
+        ),
+      const MenuItem<String>.rule(),
+      const MenuItem<String>.section('Groups'),
+      for (final entry in groups.entries)
+        MenuItem<String>(
+          entry.key,
+          _groupPrefix + entry.key,
+          detail: _groupState(entry.value, results),
+          detailColor: _groupColour(entry.value, results),
+          description: _groupDescription(entry.value, results),
+        ),
+      const MenuItem<String>.rule(),
       MenuItem<String>.section(
         prepared
             ? 'Environment'
             : 'Environment \u00b7 not built \u2014 $blocked '
                   '${blocked == 1 ? 'scenario needs' : 'scenarios need'} it',
       ),
-    )
-    ..add(
       MenuItem<String>(
         'Prepare',
         'prepare',
@@ -753,8 +780,6 @@ Future<List<String>?> _askScenario(
             'with real markdown in them. Destructive — it throws away what '
             'was there, so a run cannot inherit the last one.',
       ),
-    )
-    ..add(
       const MenuItem<String>(
         'Remove',
         'clean',
@@ -762,19 +787,126 @@ Future<List<String>?> _askScenario(
             'Deletes the prepared folders. What ran, and when, is kept — '
             'that is a record, not test data.',
       ),
-    )
-    ..add(const MenuItem<String>.rule())
-    ..add(const MenuItem<String>.back());
+    const MenuItem<String>.rule(),
+    const MenuItem<String>.back(),
+  ];
+}
 
-  final chosen = await showMenu<String>(
-    terminal,
-    title: _title,
-    titleSuffix: _subtitle,
-    section: section,
-    prompt: 'Which one?',
-    items: items,
-  );
-  return chosen == null ? null : <String>[chosen];
+/// What a group row resolves to, told apart from a scenario's own name.
+///
+/// A prefix rather than a second menu type, because `showMenu` answers one
+/// value and the caller has to know which screen it came from.
+const String _groupPrefix = 'group:';
+
+/// The scenarios by group, in the declared order.
+///
+/// Seeded from [scenarioGroups] so the screen reads as the journey through
+/// the app; an empty group is dropped and an undeclared one lands at the end.
+Map<String, List<Scenario>> _groupsOf(List<Scenario> scenarios) {
+  final groups = <String, List<Scenario>>{
+    for (final heading in scenarioGroups) heading: <Scenario>[],
+  };
+  for (final scenario in scenarios) {
+    groups.putIfAbsent(scenario.group, () => <Scenario>[]).add(scenario);
+  }
+  groups.removeWhere((_, scenarios) => scenarios.isEmpty);
+  return groups;
+}
+
+/// What a group's rows add up to: how many, and whether any is red.
+///
+/// A failure is what the eye is looking for, so it is said first and in the
+/// count; "all passed" is only claimed when every one of them actually ran.
+String _groupState(List<Scenario> group, Map<String, ScenarioResult> results) {
+  final failing = group.where((s) => results[s.name]?.passed == false).length;
+  final ran = group.where((s) => results.containsKey(s.name)).length;
+  if (failing > 0) {
+    return '\u2718 $failing failing';
+  }
+  return ran == group.length
+      ? '\u2713 ${group.length} passed'
+      : '$ran of ${group.length} run';
+}
+
+/// The colour [_groupState] is painted in.
+String _groupColour(List<Scenario> group, Map<String, ScenarioResult> results) {
+  if (group.any((s) => results[s.name]?.passed == false)) return palette.fail;
+  return group.every((s) => results.containsKey(s.name))
+      ? palette.ok
+      : palette.rowDisabled;
+}
+
+/// What the footer says while the cursor is on a group.
+String _groupDescription(
+  List<Scenario> group,
+  Map<String, ScenarioResult> results,
+) {
+  final names = group.map((s) => s.name).take(3).join(' \u00b7 ');
+  final more = group.length > 3 ? ' \u00b7 …' : '';
+  return '${group.length} '
+      '${group.length == 1 ? 'scenario' : 'scenarios'}: $names$more';
+}
+
+/// Asks which scenario of one group to run.
+///
+/// Answers null for "back", which the caller reads as *return to the groups*
+/// rather than as leaving the screen.
+Future<String?> _askScenarioInGroup(
+  Terminal terminal, {
+  required String section,
+  required List<Scenario> group,
+}) => showMenu<String>(
+  terminal,
+  title: _title,
+  titleSuffix: _subtitle,
+  section: section,
+  prompt: 'Which one?',
+  items: e2eScenarioItems(group),
+);
+
+/// The rows of one group's screen.
+///
+/// Each says when it last passed and on which version, since "checked
+/// since?" is what the list is read for; one that never ran is listed
+/// without a date rather than hidden.
+List<MenuItem<String>> e2eScenarioItems(List<Scenario> group) {
+  final results = readResults();
+  final prepared = environmentIsPrepared();
+  final items = <MenuItem<String>>[];
+  for (final scenario in group) {
+    final result = results[scenario.name];
+    final result_ = result == null
+        ? 'never run'
+        : '${result.passed ? '\u2713' : '\u2718'} '
+              '${describeWhen(result.when)} \u00b7 v${result.version} '
+              '\u00b7 ${describeElapsed(result.elapsed)}';
+    // Grey for never run: "it passed" and "it ran" are different claims.
+    final resultColor = result == null
+        ? palette.rowDisabled
+        : (result.passed ? palette.ok : palette.fail);
+    items.add(
+      scenario.needsEnvironment && !prepared
+          ? MenuItem<String>.disabled(
+              scenario.name,
+              detail: blockedNote,
+              detailColor: palette.rowDisabled,
+              description:
+                  '${scenario.describe} — it reads the prepared folders, so '
+                  'build them first with Prepare.',
+            )
+          : MenuItem<String>(
+              scenario.name,
+              scenario.name,
+              detail: result_,
+              detailColor: resultColor,
+              description: scenario.describe,
+            ),
+    );
+  }
+  items
+    ..add(const MenuItem<String>.rule())
+    ..add(const MenuItem<String>.back(description: _backDescription));
+  return items;
 }
 
 /// Asks which package to clear, on the package screen codegen and coverage
@@ -897,12 +1029,13 @@ const _backDescription =
 /// The argument that stands for the whole workspace.
 const _allTargets = 'all';
 
-/// [rest] with [watchFlag] taken out, which leaves a scenario name in prose.
+/// [rest] with the flags taken out, which leaves a scenario name in prose.
 ///
 /// Both questions — was a name given, and what is it — are asked of the
 /// filtered list, or `tom e2e --watch` looks for a scenario called nothing.
-List<String> _scenarioWords(List<String> rest) =>
-    rest.where((word) => word != watchFlag).toList();
+List<String> _scenarioWords(List<String> rest) => rest
+    .where((word) => word != watchFlag && word != boardFlag)
+    .toList();
 
 /// A package name as the menu shows it: capitalized, except where the package
 /// spells itself.
@@ -1055,6 +1188,7 @@ Future<int> _dispatch(String name, List<String> rest) async {
       _ when rest.contains('list') => await runE2eList(),
       _ when rest.contains(_allTargets) => await runAllScenarios(
         watch: rest.contains(watchFlag),
+        board: rest.contains(boardFlag),
       ),
       // `tom e2e` and `tom e2e --watch` both name no scenario, so both list.
       _ when _scenarioWords(rest).isEmpty => await runE2eList(),
@@ -1062,6 +1196,7 @@ Future<int> _dispatch(String name, List<String> rest) async {
       _ => await runNamedScenario(
         _scenarioWords(rest).join(' '),
         watch: rest.contains(watchFlag),
+        board: rest.contains(boardFlag),
       ),
     },
     'rules' => await runRules(rest.isEmpty ? null : rest.first),

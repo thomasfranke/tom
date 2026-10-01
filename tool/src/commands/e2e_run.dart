@@ -50,12 +50,17 @@ void clearScreen() {
   if (stdout.hasTerminal) stdout.write('\x1B[2J\x1B[H');
 }
 
+/// The window every board is drawn in: 1440 by 900, the Penpot frame's own
+/// size (`docs/design/screens/conventions.md`).
+const String _boardWindow = '1440x900';
+
 /// Runs [scenario] and paints its progress until it is done.
 Future<int> runScenario(
   Scenario scenario, {
   bool quiet = false,
   SuiteProgress? suite,
   bool watch = false,
+  bool board = false,
 }) async {
   final screen = _ScenarioScreen(scenario, quiet: quiet, suite: suite)..start();
   // One stamp for the whole run, handed to the app, so the frames, the video
@@ -72,6 +77,9 @@ Future<int> runScenario(
     // A define rather than a file the run reads: the value belongs to this
     // invocation, and the next one must not inherit it.
     if (watch) '--dart-define=TOM_E2E_HOLD_MS=$_holdWhileWatching',
+    // The window the boards are drawn at, so a screenshot and a board crop
+    // to the same rectangle and nothing has to be scaled to compare.
+    if (board) '--dart-define=TOM_E2E_WINDOW=$_boardWindow',
     '--dart-define=TOM_E2E_STAMP=$stamp',
   ], workingDirectory: '${repoRoot().path}/src/apps/desktop');
 

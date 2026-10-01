@@ -169,20 +169,33 @@ List<E2eFixture> e2eFixtures() {
 /// file's [main] — and a flag spelled twice is one eventually forgotten.
 const watchFlag = '--watch';
 
+/// Runs the scenario in the window the **boards** are drawn at, so a
+/// screenshot and a board crop to the same rectangle: `tom e2e <name>
+/// --board`.
+///
+/// Every other run uses a window a laptop actually has. This one exists for
+/// the pixel review, where scaling either side to match the other would make
+/// every measurement a measurement of the scaling
+/// (`docs/design/screens/conventions.md`).
+const boardFlag = '--board';
+
 /// Runs one of the environment commands directly, without the menu.
 ///
 /// [watchFlag] is taken from anywhere in the line, as the menu takes it.
 Future<void> main(List<String> arguments) async {
   final watch = arguments.contains(watchFlag);
-  final words = arguments.where((word) => word != watchFlag).toList();
+  final board = arguments.contains(boardFlag);
+  final words = arguments
+      .where((word) => word != watchFlag && word != boardFlag)
+      .toList();
   final mode = words.isEmpty ? 'list' : words.first;
   exitCode = switch (mode) {
     'prepare' => await runE2ePrepare(),
     'clean' => await runE2eClean(),
     'list' => await runE2eList(),
     'fixtures' => await runE2eFixtures(),
-    'all' => await runAllScenarios(watch: watch),
-    _ => await runNamedScenario(words.join(' '), watch: watch),
+    'all' => await runAllScenarios(watch: watch, board: board),
+    _ => await runNamedScenario(words.join(' '), watch: watch, board: board),
   };
 }
 
@@ -190,7 +203,7 @@ Future<void> main(List<String> arguments) async {
 ///
 /// Sequential because each one launches the app, and on macOS the next launch
 /// fails while the previous window is still there.
-Future<int> runAllScenarios({bool watch = false}) async {
+Future<int> runAllScenarios({bool watch = false, bool board = false}) async {
   final scenarios = discoverScenarios();
   if (scenarios.isEmpty) {
     stderr.writeln('tom e2e: no scenarios found under $scenarioDirectory');
@@ -206,7 +219,12 @@ Future<int> runAllScenarios({bool watch = false}) async {
     // the summary will not say better.
     clearScreen();
     _freshEnvironmentFor(scenario);
-    final code = await runScenario(scenario, suite: progress, watch: watch);
+    final code = await runScenario(
+      scenario,
+      suite: progress,
+      watch: watch,
+      board: board,
+    );
     if (code == 0) {
       progress.passed++;
     } else {
@@ -258,7 +276,11 @@ void _printSuiteSummary(
 }
 
 /// Runs the scenario called [name].
-Future<int> runNamedScenario(String name, {bool watch = false}) async {
+Future<int> runNamedScenario(
+  String name, {
+  bool watch = false,
+  bool board = false,
+}) async {
   final scenarios = discoverScenarios();
   final match = scenarios.where((s) => s.name == name);
   if (match.isEmpty) {
@@ -271,7 +293,7 @@ Future<int> runNamedScenario(String name, {bool watch = false}) async {
     return 64; // EX_USAGE
   }
   _freshEnvironmentFor(match.first);
-  return runScenario(match.first, watch: watch);
+  return runScenario(match.first, watch: watch, board: board);
 }
 
 /// Rebuilds the environment before [scenario], when it reads one.

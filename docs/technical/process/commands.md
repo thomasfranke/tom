@@ -15,6 +15,7 @@ dart run tool/tom.dart codegen hard    # delete every generated file, then regen
 dart run tool/tom.dart coverage domain # measure, build the HTML report, open it
 dart run tool/tom.dart doctor          # can this machine build the repository at all
 dart run tool/tom.dart updates         # the pinned SDKs, against the latest stable
+dart run tool/tom.dart --preview e2e   # a screen as plain text, without driving the menu
 ```
 
 ## The three worth knowing early
@@ -28,6 +29,8 @@ dart run tool/tom.dart updates         # the pinned SDKs, against the latest sta
 ## Rules
 
 - **`make` is a face, not a layer.** Every target is one line through `tom`, and nothing in `tool/` calls back into `make` — the direction is deliberate, because `make` is not installed on Windows and the commands have to work there.
+- **The end-to-end screen is two screens: the groups, then one group's scenarios.** A suite grows a scenario at a time and a single list grows with it until it runs off the window; a group is the unit somebody thinks in anyway. Backing out of a group returns to the groups rather than leaving, the way codegen's two screens do.
+- **A group's row says what the group adds up to** — `✘ 1 failing`, `✓ 6 passed`, or `4 of 6 run`. A failure is what the eye is looking for, so it is said first, and "all passed" is claimed only when every one of them actually ran.
 - **`codegen-gate` and `coverage-gate` exist to fail a build**, not to do anything for you, so they are not menu rows and `codegen-gate` is not a `make` target. Both arrive as steps of `verify`, which is how anyone wants them locally, and as steps of the PR job ([`ci.md`](ci.md)).
 
 ---

@@ -8,6 +8,7 @@ live outside the code.
 | [`setup.md`](setup.md) | Prerequisites, the clone, where things are, and how a dependency is added |
 | [`commands.md`](commands.md) | The `tom` CLI — every command worth knowing, and what `make` is |
 | [`ci.md`](ci.md) | The two levels: what a PR must pass, and what a tag triggers |
+| [`end-to-end-coverage.md`](end-to-end-coverage.md) | Which product subject each scenario proves, and the ones nobody has watched working |
 | [`versioning.md`](versioning.md) | What counts as breaking for a desktop app, before and after 1.0, and deprecation |
 | [`repository-settings/`](repository-settings/README.md) | Access, branch and tag protection, Actions policy, the CLA bot — the configuration nobody can review in a diff |
 
