@@ -98,10 +98,12 @@ void main() {
   /// Presses the button whose tooltip is [word].
   Future<void> press(WidgetTester tester, String word) async {
     await tester.tap(
-      find.ancestor(
-        of: find.byTooltip(word),
-        matching: find.byType(TomToolbarButtonWidget),
-      ).first,
+      find
+          .ancestor(
+            of: find.byTooltip(word),
+            matching: find.byType(TomToolbarButtonWidget),
+          )
+          .first,
     );
     await tester.pumpAndSettle();
   }
@@ -193,10 +195,12 @@ void main() {
 
     for (final String word in <String>['Undo', 'Redo']) {
       final TomToolbarButtonWidget button = tester.widget(
-        find.ancestor(
-          of: find.byTooltip(word),
-          matching: find.byType(TomToolbarButtonWidget),
-        ).first,
+        find
+            .ancestor(
+              of: find.byTooltip(word),
+              matching: find.byType(TomToolbarButtonWidget),
+            )
+            .first,
       );
       expect(button.onPressed, isNull);
     }
@@ -217,10 +221,12 @@ void main() {
 
     for (final String word in <String>['Undo', 'Redo']) {
       final TomToolbarButtonWidget button = tester.widget(
-        find.ancestor(
-          of: find.byTooltip(word),
-          matching: find.byType(TomToolbarButtonWidget),
-        ).first,
+        find
+            .ancestor(
+              of: find.byTooltip(word),
+              matching: find.byType(TomToolbarButtonWidget),
+            )
+            .first,
       );
       expect(button.onPressed, isNotNull);
     }

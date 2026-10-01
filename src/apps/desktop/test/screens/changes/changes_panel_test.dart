@@ -281,8 +281,7 @@ void main() {
 
     /// Whether *Commit* can be pressed.
     bool isEnabled(WidgetTester tester) =>
-        tester.widget<FilledButton>(commitButton).onPressed !=
-        null;
+        tester.widget<FilledButton>(commitButton).onPressed != null;
 
     testWidgets('is disabled until there is a message', (
       WidgetTester tester,
@@ -443,10 +442,7 @@ void main() {
     await tester.enterText(find.byType(TextField).first, 'merge it');
     await tester.pump();
 
-    expect(
-      tester.widget<FilledButton>(commitButton).onPressed,
-      isNull,
-    );
+    expect(tester.widget<FilledButton>(commitButton).onPressed, isNull);
   });
 
   testWidgets('the staged count comes back once nothing is conflicted', (
@@ -595,9 +591,8 @@ final class _NoDocuments implements DocumentRepository {
   @override
   Future<Result<DocumentEntity, DocumentFailure>> read(
     SpaceRelativePathValueObject path,
-  ) async => Failure<DocumentEntity, DocumentFailure>(
-    DocumentNotFound(path.value),
-  );
+  ) async =>
+      Failure<DocumentEntity, DocumentFailure>(DocumentNotFound(path.value));
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

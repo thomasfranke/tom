@@ -147,9 +147,8 @@ final class EditorMarks {
   }
 
   /// Whether a removed block used to sit above [line].
-  bool seamAbove(int line) => spans.any(
-    (EditorMarkSpan span) => span.isSeam && span.from == line,
-  );
+  bool seamAbove(int line) =>
+      spans.any((EditorMarkSpan span) => span.isSeam && span.from == line);
 
   /// How many lines [text] occupies; nothing at all is no lines.
   static int _linesIn(String text) =>
@@ -161,9 +160,10 @@ final class EditorMarks {
   bool operator ==(Object other) =>
       other is EditorMarks &&
       other.spans.length == spans.length &&
-      List<int>.generate(spans.length, (int at) => at).every(
-        (int at) => other.spans[at] == spans[at],
-      );
+      List<int>.generate(
+        spans.length,
+        (int at) => at,
+      ).every((int at) => other.spans[at] == spans[at]);
 
   @override
   int get hashCode => Object.hashAll(spans);

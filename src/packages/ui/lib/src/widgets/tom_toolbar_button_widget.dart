@@ -93,11 +93,7 @@ class TomToolbarButtonWidget extends StatelessWidget {
                         color: ink,
                       ),
                     )
-                  : TomGlyphWidget(
-                      glyph: glyph!,
-                      color: ink,
-                      size: glyphSize,
-                    ),
+                  : TomGlyphWidget(glyph: glyph!, color: ink, size: glyphSize),
             ),
           ),
         ),

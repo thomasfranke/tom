@@ -275,9 +275,7 @@ void main() {
       // A changed block carries a letter **as well as** a tint
       // (`docs/product/diff/rendered-diff/how-it-is-drawn/doc.md`).
       final EditorMarks lines = EditorMarks.ofDiff(
-        diffOf(<DiffBlockValueObject>[
-          DiffBlockValueObject.added(block(2, 5)),
-        ]),
+        diffOf(<DiffBlockValueObject>[DiffBlockValueObject.added(block(2, 5))]),
       );
 
       expect(lines.at(2), EditorMarkEnum.added);

@@ -54,10 +54,11 @@ class PreviewPanel extends ConsumerWidget {
                 isReading: isReading,
                 diff: diff,
                 segments: segments,
-                onChoose: (
-                  ConflictRegionValueObject region,
-                  ConflictChoiceEnum choice,
-                ) => _choose(ref, document, region, choice),
+                onChoose:
+                    (
+                      ConflictRegionValueObject region,
+                      ConflictChoiceEnum choice,
+                    ) => _choose(ref, document, region, choice),
               ),
           },
         ),

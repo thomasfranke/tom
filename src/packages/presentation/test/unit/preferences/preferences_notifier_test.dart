@@ -58,9 +58,9 @@ void main() {
     start();
     await settle();
 
-    container.read(preferencesProvider.notifier).chooseTheme(
-      ThemeChoiceEnum.light,
-    );
+    container
+        .read(preferencesProvider.notifier)
+        .chooseTheme(ThemeChoiceEnum.light);
 
     // On screen before the disk: the window changes behind the popover.
     expect(now().theme, ThemeChoiceEnum.light);
@@ -70,9 +70,9 @@ void main() {
     start();
     await settle();
 
-    container.read(preferencesProvider.notifier).chooseTheme(
-      ThemeChoiceEnum.dark,
-    );
+    container
+        .read(preferencesProvider.notifier)
+        .chooseTheme(ThemeChoiceEnum.dark);
     await settle();
 
     expect(stored.held.theme, ThemeChoiceEnum.dark);
@@ -83,9 +83,9 @@ void main() {
     start();
     await settle();
 
-    container.read(preferencesProvider.notifier).chooseLanguage(
-      LanguageEnum.portuguese,
-    );
+    container
+        .read(preferencesProvider.notifier)
+        .chooseLanguage(LanguageEnum.portuguese);
     await settle();
 
     expect(now().language, LanguageEnum.portuguese);
@@ -122,9 +122,9 @@ void main() {
     start();
     await settle();
 
-    container.read(preferencesProvider.notifier).chooseTheme(
-      ThemeChoiceEnum.light,
-    );
+    container
+        .read(preferencesProvider.notifier)
+        .chooseTheme(ThemeChoiceEnum.light);
     await settle();
 
     expect(stored.held.language, LanguageEnum.german);

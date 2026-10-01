@@ -153,23 +153,22 @@ void main() {
       container.read(spaceSessionProvider.notifier).open(docs);
       await settle();
 
-      expect(
-        container.read(spaceSessionProvider)?.merge?.inProgress,
-        isTrue,
-      );
+      expect(container.read(spaceSessionProvider)?.merge?.inProgress, isTrue);
     });
 
-    test('the documents still to resolve are counted from the status',
-        () async {
-      conflicted();
-      start();
-      container.read(spaceSessionProvider.notifier).open(docs);
-      await settle();
+    test(
+      'the documents still to resolve are counted from the status',
+      () async {
+        conflicted();
+        start();
+        container.read(spaceSessionProvider.notifier).open(docs);
+        await settle();
 
-      final SpaceSessionState session = container.read(spaceSessionProvider)!;
-      expect(session.toResolve, hasLength(2));
-      expect(session.isResolvingMerge, isTrue);
-    });
+        final SpaceSessionState session = container.read(spaceSessionProvider)!;
+        expect(session.toResolve, hasLength(2));
+        expect(session.isResolvingMerge, isTrue);
+      },
+    );
 
     test('the message box starts from the draft git wrote', () async {
       conflicted();
@@ -192,26 +191,26 @@ void main() {
           .describe('docs: my own sentence');
       conflicted();
 
-      await container
-          .read(changesProvider.notifier)
-          .setAllStaged(staged: true);
+      await container.read(changesProvider.notifier).setAllStaged(staged: true);
       await settle();
 
       expect(ready().message, 'docs: my own sentence');
     });
 
-    test('a repository at rest leaves the box empty and the session clear',
-        () async {
-      start();
-      container.read(spaceSessionProvider.notifier).open(docs);
-      await settle();
+    test(
+      'a repository at rest leaves the box empty and the session clear',
+      () async {
+        start();
+        container.read(spaceSessionProvider.notifier).open(docs);
+        await settle();
 
-      final SpaceSessionState session = container.read(spaceSessionProvider)!;
-      expect(session.merge?.inProgress, isFalse);
-      expect(session.isResolvingMerge, isFalse);
-      expect(session.toResolve, isEmpty);
-      expect(ready().message, isEmpty);
-    });
+        final SpaceSessionState session = container.read(spaceSessionProvider)!;
+        expect(session.merge?.inProgress, isFalse);
+        expect(session.isResolvingMerge, isFalse);
+        expect(session.toResolve, isEmpty);
+        expect(ready().message, isEmpty);
+      },
+    );
   });
 
   group('staging', () {
@@ -484,9 +483,8 @@ final class _NoDocuments implements DocumentRepository {
   @override
   Future<Result<DocumentEntity, DocumentFailure>> read(
     SpaceRelativePathValueObject path,
-  ) async => Failure<DocumentEntity, DocumentFailure>(
-    DocumentNotFound(path.value),
-  );
+  ) async =>
+      Failure<DocumentEntity, DocumentFailure>(DocumentNotFound(path.value));
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

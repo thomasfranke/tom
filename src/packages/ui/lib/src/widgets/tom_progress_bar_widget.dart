@@ -62,10 +62,7 @@ class _TomProgressBarWidgetState extends State<TomProgressBarWidget>
                   // and leaves rather than appearing at a stop.
                   alignment: Alignment(_travel.value * 2 - 1, 0),
                   child: SizedBox(
-                    width: TomProgressBarWidget.segment.clamp(
-                      0,
-                      room.maxWidth,
-                    ),
+                    width: TomProgressBarWidget.segment.clamp(0, room.maxWidth),
                     child: ColoredBox(color: colors.accent),
                   ),
                 ),

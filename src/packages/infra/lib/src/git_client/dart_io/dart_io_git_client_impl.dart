@@ -237,10 +237,9 @@ final class DartIoGitClientImpl implements GitClient {
       '--git-path',
       'MERGE_MSG',
     ]);
-    if (located
-        case Failure<String, GitClientFailure>(
-          failure: final GitClientFailure failure,
-        )) {
+    if (located case Failure<String, GitClientFailure>(
+      failure: final GitClientFailure failure,
+    )) {
       return Failure<String, GitClientFailure>(failure);
     }
     final String path = (located as Success<String, GitClientFailure>).value

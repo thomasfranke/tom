@@ -109,12 +109,7 @@ class EditorBandsPainter extends CustomPainter {
         final (Color ink, Color fill) = _roleOf(mark);
         canvas
           ..drawRect(
-            Rect.fromLTRB(
-              EditorDesign.bandLeft,
-              line.top,
-              right,
-              line.bottom,
-            ),
+            Rect.fromLTRB(EditorDesign.bandLeft, line.top, right, line.bottom),
             Paint()..color = fill,
           )
           ..drawRect(

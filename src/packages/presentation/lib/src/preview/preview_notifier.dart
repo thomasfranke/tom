@@ -259,9 +259,7 @@ class PreviewNotifier extends _$PreviewNotifier {
     if (!(session?.isConflicted(parsed.document.path) ?? false)) {
       return null;
     }
-    final List<ConflictSegment> cut = scanner.segment(
-      parsed.document.content,
-    );
+    final List<ConflictSegment> cut = scanner.segment(parsed.document.content);
     if (cut.length == 1 && cut.single is ConflictProse) {
       return null;
     }

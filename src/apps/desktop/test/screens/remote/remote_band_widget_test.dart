@@ -394,8 +394,9 @@ void main() {
       expect(git.aborted, 0);
     });
 
-    testWidgets('keeping the conflict closes the question and undoes nothing',
-        (WidgetTester tester) async {
+    testWidgets('keeping the conflict closes the question and undoes nothing', (
+      WidgetTester tester,
+    ) async {
       await pumpBand(tester);
       stopped();
       await tester.pump();
@@ -431,12 +432,14 @@ void main() {
       WidgetTester tester,
     ) async {
       await pumpBand(tester);
-      container.read(spaceSessionProvider.notifier).observeMerge(
-        const MergeStateValueObject(
-          inProgress: true,
-          message: "Merge branch 'main'",
-        ),
-      );
+      container
+          .read(spaceSessionProvider.notifier)
+          .observeMerge(
+            const MergeStateValueObject(
+              inProgress: true,
+              message: "Merge branch 'main'",
+            ),
+          );
       await tester.pump();
 
       expect(find.byType(NoticeBandWidget), findsNothing);

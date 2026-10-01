@@ -93,7 +93,6 @@ class EditorHistoryScope extends InheritedNotifier<EditorHistory> {
       ?.notifier;
 
   /// The same, without depending: for a widget that only offers to it.
-  static EditorHistory? read(BuildContext context) => context
-      .getInheritedWidgetOfExactType<EditorHistoryScope>()
-      ?.notifier;
+  static EditorHistory? read(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<EditorHistoryScope>()?.notifier;
 }

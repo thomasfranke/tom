@@ -89,8 +89,7 @@ class _TomShellState extends ConsumerState<TomShell> {
         .at(PanelPlacementEnum.document)
         .isNotEmpty;
     final bool openExplorer =
-        showingExplorer &&
-        registry.at(PanelPlacementEnum.explorer).isNotEmpty;
+        showingExplorer && registry.at(PanelPlacementEnum.explorer).isNotEmpty;
     final bool openAside =
         showingAside && registry.at(PanelPlacementEnum.aside).isNotEmpty;
     final TomColors colors = TomColors.of(context);
@@ -185,9 +184,7 @@ class _TomShellState extends ConsumerState<TomShell> {
                   // Over the gutter rather than in the row, so grabbing it
                   // costs the layout nothing.
                   Positioned(
-                    left: openExplorer
-                        ? explorerWidth - TomMetrics.gutter
-                        : 0,
+                    left: openExplorer ? explorerWidth - TomMetrics.gutter : 0,
                     top: 0,
                     bottom: 0,
                     child: WorkspaceGripWidget(width: explorerWidth),

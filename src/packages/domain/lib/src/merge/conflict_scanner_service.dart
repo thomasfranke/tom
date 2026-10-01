@@ -41,8 +41,7 @@ final class ConflictScannerService {
     }
 
     final List<String> lines = text.split('\n');
-    final List<ConflictRegionValueObject> found =
-        <ConflictRegionValueObject>[];
+    final List<ConflictRegionValueObject> found = <ConflictRegionValueObject>[];
 
     // Offsets are tracked alongside the lines so a region can be replaced by
     // span later without the caller counting newlines again.
@@ -92,8 +91,7 @@ final class ConflictScannerService {
           closing = scan;
           break;
         }
-        if (lines[scan].startsWith(_start) ||
-            lines[scan].startsWith(_middle)) {
+        if (lines[scan].startsWith(_start) || lines[scan].startsWith(_middle)) {
           break;
         }
         incoming.add(lines[scan]);

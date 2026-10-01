@@ -413,7 +413,6 @@ class _GlyphPainter extends CustomPainter {
     ..moveTo(8, 11.3)
     ..lineTo(8, 11.3);
 
-
   /// `icons/preferences.svg`: the cogwheel, and the hole at its centre.
   ///
   /// Twelve arcs rather than teeth drawn one by one, which is what makes it
@@ -421,66 +420,32 @@ class _GlyphPainter extends CustomPainter {
   /// a control panel at every size tried before this one.
   static Path _preferences() => Path()
     ..moveTo(6.24, 1.85)
-    ..arcToPoint(
-      const Offset(9.76, 1.85),
-      radius: const Radius.circular(6.40),
-    )
+    ..arcToPoint(const Offset(9.76, 1.85), radius: const Radius.circular(6.40))
     ..lineTo(9.84, 3.86)
-    ..arcToPoint(
-      const Offset(10.66, 4.33),
-      radius: const Radius.circular(4.53),
-    )
+    ..arcToPoint(const Offset(10.66, 4.33), radius: const Radius.circular(4.53))
     ..lineTo(12.45, 3.40)
-    ..arcToPoint(
-      const Offset(14.21, 6.45),
-      radius: const Radius.circular(6.40),
-    )
+    ..arcToPoint(const Offset(14.21, 6.45), radius: const Radius.circular(6.40))
     ..lineTo(12.51, 7.53)
-    ..arcToPoint(
-      const Offset(12.51, 8.47),
-      radius: const Radius.circular(4.53),
-    )
+    ..arcToPoint(const Offset(12.51, 8.47), radius: const Radius.circular(4.53))
     ..lineTo(14.21, 9.55)
     ..arcToPoint(
       const Offset(12.45, 12.60),
       radius: const Radius.circular(6.40),
     )
     ..lineTo(10.66, 11.67)
-    ..arcToPoint(
-      const Offset(9.84, 12.14),
-      radius: const Radius.circular(4.53),
-    )
+    ..arcToPoint(const Offset(9.84, 12.14), radius: const Radius.circular(4.53))
     ..lineTo(9.76, 14.15)
-    ..arcToPoint(
-      const Offset(6.24, 14.15),
-      radius: const Radius.circular(6.40),
-    )
+    ..arcToPoint(const Offset(6.24, 14.15), radius: const Radius.circular(6.40))
     ..lineTo(6.16, 12.14)
-    ..arcToPoint(
-      const Offset(5.34, 11.67),
-      radius: const Radius.circular(4.53),
-    )
+    ..arcToPoint(const Offset(5.34, 11.67), radius: const Radius.circular(4.53))
     ..lineTo(3.55, 12.60)
-    ..arcToPoint(
-      const Offset(1.79, 9.55),
-      radius: const Radius.circular(6.40),
-    )
+    ..arcToPoint(const Offset(1.79, 9.55), radius: const Radius.circular(6.40))
     ..lineTo(3.49, 8.47)
-    ..arcToPoint(
-      const Offset(3.49, 7.53),
-      radius: const Radius.circular(4.53),
-    )
+    ..arcToPoint(const Offset(3.49, 7.53), radius: const Radius.circular(4.53))
     ..lineTo(1.79, 6.45)
-    ..arcToPoint(
-      const Offset(3.55, 3.40),
-      radius: const Radius.circular(6.40),
-    )
+    ..arcToPoint(const Offset(3.55, 3.40), radius: const Radius.circular(6.40))
     ..lineTo(5.34, 4.33)
-    ..arcToPoint(
-      const Offset(6.16, 3.86),
-      radius: const Radius.circular(4.53),
-    )
+    ..arcToPoint(const Offset(6.16, 3.86), radius: const Radius.circular(4.53))
     ..close()
     ..addOval(Rect.fromCircle(center: const Offset(8, 8), radius: 2));
-
 }

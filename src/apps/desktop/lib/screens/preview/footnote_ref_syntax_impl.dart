@@ -27,11 +27,10 @@ class FootnoteRefSyntaxImpl extends md.InlineSyntax {
   static const String tag = 'tomFootnoteRef';
 
   /// [notes] by the label each is cited under.
-  static Map<String, FootnoteValueObject> by(
-    List<FootnoteValueObject> notes,
-  ) => <String, FootnoteValueObject>{
-    for (final FootnoteValueObject note in notes) note.label: note,
-  };
+  static Map<String, FootnoteValueObject> by(List<FootnoteValueObject> notes) =>
+      <String, FootnoteValueObject>{
+        for (final FootnoteValueObject note in notes) note.label: note,
+      };
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {

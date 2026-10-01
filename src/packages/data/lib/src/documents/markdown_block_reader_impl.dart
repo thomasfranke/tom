@@ -52,16 +52,14 @@ final class MarkdownBlockReaderImpl implements BlockReaderPort {
           ),
       ]),
       linkDefinitions: outline.linkDefinitions,
-      footnotes: List<FootnoteValueObject>.unmodifiable(
-        <FootnoteValueObject>[
-          for (final MarkdownFootnoteDto note in outline.footnotes)
-            FootnoteValueObject(
-              label: note.label,
-              number: note.number,
-              text: note.text,
-            ),
-        ],
-      ),
+      footnotes: List<FootnoteValueObject>.unmodifiable(<FootnoteValueObject>[
+        for (final MarkdownFootnoteDto note in outline.footnotes)
+          FootnoteValueObject(
+            label: note.label,
+            number: note.number,
+            text: note.text,
+          ),
+      ]),
     );
   }
 

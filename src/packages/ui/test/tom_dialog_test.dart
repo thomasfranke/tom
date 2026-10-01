@@ -100,8 +100,9 @@ void main() {
       expect(second.dy, greaterThan(first.dy));
     });
 
-    testWidgets('its actions are as tall and as wide as the board draws them',
-        (WidgetTester tester) async {
+    testWidgets('its actions are as tall and as wide as the board draws them', (
+      WidgetTester tester,
+    ) async {
       await pump(
         tester,
         TomDialogWidget(
@@ -115,10 +116,7 @@ void main() {
 
       final Size filled = tester.getSize(find.byType(FilledButton));
       expect(filled.height, TomDialogWidget.actionHeight);
-      expect(
-        filled.width,
-        TomDialogWidget.width - TomDialogWidget.inset * 2,
-      );
+      expect(filled.width, TomDialogWidget.width - TomDialogWidget.inset * 2);
     });
 
     // The press that needs no thought is the one that changes nothing.
@@ -193,5 +191,4 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
-
 }

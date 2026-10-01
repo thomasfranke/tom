@@ -732,61 +732,61 @@ List<MenuItem<String>> e2eGroupItems(List<Scenario> scenarios) {
   final runnable = !prepared ? scenarios.length - blocked : scenarios.length;
 
   return <MenuItem<String>>[
-      if (runnable == 0)
-        MenuItem<String>.disabled(
-          'All of them',
-          detail: blockedNote,
-          detailColor: palette.rowDisabled,
-          description:
-              'Nothing can run until the environment is built — Prepare, at '
-              'the bottom of this screen.',
-        )
-      else
-        MenuItem<String>(
-          'All of them',
-          _allTargets,
-          emphasized: true,
-          description: prepared
-              ? 'Runs every scenario, one at a time — each launches the app, '
-                    'and the next cannot start while the last window is still '
-                    'there.'
-              : 'Runs the $runnable that do not need the environment.',
-        ),
-      const MenuItem<String>.rule(),
-      const MenuItem<String>.section('Groups'),
-      for (final entry in groups.entries)
-        MenuItem<String>(
-          entry.key,
-          _groupPrefix + entry.key,
-          detail: _groupState(entry.value, results),
-          detailColor: _groupColour(entry.value, results),
-          description: _groupDescription(entry.value, results),
-        ),
-      const MenuItem<String>.rule(),
-      MenuItem<String>.section(
-        prepared
-            ? 'Environment'
-            : 'Environment \u00b7 not built \u2014 $blocked '
-                  '${blocked == 1 ? 'scenario needs' : 'scenarios need'} it',
-      ),
+    if (runnable == 0)
+      MenuItem<String>.disabled(
+        'All of them',
+        detail: blockedNote,
+        detailColor: palette.rowDisabled,
+        description:
+            'Nothing can run until the environment is built — Prepare, at '
+            'the bottom of this screen.',
+      )
+    else
       MenuItem<String>(
-        'Prepare',
-        'prepare',
-        emphasized: !prepared,
-        detail: prepared ? '\u2713 ready' : 'not built',
-        detailColor: prepared ? palette.ok : palette.rowDisabled,
-        description:
-            'Builds the folders the scenarios run against: real repositories '
-            'with real markdown in them. Destructive — it throws away what '
-            'was there, so a run cannot inherit the last one.',
+        'All of them',
+        _allTargets,
+        emphasized: true,
+        description: prepared
+            ? 'Runs every scenario, one at a time — each launches the app, '
+                  'and the next cannot start while the last window is still '
+                  'there.'
+            : 'Runs the $runnable that do not need the environment.',
       ),
-      const MenuItem<String>(
-        'Remove',
-        'clean',
-        description:
-            'Deletes the prepared folders. What ran, and when, is kept — '
-            'that is a record, not test data.',
+    const MenuItem<String>.rule(),
+    const MenuItem<String>.section('Groups'),
+    for (final entry in groups.entries)
+      MenuItem<String>(
+        entry.key,
+        _groupPrefix + entry.key,
+        detail: _groupState(entry.value, results),
+        detailColor: _groupColour(entry.value, results),
+        description: _groupDescription(entry.value, results),
       ),
+    const MenuItem<String>.rule(),
+    MenuItem<String>.section(
+      prepared
+          ? 'Environment'
+          : 'Environment \u00b7 not built \u2014 $blocked '
+                '${blocked == 1 ? 'scenario needs' : 'scenarios need'} it',
+    ),
+    MenuItem<String>(
+      'Prepare',
+      'prepare',
+      emphasized: !prepared,
+      detail: prepared ? '\u2713 ready' : 'not built',
+      detailColor: prepared ? palette.ok : palette.rowDisabled,
+      description:
+          'Builds the folders the scenarios run against: real repositories '
+          'with real markdown in them. Destructive — it throws away what '
+          'was there, so a run cannot inherit the last one.',
+    ),
+    const MenuItem<String>(
+      'Remove',
+      'clean',
+      description:
+          'Deletes the prepared folders. What ran, and when, is kept — '
+          'that is a record, not test data.',
+    ),
     const MenuItem<String>.rule(),
     const MenuItem<String>.back(),
   ];
@@ -1033,9 +1033,8 @@ const _allTargets = 'all';
 ///
 /// Both questions — was a name given, and what is it — are asked of the
 /// filtered list, or `tom e2e --watch` looks for a scenario called nothing.
-List<String> _scenarioWords(List<String> rest) => rest
-    .where((word) => word != watchFlag && word != boardFlag)
-    .toList();
+List<String> _scenarioWords(List<String> rest) =>
+    rest.where((word) => word != watchFlag && word != boardFlag).toList();
 
 /// A package name as the menu shows it: capitalized, except where the package
 /// spells itself.

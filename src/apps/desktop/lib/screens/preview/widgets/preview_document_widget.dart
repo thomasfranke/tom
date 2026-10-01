@@ -80,9 +80,7 @@ class PreviewDocumentWidget extends StatelessWidget {
               PreviewBlockWidget(block: block, document: prose, body: body),
             );
           }
-        case PreviewConflict(
-          region: final ConflictRegionValueObject region,
-        ):
+        case PreviewConflict(region: final ConflictRegionValueObject region):
           rows.add(
             PreviewConflictWidget(
               region: region,
@@ -132,9 +130,7 @@ class PreviewDocumentWidget extends StatelessWidget {
         width:
             measure +
             TomMetrics.pad * 2 +
-            (changes == null && segments == null
-                ? 0
-                : PreviewDesign.diffInset),
+            (changes == null && segments == null ? 0 : PreviewDesign.diffInset),
         child: ListView.separated(
           padding: const EdgeInsets.fromLTRB(
             TomMetrics.pad,

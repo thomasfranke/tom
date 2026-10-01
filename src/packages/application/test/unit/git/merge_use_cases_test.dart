@@ -54,9 +54,7 @@ void main() {
 
       expect(result, isA<Success<MergeStateValueObject, AppFailure>>());
       expect(
-        (result as Success<MergeStateValueObject, AppFailure>)
-            .value
-            .inProgress,
+        (result as Success<MergeStateValueObject, AppFailure>).value.inProgress,
         isFalse,
       );
     });

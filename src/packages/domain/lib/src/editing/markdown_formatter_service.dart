@@ -104,11 +104,9 @@ final class MarkdownFormatterService {
         text.substring(to, to + width) == marks;
     if (wrapped) {
       return FormattedSourceValueObject(
-        text: text.replaceRange(to, to + width, '').replaceRange(
-          from - width,
-          from,
-          '',
-        ),
+        text: text
+            .replaceRange(to, to + width, '')
+            .replaceRange(from - width, from, ''),
         start: from - width,
         end: to - width,
       );

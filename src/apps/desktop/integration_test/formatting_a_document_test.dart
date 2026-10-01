@@ -60,9 +60,7 @@ void main() {
       ) async {
         await robot.seesUnsaved('untracked.md');
       }),
-      Step('and saving puts that markdown on the disk', (
-        TomRobot robot,
-      ) async {
+      Step('and saving puts that markdown on the disk', (TomRobot robot) async {
         await robot.saves();
         await robot.seesNothingUnsaved('untracked.md');
 

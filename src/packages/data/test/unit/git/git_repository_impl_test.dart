@@ -326,10 +326,7 @@ void main() {
     test('a failure reading MERGE_HEAD is reported, not swallowed', () async {
       client.failure = const GitClientExecutableNotFound();
 
-      expect(
-        failureOf(await repository.mergeState()),
-        isA<GitNotInstalled>(),
-      );
+      expect(failureOf(await repository.mergeState()), isA<GitNotInstalled>());
     });
 
     test('aborting asks git to abort', () async {
@@ -345,6 +342,7 @@ void main() {
     });
   });
 }
+
 /// A [GitClient] that records what it was asked and answers what it was told
 /// to.
 final class _RecordingGitClient implements GitClient {

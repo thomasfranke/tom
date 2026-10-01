@@ -75,9 +75,7 @@ class PreviewConflictWidget extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(
-        DiagnosticsProperty<ConflictRegionValueObject>('region', region),
-      )
+      ..add(DiagnosticsProperty<ConflictRegionValueObject>('region', region))
       ..add(DoubleProperty('body', body))
       ..add(
         ObjectFlagProperty<ValueChanged<ConflictChoiceEnum>>.has(
@@ -185,12 +183,7 @@ class PreviewConflictWidget extends StatelessWidget {
         ConflictChoiceEnum.incoming,
         incomingWidth,
       ),
-      _act(
-        colors,
-        'Accept Both Changes',
-        ConflictChoiceEnum.both,
-        bothWidth,
-      ),
+      _act(colors, 'Accept Both Changes', ConflictChoiceEnum.both, bothWidth),
     ],
   );
 
@@ -202,24 +195,24 @@ class PreviewConflictWidget extends StatelessWidget {
     ConflictChoiceEnum choice,
     double width,
   ) => SizedBox(
-        width: width,
-        height: actionHeight,
-        child: OutlinedButton(
-          onPressed: () => onChoose(choice),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: colors.modified,
-            side: BorderSide(color: colors.modified),
-            padding: EdgeInsets.zero,
-            minimumSize: Size(width, actionHeight),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(TomMetrics.radius),
-            ),
-            textStyle: const TextStyle(
-              fontSize: action,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          child: Text(text),
+    width: width,
+    height: actionHeight,
+    child: OutlinedButton(
+      onPressed: () => onChoose(choice),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: colors.modified,
+        side: BorderSide(color: colors.modified),
+        padding: EdgeInsets.zero,
+        minimumSize: Size(width, actionHeight),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TomMetrics.radius),
         ),
-      );
+        textStyle: const TextStyle(
+          fontSize: action,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      child: Text(text),
+    ),
+  );
 }

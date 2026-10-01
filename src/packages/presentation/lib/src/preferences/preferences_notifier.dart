@@ -24,14 +24,12 @@ part 'preferences_notifier.g.dart';
 @Riverpod(keepAlive: true)
 class PreferencesNotifier extends _$PreferencesNotifier {
   /// Reads what is stored.
-  ReadPreferencesUseCase get readPreferences => ref.read(
-    readPreferencesProvider,
-  );
+  ReadPreferencesUseCase get readPreferences =>
+      ref.read(readPreferencesProvider);
 
   /// Writes a choice back.
-  WritePreferencesUseCase get writePreferences => ref.read(
-    writePreferencesProvider,
-  );
+  WritePreferencesUseCase get writePreferences =>
+      ref.read(writePreferencesProvider);
 
   @override
   PreferencesValueObject build() {
@@ -53,9 +51,8 @@ class PreferencesNotifier extends _$PreferencesNotifier {
       _apply(state.copyWith(language: language));
 
   /// Shows the formatting bar, or puts it away.
-  void toggleFormattingBar() => _apply(
-    state.copyWith(showingFormattingBar: !state.showingFormattingBar),
-  );
+  void toggleFormattingBar() =>
+      _apply(state.copyWith(showingFormattingBar: !state.showingFormattingBar));
 
   /// Puts [chosen] on screen, then in the store.
   void _apply(PreferencesValueObject chosen) {

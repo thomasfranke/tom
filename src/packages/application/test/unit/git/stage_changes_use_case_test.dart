@@ -116,10 +116,9 @@ void main() {
 
       final AppFailure failure = (result as Failure<void, AppFailure>).failure;
       expect(failure, isA<GitConflictMarkersPresent>());
-      expect(
-        (failure as GitConflictMarkersPresent).paths,
-        <String>['docs/guides/writing.md'],
-      );
+      expect((failure as GitConflictMarkersPresent).paths, <String>[
+        'docs/guides/writing.md',
+      ]);
     });
 
     test('never reaches git', () async {
@@ -130,27 +129,29 @@ void main() {
       expect(git.staged, isEmpty);
     });
 
-    test('refuses the whole batch, naming every one that holds a marker',
-        () async {
-      final RepoRelativePathValueObject reading = RepoRelativePathValueObject(
-        'docs/guides/reading.md',
-      );
-      documents.contents['guides/writing.md'] = conflicted;
-      documents.contents['guides/reading.md'] = conflicted;
+    test(
+      'refuses the whole batch, naming every one that holds a marker',
+      () async {
+        final RepoRelativePathValueObject reading = RepoRelativePathValueObject(
+          'docs/guides/reading.md',
+        );
+        documents.contents['guides/writing.md'] = conflicted;
+        documents.contents['guides/reading.md'] = conflicted;
 
-      final Result<void, AppFailure> result = await staging().stage(
-        docs,
-        <RepoRelativePathValueObject>[writing, reading],
-      );
+        final Result<void, AppFailure> result = await staging().stage(
+          docs,
+          <RepoRelativePathValueObject>[writing, reading],
+        );
 
-      expect(
-        ((result as Failure<void, AppFailure>).failure
-                as GitConflictMarkersPresent)
-            .paths,
-        <String>['docs/guides/writing.md', 'docs/guides/reading.md'],
-      );
-      expect(git.staged, isEmpty);
-    });
+        expect(
+          ((result as Failure<void, AppFailure>).failure
+                  as GitConflictMarkersPresent)
+              .paths,
+          <String>['docs/guides/writing.md', 'docs/guides/reading.md'],
+        );
+        expect(git.staged, isEmpty);
+      },
+    );
 
     // The rule the check exists for: resolving happens in the buffer and
     // staging is how the resolution is declared, so a document whose markers
@@ -236,9 +237,7 @@ final class _Documents implements DocumentRepository {
     read_.add(path.value);
     final String? content = contents[path.value];
     return content == null
-        ? Failure<DocumentEntity, DocumentFailure>(
-            DocumentNotFound(path.value),
-          )
+        ? Failure<DocumentEntity, DocumentFailure>(DocumentNotFound(path.value))
         : Success<DocumentEntity, DocumentFailure>(
             DocumentEntity(path: path, content: content),
           );

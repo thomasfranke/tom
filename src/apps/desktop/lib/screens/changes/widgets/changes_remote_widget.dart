@@ -71,9 +71,7 @@ class ChangesRemoteWidget extends ConsumerWidget {
           width: pushWidth,
           isPrimary: true,
           // Nothing to publish is said by the button, not reported after.
-          onPressed: git.ahead == 0
-              ? null
-              : () => unawaited(notifier.push()),
+          onPressed: git.ahead == 0 ? null : () => unawaited(notifier.push()),
         ),
         const SizedBox(height: rowGap),
         Row(

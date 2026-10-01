@@ -98,9 +98,7 @@ class TomApp extends ConsumerWidget {
     // choice is inside the preferences popover, which is where it is also
     // stored (`docs/product/preferences/what-it-holds/doc.md`).
     themeMode: switch (ref.watch(
-      preferencesProvider.select(
-        (PreferencesValueObject it) => it.theme,
-      ),
+      preferencesProvider.select((PreferencesValueObject it) => it.theme),
     )) {
       ThemeChoiceEnum.system => ThemeMode.system,
       ThemeChoiceEnum.light => ThemeMode.light,

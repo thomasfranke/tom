@@ -188,8 +188,9 @@ void main() {
     test('each side is parsed, so the preview can render it', () async {
       await showing(conflicted);
 
-      final PreviewConflict part =
-          ready().segments!.whereType<PreviewConflict>().single;
+      final PreviewConflict part = ready().segments!
+          .whereType<PreviewConflict>()
+          .single;
       expect(part.current.document.content, 'ours');
       expect(part.incoming.document.content, 'theirs');
       expect(part.current.blocks, isNotEmpty);
@@ -209,8 +210,9 @@ void main() {
     test('each side keeps the document path, so its links resolve', () async {
       await showing(conflicted);
 
-      final PreviewConflict part =
-          ready().segments!.whereType<PreviewConflict>().single;
+      final PreviewConflict part = ready().segments!
+          .whereType<PreviewConflict>()
+          .single;
       expect(part.current.document.path, writing);
       expect(part.incoming.document.path, writing);
     });

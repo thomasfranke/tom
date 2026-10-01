@@ -310,9 +310,8 @@ final class _NoDocuments implements DocumentRepository {
   @override
   Future<Result<DocumentEntity, DocumentFailure>> read(
     SpaceRelativePathValueObject path,
-  ) async => Failure<DocumentEntity, DocumentFailure>(
-    DocumentNotFound(path.value),
-  );
+  ) async =>
+      Failure<DocumentEntity, DocumentFailure>(DocumentNotFound(path.value));
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

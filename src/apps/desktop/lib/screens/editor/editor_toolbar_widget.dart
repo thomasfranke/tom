@@ -59,8 +59,7 @@ class EditorToolbarWidget extends ConsumerWidget {
 
   /// One group's width: its buttons and the gaps between them.
   static double widthOfGroup(List<ToolbarEntry> group) =>
-      group.length * TomToolbarButtonWidget.size +
-      (group.length - 1) * gap;
+      group.length * TomToolbarButtonWidget.size + (group.length - 1) * gap;
 
   /// What separates one group from the next.
   static const double betweenGroups = beforeRule + ruleWidth + afterRule;
@@ -243,19 +242,19 @@ class EditorToolbarWidget extends ConsumerWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              for (final (int index, List<ToolbarEntry> group) in shown.indexed)
-                ...<Widget>[
-                  _buttons(group, ref, history, editable: editable),
-                  if (index < shown.length - 1 || !whole) ...<Widget>[
-                    const SizedBox(width: beforeRule),
-                    SizedBox(
-                      width: ruleWidth,
-                      height: ruleHeight,
-                      child: ColoredBox(color: colors.border),
-                    ),
-                    const SizedBox(width: afterRule),
-                  ],
+              for (final (int index, List<ToolbarEntry> group)
+                  in shown.indexed) ...<Widget>[
+                _buttons(group, ref, history, editable: editable),
+                if (index < shown.length - 1 || !whole) ...<Widget>[
+                  const SizedBox(width: beforeRule),
+                  SizedBox(
+                    width: ruleWidth,
+                    height: ruleHeight,
+                    child: ColoredBox(color: colors.border),
+                  ),
+                  const SizedBox(width: afterRule),
                 ],
+              ],
               if (!whole)
                 _OverflowWidget(
                   group: hidden,
@@ -417,9 +416,7 @@ class _OverflowWidgetState extends ConsumerState<_OverflowWidget> {
     if (button == null) {
       return const SizedBox.shrink();
     }
-    final Offset corner = button.localToGlobal(
-      Offset(0, button.size.height),
-    );
+    final Offset corner = button.localToGlobal(Offset(0, button.size.height));
     final TomColors colors = TomColors.of(context);
     return Stack(
       children: <Widget>[

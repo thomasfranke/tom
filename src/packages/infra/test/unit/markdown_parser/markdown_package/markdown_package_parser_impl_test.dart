@@ -178,8 +178,9 @@ void main() {
   group('the footnotes it reports', () {
     /// Every footnote of [markdown] as `number label: text`.
     Future<List<String>> notesOf(String markdown) async => <String>[
-      for (final MarkdownFootnoteDto note in (await outlineOf(markdown))
-          .footnotes)
+      for (final MarkdownFootnoteDto note in (await outlineOf(
+        markdown,
+      )).footnotes)
         '${note.number} ${note.label}: ${note.text}',
     ];
 
@@ -187,20 +188,20 @@ void main() {
       expect(await notesOf('# Title\n\nProse.\n'), isEmpty);
     });
 
-    test('the note is what was written, without the syntax that held it',
-        () async {
-      expect(await notesOf('Text.[^a]\n\n[^a]: The note itself.\n'), <String>[
-        '1 a: The note itself.',
-      ]);
-    });
+    test(
+      'the note is what was written, without the syntax that held it',
+      () async {
+        expect(await notesOf('Text.[^a]\n\n[^a]: The note itself.\n'), <String>[
+          '1 a: The note itself.',
+        ]);
+      },
+    );
 
     test('they are numbered in the order they are first cited', () async {
       // Not the order they are defined in: that is what every renderer does,
       // and a block cannot see the citations in other blocks.
       expect(
-        await notesOf(
-          'First.[^b]\n\nSecond.[^a]\n\n[^a]: A.\n\n[^b]: B.\n',
-        ),
+        await notesOf('First.[^b]\n\nSecond.[^a]\n\n[^a]: A.\n\n[^b]: B.\n'),
         <String>['1 b: B.', '2 a: A.'],
       );
     });
@@ -212,10 +213,7 @@ void main() {
     });
 
     test('a definition inside a fence is text, not a note', () async {
-      expect(
-        await notesOf('Text.[^a]\n\n```\n[^a]: Not one.\n```\n'),
-        isEmpty,
-      );
+      expect(await notesOf('Text.[^a]\n\n```\n[^a]: Not one.\n```\n'), isEmpty);
     });
   });
 }

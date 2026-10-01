@@ -131,10 +131,10 @@ class ShellModeBarWidget extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: _gap),
-          // **Both ends are anchored to the pane, not to the window.** The
-          // modes used to be centred on the window; a centred control in a
-          // full row is one the buttons run into
-          // (`docs/product/workspace/columns/doc.md`).
+            // **Both ends are anchored to the pane, not to the window.** The
+            // modes used to be centred on the window; a centred control in a
+            // full row is one the buttons run into
+            // (`docs/product/workspace/columns/doc.md`).
             const ShellModeControlWidget(),
             const SizedBox(width: _chipGap),
             const CompareControlWidget(),

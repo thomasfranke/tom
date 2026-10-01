@@ -99,13 +99,10 @@ final class GitRepositoryImpl implements GitRepository {
   Future<Result<MergeStateValueObject, GitFailure>> mergeState() async {
     final Result<bool, GitClientFailure> inProgress = await git
         .mergeInProgress();
-    if (inProgress
-        case Failure<bool, GitClientFailure>(
-          failure: final GitClientFailure failure,
-        )) {
-      return Failure<MergeStateValueObject, GitFailure>(
-        _asGitFailure(failure),
-      );
+    if (inProgress case Failure<bool, GitClientFailure>(
+      failure: final GitClientFailure failure,
+    )) {
+      return Failure<MergeStateValueObject, GitFailure>(_asGitFailure(failure));
     }
     if (!(inProgress as Success<bool, GitClientFailure>).value) {
       return const Success<MergeStateValueObject, GitFailure>(

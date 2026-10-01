@@ -75,18 +75,20 @@ void main() {
     expect(find.textContaining('HEAD'), findsNothing);
   });
 
-  testWidgets('the three choices are offered, in the order the merge has them',
-      (WidgetTester tester) async {
-    await pump(tester);
+  testWidgets(
+    'the three choices are offered, in the order the merge has them',
+    (WidgetTester tester) async {
+      await pump(tester);
 
-    final Iterable<Widget> buttons = tester.widgetList(
-      find.byType(OutlinedButton),
-    );
-    expect(buttons, hasLength(3));
-    expect(find.text('Accept Current Change'), findsOneWidget);
-    expect(find.text('Accept Incoming Change'), findsOneWidget);
-    expect(find.text('Accept Both Changes'), findsOneWidget);
-  });
+      final Iterable<Widget> buttons = tester.widgetList(
+        find.byType(OutlinedButton),
+      );
+      expect(buttons, hasLength(3));
+      expect(find.text('Accept Current Change'), findsOneWidget);
+      expect(find.text('Accept Incoming Change'), findsOneWidget);
+      expect(find.text('Accept Both Changes'), findsOneWidget);
+    },
+  );
 
   testWidgets('each choice reports which side was picked', (
     WidgetTester tester,

@@ -20,15 +20,12 @@ final class PreferencesRepositoryImpl implements PreferencesRepository {
   final PreferencesDataSource source;
 
   @override
-  Future<PreferencesValueObject> read() async =>
-      switch (await source.read()) {
-        Success<PreferencesDto, SettingsFailure>(
-          value: final PreferencesDto row,
-        ) =>
-          row.toValueObject(),
-        Failure<PreferencesDto, SettingsFailure>() =>
-          PreferencesValueObject.defaults,
-      };
+  Future<PreferencesValueObject> read() async => switch (await source.read()) {
+    Success<PreferencesDto, SettingsFailure>(value: final PreferencesDto row) =>
+      row.toValueObject(),
+    Failure<PreferencesDto, SettingsFailure>() =>
+      PreferencesValueObject.defaults,
+  };
 
   @override
   Future<Result<void, AppFailure>> write(

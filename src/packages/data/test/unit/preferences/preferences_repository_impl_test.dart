@@ -93,9 +93,7 @@ final class _Settings implements Settings {
 
   @override
   Future<Result<String?, SettingsFailure>> read(String key) async => refuses
-      ? const Failure<String?, SettingsFailure>(
-          SettingsUnavailable('no store'),
-        )
+      ? const Failure<String?, SettingsFailure>(SettingsUnavailable('no store'))
       : Success<String?, SettingsFailure>(stored[key]);
 
   @override

@@ -147,8 +147,6 @@ class _RemoteProgressWidget extends ConsumerWidget {
     final bool working = ref.watch(
       remoteProvider.select((RemoteState state) => state.isBusy),
     );
-    return working
-        ? const TomProgressBarWidget()
-        : const SizedBox.shrink();
+    return working ? const TomProgressBarWidget() : const SizedBox.shrink();
   }
 }

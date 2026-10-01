@@ -34,10 +34,14 @@ void main() {
     });
 
     test('italic and strikethrough are the same shape, other marks', () {
-      expect(apply('a |word| here', FormatCommandEnum.italic).text,
-          'a *word* here');
-      expect(apply('a |word| here', FormatCommandEnum.strikethrough).text,
-          'a ~~word~~ here');
+      expect(
+        apply('a |word| here', FormatCommandEnum.italic).text,
+        'a *word* here',
+      );
+      expect(
+        apply('a |word| here', FormatCommandEnum.strikethrough).text,
+        'a ~~word~~ here',
+      );
     });
 
     test('pressed again on its own marks, it takes them off', () {
@@ -63,8 +67,10 @@ void main() {
     });
 
     test('a few words are inline code, and lines are a fence', () {
-      expect(apply('a |word| here', FormatCommandEnum.code).text,
-          'a `word` here');
+      expect(
+        apply('a |word| here', FormatCommandEnum.code).text,
+        'a `word` here',
+      );
 
       final FormattedSourceValueObject fenced = apply(
         '|one\ntwo|',
@@ -85,21 +91,20 @@ void main() {
       expect(result.text, '- one\n- two\nthree');
     });
 
-    test('the run stays selected, because it is what the next press acts on',
-        () {
-      final FormattedSourceValueObject result = apply(
-        'o|ne\ntw|o',
-        FormatCommandEnum.quote,
-      );
+    test(
+      'the run stays selected, because it is what the next press acts on',
+      () {
+        final FormattedSourceValueObject result = apply(
+          'o|ne\ntw|o',
+          FormatCommandEnum.quote,
+        );
 
-      expect(result.text.substring(result.start, result.end), '> one\n> two');
-    });
+        expect(result.text.substring(result.start, result.end), '> one\n> two');
+      },
+    );
 
     test('pressed again on lines that all have it, it takes it off', () {
-      expect(
-        apply('- o|ne\n- tw|o', FormatCommandEnum.list).text,
-        'one\ntwo',
-      );
+      expect(apply('- o|ne\n- tw|o', FormatCommandEnum.list).text, 'one\ntwo');
     });
 
     test('a run where one line has it is a run being made into a list', () {
@@ -110,13 +115,15 @@ void main() {
       );
     });
 
-    test('an ordered list counts, which is why its prefix is not a constant',
-        () {
-      expect(
-        apply('o|ne\ntwo\nthre|e', FormatCommandEnum.orderedList).text,
-        '1. one\n2. two\n3. three',
-      );
-    });
+    test(
+      'an ordered list counts, which is why its prefix is not a constant',
+      () {
+        expect(
+          apply('o|ne\ntwo\nthre|e', FormatCommandEnum.orderedList).text,
+          '1. one\n2. two\n3. three',
+        );
+      },
+    );
 
     test('a heading, a task and an alert are the same shape', () {
       expect(apply('|a|', FormatCommandEnum.heading).text, '# a');
@@ -136,13 +143,15 @@ void main() {
       expect(result.isCaret, isTrue);
     });
 
-    test('a table arrives with a header, because an empty one renders as text',
-        () {
-      expect(
-        apply('a|', FormatCommandEnum.table).text,
-        'a\n\n| Column | Column |\n|---|---|\n|  |  |\n',
-      );
-    });
+    test(
+      'a table arrives with a header, because an empty one renders as text',
+      () {
+        expect(
+          apply('a|', FormatCommandEnum.table).text,
+          'a\n\n| Column | Column |\n|---|---|\n|  |  |\n',
+        );
+      },
+    );
 
     test('a link wraps the selection and leaves the url to be typed', () {
       final FormattedSourceValueObject result = apply(

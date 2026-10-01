@@ -100,8 +100,7 @@ class _PreferencesControlWidgetState extends State<PreferencesControlWidget> {
     final Offset corner = button.localToGlobal(
       Offset(button.size.width, button.size.height),
     );
-    const double underTheBar =
-        TomMetrics.topBar + PreferencesControlWidget.gap;
+    const double underTheBar = TomMetrics.topBar + PreferencesControlWidget.gap;
     return Stack(
       children: <Widget>[
         Positioned(

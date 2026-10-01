@@ -77,14 +77,14 @@ final class StageChangesUseCase with UseCase {
       if (within == null) {
         continue;
       }
-      final Result<DocumentEntity, DocumentFailure> read = await documents
-          .read(within);
+      final Result<DocumentEntity, DocumentFailure> read = await documents.read(
+        within,
+      );
       // A file that cannot be read is not a file with a marker. Whatever is
       // wrong with it, git is about to report it too.
-      if (read
-          case Success<DocumentEntity, DocumentFailure>(
-            value: final DocumentEntity document,
-          )) {
+      if (read case Success<DocumentEntity, DocumentFailure>(
+        value: final DocumentEntity document,
+      )) {
         if (scanner.holdsMarker(document.content)) {
           holding.add(path.value);
         }

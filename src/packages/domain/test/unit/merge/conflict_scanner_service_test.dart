@@ -50,7 +50,8 @@ void main() {
     });
 
     test('finds every region in a document with several', () {
-      final String text = '${conflicted(current: 'a', incoming: 'b')}'
+      final String text =
+          '${conflicted(current: 'a', incoming: 'b')}'
           '${conflicted(current: 'c', incoming: 'd')}';
 
       final List<ConflictRegionValueObject> found = scanner.scan(text);
@@ -63,16 +64,18 @@ void main() {
     });
 
     test('keeps a side that is empty', () {
-      final ConflictRegionValueObject region =
-          scanner.scan(conflicted(current: '')).single;
+      final ConflictRegionValueObject region = scanner
+          .scan(conflicted(current: ''))
+          .single;
 
       expect(region.current, isEmpty);
       expect(region.incoming, 'theirs');
     });
 
     test('carries a multi-line side whole', () {
-      final ConflictRegionValueObject region =
-          scanner.scan(conflicted(current: 'one\ntwo')).single;
+      final ConflictRegionValueObject region = scanner
+          .scan(conflicted(current: 'one\ntwo'))
+          .single;
 
       expect(region.current, 'one\ntwo');
     });
@@ -151,7 +154,8 @@ void main() {
     });
 
     test('resolving one of two leaves the other', () {
-      final String text = '${conflicted(current: 'a', incoming: 'b')}'
+      final String text =
+          '${conflicted(current: 'a', incoming: 'b')}'
           '${conflicted(current: 'c', incoming: 'd')}';
       final ConflictRegionValueObject first = scanner.scan(text).first;
 
@@ -226,7 +230,8 @@ void main() {
     });
 
     test('two conflicts keep the prose between them', () {
-      final String text = '${conflicted(current: 'a', incoming: 'b')}'
+      final String text =
+          '${conflicted(current: 'a', incoming: 'b')}'
           '${conflicted(current: 'c', incoming: 'd')}';
 
       final List<ConflictSegment> cut = scanner.segment(text);
