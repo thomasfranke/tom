@@ -34,6 +34,9 @@ class RemoteNotifier extends _$RemoteNotifier {
   /// Publishes this branch.
   PushRemoteUseCase get pushRemote => ref.read(pushRemoteProvider);
 
+  /// Undoes the merge a conflicted pull left behind.
+  AbortPullUseCase get abortPull => ref.read(abortPullProvider);
+
   @override
   RemoteState build() {
     // The space only: a rejection from the last folder is about a repository
@@ -63,6 +66,34 @@ class RemoteNotifier extends _$RemoteNotifier {
     RemoteActionEnum.push,
     (SpaceEntity space) => pushRemote.push(space),
   );
+
+  /// Puts the working tree back where the conflicted pull found it.
+  ///
+  /// Not one of [_run]'s three: nothing is asked of the remote, so there is
+  /// no `working` state to enter and no verb for a button to wear. What it
+  /// shares with them is the tail — git is read again, and the tree walked,
+  /// because the merge ending changes both
+  /// (`docs/product/git-workflow/push-pull/when-a-pull-conflicts/doc.md`).
+  Future<void> abort() async {
+    final SpaceEntity? space = ref.read(spaceSessionProvider)?.space;
+    if (space == null || state.isBusy) {
+      return;
+    }
+    final Result<void, AppFailure> done = await abortPull.abort(space);
+    if (!ref.mounted) {
+      return;
+    }
+    // A refused abort is said the way a refused action is: the band above
+    // the document, with what git answered.
+    if (done case Failure<void, AppFailure>(failure: final AppFailure it)) {
+      state = RemoteState.failed(action: RemoteActionEnum.pull, failure: it);
+    }
+    await ref.read(changesProvider.notifier).refresh();
+    if (!ref.mounted) {
+      return;
+    }
+    await ref.read(fileTreeProvider.notifier).refresh();
+  }
 
   /// Runs [operation] as [action], then has git read again.
   Future<void> _run(

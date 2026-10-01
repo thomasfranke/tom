@@ -17,27 +17,43 @@ import 'package:tom_ui/tom_ui.dart';
 /// depends on nothing ([Decision 26](../../../../../docs/technical/decisions/026-the-look-is-a-package.md)).
 class FileStateMarkWidget extends StatelessWidget {
   /// Creates the mark for [state].
-  const FileStateMarkWidget({required this.state, super.key});
+  const FileStateMarkWidget({
+    required this.state,
+    this.isBare = false,
+    super.key,
+  });
 
   /// What happened to the file.
   final FileStateEnum state;
 
+  /// Whether to draw the letter without its square — the tree's shape, where
+  /// the row's own highlight is the only fill.
+  final bool isBare;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(EnumProperty<FileStateEnum>('state', state));
+    properties
+      ..add(EnumProperty<FileStateEnum>('state', state))
+      ..add(DiagnosticsProperty<bool>('isBare', isBare));
   }
 
   @override
   Widget build(BuildContext context) {
     final TomColors colors = TomColors.of(context);
     final (Color ink, Color fill) = _rolesOf(colors);
-    return DiffMarkWidget(
-      letter: _letters[state]!,
-      ink: ink,
-      fill: fill,
-      tooltip: _words[state]!,
-    );
+    return isBare
+        ? DiffMarkWidget.bare(
+            letter: _letters[state]!,
+            ink: ink,
+            tooltip: _words[state]!,
+          )
+        : DiffMarkWidget(
+            letter: _letters[state]!,
+            ink: ink,
+            fill: fill,
+            tooltip: _words[state]!,
+          );
   }
 
   /// The pair of roles this state is drawn in.

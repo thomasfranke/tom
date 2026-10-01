@@ -9,6 +9,7 @@ import 'package:tom_desktop/screens/changes/widgets/changes_caption_widget.dart'
 import 'package:tom_desktop/screens/changes/widgets/changes_commit_button_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_message_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_note_widget.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_remote_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_row_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -37,6 +38,16 @@ class ChangesPanel extends ConsumerWidget {
     final int staged = entries
         .where((StatusEntryValueObject it) => it.isStaged)
         .length;
+    // A merge still holding conflicts is the one thing that takes the commit
+    // away: concluding it is a commit, and it cannot be made while a document
+    // still holds a marker
+    // (`docs/product/git-workflow/push-pull/when-a-pull-conflicts/doc.md`).
+    final int toResolve = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) =>
+            session?.isResolvingMerge ?? false ? session!.toResolve.length : 0,
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -71,6 +82,7 @@ class ChangesPanel extends ConsumerWidget {
         ChangesCommitButtonWidget(
           canCommit:
               !isBusy &&
+              toResolve == 0 &&
               state is ChangesReady &&
               state.message.trim().isNotEmpty &&
               (status?.hasStagedChanges ?? false),
@@ -87,7 +99,13 @@ class ChangesPanel extends ConsumerWidget {
               horizontal: TomMetrics.padTight,
             ),
             child: Text(
-              '$staged of ${entries.length} staged',
+              // What is left to resolve takes the line while a merge is
+              // unfinished: the staged count answers a question nobody is
+              // asking yet
+              // (`design/screens/desktop/git-conflict/conflict-in-source-light.svg`).
+              toResolve > 0
+                  ? '$toResolve document${toResolve == 1 ? '' : 's'} to resolve'
+                  : '$staged of ${entries.length} staged',
               style: TextStyle(
                 fontSize: ChangesDesign.staged,
                 height: 1.4,
@@ -96,7 +114,14 @@ class ChangesPanel extends ConsumerWidget {
             ),
           ),
         ],
-        const SizedBox(height: TomMetrics.pad),
+        // Under the commit, in the order the work happens: stage, describe,
+        // commit, then publish
+        // (`docs/product/git-workflow/push-pull/the-controls/doc.md`).
+        const ChangesRemoteWidget(),
+        // Sixteen, which is where a column's content ends: the containers
+        // run under the status bar and what sits in them does not
+        // (`docs/design/screens/measurements.md`).
+        const SizedBox(height: TomMetrics.padTight),
       ],
     );
   }

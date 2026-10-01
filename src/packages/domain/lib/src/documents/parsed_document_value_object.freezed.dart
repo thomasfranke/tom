@@ -21,8 +21,14 @@ mixin _$ParsedDocumentValueObject {
 /// element-wise and copies nothing.
  List<BlockValueObject> get blocks;/// Every link reference definition in the document, as its own lines, so
 /// `[text][ref]` resolves in a block that does not hold the definition.
-/// Footnotes do not survive the same way (Decision 19).
- String get linkDefinitions;
+ String get linkDefinitions;/// Every footnote, in citation order.
+///
+/// Structured where [linkDefinitions] is a string, because the two are
+/// used differently: a definition is appended to a block and parsed
+/// again, while a footnote is **drawn** — its number in the prose and its
+/// text at the foot — and drawing needs the parts apart
+/// ([Decision 31](../../../../../../docs/technical/decisions/031-where-a-footnotes-text-goes.md)).
+ List<FootnoteValueObject> get footnotes;
 /// Create a copy of ParsedDocumentValueObject
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -33,16 +39,16 @@ $ParsedDocumentValueObjectCopyWith<ParsedDocumentValueObject> get copyWith => _$
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ParsedDocumentValueObject&&(identical(other.document, document) || other.document == document)&&const DeepCollectionEquality().equals(other.blocks, blocks)&&(identical(other.linkDefinitions, linkDefinitions) || other.linkDefinitions == linkDefinitions));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ParsedDocumentValueObject&&(identical(other.document, document) || other.document == document)&&const DeepCollectionEquality().equals(other.blocks, blocks)&&(identical(other.linkDefinitions, linkDefinitions) || other.linkDefinitions == linkDefinitions)&&const DeepCollectionEquality().equals(other.footnotes, footnotes));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,document,const DeepCollectionEquality().hash(blocks),linkDefinitions);
+int get hashCode => Object.hash(runtimeType,document,const DeepCollectionEquality().hash(blocks),linkDefinitions,const DeepCollectionEquality().hash(footnotes));
 
 @override
 String toString() {
-  return 'ParsedDocumentValueObject(document: $document, blocks: $blocks, linkDefinitions: $linkDefinitions)';
+  return 'ParsedDocumentValueObject(document: $document, blocks: $blocks, linkDefinitions: $linkDefinitions, footnotes: $footnotes)';
 }
 
 
@@ -53,7 +59,7 @@ abstract mixin class $ParsedDocumentValueObjectCopyWith<$Res>  {
   factory $ParsedDocumentValueObjectCopyWith(ParsedDocumentValueObject value, $Res Function(ParsedDocumentValueObject) _then) = _$ParsedDocumentValueObjectCopyWithImpl;
 @useResult
 $Res call({
- DocumentEntity document, List<BlockValueObject> blocks, String linkDefinitions
+ DocumentEntity document, List<BlockValueObject> blocks, String linkDefinitions, List<FootnoteValueObject> footnotes
 });
 
 
@@ -70,12 +76,13 @@ class _$ParsedDocumentValueObjectCopyWithImpl<$Res>
 
 /// Create a copy of ParsedDocumentValueObject
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? document = null,Object? blocks = null,Object? linkDefinitions = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? document = null,Object? blocks = null,Object? linkDefinitions = null,Object? footnotes = null,}) {
   return _then(_self.copyWith(
 document: null == document ? _self.document : document // ignore: cast_nullable_to_non_nullable
 as DocumentEntity,blocks: null == blocks ? _self.blocks : blocks // ignore: cast_nullable_to_non_nullable
 as List<BlockValueObject>,linkDefinitions: null == linkDefinitions ? _self.linkDefinitions : linkDefinitions // ignore: cast_nullable_to_non_nullable
-as String,
+as String,footnotes: null == footnotes ? _self.footnotes : footnotes // ignore: cast_nullable_to_non_nullable
+as List<FootnoteValueObject>,
   ));
 }
 /// Create a copy of ParsedDocumentValueObject
@@ -169,10 +176,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( DocumentEntity document,  List<BlockValueObject> blocks,  String linkDefinitions)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( DocumentEntity document,  List<BlockValueObject> blocks,  String linkDefinitions,  List<FootnoteValueObject> footnotes)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ParsedDocumentValueObject() when $default != null:
-return $default(_that.document,_that.blocks,_that.linkDefinitions);case _:
+return $default(_that.document,_that.blocks,_that.linkDefinitions,_that.footnotes);case _:
   return orElse();
 
 }
@@ -190,10 +197,10 @@ return $default(_that.document,_that.blocks,_that.linkDefinitions);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DocumentEntity document,  List<BlockValueObject> blocks,  String linkDefinitions)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DocumentEntity document,  List<BlockValueObject> blocks,  String linkDefinitions,  List<FootnoteValueObject> footnotes)  $default,) {final _that = this;
 switch (_that) {
 case _ParsedDocumentValueObject():
-return $default(_that.document,_that.blocks,_that.linkDefinitions);case _:
+return $default(_that.document,_that.blocks,_that.linkDefinitions,_that.footnotes);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -210,10 +217,10 @@ return $default(_that.document,_that.blocks,_that.linkDefinitions);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( DocumentEntity document,  List<BlockValueObject> blocks,  String linkDefinitions)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( DocumentEntity document,  List<BlockValueObject> blocks,  String linkDefinitions,  List<FootnoteValueObject> footnotes)?  $default,) {final _that = this;
 switch (_that) {
 case _ParsedDocumentValueObject() when $default != null:
-return $default(_that.document,_that.blocks,_that.linkDefinitions);case _:
+return $default(_that.document,_that.blocks,_that.linkDefinitions,_that.footnotes);case _:
   return null;
 
 }
@@ -225,7 +232,7 @@ return $default(_that.document,_that.blocks,_that.linkDefinitions);case _:
 
 
 class _ParsedDocumentValueObject implements ParsedDocumentValueObject {
-  const _ParsedDocumentValueObject({required this.document, required final  List<BlockValueObject> blocks, required this.linkDefinitions}): _blocks = blocks;
+  const _ParsedDocumentValueObject({required this.document, required final  List<BlockValueObject> blocks, required this.linkDefinitions, final  List<FootnoteValueObject> footnotes = const <FootnoteValueObject>[]}): _blocks = blocks,_footnotes = footnotes;
   
 
 /// The document these blocks came from, source and all.
@@ -247,8 +254,28 @@ class _ParsedDocumentValueObject implements ParsedDocumentValueObject {
 
 /// Every link reference definition in the document, as its own lines, so
 /// `[text][ref]` resolves in a block that does not hold the definition.
-/// Footnotes do not survive the same way (Decision 19).
 @override final  String linkDefinitions;
+/// Every footnote, in citation order.
+///
+/// Structured where [linkDefinitions] is a string, because the two are
+/// used differently: a definition is appended to a block and parsed
+/// again, while a footnote is **drawn** — its number in the prose and its
+/// text at the foot — and drawing needs the parts apart
+/// ([Decision 31](../../../../../../docs/technical/decisions/031-where-a-footnotes-text-goes.md)).
+ final  List<FootnoteValueObject> _footnotes;
+/// Every footnote, in citation order.
+///
+/// Structured where [linkDefinitions] is a string, because the two are
+/// used differently: a definition is appended to a block and parsed
+/// again, while a footnote is **drawn** — its number in the prose and its
+/// text at the foot — and drawing needs the parts apart
+/// ([Decision 31](../../../../../../docs/technical/decisions/031-where-a-footnotes-text-goes.md)).
+@override@JsonKey() List<FootnoteValueObject> get footnotes {
+  if (_footnotes is EqualUnmodifiableListView) return _footnotes;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_footnotes);
+}
+
 
 /// Create a copy of ParsedDocumentValueObject
 /// with the given fields replaced by the non-null parameter values.
@@ -260,16 +287,16 @@ _$ParsedDocumentValueObjectCopyWith<_ParsedDocumentValueObject> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ParsedDocumentValueObject&&(identical(other.document, document) || other.document == document)&&const DeepCollectionEquality().equals(other._blocks, _blocks)&&(identical(other.linkDefinitions, linkDefinitions) || other.linkDefinitions == linkDefinitions));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ParsedDocumentValueObject&&(identical(other.document, document) || other.document == document)&&const DeepCollectionEquality().equals(other._blocks, _blocks)&&(identical(other.linkDefinitions, linkDefinitions) || other.linkDefinitions == linkDefinitions)&&const DeepCollectionEquality().equals(other._footnotes, _footnotes));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,document,const DeepCollectionEquality().hash(_blocks),linkDefinitions);
+int get hashCode => Object.hash(runtimeType,document,const DeepCollectionEquality().hash(_blocks),linkDefinitions,const DeepCollectionEquality().hash(_footnotes));
 
 @override
 String toString() {
-  return 'ParsedDocumentValueObject(document: $document, blocks: $blocks, linkDefinitions: $linkDefinitions)';
+  return 'ParsedDocumentValueObject(document: $document, blocks: $blocks, linkDefinitions: $linkDefinitions, footnotes: $footnotes)';
 }
 
 
@@ -280,7 +307,7 @@ abstract mixin class _$ParsedDocumentValueObjectCopyWith<$Res> implements $Parse
   factory _$ParsedDocumentValueObjectCopyWith(_ParsedDocumentValueObject value, $Res Function(_ParsedDocumentValueObject) _then) = __$ParsedDocumentValueObjectCopyWithImpl;
 @override @useResult
 $Res call({
- DocumentEntity document, List<BlockValueObject> blocks, String linkDefinitions
+ DocumentEntity document, List<BlockValueObject> blocks, String linkDefinitions, List<FootnoteValueObject> footnotes
 });
 
 
@@ -297,12 +324,13 @@ class __$ParsedDocumentValueObjectCopyWithImpl<$Res>
 
 /// Create a copy of ParsedDocumentValueObject
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? document = null,Object? blocks = null,Object? linkDefinitions = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? document = null,Object? blocks = null,Object? linkDefinitions = null,Object? footnotes = null,}) {
   return _then(_ParsedDocumentValueObject(
 document: null == document ? _self.document : document // ignore: cast_nullable_to_non_nullable
 as DocumentEntity,blocks: null == blocks ? _self._blocks : blocks // ignore: cast_nullable_to_non_nullable
 as List<BlockValueObject>,linkDefinitions: null == linkDefinitions ? _self.linkDefinitions : linkDefinitions // ignore: cast_nullable_to_non_nullable
-as String,
+as String,footnotes: null == footnotes ? _self._footnotes : footnotes // ignore: cast_nullable_to_non_nullable
+as List<FootnoteValueObject>,
   ));
 }
 

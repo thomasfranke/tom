@@ -37,6 +37,18 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
     AppFailure? cause,
   }) = GitMergeConflict;
 
+  /// Staging was refused because a document still holds a conflict marker.
+  ///
+  /// This product's rule, not git's: git will record a marker somebody
+  /// staged, and `<<<<<<<` committed into documentation is read by everyone
+  /// who opens the file next
+  /// (`docs/product/git-workflow/push-pull/when-a-pull-conflicts/doc.md`).
+  const factory GitFailure.conflictMarkersPresent(
+    /// The documents still holding one, so the refusal can name them.
+    List<String> paths, {
+    AppFailure? cause,
+  }) = GitConflictMarkersPresent;
+
   /// The remote refused the credentials, or asked for some TOM cannot supply.
   const factory GitFailure.authenticationFailed({AppFailure? cause}) =
       GitAuthenticationFailed;

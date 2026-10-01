@@ -21,6 +21,18 @@ class DiffMarkWidget extends StatelessWidget {
     super.key,
   });
 
+  /// The letter alone, in the same twenty square.
+  ///
+  /// What a tree row carries: the row already has a highlight of its own,
+  /// and a second fill inside it reads as a box nobody drew
+  /// (`docs/design/screens/desktop/git-commit/committing-dark.svg`).
+  const DiffMarkWidget.bare({
+    required this.letter,
+    required this.ink,
+    this.tooltip,
+    super.key,
+  }) : fill = Colors.transparent;
+
   /// The one character inside the square.
   final String letter;
 

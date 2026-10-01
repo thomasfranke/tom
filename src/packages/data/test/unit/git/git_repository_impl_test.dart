@@ -280,8 +280,71 @@ void main() {
       );
     });
   });
-}
 
+  group('the merge state', () {
+    test('a repository at rest is no merge and no message', () async {
+      client
+        ..mergeIsInProgress = false
+        ..text = 'a draft nobody should read';
+
+      final MergeStateValueObject state = valueOf(
+        await repository.mergeState(),
+      );
+
+      expect(state.inProgress, isFalse);
+      expect(state.message, isEmpty);
+      // The draft is not even asked for: MERGE_HEAD decides, and one round
+      // trip is enough to answer.
+      expect(client.calls, isNot(contains('mergeMessage')));
+    });
+
+    test('a merge in progress carries the draft git wrote', () async {
+      client
+        ..mergeIsInProgress = true
+        ..text = "Merge branch 'main' into feat/rendered-diff\n";
+
+      final MergeStateValueObject state = valueOf(
+        await repository.mergeState(),
+      );
+
+      expect(state.inProgress, isTrue);
+      expect(state.message, "Merge branch 'main' into feat/rendered-diff");
+    });
+
+    test('a merge whose draft cannot be read is still a merge', () async {
+      client.mergeIsInProgress = true;
+
+      // The client answers everything with this failure once it is set, so
+      // mergeInProgress is asked first and answered before it applies.
+      final MergeStateValueObject state = valueOf(
+        await repository.mergeState(),
+      );
+
+      expect(state.inProgress, isTrue);
+    });
+
+    test('a failure reading MERGE_HEAD is reported, not swallowed', () async {
+      client.failure = const GitClientExecutableNotFound();
+
+      expect(
+        failureOf(await repository.mergeState()),
+        isA<GitNotInstalled>(),
+      );
+    });
+
+    test('aborting asks git to abort', () async {
+      await repository.abortMerge();
+
+      expect(client.calls, contains('abortMerge'));
+    });
+
+    test('a refused abort comes back in the product vocabulary', () async {
+      client.failure = const GitClientExecutableNotFound();
+
+      expect(failureOf(await repository.abortMerge()), isA<GitNotInstalled>());
+    });
+  });
+}
 /// A [GitClient] that records what it was asked and answers what it was told
 /// to.
 final class _RecordingGitClient implements GitClient {
@@ -290,6 +353,9 @@ final class _RecordingGitClient implements GitClient {
 
   /// What every command fails with, or null to succeed.
   GitClientFailure? failure;
+
+  /// What `MERGE_HEAD` is taken to say.
+  bool mergeIsInProgress = false;
 
   final List<String> calls = <String>[];
   String? logPath;
@@ -383,4 +449,16 @@ final class _RecordingGitClient implements GitClient {
   @override
   Future<Result<void, GitClientFailure>> push() async =>
       _answer<void>('push', null);
+
+  @override
+  Future<Result<bool, GitClientFailure>> mergeInProgress() async =>
+      _answer<bool>('mergeInProgress', mergeIsInProgress);
+
+  @override
+  Future<Result<String, GitClientFailure>> mergeMessage() async =>
+      _answer<String>('mergeMessage', text);
+
+  @override
+  Future<Result<void, GitClientFailure>> abortMerge() async =>
+      _answer<void>('abortMerge', null);
 }

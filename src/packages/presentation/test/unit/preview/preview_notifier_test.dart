@@ -136,6 +136,96 @@ void main() {
     expect(rendered(), '# index.md\n');
   });
 
+  group('a conflicted document', () {
+    const String conflicted =
+        '# Guide\n'
+        '\n'
+        'Before.\n'
+        '<<<<<<< HEAD\n'
+        'ours\n'
+        '=======\n'
+        'theirs\n'
+        '>>>>>>> main\n'
+        'After.\n';
+
+    /// Shows a document whose buffer holds [text], mid-merge.
+    ///
+    /// The merge is set up as well as the text, because the conflict is
+    /// offered only while git reports that document conflicted: the markers
+    /// alone are what a document *about* merging has.
+    Future<void> showing(String text) async {
+      documents.answer = Success<DocumentEntity, DocumentFailure>(
+        DocumentEntity(path: writing, content: text),
+      );
+      start();
+      show(docs, writing);
+      container.read(spaceSessionProvider.notifier)
+        ..observe(_conflictedOn(writing))
+        ..observeMerge(
+          const MergeStateValueObject(inProgress: true, message: 'Merge main'),
+        );
+      await settle();
+    }
+
+    PreviewReady ready() => container.read(previewProvider) as PreviewReady;
+
+    test('a document with no marker is not cut at all', () async {
+      await showing('# Guide\n\nJust prose.\n');
+
+      expect(ready().segments, isNull);
+    });
+
+    test('is cut into prose, the conflict, and prose', () async {
+      await showing(conflicted);
+
+      final List<PreviewSegment> cut = ready().segments!;
+      expect(cut, hasLength(3));
+      expect(cut[0], isA<PreviewProse>());
+      expect(cut[1], isA<PreviewConflict>());
+      expect(cut[2], isA<PreviewProse>());
+    });
+
+    test('each side is parsed, so the preview can render it', () async {
+      await showing(conflicted);
+
+      final PreviewConflict part =
+          ready().segments!.whereType<PreviewConflict>().single;
+      expect(part.current.document.content, 'ours');
+      expect(part.incoming.document.content, 'theirs');
+      expect(part.current.blocks, isNotEmpty);
+      expect(part.incoming.blocks, isNotEmpty);
+    });
+
+    // The rule: while a marker is on screen the preview shows the conflict
+    // and nothing else — comparing against `HEAD` mid-merge answers a
+    // question nobody has asked yet, in the tint the conflict already uses.
+    test('turns the diff off while a marker is there', () async {
+      await showing(conflicted);
+
+      expect(ready().segments, isNotNull);
+      expect(ready().diff, isNull);
+    });
+
+    test('each side keeps the document path, so its links resolve', () async {
+      await showing(conflicted);
+
+      final PreviewConflict part =
+          ready().segments!.whereType<PreviewConflict>().single;
+      expect(part.current.document.path, writing);
+      expect(part.incoming.document.path, writing);
+    });
+
+    test('stops being cut once the markers are gone', () async {
+      await showing(conflicted);
+      expect(ready().segments, isNotNull);
+
+      container.read(editorProvider.notifier).edit('# Guide\n\nResolved.\n');
+      await settleTyping();
+
+      expect(ready().segments, isNull);
+    });
+  });
+
   test('a document that is gone is a failure, not an empty page', () async {
     documents.answer = Failure<DocumentEntity, DocumentFailure>(
       DocumentNotFound(writing.value),
@@ -648,6 +738,23 @@ final class _Blocks implements BlockReaderPort {
     );
   }
 }
+
+/// A status reporting [path] as the one document git could not merge.
+GitStatusValueObject _conflictedOn(SpaceRelativePathValueObject path) =>
+    GitStatusValueObject(
+      branch: BranchNameValueObject('main'),
+      upstream: BranchNameValueObject('origin/main'),
+      ahead: 0,
+      behind: 0,
+      entries: <StatusEntryValueObject>[
+        StatusEntryValueObject(
+          path: RepoRelativePathValueObject('docs/${path.value}'),
+          state: FileStateEnum.conflicted,
+          isStaged: false,
+        ),
+      ],
+      isDetached: false,
+    );
 
 /// A commit to compare against, and to open as a version.
 final CommitEntity _earlier = CommitEntity(

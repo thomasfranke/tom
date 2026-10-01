@@ -21,8 +21,7 @@ mixin _$WorkspaceState {
 /// The reader's, dragged from the divider beside it: it opens at a width
 /// the tree reads well at, and somebody reading search results widens it
 /// (`docs/product/workspace/regions/doc.md`).
- double? get explorerWidth;/// Which theme the window draws.
- ThemeChoiceEnum get theme;/// Which of the right column's panels is showing, by the id the module
+ double? get explorerWidth;/// Which of the right column's panels is showing, by the id the module
 /// registered it under; null means the first one.
 ///
 /// The column's own state, not the document's — opening another file
@@ -38,16 +37,16 @@ $WorkspaceStateCopyWith<WorkspaceState> get copyWith => _$WorkspaceStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceState&&(identical(other.showingExplorer, showingExplorer) || other.showingExplorer == showingExplorer)&&(identical(other.showingAside, showingAside) || other.showingAside == showingAside)&&(identical(other.explorerWidth, explorerWidth) || other.explorerWidth == explorerWidth)&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.asidePanel, asidePanel) || other.asidePanel == asidePanel));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceState&&(identical(other.showingExplorer, showingExplorer) || other.showingExplorer == showingExplorer)&&(identical(other.showingAside, showingAside) || other.showingAside == showingAside)&&(identical(other.explorerWidth, explorerWidth) || other.explorerWidth == explorerWidth)&&(identical(other.asidePanel, asidePanel) || other.asidePanel == asidePanel));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,showingExplorer,showingAside,explorerWidth,theme,asidePanel);
+int get hashCode => Object.hash(runtimeType,showingExplorer,showingAside,explorerWidth,asidePanel);
 
 @override
 String toString() {
-  return 'WorkspaceState(showingExplorer: $showingExplorer, showingAside: $showingAside, explorerWidth: $explorerWidth, theme: $theme, asidePanel: $asidePanel)';
+  return 'WorkspaceState(showingExplorer: $showingExplorer, showingAside: $showingAside, explorerWidth: $explorerWidth, asidePanel: $asidePanel)';
 }
 
 
@@ -58,7 +57,7 @@ abstract mixin class $WorkspaceStateCopyWith<$Res>  {
   factory $WorkspaceStateCopyWith(WorkspaceState value, $Res Function(WorkspaceState) _then) = _$WorkspaceStateCopyWithImpl;
 @useResult
 $Res call({
- bool showingExplorer, bool showingAside, double? explorerWidth, ThemeChoiceEnum theme, String? asidePanel
+ bool showingExplorer, bool showingAside, double? explorerWidth, String? asidePanel
 });
 
 
@@ -75,13 +74,12 @@ class _$WorkspaceStateCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? showingExplorer = null,Object? showingAside = null,Object? explorerWidth = freezed,Object? theme = null,Object? asidePanel = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? showingExplorer = null,Object? showingAside = null,Object? explorerWidth = freezed,Object? asidePanel = freezed,}) {
   return _then(_self.copyWith(
 showingExplorer: null == showingExplorer ? _self.showingExplorer : showingExplorer // ignore: cast_nullable_to_non_nullable
 as bool,showingAside: null == showingAside ? _self.showingAside : showingAside // ignore: cast_nullable_to_non_nullable
 as bool,explorerWidth: freezed == explorerWidth ? _self.explorerWidth : explorerWidth // ignore: cast_nullable_to_non_nullable
-as double?,theme: null == theme ? _self.theme : theme // ignore: cast_nullable_to_non_nullable
-as ThemeChoiceEnum,asidePanel: freezed == asidePanel ? _self.asidePanel : asidePanel // ignore: cast_nullable_to_non_nullable
+as double?,asidePanel: freezed == asidePanel ? _self.asidePanel : asidePanel // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -167,10 +165,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  ThemeChoiceEnum theme,  String? asidePanel)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  String? asidePanel)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WorkspaceState() when $default != null:
-return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.theme,_that.asidePanel);case _:
+return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.asidePanel);case _:
   return orElse();
 
 }
@@ -188,10 +186,10 @@ return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  ThemeChoiceEnum theme,  String? asidePanel)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  String? asidePanel)  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceState():
-return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.theme,_that.asidePanel);case _:
+return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.asidePanel);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -208,10 +206,10 @@ return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  ThemeChoiceEnum theme,  String? asidePanel)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  String? asidePanel)?  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceState() when $default != null:
-return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.theme,_that.asidePanel);case _:
+return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.asidePanel);case _:
   return null;
 
 }
@@ -223,7 +221,7 @@ return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_th
 
 
 class _WorkspaceState implements WorkspaceState {
-  const _WorkspaceState({this.showingExplorer = true, this.showingAside = true, this.explorerWidth, this.theme = ThemeChoiceEnum.system, this.asidePanel});
+  const _WorkspaceState({this.showingExplorer = true, this.showingAside = true, this.explorerWidth, this.asidePanel});
   
 
 /// Whether the left column is on screen.
@@ -236,8 +234,6 @@ class _WorkspaceState implements WorkspaceState {
 /// the tree reads well at, and somebody reading search results widens it
 /// (`docs/product/workspace/regions/doc.md`).
 @override final  double? explorerWidth;
-/// Which theme the window draws.
-@override@JsonKey() final  ThemeChoiceEnum theme;
 /// Which of the right column's panels is showing, by the id the module
 /// registered it under; null means the first one.
 ///
@@ -255,16 +251,16 @@ _$WorkspaceStateCopyWith<_WorkspaceState> get copyWith => __$WorkspaceStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceState&&(identical(other.showingExplorer, showingExplorer) || other.showingExplorer == showingExplorer)&&(identical(other.showingAside, showingAside) || other.showingAside == showingAside)&&(identical(other.explorerWidth, explorerWidth) || other.explorerWidth == explorerWidth)&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.asidePanel, asidePanel) || other.asidePanel == asidePanel));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceState&&(identical(other.showingExplorer, showingExplorer) || other.showingExplorer == showingExplorer)&&(identical(other.showingAside, showingAside) || other.showingAside == showingAside)&&(identical(other.explorerWidth, explorerWidth) || other.explorerWidth == explorerWidth)&&(identical(other.asidePanel, asidePanel) || other.asidePanel == asidePanel));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,showingExplorer,showingAside,explorerWidth,theme,asidePanel);
+int get hashCode => Object.hash(runtimeType,showingExplorer,showingAside,explorerWidth,asidePanel);
 
 @override
 String toString() {
-  return 'WorkspaceState(showingExplorer: $showingExplorer, showingAside: $showingAside, explorerWidth: $explorerWidth, theme: $theme, asidePanel: $asidePanel)';
+  return 'WorkspaceState(showingExplorer: $showingExplorer, showingAside: $showingAside, explorerWidth: $explorerWidth, asidePanel: $asidePanel)';
 }
 
 
@@ -275,7 +271,7 @@ abstract mixin class _$WorkspaceStateCopyWith<$Res> implements $WorkspaceStateCo
   factory _$WorkspaceStateCopyWith(_WorkspaceState value, $Res Function(_WorkspaceState) _then) = __$WorkspaceStateCopyWithImpl;
 @override @useResult
 $Res call({
- bool showingExplorer, bool showingAside, double? explorerWidth, ThemeChoiceEnum theme, String? asidePanel
+ bool showingExplorer, bool showingAside, double? explorerWidth, String? asidePanel
 });
 
 
@@ -292,13 +288,12 @@ class __$WorkspaceStateCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? showingExplorer = null,Object? showingAside = null,Object? explorerWidth = freezed,Object? theme = null,Object? asidePanel = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? showingExplorer = null,Object? showingAside = null,Object? explorerWidth = freezed,Object? asidePanel = freezed,}) {
   return _then(_WorkspaceState(
 showingExplorer: null == showingExplorer ? _self.showingExplorer : showingExplorer // ignore: cast_nullable_to_non_nullable
 as bool,showingAside: null == showingAside ? _self.showingAside : showingAside // ignore: cast_nullable_to_non_nullable
 as bool,explorerWidth: freezed == explorerWidth ? _self.explorerWidth : explorerWidth // ignore: cast_nullable_to_non_nullable
-as double?,theme: null == theme ? _self.theme : theme // ignore: cast_nullable_to_non_nullable
-as ThemeChoiceEnum,asidePanel: freezed == asidePanel ? _self.asidePanel : asidePanel // ignore: cast_nullable_to_non_nullable
+as double?,asidePanel: freezed == asidePanel ? _self.asidePanel : asidePanel // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

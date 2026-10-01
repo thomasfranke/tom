@@ -4,6 +4,7 @@ library;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/src/preview/preview_segment.dart';
 
 part 'preview_state.freezed.dart';
 
@@ -26,6 +27,16 @@ sealed class PreviewState with _$PreviewState {
     /// then, when the comparison failed, and for a version nobody asked to
     /// compare (`docs/product/diff/rendered-diff/what-is-compared/doc.md`).
     DocumentDiffValueObject? diff,
+
+    /// The document cut at its conflicts, or null when it holds none.
+    ///
+    /// Non-null replaces the parsed document on screen rather than decorating
+    /// it: while a marker is there the preview shows the conflict and
+    /// nothing else, which is also why the diff stays null — comparing to
+    /// `HEAD` mid-merge answers a question nobody has asked yet, in the
+    /// same tint the conflict already uses
+    /// (`docs/product/editor/conflicted-document/doc.md`).
+    List<PreviewSegment>? segments,
   }) = PreviewReady;
 
   /// The document could not be read or could not be parsed.

@@ -125,12 +125,12 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  empty,TResult Function()?  loading,TResult Function( DocumentEntity saved,  String source,  bool isSaving,  AppFailure? saveFailure)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  empty,TResult Function()?  loading,TResult Function( DocumentEntity saved,  String source,  int selectionStart,  int selectionEnd,  bool isSaving,  AppFailure? saveFailure)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case EditorEmpty() when empty != null:
 return empty();case EditorLoading() when loading != null:
 return loading();case EditorReady() when ready != null:
-return ready(_that.saved,_that.source,_that.isSaving,_that.saveFailure);case EditorFailed() when failed != null:
+return ready(_that.saved,_that.source,_that.selectionStart,_that.selectionEnd,_that.isSaving,_that.saveFailure);case EditorFailed() when failed != null:
 return failed(_that.failure);case _:
   return orElse();
 
@@ -149,12 +149,12 @@ return failed(_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  empty,required TResult Function()  loading,required TResult Function( DocumentEntity saved,  String source,  bool isSaving,  AppFailure? saveFailure)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  empty,required TResult Function()  loading,required TResult Function( DocumentEntity saved,  String source,  int selectionStart,  int selectionEnd,  bool isSaving,  AppFailure? saveFailure)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
 switch (_that) {
 case EditorEmpty():
 return empty();case EditorLoading():
 return loading();case EditorReady():
-return ready(_that.saved,_that.source,_that.isSaving,_that.saveFailure);case EditorFailed():
+return ready(_that.saved,_that.source,_that.selectionStart,_that.selectionEnd,_that.isSaving,_that.saveFailure);case EditorFailed():
 return failed(_that.failure);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -169,12 +169,12 @@ return failed(_that.failure);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  empty,TResult? Function()?  loading,TResult? Function( DocumentEntity saved,  String source,  bool isSaving,  AppFailure? saveFailure)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  empty,TResult? Function()?  loading,TResult? Function( DocumentEntity saved,  String source,  int selectionStart,  int selectionEnd,  bool isSaving,  AppFailure? saveFailure)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
 switch (_that) {
 case EditorEmpty() when empty != null:
 return empty();case EditorLoading() when loading != null:
 return loading();case EditorReady() when ready != null:
-return ready(_that.saved,_that.source,_that.isSaving,_that.saveFailure);case EditorFailed() when failed != null:
+return ready(_that.saved,_that.source,_that.selectionStart,_that.selectionEnd,_that.isSaving,_that.saveFailure);case EditorFailed() when failed != null:
 return failed(_that.failure);case _:
   return null;
 
@@ -251,7 +251,7 @@ String toString() {
 
 
 class EditorReady extends EditorState {
-  const EditorReady({required this.saved, required this.source, this.isSaving = false, this.saveFailure}): super._();
+  const EditorReady({required this.saved, required this.source, this.selectionStart = 0, this.selectionEnd = 0, this.isSaving = false, this.saveFailure}): super._();
   
 
 /// The document as the disk last agreed it was — what the buffer is
@@ -259,6 +259,15 @@ class EditorReady extends EditorState {
  final  DocumentEntity saved;
 /// The text being edited, which is the file's content until it is not.
  final  String source;
+/// Where the caret is, as an offset into the buffer.
+///
+/// Here because the toolbar is not inside the pane: a button that bolds
+/// the selection has to know what is selected, and the row sits above
+/// the document rather than in it
+/// (`docs/product/editor/formatting-shortcuts/doc.md`).
+@JsonKey() final  int selectionStart;
+/// Where it ends, exclusive; equal to the start for a caret.
+@JsonKey() final  int selectionEnd;
 /// Whether a write is in flight.
 @JsonKey() final  bool isSaving;
 /// Why the last save did not land, or null when it did.
@@ -277,16 +286,16 @@ $EditorReadyCopyWith<EditorReady> get copyWith => _$EditorReadyCopyWithImpl<Edit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EditorReady&&(identical(other.saved, saved) || other.saved == saved)&&(identical(other.source, source) || other.source == source)&&(identical(other.isSaving, isSaving) || other.isSaving == isSaving)&&(identical(other.saveFailure, saveFailure) || other.saveFailure == saveFailure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EditorReady&&(identical(other.saved, saved) || other.saved == saved)&&(identical(other.source, source) || other.source == source)&&(identical(other.selectionStart, selectionStart) || other.selectionStart == selectionStart)&&(identical(other.selectionEnd, selectionEnd) || other.selectionEnd == selectionEnd)&&(identical(other.isSaving, isSaving) || other.isSaving == isSaving)&&(identical(other.saveFailure, saveFailure) || other.saveFailure == saveFailure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,saved,source,isSaving,saveFailure);
+int get hashCode => Object.hash(runtimeType,saved,source,selectionStart,selectionEnd,isSaving,saveFailure);
 
 @override
 String toString() {
-  return 'EditorState.ready(saved: $saved, source: $source, isSaving: $isSaving, saveFailure: $saveFailure)';
+  return 'EditorState.ready(saved: $saved, source: $source, selectionStart: $selectionStart, selectionEnd: $selectionEnd, isSaving: $isSaving, saveFailure: $saveFailure)';
 }
 
 
@@ -297,7 +306,7 @@ abstract mixin class $EditorReadyCopyWith<$Res> implements $EditorStateCopyWith<
   factory $EditorReadyCopyWith(EditorReady value, $Res Function(EditorReady) _then) = _$EditorReadyCopyWithImpl;
 @useResult
 $Res call({
- DocumentEntity saved, String source, bool isSaving, AppFailure? saveFailure
+ DocumentEntity saved, String source, int selectionStart, int selectionEnd, bool isSaving, AppFailure? saveFailure
 });
 
 
@@ -314,11 +323,13 @@ class _$EditorReadyCopyWithImpl<$Res>
 
 /// Create a copy of EditorState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? saved = null,Object? source = null,Object? isSaving = null,Object? saveFailure = freezed,}) {
+@pragma('vm:prefer-inline') $Res call({Object? saved = null,Object? source = null,Object? selectionStart = null,Object? selectionEnd = null,Object? isSaving = null,Object? saveFailure = freezed,}) {
   return _then(EditorReady(
 saved: null == saved ? _self.saved : saved // ignore: cast_nullable_to_non_nullable
 as DocumentEntity,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
-as String,isSaving: null == isSaving ? _self.isSaving : isSaving // ignore: cast_nullable_to_non_nullable
+as String,selectionStart: null == selectionStart ? _self.selectionStart : selectionStart // ignore: cast_nullable_to_non_nullable
+as int,selectionEnd: null == selectionEnd ? _self.selectionEnd : selectionEnd // ignore: cast_nullable_to_non_nullable
+as int,isSaving: null == isSaving ? _self.isSaving : isSaving // ignore: cast_nullable_to_non_nullable
 as bool,saveFailure: freezed == saveFailure ? _self.saveFailure : saveFailure // ignore: cast_nullable_to_non_nullable
 as AppFailure?,
   ));

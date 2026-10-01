@@ -56,7 +56,7 @@ final class BranchesNotifierProvider
   }
 }
 
-String _$branchesNotifierHash() => r'b5cfa7d39cf05e7e21f8edfa7defbddf5aa9c648';
+String _$branchesNotifierHash() => r'c719bb64885a43568685bcabb9803bc2a06f1444';
 
 /// Switches branches, starts them, and refuses to lose work doing either.
 ///

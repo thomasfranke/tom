@@ -172,3 +172,54 @@ final class PushRemoteProvider
 }
 
 String _$pushRemoteHash() => r'aba6876465a7b26d413ad80bf02a9e5bcdc618f7';
+
+/// Undoes the merge a conflicted pull left behind.
+
+@ProviderFor(abortPull)
+final abortPullProvider = AbortPullProvider._();
+
+/// Undoes the merge a conflicted pull left behind.
+
+final class AbortPullProvider
+    extends
+        $FunctionalProvider<
+          AbortPullUseCase,
+          AbortPullUseCase,
+          AbortPullUseCase
+        >
+    with $Provider<AbortPullUseCase> {
+  /// Undoes the merge a conflicted pull left behind.
+  AbortPullProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'abortPullProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$abortPullHash();
+
+  @$internal
+  @override
+  $ProviderElement<AbortPullUseCase> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  AbortPullUseCase create(Ref ref) {
+    return abortPull(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AbortPullUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AbortPullUseCase>(value),
+    );
+  }
+}
+
+String _$abortPullHash() => r'319f04ccf2cc4e7dbfbd442c5861e30d7cba8e68';

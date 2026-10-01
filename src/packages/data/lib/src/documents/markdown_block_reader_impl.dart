@@ -2,6 +2,7 @@
 library;
 
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_data/src/capabilities/markdown_parser/markdown_footnote_dto.dart';
 import 'package:tom_data/src/capabilities/markdown_parser/markdown_outline_dto.dart';
 import 'package:tom_data/src/capabilities/markdown_parser/markdown_span_dto.dart';
 import 'package:tom_data/src/capabilities/markdown_parser/markdown_span_kind_enum.dart';
@@ -51,6 +52,16 @@ final class MarkdownBlockReaderImpl implements BlockReaderPort {
           ),
       ]),
       linkDefinitions: outline.linkDefinitions,
+      footnotes: List<FootnoteValueObject>.unmodifiable(
+        <FootnoteValueObject>[
+          for (final MarkdownFootnoteDto note in outline.footnotes)
+            FootnoteValueObject(
+              label: note.label,
+              number: note.number,
+              text: note.text,
+            ),
+        ],
+      ),
     );
   }
 

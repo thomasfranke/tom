@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/editor/editor_design.dart';
-import 'package:tom_desktop/screens/editor/widgets/editor_caption_widget.dart';
 import 'package:tom_desktop/screens/editor/widgets/editor_note_widget.dart';
 import 'package:tom_desktop/screens/editor/widgets/editor_source_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -33,20 +32,13 @@ class EditorPanel extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const SizedBox(height: EditorDesign.captionTop),
-        const EditorCaptionWidget(),
-        const SizedBox(
-          height:
-              EditorDesign.bodyTop -
-              EditorDesign.captionTop -
-              EditorDesign.caption * 1.4,
-        ),
+        const SizedBox(height: EditorDesign.bodyTop),
         Expanded(child: _body(stage)),
       ],
     );
   }
 
-  /// What sits under the caption.
+  /// What the pane holds.
   static Widget _body(EditorStage stage) {
     if (stage.open case final SpaceRelativePathValueObject open) {
       // Keyed by the document's path: another file is another controller,

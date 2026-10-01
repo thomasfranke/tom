@@ -31,6 +31,12 @@ abstract final class WorkspaceDesign {
   /// The theme control, a circle half filled.
   static const double themeBox = 16;
 
+  /// The preferences gear, the bar's last control.
+  ///
+  /// The toggles' own weight, so the three still read as one set
+  /// (`design/components/controls.md`).
+  static const double gear = 20;
+
   /// Theme control to the first toggle, wider than the gap between the
   /// toggles because the three are one set of two kinds.
   static const double themeGap = 18;
@@ -43,9 +49,7 @@ abstract final class WorkspaceDesign {
 
   /// How far a segment's tile sits inside the control's outer edge.
   ///
-  /// The padding that produces it is a point less, because Flutter draws a
-  /// border *inside* the box while the board measures from the outside: the
-  /// tile is 22 in a 28 control, not 20.
+  /// Three, so the tile is 22 in a 28 control, which is what the boards draw.
   static const double switchInset = 3;
 
   /// The control's outline.

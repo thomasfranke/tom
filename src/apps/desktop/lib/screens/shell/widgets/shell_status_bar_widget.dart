@@ -24,26 +24,21 @@ class ShellStatusBarWidget extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final TomColors colors = TomColors.of(context);
-    return SizedBox(
-      height: TomMetrics.statusBar,
-      child: ColoredBox(
-        color: colors.surfaceSunken,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: TomMetrics.pad + TomMetrics.chromeInset,
-          ),
-          child: Row(
-            children: <Widget>[
-              for (final PanelDescriptor panel in registry.at(
-                PanelPlacementEnum.statusBar,
-              ))
-                Builder(builder: panel.builder),
-            ],
-          ),
-        ),
+  Widget build(BuildContext context) => TomBarWidget(
+    height: TomMetrics.statusBar,
+    rule: TomBarEdgeEnum.top,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: TomMetrics.pad + TomMetrics.chromeInset,
       ),
-    );
-  }
+      child: Row(
+        children: <Widget>[
+          for (final PanelDescriptor panel in registry.at(
+            PanelPlacementEnum.statusBar,
+          ))
+            Builder(builder: panel.builder),
+        ],
+      ),
+    ),
+  );
 }

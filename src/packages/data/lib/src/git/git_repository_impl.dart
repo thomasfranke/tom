@@ -95,6 +95,42 @@ final class GitRepositoryImpl implements GitRepository {
   Future<Result<void, GitFailure>> push() =>
       git.push().mapFailure(_asGitFailure);
 
+  @override
+  Future<Result<MergeStateValueObject, GitFailure>> mergeState() async {
+    final Result<bool, GitClientFailure> inProgress = await git
+        .mergeInProgress();
+    if (inProgress
+        case Failure<bool, GitClientFailure>(
+          failure: final GitClientFailure failure,
+        )) {
+      return Failure<MergeStateValueObject, GitFailure>(
+        _asGitFailure(failure),
+      );
+    }
+    if (!(inProgress as Success<bool, GitClientFailure>).value) {
+      return const Success<MergeStateValueObject, GitFailure>(
+        MergeStateValueObject.none,
+      );
+    }
+    // A merge with an unreadable draft is still a merge; the message is what
+    // the box starts from, not what says the state exists.
+    final Result<String, GitClientFailure> message = await git.mergeMessage();
+    return Success<MergeStateValueObject, GitFailure>(
+      MergeStateValueObject(
+        inProgress: true,
+        message: switch (message) {
+          Success<String, GitClientFailure>(value: final String drafted) =>
+            drafted.trim(),
+          Failure<String, GitClientFailure>() => '',
+        },
+      ),
+    );
+  }
+
+  @override
+  Future<Result<void, GitFailure>> abortMerge() =>
+      git.abortMerge().mapFailure(_asGitFailure);
+
   /// [paths] as the strings the capability takes.
   static List<String> _values(List<RepoRelativePathValueObject> paths) =>
       paths.map((RepoRelativePathValueObject path) => path.value).toList();

@@ -13,9 +13,11 @@ import 'package:tom_ui/tom_ui.dart';
 /// The band that carries news from the remote, and nothing while there is
 /// none (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
 ///
-/// A pull in flight is drawn here because **Pull is not a fourth button** —
-/// it lives inside the refusal, so this band is the control that was pressed
-/// and the one that has to say it is working.
+/// **A merge in progress outranks everything else the band could say.** It is
+/// a state of the repository rather than news from a press, so it survives
+/// the window being closed — which is what keeps the `C` marks in the tree
+/// from standing there with nothing explaining them
+/// (`docs/product/git-workflow/push-pull/when-a-pull-conflicts/doc.md`).
 class RemoteBandWidget extends ConsumerWidget {
   /// Creates the band.
   const RemoteBandWidget({super.key});
@@ -31,6 +33,28 @@ class RemoteBandWidget extends ConsumerWidget {
           ),
         ) ??
         0;
+    final int conflicted = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) =>
+            session?.isResolvingMerge ?? false ? session!.toResolve.length : 0,
+      ),
+    );
+    // Before the remote state, because a conflict found on open was left by a
+    // pull nobody in this session made.
+    if (conflicted > 0) {
+      return NoticeBandWidget(
+        sentence: _stopped(conflicted),
+        // `modified` rather than `removed`: nothing failed, and there is
+        // something to do about it.
+        ink: colors.modified,
+        fill: colors.modifiedSoft,
+        raised: colors.surfaceRaised,
+        // The band's one action while a merge is open. Resolving is done in
+        // the document, not from here, so undoing is all this offers.
+        action: 'Abort the pull',
+        onAction: () => unawaited(_confirmAbort(context, ref)),
+      );
+    }
     return switch (remote) {
       RemoteWorking(action: RemoteActionEnum.pull) => NoticeBandWidget(
         sentence: 'Pulling what the remote has…',
@@ -69,6 +93,47 @@ class RemoteBandWidget extends ConsumerWidget {
         ),
     };
   }
+
+  /// Asks before undoing, and says what the undo costs.
+  ///
+  /// The safe answer is the filled one and the destructive answer carries
+  /// `removed`: a press that cannot be taken back is never the one that
+  /// needs no thought
+  /// (`design/screens/desktop/git-conflict/aborting-the-pull-light.svg`).
+  static Future<void> _confirmAbort(BuildContext context, WidgetRef ref) async {
+    final bool? abort = await TomDialogWidget.show<bool>(
+      context,
+      title: 'Abort the pull?',
+      body: const <String>[
+        'The space goes back to what it was before the pull.',
+        'What arrived from the remote stays fetched.',
+      ],
+      actions: (void Function(bool) answer) => <TomDialogAction>[
+        TomDialogAction(
+          label: 'Keep the conflict',
+          onPressed: () => answer(false),
+        ),
+        TomDialogAction(
+          label: 'Abort the pull',
+          onPressed: () => answer(true),
+          destructive: true,
+        ),
+      ],
+    );
+    // Dismissed without choosing is *do nothing*, never a default.
+    if (abort ?? false) {
+      await ref.read(remoteProvider.notifier).abort();
+    }
+  }
+
+  /// What the pull left behind, counted from git rather than from the pull.
+  ///
+  /// The failed pull's own payload is this session's; git's status is the
+  /// repository's, and it is still right after the window was closed.
+  static String _stopped(int conflicted) =>
+      'The pull stopped: $conflicted '
+      'document${conflicted == 1 ? '' : 's'} conflict. '
+      'Nothing you committed has been lost.';
 
   /// Who got there first, what to do, and that nothing is lost — the three
   /// the product asks for, in the board's own words.

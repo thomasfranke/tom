@@ -6,18 +6,16 @@ import 'package:tom_ui/tom_ui.dart';
 /// The numbers of the `branch-switcher` board
 /// ([branch-switcher-light.svg](../../../../../../docs/design/screens/desktop/git-branches/branch-switcher-light.svg)).
 ///
-/// The control's x is the one number that is not the board's: it is fixed
-/// there on a narrower canvas, so here it sits [gap] after the space's name
-/// and moves with the left group.
+/// **The control is centred on the window, not on what precedes it.** Every
+/// board draws it at `615,11 210×30`, and 615 + 105 is 720 — so a longer
+/// space name pushes nothing, and the control lines up with the modes in the
+/// row below (`docs/design/screens/measurements.md`).
 abstract final class BranchesDesign {
   /// The control in the top bar.
-  static const double controlWidth = 190;
+  static const double controlWidth = 210;
 
   /// The control's box, inside the 52 of the bar.
-  static const double controlHeight = 28;
-
-  /// Space name to the control.
-  static const double gap = 32;
+  static const double controlHeight = 30;
 
   /// The popover, wider than the control it hangs from.
   static const double popoverWidth = 260;

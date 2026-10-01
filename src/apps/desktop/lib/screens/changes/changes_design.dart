@@ -30,13 +30,13 @@ abstract final class ChangesDesign {
   static const double mark = TomMetrics.mark;
 
   /// The message box.
-  static const double messageHeight = 96;
+  static const double messageHeight = 84;
 
-  /// The commit button.
-  static const double buttonHeight = 44;
+  /// The commit button, and each of the three remote controls under it.
+  static const double buttonHeight = 40;
 
   /// The gap above the message box and above the button.
-  static const double stackGap = 16;
+  static const double stackGap = 12;
 
   /// The panel's caption.
   static const double caption = 10;

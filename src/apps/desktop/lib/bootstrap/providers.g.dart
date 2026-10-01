@@ -365,6 +365,59 @@ final class RecentSpacesRepositoryProvider
 String _$recentSpacesRepositoryHash() =>
     r'5661f76eeb1090b4ec05139ce031b53221146bbf';
 
+/// What the machine remembers about how the app looks and speaks.
+
+@ProviderFor(preferencesRepository)
+final preferencesRepositoryProvider = PreferencesRepositoryProvider._();
+
+/// What the machine remembers about how the app looks and speaks.
+
+final class PreferencesRepositoryProvider
+    extends
+        $FunctionalProvider<
+          PreferencesRepository,
+          PreferencesRepository,
+          PreferencesRepository
+        >
+    with $Provider<PreferencesRepository> {
+  /// What the machine remembers about how the app looks and speaks.
+  PreferencesRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'preferencesRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$preferencesRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<PreferencesRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  PreferencesRepository create(Ref ref) {
+    return preferencesRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PreferencesRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PreferencesRepository>(value),
+    );
+  }
+}
+
+String _$preferencesRepositoryHash() =>
+    r'0217eb3736b7493b0faac01f5bd4a22943107db0';
+
 /// How to reach the documents of a space.
 ///
 /// A repository is per space and the space is picked at runtime, so what is

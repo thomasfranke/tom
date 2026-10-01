@@ -2,7 +2,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:tom_desktop/screens/home/widgets/home_bar_widget.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// Home's status bar, saying the one thing there is to say with nothing
@@ -14,10 +13,9 @@ class HomeStatusStripWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TomColors colors = TomColors.of(context);
-    return HomeBarWidget(
-      colors: colors,
+    return TomBarWidget(
       height: TomMetrics.statusBar,
-      rule: HomeBarEdgeEnum.top,
+      rule: TomBarEdgeEnum.top,
       child: Align(
         alignment: Alignment.centerLeft,
         child: Padding(

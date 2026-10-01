@@ -27,6 +27,17 @@ sealed class EditorState with _$EditorState {
     /// The text being edited, which is the file's content until it is not.
     required String source,
 
+    /// Where the caret is, as an offset into the buffer.
+    ///
+    /// Here because the toolbar is not inside the pane: a button that bolds
+    /// the selection has to know what is selected, and the row sits above
+    /// the document rather than in it
+    /// (`docs/product/editor/formatting-shortcuts/doc.md`).
+    @Default(0) int selectionStart,
+
+    /// Where it ends, exclusive; equal to the start for a caret.
+    @Default(0) int selectionEnd,
+
     /// Whether a write is in flight.
     @Default(false) bool isSaving,
 

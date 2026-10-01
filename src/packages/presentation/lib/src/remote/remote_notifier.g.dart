@@ -59,7 +59,7 @@ final class RemoteNotifierProvider
   }
 }
 
-String _$remoteNotifierHash() => r'56dbe29793cafce7437559d16438c945a50ae481';
+String _$remoteNotifierHash() => r'f89089a4eb16e4cbe8fadb78083a893cef954ba1';
 
 /// Fetch, pull and push, each started by somebody and never on its own
 /// (`docs/product/git-workflow/push-pull/README.md`).

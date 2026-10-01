@@ -59,7 +59,7 @@ final class EditorNotifierProvider
   }
 }
 
-String _$editorNotifierHash() => r'987d6d7f1ab3b490694678db019ba02ca16931aa';
+String _$editorNotifierHash() => r'e9d79f1f5a9af57ae1794cf7bf95324ab370163c';
 
 /// The one buffer in the app, over whatever document the session says is
 /// open; the preview renders it rather than the file

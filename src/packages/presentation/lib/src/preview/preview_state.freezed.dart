@@ -125,12 +125,12 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  empty,TResult Function()?  loading,TResult Function( ParsedDocumentValueObject document,  DocumentDiffValueObject? diff)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  empty,TResult Function()?  loading,TResult Function( ParsedDocumentValueObject document,  DocumentDiffValueObject? diff,  List<PreviewSegment>? segments)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case PreviewEmpty() when empty != null:
 return empty();case PreviewLoading() when loading != null:
 return loading();case PreviewReady() when ready != null:
-return ready(_that.document,_that.diff);case PreviewFailed() when failed != null:
+return ready(_that.document,_that.diff,_that.segments);case PreviewFailed() when failed != null:
 return failed(_that.failure);case _:
   return orElse();
 
@@ -149,12 +149,12 @@ return failed(_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  empty,required TResult Function()  loading,required TResult Function( ParsedDocumentValueObject document,  DocumentDiffValueObject? diff)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  empty,required TResult Function()  loading,required TResult Function( ParsedDocumentValueObject document,  DocumentDiffValueObject? diff,  List<PreviewSegment>? segments)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
 switch (_that) {
 case PreviewEmpty():
 return empty();case PreviewLoading():
 return loading();case PreviewReady():
-return ready(_that.document,_that.diff);case PreviewFailed():
+return ready(_that.document,_that.diff,_that.segments);case PreviewFailed():
 return failed(_that.failure);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -169,12 +169,12 @@ return failed(_that.failure);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  empty,TResult? Function()?  loading,TResult? Function( ParsedDocumentValueObject document,  DocumentDiffValueObject? diff)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  empty,TResult? Function()?  loading,TResult? Function( ParsedDocumentValueObject document,  DocumentDiffValueObject? diff,  List<PreviewSegment>? segments)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
 switch (_that) {
 case PreviewEmpty() when empty != null:
 return empty();case PreviewLoading() when loading != null:
 return loading();case PreviewReady() when ready != null:
-return ready(_that.document,_that.diff);case PreviewFailed() when failed != null:
+return ready(_that.document,_that.diff,_that.segments);case PreviewFailed() when failed != null:
 return failed(_that.failure);case _:
   return null;
 
@@ -251,7 +251,7 @@ String toString() {
 
 
 class PreviewReady implements PreviewState {
-  const PreviewReady(this.document, {this.diff});
+  const PreviewReady(this.document, {this.diff, final  List<PreviewSegment>? segments}): _segments = segments;
   
 
  final  ParsedDocumentValueObject document;
@@ -259,6 +259,31 @@ class PreviewReady implements PreviewState {
 /// then, when the comparison failed, and for a version nobody asked to
 /// compare (`docs/product/diff/rendered-diff/what-is-compared/doc.md`).
  final  DocumentDiffValueObject? diff;
+/// The document cut at its conflicts, or null when it holds none.
+///
+/// Non-null replaces the parsed document on screen rather than decorating
+/// it: while a marker is there the preview shows the conflict and
+/// nothing else, which is also why the diff stays null — comparing to
+/// `HEAD` mid-merge answers a question nobody has asked yet, in the
+/// same tint the conflict already uses
+/// (`docs/product/editor/conflicted-document/doc.md`).
+ final  List<PreviewSegment>? _segments;
+/// The document cut at its conflicts, or null when it holds none.
+///
+/// Non-null replaces the parsed document on screen rather than decorating
+/// it: while a marker is there the preview shows the conflict and
+/// nothing else, which is also why the diff stays null — comparing to
+/// `HEAD` mid-merge answers a question nobody has asked yet, in the
+/// same tint the conflict already uses
+/// (`docs/product/editor/conflicted-document/doc.md`).
+ List<PreviewSegment>? get segments {
+  final value = _segments;
+  if (value == null) return null;
+  if (_segments is EqualUnmodifiableListView) return _segments;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
 
 /// Create a copy of PreviewState
 /// with the given fields replaced by the non-null parameter values.
@@ -270,16 +295,16 @@ $PreviewReadyCopyWith<PreviewReady> get copyWith => _$PreviewReadyCopyWithImpl<P
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PreviewReady&&(identical(other.document, document) || other.document == document)&&(identical(other.diff, diff) || other.diff == diff));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PreviewReady&&(identical(other.document, document) || other.document == document)&&(identical(other.diff, diff) || other.diff == diff)&&const DeepCollectionEquality().equals(other._segments, _segments));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,document,diff);
+int get hashCode => Object.hash(runtimeType,document,diff,const DeepCollectionEquality().hash(_segments));
 
 @override
 String toString() {
-  return 'PreviewState.ready(document: $document, diff: $diff)';
+  return 'PreviewState.ready(document: $document, diff: $diff, segments: $segments)';
 }
 
 
@@ -290,7 +315,7 @@ abstract mixin class $PreviewReadyCopyWith<$Res> implements $PreviewStateCopyWit
   factory $PreviewReadyCopyWith(PreviewReady value, $Res Function(PreviewReady) _then) = _$PreviewReadyCopyWithImpl;
 @useResult
 $Res call({
- ParsedDocumentValueObject document, DocumentDiffValueObject? diff
+ ParsedDocumentValueObject document, DocumentDiffValueObject? diff, List<PreviewSegment>? segments
 });
 
 
@@ -307,11 +332,12 @@ class _$PreviewReadyCopyWithImpl<$Res>
 
 /// Create a copy of PreviewState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? document = null,Object? diff = freezed,}) {
+@pragma('vm:prefer-inline') $Res call({Object? document = null,Object? diff = freezed,Object? segments = freezed,}) {
   return _then(PreviewReady(
 null == document ? _self.document : document // ignore: cast_nullable_to_non_nullable
 as ParsedDocumentValueObject,diff: freezed == diff ? _self.diff : diff // ignore: cast_nullable_to_non_nullable
-as DocumentDiffValueObject?,
+as DocumentDiffValueObject?,segments: freezed == segments ? _self._segments : segments // ignore: cast_nullable_to_non_nullable
+as List<PreviewSegment>?,
   ));
 }
 

@@ -21,7 +21,17 @@ part 'changes_notifier.g.dart';
 /// It re-reads rather than patches: nothing can predict what git will say
 /// after an operation (a deleted file staged, an editor saving underneath,
 /// a rebase in another terminal), so every one ends in `status()` again.
-@riverpod
+/// **Kept alive because it is the app's one reader of git.** The shell builds
+/// the git column under `if (showingAside)`, and Riverpod disposes a notifier
+/// nobody listens to — so without this, hiding the column would leave
+/// `SpaceSessionState.git` and `.merge` with nobody to write them, and a
+/// space opened with the column shut would have no git reading at all. It
+/// also keeps the commit message being written: closing a column is not a
+/// reason to throw a sentence away.
+///
+/// `build` still watches the open space, so leaving one clears the draft —
+/// which is the case where dropping it is right.
+@Riverpod(keepAlive: true)
 class ChangesNotifier extends _$ChangesNotifier {
   /// Reads where the repository stands.
   ReadGitStatusUseCase get readGitStatus => ref.read(readGitStatusProvider);
@@ -31,6 +41,9 @@ class ChangesNotifier extends _$ChangesNotifier {
 
   /// Records the index as a commit.
   CommitChangesUseCase get commitChanges => ref.read(commitChangesProvider);
+
+  /// Reads whether a pull stopped mid-merge.
+  ReadMergeStateUseCase get readMergeState => ref.read(readMergeStateProvider);
 
   @override
   ChangesState build() {
@@ -163,12 +176,44 @@ class ChangesNotifier extends _$ChangesNotifier {
         value: final GitStatusValueObject status,
       ):
         ref.read(spaceSessionProvider.notifier).observe(status);
-        state = ChangesState.ready(message: draft);
+        final String merged = await _observeMerge(space);
+        if (!ref.mounted) {
+          return;
+        }
+        // The draft git wrote only fills an empty box: a sentence somebody
+        // is typing is theirs, and a merge arriving must not replace it.
+        state = ChangesState.ready(message: draft.isEmpty ? merged : draft);
       case Failure<GitStatusValueObject, AppFailure>(
         failure: final AppFailure failure,
       ):
         ref.read(spaceSessionProvider.notifier).observe(null);
         state = ChangesState.failed(failure);
     }
+  }
+
+  /// Puts the merge state on the session and answers with git's draft.
+  ///
+  /// A merge that cannot be read is no merge for the screen's purposes: the
+  /// status already carries the `C` marks, and the band is what explains
+  /// them.
+  Future<String> _observeMerge(SpaceEntity space) async {
+    final Result<MergeStateValueObject, AppFailure> read = await readMergeState
+        .read(space);
+    if (!ref.mounted) {
+      return '';
+    }
+    return switch (read) {
+      Success<MergeStateValueObject, AppFailure>(
+        value: final MergeStateValueObject merge,
+      ) =>
+        _remember(merge),
+      Failure<MergeStateValueObject, AppFailure>() => _remember(null),
+    };
+  }
+
+  /// Records [merge] on the session and answers with the message it drafted.
+  String _remember(MergeStateValueObject? merge) {
+    ref.read(spaceSessionProvider.notifier).observeMerge(merge);
+    return (merge?.inProgress ?? false) ? merge!.message : '';
   }
 }

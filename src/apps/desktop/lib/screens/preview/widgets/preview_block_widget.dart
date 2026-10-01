@@ -7,7 +7,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:tom_desktop/screens/preview/code_highlighter_impl.dart';
+import 'package:tom_desktop/screens/preview/footnote_marker_builder_impl.dart';
+import 'package:tom_desktop/screens/preview/footnote_ref_syntax_impl.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -67,10 +70,18 @@ class PreviewBlockWidget extends ConsumerWidget {
     return MarkdownBody(
       // The link reference definitions are document scope, so a block
       // rendered alone would otherwise draw `[text][ref]` literally.
-      // Footnotes do not survive the same way (Decision 19).
       data: document.linkDefinitions.isEmpty
           ? block.source
           : '${block.source}\n\n${document.linkDefinitions}',
+      // The footnotes are document scope too, and drawn rather than parsed
+      // again: the number is the document's, not this block's
+      // (`docs/technical/decisions/031-where-a-footnotes-text-goes.md`).
+      inlineSyntaxes: <md.InlineSyntax>[
+        FootnoteRefSyntaxImpl(FootnoteRefSyntaxImpl.by(document.footnotes)),
+      ],
+      builders: <String, MarkdownElementBuilder>{
+        FootnoteRefSyntaxImpl.tag: FootnoteMarkerBuilderImpl(),
+      },
       selectable: true,
       styleSheet: _styleSheetOf(context, colors, body, struckThrough),
       syntaxHighlighter: CodeHighlighterImpl(

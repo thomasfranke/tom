@@ -2,12 +2,15 @@
 library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:tom_presentation/src/workspace/theme_choice_enum.dart';
 
 part 'workspace_state.freezed.dart';
 
-/// Which columns are on screen, which git panel the right one shows, and
-/// which theme is drawn (`docs/product/workspace/columns/doc.md`).
+/// Which columns are on screen, and which git panel the right one shows
+/// (`docs/product/workspace/columns/doc.md`).
+///
+/// ~~Which theme is drawn~~ moved out: the theme is a **preference**, kept
+/// on the machine rather than in the window
+/// (`docs/product/preferences/what-it-holds/doc.md`).
 ///
 /// A hidden column is a column, not a mode: what was on screen comes back
 /// unchanged, so this carries whether it is shown and nothing about what is
@@ -28,9 +31,6 @@ abstract class WorkspaceState with _$WorkspaceState {
     /// the tree reads well at, and somebody reading search results widens it
     /// (`docs/product/workspace/regions/doc.md`).
     double? explorerWidth,
-
-    /// Which theme the window draws.
-    @Default(ThemeChoiceEnum.system) ThemeChoiceEnum theme,
 
     /// Which of the right column's panels is showing, by the id the module
     /// registered it under; null means the first one.

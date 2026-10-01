@@ -38,9 +38,16 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        readMergeStateProvider.overrideWithValue(
+          ReadMergeStateUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
         stageChangesProvider.overrideWithValue(
           StageChangesUseCase(
             gitFor: (SpaceEntity space) => git,
+            documentsFor: (SpaceEntity space) => const _NoDocuments(),
             observability: const _Silent(),
           ),
         ),
@@ -293,4 +300,21 @@ final class _Silent implements Observability {
     StackTrace stackTrace, {
     required String layer,
   }) async {}
+}
+
+/// Documents nothing can be read from, so the marker check finds nothing to
+/// refuse and staging behaves as it did before the check existed.
+final class _NoDocuments implements DocumentRepository {
+  const _NoDocuments();
+
+  @override
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
+  ) async => Failure<DocumentEntity, DocumentFailure>(
+    DocumentNotFound(path.value),
+  );
+
+  @override
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
+      throw UnimplementedError();
 }

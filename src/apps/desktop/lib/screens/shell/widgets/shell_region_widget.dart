@@ -13,14 +13,14 @@ import 'package:tom_ui/tom_ui.dart';
 
 /// One region of the shell, holding whatever was registered into it.
 ///
-/// A fixed [width] for the columns that must not move between screens, and
-/// null for the document area, which takes what is left.
+/// It draws the panels and nothing around them: the width of a fixed column
+/// and the container it sits on are the shell's, because the document's
+/// container holds the row above the document too.
 class ShellRegionWidget extends ConsumerWidget {
   /// Creates the region for [placement], reading [registry].
   const ShellRegionWidget({
     required this.placement,
     required this.registry,
-    this.width,
     this.mode,
     super.key,
   });
@@ -30,9 +30,6 @@ class ShellRegionWidget extends ConsumerWidget {
 
   /// Where to ask what belongs in it.
   final PanelRegistry registry;
-
-  /// Its fixed width, or null to take what is left.
-  final double? width;
 
   /// Which document mode to draw, or null for a region the bar does not
   /// govern; passed through to the registry, never read here.
@@ -44,7 +41,6 @@ class ShellRegionWidget extends ConsumerWidget {
     properties
       ..add(EnumProperty<PanelPlacementEnum>('placement', placement))
       ..add(DiagnosticsProperty<PanelRegistry>('registry', registry))
-      ..add(DoubleProperty('width', width))
       ..add(EnumProperty<DocumentModeEnum?>('mode', mode));
   }
 
@@ -73,27 +69,11 @@ class ShellRegionWidget extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: children,
           );
-    // The divider belongs to the fixed column, on the side facing the
-    // document area, so the column's width stays the wireframe's.
-    final Widget bordered = switch (placement) {
-      PanelPlacementEnum.explorer => Row(
-        children: <Widget>[
-          Expanded(child: content),
-          VerticalDivider(width: 1, color: colors.border),
-        ],
-      ),
-      PanelPlacementEnum.aside => Row(
-        children: <Widget>[
-          VerticalDivider(width: 1, color: colors.border),
-          Expanded(child: content),
-        ],
-      ),
-      PanelPlacementEnum.document || PanelPlacementEnum.statusBar => content,
-    };
-    final double? total = width;
-    return total == null
-        ? bordered
-        : SizedBox(width: total + 1, child: bordered);
+    // The container is the shell's, not a region's: the document column's
+    // runs from under the top bar to under the status bar and the row above
+    // the document is **inside** it, which a box drawn here could not reach
+    // (`docs/design/screens/measurements.md`).
+    return content;
   }
 }
 
@@ -128,14 +108,47 @@ class _SwitchedWidget extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) => Stack(
     children: <Widget>[
-      // One panel needs no switch: a control with a single choice says
-      // nothing the panel does not already say.
-      if (panels.length > 1)
-        WorkspaceAsideSwitchWidget(panels: panels, chosen: chosen),
-      Expanded(child: Builder(builder: chosen.builder)),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          // One panel needs no switch: a control with a single choice says
+          // nothing the panel does not already say.
+          if (panels.length > 1)
+            WorkspaceAsideSwitchWidget(panels: panels, chosen: chosen),
+          Expanded(child: Builder(builder: chosen.builder)),
+        ],
+      ),
+      // **Over** the column rather than above it: the boards draw the bar
+      // across the column's own top edge, and a row reserved for it would
+      // push everything under it down by three whether or not a request is
+      // out (`docs/product/git-workflow/push-pull/while-a-request-runs/doc.md`).
+      const Positioned(
+        left: 0,
+        right: 0,
+        top: 0,
+        child: _RemoteProgressWidget(),
+      ),
     ],
   );
+}
+
+/// The bar, while git is talking to a remote.
+///
+/// Watched here rather than inside a panel because **committing is not
+/// touched**: staging and committing reach no remote, and the bar is what
+/// teaches that it is about the network and not about the app being busy.
+class _RemoteProgressWidget extends ConsumerWidget {
+  const _RemoteProgressWidget();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bool working = ref.watch(
+      remoteProvider.select((RemoteState state) => state.isBusy),
+    );
+    return working
+        ? const TomProgressBarWidget()
+        : const SizedBox.shrink();
+  }
 }

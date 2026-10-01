@@ -12,6 +12,13 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
+/// The commit button, not the Push beside it: the column now holds two
+/// filled buttons, and `byType` would find both.
+final Finder commitButton = find.ancestor(
+  of: find.textContaining('Commit'),
+  matching: find.byType(FilledButton),
+);
+
 void main() {
   late _Git git;
   late ProviderContainer container;
@@ -54,9 +61,16 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        readMergeStateProvider.overrideWithValue(
+          ReadMergeStateUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
         stageChangesProvider.overrideWithValue(
           StageChangesUseCase(
             gitFor: (SpaceEntity space) => git,
+            documentsFor: (SpaceEntity space) => const _NoDocuments(),
             observability: const _Silent(),
           ),
         ),
@@ -267,7 +281,7 @@ void main() {
 
     /// Whether *Commit* can be pressed.
     bool isEnabled(WidgetTester tester) =>
-        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed !=
+        tester.widget<FilledButton>(commitButton).onPressed !=
         null;
 
     testWidgets('is disabled until there is a message', (
@@ -301,7 +315,7 @@ void main() {
       expect(isEnabled(tester), isTrue);
       git.reported = statusOf(const <StatusEntryValueObject>[]);
 
-      await tester.tap(find.byType(FilledButton));
+      await tester.tap(commitButton);
       await tester.pumpAndSettle();
 
       expect(git.messages, <String>['docs: say it']);
@@ -374,10 +388,91 @@ void main() {
 
     expect(light.modified, isNot(light.added));
   });
+
+  testWidgets('a merge still holding conflicts counts what is left, not what '
+      'is staged', (WidgetTester tester) async {
+    git
+      ..reported = statusOf(<StatusEntryValueObject>[
+        entry('docs/roadmap.md', FileStateEnum.conflicted, isStaged: false),
+        entry('docs/guide.md', FileStateEnum.conflicted, isStaged: false),
+      ])
+      ..merge = const MergeStateValueObject(
+        inProgress: true,
+        message: "Merge branch 'main'",
+      );
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('2 documents to resolve'), findsOneWidget);
+    expect(find.text('0 of 2 staged'), findsNothing);
+  });
+
+  testWidgets('one left to resolve is said in the singular', (
+    WidgetTester tester,
+  ) async {
+    git
+      ..reported = statusOf(<StatusEntryValueObject>[
+        entry('docs/roadmap.md', FileStateEnum.conflicted, isStaged: false),
+      ])
+      ..merge = const MergeStateValueObject(
+        inProgress: true,
+        message: "Merge branch 'main'",
+      );
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('1 document to resolve'), findsOneWidget);
+  });
+
+  // Concluding the merge is a commit, and it cannot be made while a document
+  // still holds a marker — so the button is dim rather than refusing after
+  // the press (`design/screens/desktop/git-conflict/conflict-in-source-light.svg`).
+  testWidgets('the commit is unavailable while anything is unresolved', (
+    WidgetTester tester,
+  ) async {
+    git
+      ..reported = statusOf(<StatusEntryValueObject>[
+        entry('docs/roadmap.md', FileStateEnum.conflicted, isStaged: true),
+      ])
+      ..merge = const MergeStateValueObject(
+        inProgress: true,
+        message: "Merge branch 'main'",
+      );
+
+    await pumpPanel(tester, space: docs);
+    await tester.enterText(find.byType(TextField).first, 'merge it');
+    await tester.pump();
+
+    expect(
+      tester.widget<FilledButton>(commitButton).onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('the staged count comes back once nothing is conflicted', (
+    WidgetTester tester,
+  ) async {
+    git
+      ..reported = statusOf(<StatusEntryValueObject>[
+        entry('docs/roadmap.md', FileStateEnum.modified, isStaged: true),
+      ])
+      ..merge = const MergeStateValueObject(
+        inProgress: true,
+        message: "Merge branch 'main'",
+      );
+
+    await pumpPanel(tester, space: docs);
+
+    expect(find.text('1 of 1 staged'), findsOneWidget);
+    expect(find.textContaining('to resolve'), findsNothing);
+  });
 }
 
 /// Git, answering what the test set and remembering what it was asked.
 final class _Git implements GitRepository {
+  /// What git is taken to say about a merge; no merge unless a test says so.
+  MergeStateValueObject merge = MergeStateValueObject.none;
+
   GitStatusValueObject? reported;
   GitFailure? statusFailure;
   GitFailure? writeFailure;
@@ -455,6 +550,14 @@ final class _Git implements GitRepository {
 
   @override
   Future<Result<void, GitFailure>> push() async => _done();
+
+  @override
+  Future<Result<MergeStateValueObject, GitFailure>> mergeState() async =>
+      Success<MergeStateValueObject, GitFailure>(merge);
+
+  @override
+  Future<Result<void, GitFailure>> abortMerge() async =>
+      throw UnimplementedError();
 }
 
 /// A space that holds nothing, so the tree has nothing to draw.
@@ -482,4 +585,21 @@ final class _Silent implements Observability {
     StackTrace stackTrace, {
     required String layer,
   }) async {}
+}
+
+/// Documents nothing can be read from, so the marker check finds nothing to
+/// refuse and staging behaves as it did before the check existed.
+final class _NoDocuments implements DocumentRepository {
+  const _NoDocuments();
+
+  @override
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
+  ) async => Failure<DocumentEntity, DocumentFailure>(
+    DocumentNotFound(path.value),
+  );
+
+  @override
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
+      throw UnimplementedError();
 }

@@ -12,12 +12,17 @@ import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_desktop/screens/branches/branches_control_widget.dart';
 import 'package:tom_desktop/screens/branches/widgets/branches_popover_widget.dart';
 import 'package:tom_desktop/screens/changes/changes_panel.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_remote_widget.dart';
 import 'package:tom_desktop/screens/compare/compare_control_widget.dart';
+import 'package:tom_desktop/screens/compare/compare_design.dart';
 import 'package:tom_desktop/screens/compare/widgets/compare_popover_widget.dart';
+import 'package:tom_desktop/screens/editor/editor_panel.dart';
+import 'package:tom_desktop/screens/editor/widgets/editor_marks_widget.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_body_widget.dart';
 import 'package:tom_desktop/screens/history/history_panel.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
+import 'package:tom_desktop/screens/preview/widgets/preview_footnotes_widget.dart';
 import 'package:tom_desktop/screens/search/search_boxes.dart';
 import 'package:tom_desktop/screens/search/search_field_widget.dart';
 import 'package:tom_desktop/screens/search/search_occurrences_panel.dart';
@@ -91,6 +96,23 @@ final class TomRobot {
     await settle();
   }
 
+  /// The window a run is given, or the one the boards are drawn in.
+  ///
+  /// `tom e2e <name> --board` passes the board's own 1440 by 900, so a
+  /// screenshot and a board crop to the same rectangle — scaling either to
+  /// match the other would make every measurement a measurement of the
+  /// scaling.
+  static Size? get boardWindow {
+    const String given = String.fromEnvironment('TOM_E2E_WINDOW');
+    final List<String> parts = given.split('x');
+    if (parts.length != 2) {
+      return null;
+    }
+    final double? width = double.tryParse(parts.first);
+    final double? height = double.tryParse(parts.last);
+    return width == null || height == null ? null : Size(width, height);
+  }
+
   /// Starts the app sized for a desktop window; the default test surface is
   /// narrower than a phone and overflows the shell.
   Future<void> launchWindowed({
@@ -98,7 +120,7 @@ final class TomRobot {
     Size size = const Size(1280, 840),
   }) async {
     tester.view
-      ..physicalSize = size
+      ..physicalSize = boardWindow ?? size
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await launch(pickFolder: pickFolder);
@@ -192,6 +214,21 @@ final class TomRobot {
     await settle();
   }
 
+  /// Taps [label] inside the dialog on screen, and lets the app settle.
+  ///
+  /// Scoped rather than found on the whole screen, because a dialog's answer
+  /// is often the same words as the control that opened it — `Abort the pull`
+  /// is both the band's action and the confirmation's.
+  Future<void> tapInTheDialog(String label) async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(TomDialogWidget),
+        matching: find.text(label),
+      ),
+    );
+    await settle();
+  }
+
   /// Chooses a mode on the bar above the document area by its label —
   /// `Source`, `Split`, `Preview`.
   Future<void> looksAt(String mode) async {
@@ -237,18 +274,35 @@ final class TomRobot {
   /// Presses *Push*.
   Future<void> pushes() => _remoteAction('Push');
 
-  /// Presses *Pull*, which lives inside the rejection rather than the bar.
+  /// Presses *Pull*, which is a button of its own at the foot of the column
+  /// and not only the way out of a refusal.
   Future<void> pulls() => _remoteAction('Pull');
 
-  /// Presses the remote action saying [label], and waits for it to finish.
+  /// Presses the remote action whose label starts with [label], and waits for
+  /// it to finish.
+  ///
+  /// Scoped to the three at the foot of the git column, and matched on the
+  /// verb rather than the whole label: the counts live *inside* the buttons,
+  /// so `Push` reads `Push (2)` whenever there is anything to publish.
   Future<void> _remoteAction(String label) async {
-    await _waitUntil(() => _showing(find.text(label)));
-    await tester.tap(find.text(label));
-    // The bar's buttons read `Fetch…` while it runs; the label coming back is
-    // the action finished and the status re-read.
-    await _waitUntil(() => _showing(find.text(label)));
+    Finder button() => find.descendant(
+      of: find.byType(ChangesRemoteWidget),
+      matching: find.textContaining(label),
+    );
+    await _waitUntil(() => _showing(button()));
+    await tester.tap(button());
+    // The pressed one reads `Pushing…` while it runs, and `Pushing` contains
+    // `Push`: what says the action finished is the ellipsis leaving, not the
+    // verb coming back.
+    await _waitUntil(() => _showing(button()) && !_showing(_working));
     await settle();
   }
+
+  /// Any of the three saying it is the one in flight.
+  Finder get _working => find.descendant(
+    of: find.byType(ChangesRemoteWidget),
+    matching: find.textContaining('…'),
+  );
 
   /// Ticks *All*, staging everything the panel lists — the caption's own
   /// checkbox, the one [stages] avoids.
@@ -268,8 +322,10 @@ final class TomRobot {
   /// Asserts *Commit* cannot be pressed: unavailable rather than absent, and
   /// refused before the attempt.
   Future<void> seesCommitUnavailable() async {
-    final Finder button = find.descendant(
-      of: find.byType(ChangesPanel),
+    // Anchored on the word rather than on the type: `Push` at the foot of the
+    // same column is filled too, and the panel now holds two.
+    final Finder button = find.ancestor(
+      of: find.textContaining('Commit'),
       matching: find.byType(FilledButton),
     );
     await _waitUntil(() => _showing(button));
@@ -294,8 +350,8 @@ final class TomRobot {
   /// Checked before it is pressed, because a disabled button swallows a tap
   /// without a word.
   Future<void> commits() async {
-    final Finder button = find.descendant(
-      of: find.byType(ChangesPanel),
+    final Finder button = find.ancestor(
+      of: find.textContaining('Commit'),
       matching: find.byType(FilledButton),
     );
     expect(
@@ -392,8 +448,10 @@ final class TomRobot {
   /// slop on behalf of a widget that starts on recognition; the grip starts
   /// on the pointer going down.
   Future<void> widensTheExplorer(double dx) async {
+    // The first of the two gutters: the right column has one of its own, and
+    // only the left one is the reader's to drag.
     final TestGesture gesture = await tester.startGesture(
-      tester.getCenter(find.byType(WorkspaceGripWidget)),
+      tester.getCenter(find.byType(WorkspaceGripWidget).first),
     );
     await gesture.moveBy(Offset(dx, 0));
     await gesture.up();
@@ -600,6 +658,54 @@ final class TomRobot {
     expect(shown, findsWidgets, reason: 'the preview is not showing "$text"');
   }
 
+  /// Asserts the preview is **not** showing [text].
+  Future<void> seesNotInThePreview(String text) async {
+    final Finder shown = find.textContaining(text, findRichText: true);
+    await _waitUntil(() => !_showing(shown));
+    expect(shown, findsNothing, reason: 'the preview is still showing "$text"');
+  }
+
+  /// Asserts the prose carries [numbers] as markers, top to bottom.
+  ///
+  /// Outside the foot, which draws the same digits with a stop after them.
+  Future<void> seesTheFootnoteMarkers(List<String> numbers) async {
+    for (final String number in numbers) {
+      final Finder marker = find.descendant(
+        of: find.byType(PreviewPanel),
+        matching: find.text(number),
+      );
+      await _waitUntil(() => _showing(marker));
+      expect(marker, findsOneWidget, reason: 'no marker $number in the prose');
+    }
+    // In order: the second citation is below the first.
+    for (int at = 1; at < numbers.length; at++) {
+      expect(
+        tester.getTopLeft(find.text(numbers[at])).dy,
+        greaterThan(tester.getTopLeft(find.text(numbers[at - 1])).dy),
+        reason: 'marker ${numbers[at]} is not below ${numbers[at - 1]}',
+      );
+    }
+  }
+
+  /// Asserts the foot of the document carries [numbers], in order.
+  ///
+  /// The foot is the one container that is not a block, so it is found by
+  /// its own widget rather than by what it says
+  /// ([PreviewFootnotesWidget]).
+  Future<void> seesTheFootnotes(List<String> numbers) async {
+    await _waitUntil(() => _showing(find.byType(PreviewFootnotesWidget)));
+    for (final String number in numbers) {
+      expect(
+        find.descendant(
+          of: find.byType(PreviewFootnotesWidget),
+          matching: find.text(number),
+        ),
+        findsOneWidget,
+        reason: 'the foot does not carry $number',
+      );
+    }
+  }
+
   /// Asserts the rendered diff is marking [letters], top to bottom.
   ///
   /// Scoped to the preview, because the changes column draws the same mark
@@ -659,6 +765,68 @@ final class TomRobot {
     );
   }
 
+  /// Opens the preferences popover, or closes it.
+  Future<void> opensThePreferences() async {
+    await _waitUntil(() => _showing(find.byTooltip('Preferences')));
+    await tester.tap(find.byTooltip('Preferences'));
+    await settle();
+  }
+
+  /// Asserts the formatting bar is drawn.
+  Future<void> seesTheFormattingBar() async {
+    await _waitUntil(() => _showing(find.byType(TomToolbarButtonWidget)));
+    expect(find.byType(TomToolbarButtonWidget), findsWidgets);
+  }
+
+  /// Asserts it is not — the whole set, not half of it.
+  Future<void> seesNoFormattingBar() async {
+    await _waitUntil(() => !_showing(find.byType(TomToolbarButtonWidget)));
+    expect(find.byType(TomToolbarButtonWidget), findsNothing);
+  }
+
+  /// Presses the formatting button whose tooltip is [word].
+  ///
+  /// By its word rather than its glyph: a test that matched the shape would
+  /// pass on the wrong button the day two glyphs look alike, which is what
+  /// rendering the set at 48 caught twice on the boards.
+  Future<void> pressesTheToolbarButton(String word) async {
+    final Finder button = find
+        .ancestor(
+          of: find.byTooltip(word),
+          matching: find.byType(TomToolbarButtonWidget),
+        )
+        .first;
+    await _waitUntil(() => _showing(button));
+    // Scrolled to first: the bar never drops a button to fit, so with the git
+    // column open the later groups are off the end of the row and a tap at
+    // their coordinates would land on the document
+    // (`docs/product/editor/formatting-shortcuts/doc.md`).
+    await tester.ensureVisible(button);
+    await settle();
+    await tester.tap(button);
+    await settle();
+  }
+
+  /// Asserts the source pane marks a conflict in its gutter.
+  ///
+  /// The painter is what is read, not a widget: the gutter paints rather than
+  /// mounts, because the editor writes its layout while it is laying out
+  /// ([EditorMarksWidget]).
+  Future<void> seesTheConflictMarkedInSource() async {
+    final Finder marks = find.descendant(
+      of: find.byType(EditorMarksWidget),
+      matching: find.byType(CustomPaint),
+    );
+    await _waitUntil(() => _showing(marks));
+    final EditorMarksPainter painter =
+        tester.widget<CustomPaint>(marks).painter! as EditorMarksPainter;
+    expect(
+      painter.marks.isEmpty,
+      isFalse,
+      reason: 'the source pane marks no line as conflicted',
+    );
+  }
+
   /// Asserts the changes panel lists [names], each exactly once.
   Future<void> seesInTheChanges(List<String> names) async {
     await _waitUntil(() => _showing(_inTheChanges(names.first)));
@@ -689,48 +857,86 @@ final class TomRobot {
     expect(find.text(clean), findsOneWidget);
   }
 
-  /// Asserts the top bar says how far the branch has drifted; a zero half is
-  /// absent rather than a counter reading nothing.
+  /// Asserts the buttons say how far the branch has drifted: `Push (2)` and
+  /// `Pull (3)`, the verb and the number, and a bare verb where there is
+  /// nothing to count.
   Future<void> seesTheDrift({int ahead = 0, int behind = 0}) async {
-    final String expected = <String>[
-      if (ahead > 0) '↑ $ahead',
-      if (behind > 0) '↓ $behind',
-    ].join('  ');
-    if (expected.isEmpty) {
-      await _waitUntil(() => !_showing(find.textContaining('↑')));
-      expect(find.textContaining('↑'), findsNothing);
-      expect(find.textContaining('↓'), findsNothing);
-      return;
-    }
-    await _waitUntil(() => _showing(find.text(expected)));
-    expect(
-      find.text(expected),
-      findsOneWidget,
-      reason: 'the top bar does not say the branch is $expected',
+    final String push = ahead > 0 ? 'Push ($ahead)' : 'Push';
+    final String pull = behind > 0 ? 'Pull ($behind)' : 'Pull';
+    Finder saying(String label) => find.descendant(
+      of: find.byType(ChangesRemoteWidget),
+      matching: find.text(label),
     );
+    await _waitUntil(
+      () =>
+          _showing(saying(push)) &&
+          _showing(saying(pull)) &&
+          !_showing(_working),
+    );
+    expect(
+      saying(push),
+      findsOneWidget,
+      reason: 'the column does not say $push',
+    );
+    expect(
+      saying(pull),
+      findsOneWidget,
+      reason: 'the column does not say $pull',
+    );
+    // The counts are in the buttons and nowhere else: an indicator beside the
+    // branch would be the same fact twice
+    // (`docs/product/git-workflow/push-pull/the-controls/doc.md`).
+    expect(find.textContaining('↑'), findsNothing);
+    expect(find.textContaining('↓'), findsNothing);
   }
+
+  /// Asserts the band above the document is saying each of [fragments].
+  ///
+  /// Fragments rather than the sentence, because the band is one `Text` and
+  /// a notice is written as two or three clauses in it — what happened, and
+  /// what it cost. A scenario quoting the punctuation between them would
+  /// break on a comma.
+  Future<void> seesTheBandSaying(List<String> fragments) async {
+    await _waitUntil(() => _showing(_bandSaying(fragments.first)));
+    for (final String fragment in fragments) {
+      expect(
+        _bandSaying(fragment),
+        findsOneWidget,
+        reason: 'the band does not say $fragment',
+      );
+    }
+  }
+
+  /// The band's own sentence, where it holds [fragment].
+  Finder _bandSaying(String fragment) => find.descendant(
+    of: find.byType(NoticeBandWidget),
+    matching: find.textContaining(fragment),
+  );
 
   /// Asserts the push was refused, in all three sentences the product chose
   /// (`docs/product/git-workflow/push-pull/README.md`).
   Future<void> seesThePushRefused({required int commits}) async {
-    final String headline =
-        'Someone pushed $commits commit${commits == 1 ? '' : 's'} first.';
-    await _waitUntil(() => _showing(find.text(headline)));
-    expect(find.text(headline), findsOneWidget, reason: 'no rejection said');
+    await seesTheBandSaying(<String>[
+      'Someone pushed $commits commit${commits == 1 ? '' : 's'} first.',
+      'Pull them, then push again',
+      'nothing you committed has been lost',
+    ]);
+    // Scoped to the band: the git column carries a `Pull` of its own now, so
+    // the way *out of a refusal* is the one inside the notice.
     expect(
-      find.text(
-        'Pull them, then push again. Nothing you committed has been lost.',
+      find.descendant(
+        of: find.byType(NoticeBandWidget),
+        matching: find.text('Pull'),
       ),
       findsOneWidget,
-      reason: 'the rejection does not say the work is safe',
+      reason: 'no way out of it',
     );
-    expect(find.text('Pull'), findsOneWidget, reason: 'no way out of it');
   }
 
   /// Asserts nothing on screen is claiming a push was refused.
   void seesNoRefusal() {
     expect(find.textContaining('Someone pushed'), findsNothing);
-    expect(find.text('Pull'), findsNothing);
+    expect(find.byType(NoticeBandWidget), findsNothing);
   }
 
   /// Asserts the status bar names [branch] as the one checked out.
@@ -877,9 +1083,27 @@ final class TomRobot {
   /// Opens it and picks [revision], by the name or subject it is listed under.
   Future<void> comparesAgainst(String revision) async {
     await opensTheComparison();
-    // The lists are read when the surface opens, so the row being reached
-    // for is not there on the first frame.
-    await _waitUntil(() => _showing(_inTheComparison(revision)));
+    // The list's own scrollable, not the filter field's: a `TextField` is a
+    // `Scrollable` too, and the surface holds both.
+    final Finder list = find.descendant(
+      of: find.descendant(
+        of: find.byType(ComparePopoverWidget),
+        matching: find.byType(ListView),
+      ),
+      matching: find.byType(Scrollable),
+    );
+    // The lists are read when the surface opens, so nothing to scroll is
+    // there on the first frame.
+    await _waitUntil(() => _showing(list));
+    // **The surface is as tall as the design fixes it and its list scrolls**,
+    // so a commit past the second is a row the viewport has not built:
+    // tapping it without this is a silent no-op, the trap the toolbar paid
+    // for.
+    await tester.scrollUntilVisible(
+      _inTheComparison(revision),
+      CompareDesign.commitPitch,
+      scrollable: list,
+    );
     await tester.tap(_inTheComparison(revision));
     await settle();
   }
@@ -1009,16 +1233,18 @@ final class TomRobot {
     matching: find.byType(TextField),
   );
 
-  /// Asserts which of the two panes the document area is showing, by each
-  /// panel's own caption.
+  /// Asserts which of the two panes the document area is showing.
+  ///
+  /// By the panel rather than by a caption: neither pane carries one, because
+  /// no board draws one (`docs/design/screens/divergences.md`).
   void seesThePanes({required bool source, required bool preview}) {
     expect(
-      find.text('SOURCE'),
+      find.byType(EditorPanel),
       source ? findsOneWidget : findsNothing,
       reason: 'the source pane should ${source ? '' : 'not '}be on screen',
     );
     expect(
-      find.text('PREVIEW'),
+      find.byType(PreviewPanel),
       preview ? findsOneWidget : findsNothing,
       reason: 'the preview should ${preview ? '' : 'not '}be on screen',
     );

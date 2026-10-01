@@ -55,9 +55,16 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        readMergeStateProvider.overrideWithValue(
+          ReadMergeStateUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
         stageChangesProvider.overrideWithValue(
           StageChangesUseCase(
             gitFor: (SpaceEntity space) => git,
+            documentsFor: (SpaceEntity space) => const _NoDocuments(),
             observability: const _Silent(),
           ),
         ),
@@ -116,6 +123,95 @@ void main() {
       const GitNotARepository('/code/app'),
     );
     expect(observed(), isNull);
+  });
+
+  group('a pull that stopped mid-merge', () {
+    /// The status a conflicted pull leaves: two documents marked C.
+    void conflicted() {
+      git
+        ..reported = statusOf(<StatusEntryValueObject>[
+          StatusEntryValueObject(
+            path: writing,
+            state: FileStateEnum.conflicted,
+            isStaged: false,
+          ),
+          StatusEntryValueObject(
+            path: index,
+            state: FileStateEnum.conflicted,
+            isStaged: false,
+          ),
+        ])
+        ..merge = const MergeStateValueObject(
+          inProgress: true,
+          message: "Merge branch 'main' into feat/rendered-diff",
+        );
+    }
+
+    test('the merge lands on the session beside the status', () async {
+      conflicted();
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      expect(
+        container.read(spaceSessionProvider)?.merge?.inProgress,
+        isTrue,
+      );
+    });
+
+    test('the documents still to resolve are counted from the status',
+        () async {
+      conflicted();
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      final SpaceSessionState session = container.read(spaceSessionProvider)!;
+      expect(session.toResolve, hasLength(2));
+      expect(session.isResolvingMerge, isTrue);
+    });
+
+    test('the message box starts from the draft git wrote', () async {
+      conflicted();
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      expect(ready().message, "Merge branch 'main' into feat/rendered-diff");
+    });
+
+    // A sentence somebody is typing is theirs: a merge arriving must not
+    // replace it, which is the same rule that keeps a reload from emptying
+    // the box.
+    test('a draft being typed is never replaced by it', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+      container
+          .read(changesProvider.notifier)
+          .describe('docs: my own sentence');
+      conflicted();
+
+      await container
+          .read(changesProvider.notifier)
+          .setAllStaged(staged: true);
+      await settle();
+
+      expect(ready().message, 'docs: my own sentence');
+    });
+
+    test('a repository at rest leaves the box empty and the session clear',
+        () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+
+      final SpaceSessionState session = container.read(spaceSessionProvider)!;
+      expect(session.merge?.inProgress, isFalse);
+      expect(session.isResolvingMerge, isFalse);
+      expect(session.toResolve, isEmpty);
+      expect(ready().message, isEmpty);
+    });
   });
 
   group('staging', () {
@@ -276,6 +372,9 @@ void main() {
 
 /// Git, answering what the test set and remembering what it was asked.
 final class _Git implements GitRepository {
+  /// What git is taken to say about a merge; no merge unless a test says so.
+  MergeStateValueObject merge = MergeStateValueObject.none;
+
   GitStatusValueObject? reported;
   GitFailure? statusFailure;
   GitFailure? writeFailure;
@@ -355,6 +454,14 @@ final class _Git implements GitRepository {
 
   @override
   Future<Result<void, GitFailure>> push() async => throw UnimplementedError();
+
+  @override
+  Future<Result<MergeStateValueObject, GitFailure>> mergeState() async =>
+      Success<MergeStateValueObject, GitFailure>(merge);
+
+  @override
+  Future<Result<void, GitFailure>> abortMerge() async =>
+      throw UnimplementedError();
 }
 
 /// The no-op observability, which is also the shipping default.
@@ -367,4 +474,21 @@ final class _Silent implements Observability {
     StackTrace stackTrace, {
     required String layer,
   }) async {}
+}
+
+/// Documents nothing can be read from, so the marker check finds nothing to
+/// refuse and staging behaves as it did before the check existed.
+final class _NoDocuments implements DocumentRepository {
+  const _NoDocuments();
+
+  @override
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
+  ) async => Failure<DocumentEntity, DocumentFailure>(
+    DocumentNotFound(path.value),
+  );
+
+  @override
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
+      throw UnimplementedError();
 }

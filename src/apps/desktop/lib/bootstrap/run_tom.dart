@@ -10,6 +10,7 @@ import 'package:tom_desktop/bootstrap/providers.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_desktop/screens/home/home_screen.dart';
 import 'package:tom_desktop/screens/shell/tom_shell.dart';
+import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 import 'package:window_manager/window_manager.dart';
@@ -94,10 +95,12 @@ class TomApp extends ConsumerWidget {
     theme: tomTheme(Brightness.light),
     darkTheme: tomTheme(Brightness.dark),
     // The platform's until somebody says otherwise, and then theirs — the
-    // control is in the top bar with the column toggles
-    // (`docs/product/workspace/columns/doc.md`).
+    // choice is inside the preferences popover, which is where it is also
+    // stored (`docs/product/preferences/what-it-holds/doc.md`).
     themeMode: switch (ref.watch(
-      workspaceProvider.select((WorkspaceState it) => it.theme),
+      preferencesProvider.select(
+        (PreferencesValueObject it) => it.theme,
+      ),
     )) {
       ThemeChoiceEnum.system => ThemeMode.system,
       ThemeChoiceEnum.light => ThemeMode.light,

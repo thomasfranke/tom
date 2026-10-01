@@ -67,6 +67,12 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        readMergeStateProvider.overrideWithValue(
+          ReadMergeStateUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
         listSpaceEntriesProvider.overrideWithValue(
           const ListSpaceEntriesUseCase(
             spaces: _NothingInIt(),

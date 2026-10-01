@@ -8,30 +8,30 @@ part of 'workspace_notifier.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The three controls at the right of the top bar, and the right column's
-/// switch (`docs/product/workspace/columns/doc.md`).
+/// The two column toggles at the right of the top bar, and the right
+/// column's switch (`docs/product/workspace/columns/doc.md`).
 ///
-/// Kept alive because the theme is read above the shell, by the window
-/// itself: a provider nobody in the shell listened to would be disposed
-/// between screens and the choice would go with it.
+/// Kept alive because the columns are read above the shell: a provider
+/// nobody in the shell listened to would be disposed between screens and
+/// the choice would go with it.
 
 @ProviderFor(WorkspaceNotifier)
 final workspaceProvider = WorkspaceNotifierProvider._();
 
-/// The three controls at the right of the top bar, and the right column's
-/// switch (`docs/product/workspace/columns/doc.md`).
+/// The two column toggles at the right of the top bar, and the right
+/// column's switch (`docs/product/workspace/columns/doc.md`).
 ///
-/// Kept alive because the theme is read above the shell, by the window
-/// itself: a provider nobody in the shell listened to would be disposed
-/// between screens and the choice would go with it.
+/// Kept alive because the columns are read above the shell: a provider
+/// nobody in the shell listened to would be disposed between screens and
+/// the choice would go with it.
 final class WorkspaceNotifierProvider
     extends $NotifierProvider<WorkspaceNotifier, WorkspaceState> {
-  /// The three controls at the right of the top bar, and the right column's
-  /// switch (`docs/product/workspace/columns/doc.md`).
+  /// The two column toggles at the right of the top bar, and the right
+  /// column's switch (`docs/product/workspace/columns/doc.md`).
   ///
-  /// Kept alive because the theme is read above the shell, by the window
-  /// itself: a provider nobody in the shell listened to would be disposed
-  /// between screens and the choice would go with it.
+  /// Kept alive because the columns are read above the shell: a provider
+  /// nobody in the shell listened to would be disposed between screens and
+  /// the choice would go with it.
   WorkspaceNotifierProvider._()
     : super(
         from: null,
@@ -59,14 +59,14 @@ final class WorkspaceNotifierProvider
   }
 }
 
-String _$workspaceNotifierHash() => r'ee83ef9cea398153ac3c42a20088a6aae2686f9b';
+String _$workspaceNotifierHash() => r'9bf0cae48fb4079f9c15a296fe16b98024769ac0';
 
-/// The three controls at the right of the top bar, and the right column's
-/// switch (`docs/product/workspace/columns/doc.md`).
+/// The two column toggles at the right of the top bar, and the right
+/// column's switch (`docs/product/workspace/columns/doc.md`).
 ///
-/// Kept alive because the theme is read above the shell, by the window
-/// itself: a provider nobody in the shell listened to would be disposed
-/// between screens and the choice would go with it.
+/// Kept alive because the columns are read above the shell: a provider
+/// nobody in the shell listened to would be disposed between screens and
+/// the choice would go with it.
 
 abstract class _$WorkspaceNotifier extends $Notifier<WorkspaceState> {
   WorkspaceState build();

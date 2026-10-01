@@ -166,11 +166,56 @@ void main() {
 
     test('a footnote definition is dropped, not placed wrongly', () async {
       // The parser synthesises a footnotes section corresponding to no lines
-      // at all.
+      // at all, and the definition itself is reported as a footnote rather
+      // than as a block.
       final List<String> spans = await spansOf('Text.[^a]\n\n[^a]: Note.\n');
 
       expect(spans.first, 'paragraph 0..0');
       expect(spans.where((String s) => s.contains('-1')), isEmpty);
+    });
+  });
+
+  group('the footnotes it reports', () {
+    /// Every footnote of [markdown] as `number label: text`.
+    Future<List<String>> notesOf(String markdown) async => <String>[
+      for (final MarkdownFootnoteDto note in (await outlineOf(markdown))
+          .footnotes)
+        '${note.number} ${note.label}: ${note.text}',
+    ];
+
+    test('a document with none reports none', () async {
+      expect(await notesOf('# Title\n\nProse.\n'), isEmpty);
+    });
+
+    test('the note is what was written, without the syntax that held it',
+        () async {
+      expect(await notesOf('Text.[^a]\n\n[^a]: The note itself.\n'), <String>[
+        '1 a: The note itself.',
+      ]);
+    });
+
+    test('they are numbered in the order they are first cited', () async {
+      // Not the order they are defined in: that is what every renderer does,
+      // and a block cannot see the citations in other blocks.
+      expect(
+        await notesOf(
+          'First.[^b]\n\nSecond.[^a]\n\n[^a]: A.\n\n[^b]: B.\n',
+        ),
+        <String>['1 b: B.', '2 a: A.'],
+      );
+    });
+
+    test('a definition nobody cites is not a footnote', () async {
+      // The parser only collects the ones a reference matched, and a note
+      // with no marker has nothing to be the foot of.
+      expect(await notesOf('Prose.\n\n[^a]: Uncited.\n'), isEmpty);
+    });
+
+    test('a definition inside a fence is text, not a note', () async {
+      expect(
+        await notesOf('Text.[^a]\n\n```\n[^a]: Not one.\n```\n'),
+        isEmpty,
+      );
     });
   });
 }

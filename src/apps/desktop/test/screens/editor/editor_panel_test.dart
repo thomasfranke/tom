@@ -42,6 +42,29 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        // The preview's three: with no conflict the marks are the diff's,
+        // and the diff is the preview's reading. Git here has no earlier
+        // version of anything, so the fall-through is *no marks*.
+        splitDocumentProvider.overrideWithValue(
+          SplitDocumentUseCase(
+            blocks: _Blocks(),
+            observability: const _Silent(),
+          ),
+        ),
+        readVersionProvider.overrideWithValue(
+          ReadVersionUseCase(
+            gitFor: (SpaceEntity space) => _Git(),
+            observability: const _Silent(),
+          ),
+        ),
+        diffDocumentProvider.overrideWithValue(
+          DiffDocumentUseCase(
+            gitFor: (SpaceEntity space) => _Git(),
+            blocks: _Blocks(),
+            differ: BlockDifferService(aligner: _Aligner()),
+            observability: const _Silent(),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -73,12 +96,14 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('it names itself, and says so when nothing is open', (
+  testWidgets('it says so when nothing is open, and names itself not at all', (
     WidgetTester tester,
   ) async {
+    // No caption: no board draws one over either pane, and the mode control
+    // above already says which is which.
     await pumpEditor(tester);
 
-    expect(find.text('SOURCE'), findsOneWidget);
+    expect(find.text('SOURCE'), findsNothing);
     expect(find.text('Choose a document in the explorer.'), findsOneWidget);
   });
 
@@ -109,6 +134,15 @@ void main() {
     expect(find.byType(CodeEditor), findsNothing);
     expect(find.text('That document is no longer there.'), findsOneWidget);
   });
+
+  /// Everything the edit scheduled, run.
+  ///
+  /// The preview debounces, and the gutter's marks are its diff — so an edit
+  /// here starts a timer that outlives the tree unless it is pumped past.
+  Future<void> settleTyping(WidgetTester tester) async {
+    await tester.pumpAndSettle();
+    await tester.pump(PreviewNotifier.settle * 2);
+  }
 
   /// Types [source] into the editor on screen.
   ///
@@ -203,11 +237,11 @@ void main() {
     documents.content = '# On main\n';
     await pumpEditor(tester, document: writing);
     container.read(editorProvider.notifier).edit('typed, never saved');
-    await tester.pumpAndSettle();
+    await settleTyping(tester);
 
     documents.content = '# On the other branch\n';
     await container.read(editorProvider.notifier).reload();
-    await tester.pumpAndSettle();
+    await settleTyping(tester);
 
     expect(
       tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
@@ -224,7 +258,7 @@ void main() {
     await pumpEditor(tester, document: writing);
 
     container.read(editorProvider.notifier).edit('half a sentence');
-    await tester.pumpAndSettle();
+    await settleTyping(tester);
 
     expect(
       tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
@@ -232,6 +266,51 @@ void main() {
       reason: 'the pane re-seeded itself while the buffer was dirty',
     );
   });
+}
+
+/// A reader that splits nothing: one heading block, whatever it is given.
+final class _Blocks implements BlockReaderPort {
+  @override
+  Future<Result<ParsedDocumentValueObject, DocumentFailure>> read(
+    DocumentEntity document,
+  ) async => Success<ParsedDocumentValueObject, DocumentFailure>(
+    ParsedDocumentValueObject(
+      document: document,
+      blocks: <BlockValueObject>[
+        BlockValueObject(
+          startLine: 0,
+          endLine: 0,
+          source: document.content.trimRight(),
+          kind: BlockKindEnum.heading,
+        ),
+      ],
+      linkDefinitions: '',
+    ),
+  );
+}
+
+/// Git with no earlier version of anything, so no comparison is possible.
+final class _Git implements GitRepository {
+  @override
+  Future<Result<String, GitFailure>> contentAt({
+    required String revision,
+    required RepoRelativePathValueObject path,
+  }) async => Failure<String, GitFailure>(GitPathNotInRevision(path.value));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// An aligner nothing asks, because nothing gets that far here.
+final class _Aligner implements BlockAlignerPort {
+  @override
+  Future<Result<List<SequenceEditValueObject>, DocumentFailure>> align(
+    ParsedDocumentValueObject before,
+    ParsedDocumentValueObject after, {
+    required double threshold,
+  }) async => const Success<List<SequenceEditValueObject>, DocumentFailure>(
+    <SequenceEditValueObject>[],
+  );
 }
 
 /// A repository answering with whatever content the test set.

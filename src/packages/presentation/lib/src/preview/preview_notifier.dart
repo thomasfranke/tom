@@ -12,6 +12,7 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/src/editor/editor_notifier.dart';
 import 'package:tom_presentation/src/editor/editor_state.dart';
 import 'package:tom_presentation/src/preview/preview_providers.dart';
+import 'package:tom_presentation/src/preview/preview_segment.dart';
 import 'package:tom_presentation/src/preview/preview_state.dart';
 import 'package:tom_presentation/src/spaces/space_session.dart';
 import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
@@ -37,6 +38,9 @@ class PreviewNotifier extends _$PreviewNotifier {
 
   /// Compares what is on screen against a revision.
   DiffDocumentUseCase get diffDocument => ref.read(diffDocumentProvider);
+
+  /// Reads the conflicts git left in the buffer.
+  static const ConflictScannerService scanner = ConflictScannerService();
 
   Timer? _scheduled;
 
@@ -217,6 +221,16 @@ class PreviewNotifier extends _$PreviewNotifier {
     int generation, {
     required bool always,
   }) async {
+    // The conflict comes first and wins: while a marker is on screen the
+    // diff is not asked for at all.
+    final List<PreviewSegment>? segments = await _cut(parsed, generation);
+    if (!ref.mounted || generation != _generation) {
+      return;
+    }
+    if (segments != null) {
+      state = PreviewState.ready(parsed, segments: segments);
+      return;
+    }
     final DocumentDiffValueObject? diff = await _compare(parsed, generation);
     if (!ref.mounted || generation != _generation) {
       return;
@@ -224,6 +238,93 @@ class PreviewNotifier extends _$PreviewNotifier {
     if (always || diff != null) {
       state = PreviewState.ready(parsed, diff: diff);
     }
+  }
+
+  /// The document cut at its conflicts, each stretch and each side parsed,
+  /// or null when git does not report this document conflicted.
+  ///
+  /// Every piece is parsed on its own: the markers break the document's
+  /// parse, so there is no whole-document tree to take the pieces from.
+  ///
+  /// Read rather than watched: what flips the gate is a pull or an abort, and
+  /// both of those rewrite the file, so the cut is asked for again anyway.
+  Future<List<PreviewSegment>?> _cut(
+    ParsedDocumentValueObject parsed,
+    int generation,
+  ) async {
+    final SpaceSessionState? session = ref.read(spaceSessionProvider);
+    // The choices are offered only while git says the document is conflicted:
+    // a marker typed into a document *about* merging is text
+    // (`docs/product/editor/conflicted-document/doc.md`).
+    if (!(session?.isConflicted(parsed.document.path) ?? false)) {
+      return null;
+    }
+    final List<ConflictSegment> cut = scanner.segment(
+      parsed.document.content,
+    );
+    if (cut.length == 1 && cut.single is ConflictProse) {
+      return null;
+    }
+    final List<PreviewSegment> segments = <PreviewSegment>[];
+    for (final ConflictSegment part in cut) {
+      switch (part) {
+        case ConflictProse(text: final String text):
+          final ParsedDocumentValueObject? prose = await _parse(
+            parsed,
+            text,
+            generation,
+          );
+          if (prose == null) {
+            return null;
+          }
+          segments.add(PreviewProse(prose));
+        case ConflictAt(region: final ConflictRegionValueObject region):
+          final ParsedDocumentValueObject? current = await _parse(
+            parsed,
+            region.current,
+            generation,
+          );
+          final ParsedDocumentValueObject? incoming = await _parse(
+            parsed,
+            region.incoming,
+            generation,
+          );
+          if (current == null || incoming == null) {
+            return null;
+          }
+          segments.add(
+            PreviewConflict(
+              region: region,
+              current: current,
+              incoming: incoming,
+            ),
+          );
+      }
+    }
+    return segments;
+  }
+
+  /// [text] parsed as a document of its own, at [origin]'s path.
+  ///
+  /// The path travels so a link inside a side resolves from the folder the
+  /// document is in, exactly as it would outside the conflict.
+  Future<ParsedDocumentValueObject?> _parse(
+    ParsedDocumentValueObject origin,
+    String text,
+    int generation,
+  ) async {
+    final Result<ParsedDocumentValueObject, AppFailure> split =
+        await splitDocument.split(origin.document.copyWith(content: text));
+    if (!ref.mounted || generation != _generation) {
+      return null;
+    }
+    return switch (split) {
+      Success<ParsedDocumentValueObject, AppFailure>(
+        value: final ParsedDocumentValueObject parsed,
+      ) =>
+        parsed,
+      Failure<ParsedDocumentValueObject, AppFailure>() => null,
+    };
   }
 
   /// Asks what [parsed] changed against the session's base: `HEAD` unless a

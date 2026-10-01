@@ -44,10 +44,11 @@ class HomeScreen extends ConsumerWidget {
               HomeReady(recents: final List<RecentSpaceEntity> recents) =>
                 CommitTrunkWidget(
                   child: HomeCanvasWidget(
-                    // The design's empty space on its 900-tall window, used
-                    // as a ratio so a taller window does not hug the chrome.
-                    above: 98,
-                    below: 166,
+                    // The board's own empty space, measured off the render
+                    // rather than the markup, and used as a ratio so a
+                    // taller window does not hug the chrome.
+                    above: 94,
+                    below: 119,
                     child: HomeWelcomeWidget(recents: recents),
                   ),
                 ),

@@ -208,6 +208,63 @@ final class DartIoGitClientImpl implements GitClient {
   Future<Result<void, GitClientFailure>> push() =>
       _gitVoid(<String>['push'], limit: networkTimeout);
 
+  @override
+  Future<Result<bool, GitClientFailure>> mergeInProgress() async {
+    // `--verify --quiet` exits non-zero with no output when the ref is
+    // absent, which is the ordinary answer rather than a failure to report.
+    final Result<String, GitClientFailure> result = await _git(<String>[
+      'rev-parse',
+      '--verify',
+      '--quiet',
+      'MERGE_HEAD',
+    ]);
+    return switch (result) {
+      Success<String, GitClientFailure>(value: final String sha) =>
+        Success<bool, GitClientFailure>(sha.trim().isNotEmpty),
+      Failure<String, GitClientFailure>(failure: GitClientCommandFailed()) =>
+        const Success<bool, GitClientFailure>(false),
+      Failure<String, GitClientFailure>(:final GitClientFailure failure) =>
+        Failure<bool, GitClientFailure>(failure),
+    };
+  }
+
+  @override
+  Future<Result<String, GitClientFailure>> mergeMessage() async {
+    // `--git-path` rather than `.git/MERGE_MSG`: it answers correctly in a
+    // worktree and a submodule, where `.git` is a file and not a folder.
+    final Result<String, GitClientFailure> located = await _git(<String>[
+      'rev-parse',
+      '--git-path',
+      'MERGE_MSG',
+    ]);
+    if (located
+        case Failure<String, GitClientFailure>(
+          failure: final GitClientFailure failure,
+        )) {
+      return Failure<String, GitClientFailure>(failure);
+    }
+    final String path = (located as Success<String, GitClientFailure>).value
+        .trim();
+    final File file = File(
+      path.startsWith('/') ? path : '$workingDirectory/$path',
+    );
+    // No file is no merge, which is an answer; only a file that exists and
+    // cannot be read is worth reporting, and git is about to report it too.
+    try {
+      return file.existsSync()
+          ? Success<String, GitClientFailure>(
+              _decoder.convert(file.readAsBytesSync()),
+            )
+          : const Success<String, GitClientFailure>('');
+    } on FileSystemException {
+      return const Success<String, GitClientFailure>('');
+    }
+  }
+
+  @override
+  Future<Result<void, GitClientFailure>> abortMerge() =>
+      _gitVoid(<String>['merge', '--abort']);
+
   /// [path], as a pathspec git resolves from the repository root.
   ///
   /// A bare pathspec resolves against [workingDirectory], which is the root

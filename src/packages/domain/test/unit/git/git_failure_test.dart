@@ -12,6 +12,8 @@ void main() {
       GitNotARepository(path: final String path) => 'Not a repository: $path',
       GitMergeConflict(conflictedFiles: final List<String> files) =>
         '${files.length} conflicted files',
+      GitConflictMarkersPresent(paths: final List<String> paths) =>
+        '${paths.length} documents still hold a marker',
       GitAuthenticationFailed() => 'Authentication failed',
       GitDetachedHead() => 'Detached HEAD',
       GitPushRejected() => 'The remote moved first',
@@ -27,6 +29,10 @@ void main() {
       expect(
         headline(const GitMergeConflict(<String>['a.md'])),
         startsWith('1'),
+      );
+      expect(
+        headline(const GitConflictMarkersPresent(<String>['a.md', 'b.md'])),
+        startsWith('2'),
       );
       expect(
         headline(const GitAuthenticationFailed()),

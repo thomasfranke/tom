@@ -9,7 +9,9 @@ import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_desktop/screens/editor/editor_panel.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
+import 'package:tom_desktop/screens/preview/preview_panel.dart';
 import 'package:tom_desktop/screens/shell/tom_shell.dart';
 import 'package:tom_desktop/screens/workspace/workspace_grip_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -20,14 +22,25 @@ void main() {
   /// What the registry is built from, read when the shell first asks — a
   /// variable because the container is made once per test ([pumpShell]).
   List<TomModule> registered = const <TomModule>[CoreModuleImpl()];
+  late _Preferences preferences;
   late ProviderContainer container;
 
   setUp(() {
     registered = const <TomModule>[CoreModuleImpl()];
     // One container per test, not per mount: a second container left alive
     // is still scheduling its disposal, a timer the test framework fails on.
+    preferences = _Preferences();
     container = ProviderContainer(
       overrides: <Override>[
+        readPreferencesProvider.overrideWithValue(
+          ReadPreferencesUseCase(preferences: preferences),
+        ),
+        writePreferencesProvider.overrideWithValue(
+          WritePreferencesUseCase(
+            preferences: preferences,
+            observability: const _Silent(),
+          ),
+        ),
         panelRegistryProvider.overrideWith(
           (Ref ref) => PanelRegistry(registered),
         ),
@@ -51,6 +64,12 @@ void main() {
         // (`test/screens/changes/changes_panel_test.dart` has the panel).
         readGitStatusProvider.overrideWithValue(
           const ReadGitStatusUseCase(
+            gitFor: _cleanTree,
+            observability: _Silent(),
+          ),
+        ),
+        readMergeStateProvider.overrideWithValue(
+          const ReadMergeStateUseCase(
             gitFor: _cleanTree,
             observability: _Silent(),
           ),
@@ -132,8 +151,8 @@ void main() {
       await pumpShell(tester);
 
       expect(find.text('EXPLORER'), findsOneWidget);
-      expect(find.text('SOURCE'), findsOneWidget);
-      expect(find.text('PREVIEW'), findsOneWidget);
+      expect(find.byType(EditorPanel), findsOneWidget);
+      expect(find.byType(PreviewPanel), findsOneWidget);
       expect(find.text('no space open'), findsOneWidget);
     });
 
@@ -144,7 +163,7 @@ void main() {
       await pumpShell(tester, modules: const <TomModule>[]);
 
       expect(find.text('EXPLORER'), findsNothing);
-      expect(find.text('SOURCE'), findsNothing);
+      expect(find.byType(EditorPanel), findsNothing);
       expect(find.text('no space open'), findsNothing);
     });
   });
@@ -156,8 +175,10 @@ void main() {
   /// starts on the pointer going down, and the compensation would land it
   /// twenty points short.
   Future<void> dragGrip(WidgetTester tester, double dx) async {
+    // The first of the two: the right column has a gutter of its own, and
+    // only the left one is the reader's to drag.
     final TestGesture gesture = await tester.startGesture(
-      tester.getCenter(find.byType(WorkspaceGripWidget)),
+      tester.getCenter(find.byType(WorkspaceGripWidget).first),
     );
     await gesture.moveBy(Offset(dx, 0));
     await gesture.up();
@@ -278,7 +299,7 @@ void main() {
       expect(find.text('TASKS'), findsOneWidget);
       // Modules add; it displaced nothing.
       expect(find.text('EXPLORER'), findsOneWidget);
-      expect(find.text('SOURCE'), findsOneWidget);
+      expect(find.byType(EditorPanel), findsOneWidget);
     });
 
     testWidgets('two panels in the document area sit side by side', (
@@ -316,8 +337,9 @@ void main() {
     ) async {
       await pumpShell(tester);
 
-      // The extra pixel is the rule between the explorer and the document
-      // area (docs/product/workspace/regions/doc.md).
+      // Exactly the width, with no pixel for a rule: the line lives in the
+      // gutter the column's own box carries
+      // (`docs/design/screens/measurements.md`).
       final Size region = tester.getSize(
         find
             .ancestor(
@@ -326,7 +348,7 @@ void main() {
             )
             .last,
       );
-      expect(region.width, TomMetrics.explorer + 1);
+      expect(region.width, TomMetrics.explorer);
     });
 
     testWidgets('explorer, document and status bar are on screen at once', (
@@ -335,7 +357,7 @@ void main() {
       await pumpShell(tester);
 
       expect(find.text('EXPLORER'), findsOneWidget);
-      expect(find.text('SOURCE'), findsOneWidget);
+      expect(find.byType(EditorPanel), findsOneWidget);
       expect(find.text('no space open'), findsOneWidget);
     });
 
@@ -351,7 +373,7 @@ void main() {
       );
 
       expect(find.text('EXPLORER'), findsOneWidget);
-      expect(find.text('SOURCE'), findsOneWidget);
+      expect(find.byType(EditorPanel), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
@@ -422,8 +444,8 @@ void main() {
       await pumpShell(tester, space: open);
 
       expect(find.text('Split'), findsOneWidget);
-      expect(find.text('SOURCE'), findsOneWidget);
-      expect(find.text('PREVIEW'), findsOneWidget);
+      expect(find.byType(EditorPanel), findsOneWidget);
+      expect(find.byType(PreviewPanel), findsOneWidget);
     });
 
     testWidgets('preview-only leaves the preview the whole area', (
@@ -435,8 +457,8 @@ void main() {
       await tester.tap(find.text('Preview'));
       await tester.pumpAndSettle();
 
-      expect(find.text('SOURCE'), findsNothing);
-      expect(find.text('PREVIEW'), findsOneWidget);
+      expect(find.byType(EditorPanel), findsNothing);
+      expect(find.byType(PreviewPanel), findsOneWidget);
     });
 
     testWidgets('source-only leaves the source the whole area', (
@@ -447,8 +469,8 @@ void main() {
       await tester.tap(find.text('Source'));
       await tester.pumpAndSettle();
 
-      expect(find.text('SOURCE'), findsOneWidget);
-      expect(find.text('PREVIEW'), findsNothing);
+      expect(find.byType(EditorPanel), findsOneWidget);
+      expect(find.byType(PreviewPanel), findsNothing);
     });
 
     testWidgets('a module panel that names no mode is in all of them', (
@@ -568,6 +590,14 @@ final class _Clean implements GitRepository {
 
   @override
   Future<Result<void, GitFailure>> push() async => throw UnimplementedError();
+
+  @override
+  Future<Result<MergeStateValueObject, GitFailure>> mergeState() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> abortMerge() async =>
+      throw UnimplementedError();
 }
 
 /// A space that holds nothing, so the explorer has nothing to draw.
@@ -652,4 +682,20 @@ class _Module implements TomModule {
 
   @override
   List<Override> get overrides => const <Override>[];
+}
+
+/// Preferences in memory, so a widget test needs no disk.
+final class _Preferences implements PreferencesRepository {
+  PreferencesValueObject held = PreferencesValueObject.defaults;
+
+  @override
+  Future<PreferencesValueObject> read() async => held;
+
+  @override
+  Future<Result<void, AppFailure>> write(
+    PreferencesValueObject preferences,
+  ) async {
+    held = preferences;
+    return const Success<void, AppFailure>(null);
+  }
 }

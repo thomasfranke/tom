@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
-import 'package:tom_desktop/screens/preview/widgets/preview_caption_widget.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_document_widget.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_note_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -34,14 +33,7 @@ class PreviewPanel extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const SizedBox(height: PreviewDesign.captionTop),
-        const PreviewCaptionWidget(),
-        const SizedBox(
-          height:
-              PreviewDesign.bodyTop -
-              PreviewDesign.captionTop -
-              PreviewDesign.caption * 1.4,
-        ),
+        const SizedBox(height: PreviewDesign.bodyTop),
         Expanded(
           child: switch (state) {
             PreviewEmpty() => const PreviewNoteWidget(
@@ -55,16 +47,40 @@ class PreviewPanel extends ConsumerWidget {
             PreviewReady(
               document: final ParsedDocumentValueObject document,
               diff: final DocumentDiffValueObject? diff,
+              segments: final List<PreviewSegment>? segments,
             ) =>
               PreviewDocumentWidget(
                 document: document,
                 isReading: isReading,
                 diff: diff,
+                segments: segments,
+                onChoose: (
+                  ConflictRegionValueObject region,
+                  ConflictChoiceEnum choice,
+                ) => _choose(ref, document, region, choice),
               ),
           },
         ),
       ],
     );
+  }
+
+  /// Keeps the side that was chosen, in the buffer.
+  ///
+  /// **A choice is an edit, not a save**: the document is rewritten where it
+  /// is being typed, the unsaved mark appears, and undo walks back through
+  /// it like any other keystroke. The file on disk changes when somebody
+  /// saves it (`docs/product/editor/conflicted-document/doc.md`).
+  static void _choose(
+    WidgetRef ref,
+    ParsedDocumentValueObject document,
+    ConflictRegionValueObject region,
+    ConflictChoiceEnum choice,
+  ) {
+    const ConflictScannerService scanner = ConflictScannerService();
+    ref
+        .read(editorProvider.notifier)
+        .edit(scanner.resolve(document.document.content, region, choice));
   }
 
   /// What to say about a document that did not open.

@@ -93,9 +93,10 @@ class _SegmentWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
     return Padding(
-      padding: const EdgeInsets.all(
-        WorkspaceDesign.switchInset - WorkspaceDesign.switchStroke,
-      ),
+      // The whole inset, not one less: a `DecoratedBox` paints its border
+      // over the child rather than reserving room for it, so the padding is
+      // the only thing holding the tile off the edge.
+      padding: const EdgeInsets.all(WorkspaceDesign.switchInset),
       child: Material(
         color: isChosen ? colors.surfaceRaised : Colors.transparent,
         borderRadius: BorderRadius.circular(WorkspaceDesign.switchTileRadius),

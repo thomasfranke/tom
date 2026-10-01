@@ -41,6 +41,15 @@ abstract final class TomMetrics {
   /// Width of the git panel.
   static const double git = 280;
 
+  /// Between two of the window's containers, and how far each runs past the
+  /// window's own edges and under its bars.
+  ///
+  /// The columns are containers separated by gutters rather than one surface
+  /// cut by hairlines: nothing frames the window, and the only line left on
+  /// screen is the one inside a gutter
+  /// (`docs/design/screens/measurements.md`).
+  static const double gutter = 8;
+
   /// The least height a stacked panel is given before the column scrolls.
   ///
   /// The tallest fixed furniture a panel carries — the changes column's

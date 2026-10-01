@@ -1,40 +1,39 @@
-/// One of Home's two bars, and which edge its rule sits on.
+/// A bar across the window, and which edge its rule sits on.
 library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:tom_ui/tom_ui.dart';
+import 'package:tom_ui/src/theme/tom_colors.dart';
 
 /// Which edge a bar's rule sits on.
-enum HomeBarEdgeEnum {
-  /// The rule is above the bar — the status strip.
+enum TomBarEdgeEnum {
+  /// The rule is above the bar — a status bar.
   top,
 
-  /// The rule is below it — the top strip.
+  /// The rule is below it — a top bar.
   bottom,
 }
 
-/// One of the two bars: a fixed height, a raised fill, and one hairline.
+/// One of the window's two bars: a fixed height, a raised fill, one hairline.
 ///
-/// The rule is inside the height, because that is what the design measures.
-class HomeBarWidget extends StatelessWidget {
+/// **The rule is inside the height**, because that is what the boards measure:
+/// a top bar drawn 52 tall with a rule under it takes 53, and everything below
+/// it is a point low for the rest of the window
+/// (`docs/design/screens/measurements.md`).
+class TomBarWidget extends StatelessWidget {
   /// Creates a bar [height] tall with its rule on [rule].
-  const HomeBarWidget({
-    required this.colors,
+  const TomBarWidget({
     required this.height,
     required this.rule,
     required this.child,
     super.key,
   });
 
-  /// The palette in scope.
-  final TomColors colors;
-
   /// How tall, rule included.
   final double height;
 
   /// Where the hairline goes.
-  final HomeBarEdgeEnum rule;
+  final TomBarEdgeEnum rule;
 
   /// What the bar holds.
   final Widget child;
@@ -43,24 +42,24 @@ class HomeBarWidget extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<TomColors>('colors', colors))
       ..add(DoubleProperty('height', height))
-      ..add(EnumProperty<HomeBarEdgeEnum>('rule', rule));
+      ..add(EnumProperty<TomBarEdgeEnum>('rule', rule));
   }
 
   @override
   Widget build(BuildContext context) {
+    final TomColors colors = TomColors.of(context);
     final BorderSide side = BorderSide(color: colors.border);
     return Container(
       // Not redundant: a `Container` with no width sizes itself to its child,
-      // and the top bar's child is nothing at all.
+      // and a top bar with no space open has no child at all.
       width: double.infinity,
       height: height,
       decoration: BoxDecoration(
         color: colors.surfaceRaised,
         border: Border(
-          top: rule == HomeBarEdgeEnum.top ? side : BorderSide.none,
-          bottom: rule == HomeBarEdgeEnum.bottom ? side : BorderSide.none,
+          top: rule == TomBarEdgeEnum.top ? side : BorderSide.none,
+          bottom: rule == TomBarEdgeEnum.bottom ? side : BorderSide.none,
         ),
       ),
       child: child,

@@ -65,6 +65,17 @@ class SpaceSessionNotifier extends _$SpaceSessionNotifier {
     }
   }
 
+  /// Records whether a merge is in progress, and what git drafted for it.
+  ///
+  /// Separate from [observe] because it is a separate reading: the status is
+  /// re-read after everything that writes, the merge only when something
+  /// could have started or ended one.
+  void observeMerge(MergeStateValueObject? merge) {
+    if (state case final SpaceSessionState session) {
+      state = session.copyWith(merge: merge);
+    }
+  }
+
   /// Looks at the document area in [mode].
   ///
   /// The mode outlives the document: someone reading in preview is still

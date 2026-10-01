@@ -45,8 +45,15 @@ abstract final class FileTreeDesign {
   /// The dot against a document with unsaved edits.
   static const double dirtyDot = 8;
 
-  /// The dot's right edge from the panel's.
-  static const double dirtyDotRight = 26;
+  /// The unsaved dot's slot, clear of the change mark's.
+  ///
+  /// **Past the mark, not inside it.** The mark is [TomMetrics.mark] wide at
+  /// [rowInset], so a dot measured from the row's edge alone lands on the
+  /// letter and the row draws two things in one place.
+  static const double dirtyDotRight = rowInset + TomMetrics.mark + markGap;
+
+  /// Between the change mark and whatever sits before it.
+  static const double markGap = 6;
 
   /// One level of nesting.
   static const double indent = 16;

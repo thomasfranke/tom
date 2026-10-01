@@ -100,4 +100,25 @@ abstract interface class GitClient {
   /// [GitClientAuthenticationFailed] when the user's own git could not
   /// authenticate — TOM implements no authentication of its own.
   Future<Result<void, GitClientFailure>> push();
+
+  /// Whether the repository is sitting mid-merge, as `MERGE_HEAD` says.
+  ///
+  /// Asked of git rather than remembered, so the state survives the window
+  /// being closed: a conflict is the repository's, not the session's
+  /// (`docs/product/git-workflow/push-pull/when-a-pull-conflicts/doc.md`).
+  Future<Result<bool, GitClientFailure>> mergeInProgress();
+
+  /// The message git prepared for the merge in progress, or empty when there
+  /// is none.
+  ///
+  /// `MERGE_MSG` is git's own draft — the one a terminal would open an editor
+  /// on — so concluding the merge starts from what git already wrote rather
+  /// than from a blank box.
+  Future<Result<String, GitClientFailure>> mergeMessage();
+
+  /// Undoes the merge in progress, putting the working tree back.
+  ///
+  /// `GitClientCommandFailed` when there is no merge to abort; the caller
+  /// asks [mergeInProgress] first rather than reading that as a state.
+  Future<Result<void, GitClientFailure>> abortMerge();
 }

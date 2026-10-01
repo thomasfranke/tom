@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
+import 'package:tom_desktop/screens/editor/editor_history.dart';
 import 'package:tom_desktop/screens/remote/remote_band_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_mode_bar_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_region_widget.dart';
@@ -19,13 +20,37 @@ import 'package:tom_ui/tom_ui.dart';
 ///
 /// Names no panel: it asks [PanelRegistry] what belongs in each region and
 /// builds what it is told.
-class TomShell extends ConsumerWidget {
+class TomShell extends ConsumerStatefulWidget {
   /// Creates the shell.
   const TomShell({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TomShell> createState() => _TomShellState();
+}
+
+class _TomShellState extends ConsumerState<TomShell> {
+  /// Where the source pane leaves the way to `re_editor`'s own undo.
+  ///
+  /// Here because the two ends are in different regions: the pane is in the
+  /// document area and the buttons are in the row above it, so the nearest
+  /// thing that holds both is the shell ([EditorHistory]).
+  final EditorHistory _history = EditorHistory();
+
+  @override
+  void dispose() {
+    _history.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final PanelRegistry registry = ref.watch(panelRegistryProvider);
+    // Read here and not only inside the git column, because the column is
+    // built under a flag and this notifier is the app's one reader of git:
+    // with it shut from the start nothing would ever ask, and the band above
+    // the document could not say a pull had stopped. `keepAlive` keeps it
+    // once it exists; this is what makes it exist.
+    ref.watch(changesProvider);
     final bool readingVersion = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => session?.readingVersion != null,
@@ -57,91 +82,145 @@ class TomShell extends ConsumerWidget {
           workspaceProvider.select((WorkspaceState it) => it.explorerWidth),
         ) ??
         TomMetrics.explorer;
+    // A column nobody registered a panel into takes no room: a fixed column
+    // drawn empty reads as a bug in the layout, and its container would
+    // frame nothing.
+    final bool hasDocument = registry
+        .at(PanelPlacementEnum.document)
+        .isNotEmpty;
+    final bool openExplorer =
+        showingExplorer &&
+        registry.at(PanelPlacementEnum.explorer).isNotEmpty;
+    final bool openAside =
+        showingAside && registry.at(PanelPlacementEnum.aside).isNotEmpty;
     final TomColors colors = TomColors.of(context);
-    return Scaffold(
-      backgroundColor: colors.surface,
-      body: Column(
-        children: <Widget>[
-          const ShellTopBarWidget(),
-          Divider(height: 1, color: colors.border),
-          Expanded(
-            child: Stack(
-              children: <Widget>[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    if (showingExplorer)
-                      ShellRegionWidget(
-                        placement: PanelPlacementEnum.explorer,
-                        registry: registry,
-                        width: explorerWidth,
-                      ),
-                    Expanded(
-                      child: Column(
-                        children: <Widget>[
-                          // The bar belongs to the document area: the explorer
-                          // and the aside are not in a mode.
-                          if (registry
-                              .at(PanelPlacementEnum.document)
-                              .isNotEmpty) ...<Widget>[
-                            // The columns' widths, because the mode control is
-                            // centred on the window rather than on this bar.
-                            ShellModeBarWidget(
-                              leftInset:
-                                  showingExplorer &&
-                                      registry
-                                          .at(PanelPlacementEnum.explorer)
-                                          .isNotEmpty
-                                  ? explorerWidth
-                                  : 0,
-                              rightInset:
-                                  showingAside &&
-                                      registry
-                                          .at(PanelPlacementEnum.aside)
-                                          .isNotEmpty
-                                  ? TomMetrics.git
-                                  : 0,
-                            ),
-                            Divider(height: 1, color: colors.border),
-                          ],
-                          // News from git spans the document area and pushes
-                          // the document down, rather than living in a
-                          // column (`docs/product/workspace/feedback/doc.md`).
-                          const RemoteBandWidget(),
-                          Expanded(
+    // A stack, not a column: the containers run **under** the two bars and
+    // off both sides of the window, so the bars are drawn over them and no
+    // edge of a column frames the window
+    // (`docs/design/screens/measurements.md`).
+    return EditorHistoryScope(
+      history: _history,
+      child: Scaffold(
+        backgroundColor: colors.surface,
+        body: Stack(
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            Positioned(
+              left: 0,
+              right: 0,
+              top: TomMetrics.topBar,
+              bottom: TomMetrics.statusBar,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: <Widget>[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      if (openExplorer)
+                        SizedBox(
+                          width: explorerWidth,
+                          child: TomColumnBoxWidget(
+                            edge: TomColumnEdgeEnum.left,
                             child: ShellRegionWidget(
-                              placement: PanelPlacementEnum.document,
+                              placement: PanelPlacementEnum.explorer,
                               registry: registry,
-                              mode: mode,
                             ),
                           ),
-                        ],
+                        )
+                      else
+                        // A closed column leaves its gutter behind, which is
+                        // where the way to open it again lives.
+                        const SizedBox(width: TomMetrics.gutter),
+                      Expanded(
+                        // The container holds the row above the document as
+                        // well as the panes: the boards draw one rect from
+                        // under the top bar to under the status bar.
+                        child: TomColumnBoxWidget(
+                          edge: TomColumnEdgeEnum.neither,
+                          child: Column(
+                            children: <Widget>[
+                              // The bar belongs to the document area: the
+                              // explorer and the aside are not in a mode.
+                              if (hasDocument) ...<Widget>[
+                                // The columns' widths, kept although nothing
+                                // in the row is measured against the window.
+                                ShellModeBarWidget(
+                                  leftInset: openExplorer ? explorerWidth : 0,
+                                  rightInset: openAside ? TomMetrics.git : 0,
+                                ),
+                                Divider(height: 1, color: colors.border),
+                              ],
+                              // News from git spans the document area and
+                              // pushes the document down, rather than living
+                              // in a column
+                              // (`docs/product/workspace/feedback/doc.md`).
+                              const RemoteBandWidget(),
+                              Expanded(
+                                child: ShellRegionWidget(
+                                  placement: PanelPlacementEnum.document,
+                                  registry: registry,
+                                  mode: mode,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                    if (showingAside)
-                      ShellRegionWidget(
-                        placement: PanelPlacementEnum.aside,
-                        registry: registry,
-                        width: TomMetrics.git,
-                      ),
-                  ],
-                ),
-                // Over the rule rather than in the row, so grabbing it costs
-                // the layout nothing: the column is the board's width and
-                // the hairline is still one point.
-                if (showingExplorer)
+                      // Always: the gutter before the right column stays
+                      // when that column closes.
+                      const SizedBox(width: TomMetrics.gutter),
+                      if (openAside)
+                        SizedBox(
+                          width: TomMetrics.git,
+                          child: TomColumnBoxWidget(
+                            edge: TomColumnEdgeEnum.right,
+                            child: ShellRegionWidget(
+                              placement: PanelPlacementEnum.aside,
+                              registry: registry,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  // Over the gutter rather than in the row, so grabbing it
+                  // costs the layout nothing.
                   Positioned(
-                    left: explorerWidth - WorkspaceGripWidget.grip / 2,
+                    left: openExplorer
+                        ? explorerWidth - TomMetrics.gutter
+                        : 0,
                     top: 0,
                     bottom: 0,
                     child: WorkspaceGripWidget(width: explorerWidth),
                   ),
-              ],
+                  Positioned(
+                    right: openAside ? TomMetrics.git : 0,
+                    top: 0,
+                    bottom: 0,
+                    // Not yet: the right column's width is fixed, and dots
+                    // over a width nobody can drag are a promise the app
+                    // does not keep (`docs/design/screens/divergences.md`).
+                    child: const WorkspaceGripWidget(
+                      width: TomMetrics.git,
+                      isDraggable: false,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Divider(height: 1, color: colors.border),
-          ShellStatusBarWidget(registry: registry),
-        ],
+            const Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: ShellTopBarWidget(),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: ShellStatusBarWidget(registry: registry),
+            ),
+          ],
+        ),
       ),
     );
   }

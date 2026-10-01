@@ -670,6 +670,68 @@ void main() {
         expect(failureOf(await client.push()), isA<GitClientPushRejected>());
       },
     );
+
+    group('the merge a conflicted pull left', () {
+      /// Pulls into a conflict, the way a user reaches this state.
+      Future<void> conflict() async {
+        pushFromElsewhere('# A from elsewhere\n', 'A elsewhere');
+        write('a.md', '# A from here\n');
+        await client.stage(<String>['a.md']);
+        await client.commit('A here');
+        await client.pull();
+      }
+
+      test('mergeInProgress is false in a repository at rest', () async {
+        expect(
+          (await client.mergeInProgress() as Success<bool, GitClientFailure>)
+              .value,
+          isFalse,
+        );
+      });
+
+      test('mergeInProgress is true once a pull has conflicted', () async {
+        await conflict();
+
+        expect(
+          (await client.mergeInProgress() as Success<bool, GitClientFailure>)
+              .value,
+          isTrue,
+        );
+      });
+
+      test('mergeMessage is empty when there is no merge', () async {
+        expect(valueOf(await client.mergeMessage()), isEmpty);
+      });
+
+      test('mergeMessage is the draft git wrote', () async {
+        await conflict();
+
+        final String message = valueOf(await client.mergeMessage());
+
+        expect(message, contains('Merge branch'));
+        expect(message, isNotEmpty);
+      });
+
+      test('abortMerge puts the working tree back', () async {
+        await conflict();
+
+        expect(
+          await client.abortMerge(),
+          isA<Success<void, GitClientFailure>>(),
+        );
+        expect(
+          (await client.mergeInProgress() as Success<bool, GitClientFailure>)
+              .value,
+          isFalse,
+        );
+        // The local commit survives: aborting undoes the merge, not the work.
+        expect(File('$repoPath/a.md').readAsStringSync(), '# A from here\n');
+      });
+
+      test('abortMerge fails when there is nothing to abort', () async {
+        expect(failureOf(await client.abortMerge()), isA<GitClientFailure>());
+      });
+    });
   });
 
   group('the queue', () {

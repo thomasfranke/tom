@@ -1,6 +1,7 @@
 /// What the design fixes about the preview.
 library;
 
+import 'package:tom_desktop/screens/editor/editor_design.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// The numbers the preview is drawn against; type from
@@ -19,11 +20,12 @@ abstract final class PreviewDesign {
   /// Prose size with the pane to itself.
   static const double readingBody = 16;
 
-  /// Panel top to the caption's box.
-  static const double captionTop = 18;
-
   /// Panel top to the first block.
-  static const double bodyTop = 42;
+  ///
+  /// **The pane carries no caption**, and shares the source pane's step so
+  /// the two line up in split mode
+  /// (`docs/design/screens/divergences.md`).
+  static const double bodyTop = EditorDesign.bodyTop;
 
   /// Prose size.
   static const double body = 15;
@@ -39,9 +41,6 @@ abstract final class PreviewDesign {
 
   /// Code, inline and fenced alike.
   static const double code = 12.5;
-
-  /// The panel's caption.
-  static const double caption = 10;
 
   /// The gap between two blocks.
   static const double blockGap = 18;

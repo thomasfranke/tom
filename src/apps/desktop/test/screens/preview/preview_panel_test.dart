@@ -9,6 +9,7 @@ import 'package:tom_data/tom_data.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_block_widget.dart';
+import 'package:tom_desktop/screens/preview/widgets/preview_footnotes_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_infra/tom_infra.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -90,13 +91,107 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('it names itself, and says so when nothing is open', (
+  testWidgets('it says so when nothing is open, and names itself not at all', (
     WidgetTester tester,
   ) async {
+    // No caption: no board draws one over either pane, and the mode control
+    // above already says which is which.
     await pumpPreview(tester);
 
-    expect(find.text('PREVIEW'), findsOneWidget);
+    expect(find.text('PREVIEW'), findsNothing);
     expect(find.text('Choose a document in the explorer.'), findsOneWidget);
+  });
+
+  group('a document with footnotes', () {
+    const String cited =
+        'A claim.[^a]\n'
+        '\n'
+        'And another.[^b]\n'
+        '\n'
+        '[^a]: The first note.\n'
+        '\n'
+        '[^b]: The second.\n';
+
+    /// Every string the preview ended up drawing.
+    ///
+    /// The blocks are selectable, so their spans are a `SelectableText.rich`'s
+    /// rather than a `Text`'s — the numbers beside the notes are the only
+    /// plain ones.
+    List<String> drawn(WidgetTester tester) => <String>[
+      for (final SelectableText selectable in tester.widgetList<SelectableText>(
+        find.byType(SelectableText),
+      ))
+        selectable.textSpan?.toPlainText() ?? '',
+      for (final Text text in tester.widgetList<Text>(find.byType(Text)))
+        text.data ?? '',
+    ]..removeWhere((String text) => text.isEmpty);
+
+    testWidgets('the marker is a number, never the syntax that made it', (
+      WidgetTester tester,
+    ) async {
+      documents.content = cited;
+
+      await pumpPreview(tester, document: writing);
+
+      final List<String> shown = drawn(tester);
+      // The marker is drawn beside the sentence rather than inside its span:
+      // it is raised and smaller, which the prose's own face cannot do.
+      expect(shown, contains('A claim.'));
+      expect(find.text('1'), findsOneWidget);
+      expect(shown.where((String t) => t.contains('[^a]')), isEmpty);
+    });
+
+    testWidgets('the note itself is drawn at the foot', (
+      WidgetTester tester,
+    ) async {
+      documents.content = cited;
+
+      await pumpPreview(tester, document: writing);
+
+      expect(find.byType(PreviewFootnotesWidget), findsOneWidget);
+      expect(drawn(tester), contains('The first note.'));
+    });
+
+    testWidgets('they are numbered in the order they are cited', (
+      WidgetTester tester,
+    ) async {
+      // A block cannot see the citations in other blocks, so the number is
+      // the document's: the second paragraph draws 2, not 1 again.
+      documents.content = cited;
+
+      await pumpPreview(tester, document: writing);
+
+      // Proved by where they are: the second citation is below the first,
+      // and it is the one that draws 2.
+      expect(
+        tester.getTopLeft(find.text('2')).dy,
+        greaterThan(tester.getTopLeft(find.text('1')).dy),
+      );
+      expect(drawn(tester), containsAll(<String>['1.', '2.']));
+    });
+
+    testWidgets('a document with none has no foot at all', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '# Title\n\nProse.\n';
+
+      await pumpPreview(tester, document: writing);
+
+      expect(find.byType(PreviewFootnotesWidget), findsNothing);
+    });
+
+    testWidgets('a marker with no note is left as it was written', (
+      WidgetTester tester,
+    ) async {
+      // `[^a]` with no definition is not a footnote, and rewriting it would
+      // invent one.
+      documents.content = 'A claim.[^a]\n';
+
+      await pumpPreview(tester, document: writing);
+
+      expect(drawn(tester), contains('A claim.[^a]'));
+      expect(find.byType(PreviewFootnotesWidget), findsNothing);
+    });
   });
 
   testWidgets('a document is drawn one container per block', (

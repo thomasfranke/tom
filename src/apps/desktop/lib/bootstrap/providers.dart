@@ -69,6 +69,13 @@ RecentSpacesRepository recentSpacesRepository(Ref ref) =>
       observability: ref.watch(observabilityProvider),
     );
 
+/// What the machine remembers about how the app looks and speaks.
+@Riverpod(keepAlive: true)
+PreferencesRepository preferencesRepository(Ref ref) =>
+    PreferencesRepositoryImpl(
+      source: PreferencesDataSource(settings: ref.watch(settingsProvider)),
+    );
+
 /// How to reach the documents of a space.
 ///
 /// A repository is per space and the space is picked at runtime, so what is
@@ -163,6 +170,17 @@ List<Override> appOverrides = <Override>[
       observability: ref.watch(observabilityProvider),
     ),
   ),
+  readPreferencesProvider.overrideWith(
+    (Ref ref) => ReadPreferencesUseCase(
+      preferences: ref.watch(preferencesRepositoryProvider),
+    ),
+  ),
+  writePreferencesProvider.overrideWith(
+    (Ref ref) => WritePreferencesUseCase(
+      preferences: ref.watch(preferencesRepositoryProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
   readDocumentProvider.overrideWith(
     (Ref ref) => ReadDocumentUseCase(
       documentsFor: ref.watch(documentRepositoryForProvider),
@@ -198,6 +216,7 @@ List<Override> appOverrides = <Override>[
   stageChangesProvider.overrideWith(
     (Ref ref) => StageChangesUseCase(
       gitFor: ref.watch(gitRepositoryForProvider),
+      documentsFor: ref.watch(documentRepositoryForProvider),
       observability: ref.watch(observabilityProvider),
     ),
   ),
@@ -215,6 +234,18 @@ List<Override> appOverrides = <Override>[
   ),
   pullRemoteProvider.overrideWith(
     (Ref ref) => PullRemoteUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  readMergeStateProvider.overrideWith(
+    (Ref ref) => ReadMergeStateUseCase(
+      gitFor: ref.watch(gitRepositoryForProvider),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  abortPullProvider.overrideWith(
+    (Ref ref) => AbortPullUseCase(
       gitFor: ref.watch(gitRepositoryForProvider),
       observability: ref.watch(observabilityProvider),
     ),

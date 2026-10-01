@@ -88,6 +88,10 @@ class _ChevronWidget extends ConsumerWidget {
             ref.read(searchProvider.notifier).showReplacing(showing: !isOpen),
         padding: EdgeInsets.zero,
         tooltip: isOpen ? 'Hide replace' : 'Replace',
+        // Pinned to the right of a target that starts at the column's own
+        // edge: the boards draw the glyph one inset in, and a mark centred
+        // in the whole target lands eight points left of it.
+        alignment: Alignment.centerRight,
         icon: TomChevronWidget(isOpen: isOpen, color: colors.textMuted),
       ),
     );

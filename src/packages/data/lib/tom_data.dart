@@ -4,6 +4,7 @@ library;
 
 export 'src/capabilities/filesystem/filesystem_entry_dto.dart';
 export 'src/capabilities/filesystem/filesystem_entry_type_enum.dart';
+export 'src/capabilities/markdown_parser/markdown_footnote_dto.dart';
 export 'src/capabilities/markdown_parser/markdown_outline_dto.dart';
 export 'src/capabilities/markdown_parser/markdown_span_dto.dart';
 export 'src/capabilities/markdown_parser/markdown_span_kind_enum.dart';
@@ -22,6 +23,9 @@ export 'src/git/git_data_source.dart';
 export 'src/git/git_log_parser.dart';
 export 'src/git/git_repository_impl.dart';
 export 'src/git/git_status_parser.dart';
+export 'src/preferences/preferences_data_source.dart';
+export 'src/preferences/preferences_dto.dart';
+export 'src/preferences/preferences_repository_impl.dart';
 export 'src/search/search_data_source.dart';
 export 'src/search/search_repository_impl.dart';
 export 'src/spaces/recent_space_dto.dart';

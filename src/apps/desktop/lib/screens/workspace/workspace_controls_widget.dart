@@ -4,16 +4,18 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/screens/preferences/preferences_control_widget.dart';
 import 'package:tom_desktop/screens/workspace/workspace_design.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// Theme, then the two column toggles — one set, read left to right
-/// (`docs/product/workspace/columns/doc.md`).
+/// The two column toggles, then the preferences gear — one set, read left
+/// to right (`docs/product/workspace/columns/doc.md`).
 ///
-/// The theme control sits with them rather than in a menu, drawn in their
-/// grammar so the three read as one group rather than as a control that
-/// wandered in.
+/// ~~The theme control sits with them~~: the theme moved inside the
+/// [preferences popover](../preferences/preferences_control_widget.dart) and
+/// the gear took its place, so the bar still carries three
+/// (`docs/product/preferences/the-popover/doc.md`).
 class WorkspaceControlsWidget extends ConsumerWidget {
   /// Creates the group.
   const WorkspaceControlsWidget({super.key});
@@ -22,24 +24,9 @@ class WorkspaceControlsWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final WorkspaceState state = ref.watch(workspaceProvider);
     final WorkspaceNotifier notifier = ref.read(workspaceProvider.notifier);
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        _TapWidget(
-          tooltip: isDark ? 'Light theme' : 'Dark theme',
-          // What it switches to is read off the theme actually drawn, so the
-          // first press after opening is never the one that changes nothing.
-          onPressed: () => notifier.chooseTheme(
-            isDark ? ThemeChoiceEnum.light : ThemeChoiceEnum.dark,
-          ),
-          child: TomThemeToggleWidget(
-            isDark: isDark,
-            size: WorkspaceDesign.themeBox,
-            stroke: WorkspaceDesign.toggleStroke,
-          ),
-        ),
-        const SizedBox(width: WorkspaceDesign.themeGap),
         _TapWidget(
           tooltip: state.showingExplorer ? 'Hide explorer' : 'Show explorer',
           onPressed: notifier.toggleExplorer,
@@ -67,6 +54,12 @@ class WorkspaceControlsWidget extends ConsumerWidget {
             strip: WorkspaceDesign.toggleStrip,
           ),
         ),
+        const SizedBox(width: WorkspaceDesign.themeGap),
+        // **The bar's last control, and it replaces the light/dark toggle**:
+        // the theme moved inside it, so the bar trades one control for
+        // another instead of squeezing a fourth into the same margin
+        // (`docs/product/preferences/the-popover/doc.md`).
+        const PreferencesControlWidget(),
       ],
     );
   }

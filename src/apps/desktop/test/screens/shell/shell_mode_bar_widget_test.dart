@@ -11,6 +11,7 @@ import 'package:tom_ui/tom_ui.dart';
 
 void main() {
   late _Documents documents;
+  late _Preferences preferences;
   late ProviderContainer container;
 
   final SpaceEntity docs = SpaceEntity(
@@ -24,8 +25,18 @@ void main() {
 
   setUp(() {
     documents = _Documents();
+    preferences = _Preferences();
     container = ProviderContainer(
       overrides: <Override>[
+        readPreferencesProvider.overrideWithValue(
+          ReadPreferencesUseCase(preferences: preferences),
+        ),
+        writePreferencesProvider.overrideWithValue(
+          WritePreferencesUseCase(
+            preferences: preferences,
+            observability: const _Silent(),
+          ),
+        ),
         readDocumentProvider.overrideWithValue(
           ReadDocumentUseCase(
             documentsFor: (SpaceEntity space) => documents,
@@ -175,4 +186,20 @@ final class _Silent implements Observability {
     StackTrace stackTrace, {
     required String layer,
   }) async {}
+}
+
+/// Preferences in memory, so a widget test needs no disk.
+final class _Preferences implements PreferencesRepository {
+  PreferencesValueObject held = PreferencesValueObject.defaults;
+
+  @override
+  Future<PreferencesValueObject> read() async => held;
+
+  @override
+  Future<Result<void, AppFailure>> write(
+    PreferencesValueObject preferences,
+  ) async {
+    held = preferences;
+    return const Success<void, AppFailure>(null);
+  }
 }

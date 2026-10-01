@@ -29,3 +29,14 @@ CommitChangesUseCase commitChanges(Ref ref) => throw StateError(
   'commitChangesProvider has no default. The composition root overrides it '
   '— see runTom() in tom_desktop.',
 );
+
+/// Whether a pull stopped mid-merge, read from git rather than remembered.
+///
+/// Here rather than beside the pull that caused it: the changes panel is
+/// what draws the count still to resolve and what starts its message box
+/// from git's own draft.
+@riverpod
+ReadMergeStateUseCase readMergeState(Ref ref) => throw StateError(
+  'readMergeStateProvider has no default. The composition root overrides it '
+  '— see runTom() in tom_desktop.',
+);

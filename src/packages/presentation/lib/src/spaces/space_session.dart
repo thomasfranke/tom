@@ -68,5 +68,51 @@ abstract class SpaceSessionState with _$SpaceSessionState {
     /// compared is still [comparingAgainst], and turning the marks back on
     /// brings the same base back (`docs/product/diff/rendered-diff/turning-it-off/doc.md`).
     @Default(true) bool showingDiff,
+
+    /// The merge a conflicted pull left behind, or null while nobody has
+    /// asked git.
+    ///
+    /// Beside [git] because it is read in the same breath and drawn by the
+    /// same panels: the band says the pull stopped, the changes list counts
+    /// what is left to resolve, and the message box starts from the draft
+    /// git wrote. Read rather than remembered, so closing the window and
+    /// opening it again finds the same conflict
+    /// (`docs/product/git-workflow/push-pull/when-a-pull-conflicts/doc.md`).
+    MergeStateValueObject? merge,
   }) = _SpaceSessionState;
+
+  const SpaceSessionState._();
+
+  /// The documents git still reports as conflicted, in the order it gave.
+  ///
+  /// Derived rather than stored: the status already answers it, and a count
+  /// kept beside it is a count that can disagree with it.
+  List<StatusEntryValueObject> get toResolve =>
+      git?.entries
+          .where(
+            (StatusEntryValueObject entry) =>
+                entry.state == FileStateEnum.conflicted,
+          )
+          .toList() ??
+      const <StatusEntryValueObject>[];
+
+  /// Whether a merge is in progress and anything is still unresolved.
+  bool get isResolvingMerge =>
+      (merge?.inProgress ?? false) && toResolve.isNotEmpty;
+
+  /// Whether git reports the document at [path] conflicted.
+  ///
+  /// Asked of the status already read rather than of the text: a document
+  /// holding `<<<<<<<` is conflicted only while a merge is open, which is what
+  /// keeps a marker typed into a document *about* merging as plain text
+  /// (`docs/product/editor/conflicted-document/doc.md`).
+  bool isConflicted(SpaceRelativePathValueObject? path) =>
+      path != null &&
+      isResolvingMerge &&
+      toResolve.any(
+        // Through the space's own spelling, because git names a path from the
+        // repository root and the space may be a folder inside it.
+        (StatusEntryValueObject entry) =>
+            space.toSpaceRelative(entry.path) == path,
+      );
 }

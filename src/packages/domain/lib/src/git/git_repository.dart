@@ -7,6 +7,7 @@ import 'package:tom_domain/src/git/branch_name_value_object.dart';
 import 'package:tom_domain/src/git/commit_entity.dart';
 import 'package:tom_domain/src/git/git_failure.dart';
 import 'package:tom_domain/src/git/git_status_value_object.dart';
+import 'package:tom_domain/src/merge/merge_state_value_object.dart';
 import 'package:tom_domain/src/paths/repo_relative_path_value_object.dart';
 
 /// Git, in the product's own vocabulary, for one space.
@@ -88,4 +89,17 @@ abstract interface class GitRepository {
   /// Answers `GitPushRejected` when the remote moved first
   /// (`docs/product/git-workflow/push-pull/README.md`).
   Future<Result<void, GitFailure>> push();
+
+  /// Whether a merge is in progress, and the message git drafted for it.
+  ///
+  /// Read from git every time rather than remembered, so closing the window
+  /// does not leave the `C` marks with nothing explaining them
+  /// (`docs/product/git-workflow/push-pull/when-a-pull-conflicts/doc.md`).
+  Future<Result<MergeStateValueObject, GitFailure>> mergeState();
+
+  /// Undoes the merge in progress, putting the working tree back.
+  ///
+  /// The commits that were already made survive: aborting undoes the merge,
+  /// never the work.
+  Future<Result<void, GitFailure>> abortMerge();
 }

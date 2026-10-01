@@ -189,6 +189,14 @@ final class _Git implements GitRepository {
 
   @override
   Future<Result<void, GitFailure>> push() async => throw UnimplementedError();
+
+  @override
+  Future<Result<MergeStateValueObject, GitFailure>> mergeState() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> abortMerge() async =>
+      throw UnimplementedError();
 }
 
 /// An [Observability] that keeps what it was handed.

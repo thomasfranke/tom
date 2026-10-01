@@ -18,7 +18,13 @@ mixin _$MarkdownOutlineDto {
  List<MarkdownSpanDto> get spans;/// Every link reference definition as the text's own lines, newline-joined
 /// and empty when there are none, so appending them to any fragment of the
 /// text parses the same way.
- String get linkDefinitions;
+ String get linkDefinitions;/// Every footnote of the text, in citation order.
+///
+/// Reported rather than left in the spans because the parser is the only
+/// one that can number them: the number is the order the notes are first
+/// cited in, across the whole text
+/// ([Decision 31](../../../../../../../docs/technical/decisions/031-where-a-footnotes-text-goes.md)).
+ List<MarkdownFootnoteDto> get footnotes;
 /// Create a copy of MarkdownOutlineDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +35,16 @@ $MarkdownOutlineDtoCopyWith<MarkdownOutlineDto> get copyWith => _$MarkdownOutlin
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MarkdownOutlineDto&&const DeepCollectionEquality().equals(other.spans, spans)&&(identical(other.linkDefinitions, linkDefinitions) || other.linkDefinitions == linkDefinitions));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MarkdownOutlineDto&&const DeepCollectionEquality().equals(other.spans, spans)&&(identical(other.linkDefinitions, linkDefinitions) || other.linkDefinitions == linkDefinitions)&&const DeepCollectionEquality().equals(other.footnotes, footnotes));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(spans),linkDefinitions);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(spans),linkDefinitions,const DeepCollectionEquality().hash(footnotes));
 
 @override
 String toString() {
-  return 'MarkdownOutlineDto(spans: $spans, linkDefinitions: $linkDefinitions)';
+  return 'MarkdownOutlineDto(spans: $spans, linkDefinitions: $linkDefinitions, footnotes: $footnotes)';
 }
 
 
@@ -49,7 +55,7 @@ abstract mixin class $MarkdownOutlineDtoCopyWith<$Res>  {
   factory $MarkdownOutlineDtoCopyWith(MarkdownOutlineDto value, $Res Function(MarkdownOutlineDto) _then) = _$MarkdownOutlineDtoCopyWithImpl;
 @useResult
 $Res call({
- List<MarkdownSpanDto> spans, String linkDefinitions
+ List<MarkdownSpanDto> spans, String linkDefinitions, List<MarkdownFootnoteDto> footnotes
 });
 
 
@@ -66,11 +72,12 @@ class _$MarkdownOutlineDtoCopyWithImpl<$Res>
 
 /// Create a copy of MarkdownOutlineDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? spans = null,Object? linkDefinitions = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? spans = null,Object? linkDefinitions = null,Object? footnotes = null,}) {
   return _then(_self.copyWith(
 spans: null == spans ? _self.spans : spans // ignore: cast_nullable_to_non_nullable
 as List<MarkdownSpanDto>,linkDefinitions: null == linkDefinitions ? _self.linkDefinitions : linkDefinitions // ignore: cast_nullable_to_non_nullable
-as String,
+as String,footnotes: null == footnotes ? _self.footnotes : footnotes // ignore: cast_nullable_to_non_nullable
+as List<MarkdownFootnoteDto>,
   ));
 }
 
@@ -155,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<MarkdownSpanDto> spans,  String linkDefinitions)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<MarkdownSpanDto> spans,  String linkDefinitions,  List<MarkdownFootnoteDto> footnotes)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MarkdownOutlineDto() when $default != null:
-return $default(_that.spans,_that.linkDefinitions);case _:
+return $default(_that.spans,_that.linkDefinitions,_that.footnotes);case _:
   return orElse();
 
 }
@@ -176,10 +183,10 @@ return $default(_that.spans,_that.linkDefinitions);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<MarkdownSpanDto> spans,  String linkDefinitions)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<MarkdownSpanDto> spans,  String linkDefinitions,  List<MarkdownFootnoteDto> footnotes)  $default,) {final _that = this;
 switch (_that) {
 case _MarkdownOutlineDto():
-return $default(_that.spans,_that.linkDefinitions);case _:
+return $default(_that.spans,_that.linkDefinitions,_that.footnotes);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -196,10 +203,10 @@ return $default(_that.spans,_that.linkDefinitions);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<MarkdownSpanDto> spans,  String linkDefinitions)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<MarkdownSpanDto> spans,  String linkDefinitions,  List<MarkdownFootnoteDto> footnotes)?  $default,) {final _that = this;
 switch (_that) {
 case _MarkdownOutlineDto() when $default != null:
-return $default(_that.spans,_that.linkDefinitions);case _:
+return $default(_that.spans,_that.linkDefinitions,_that.footnotes);case _:
   return null;
 
 }
@@ -211,7 +218,7 @@ return $default(_that.spans,_that.linkDefinitions);case _:
 
 
 class _MarkdownOutlineDto implements MarkdownOutlineDto {
-  const _MarkdownOutlineDto({required final  List<MarkdownSpanDto> spans, required this.linkDefinitions}): _spans = spans;
+  const _MarkdownOutlineDto({required final  List<MarkdownSpanDto> spans, required this.linkDefinitions, final  List<MarkdownFootnoteDto> footnotes = const <MarkdownFootnoteDto>[]}): _spans = spans,_footnotes = footnotes;
   
 
 /// The spans in order, never overlapping, handed over unmodifiable.
@@ -227,6 +234,25 @@ class _MarkdownOutlineDto implements MarkdownOutlineDto {
 /// and empty when there are none, so appending them to any fragment of the
 /// text parses the same way.
 @override final  String linkDefinitions;
+/// Every footnote of the text, in citation order.
+///
+/// Reported rather than left in the spans because the parser is the only
+/// one that can number them: the number is the order the notes are first
+/// cited in, across the whole text
+/// ([Decision 31](../../../../../../../docs/technical/decisions/031-where-a-footnotes-text-goes.md)).
+ final  List<MarkdownFootnoteDto> _footnotes;
+/// Every footnote of the text, in citation order.
+///
+/// Reported rather than left in the spans because the parser is the only
+/// one that can number them: the number is the order the notes are first
+/// cited in, across the whole text
+/// ([Decision 31](../../../../../../../docs/technical/decisions/031-where-a-footnotes-text-goes.md)).
+@override@JsonKey() List<MarkdownFootnoteDto> get footnotes {
+  if (_footnotes is EqualUnmodifiableListView) return _footnotes;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_footnotes);
+}
+
 
 /// Create a copy of MarkdownOutlineDto
 /// with the given fields replaced by the non-null parameter values.
@@ -238,16 +264,16 @@ _$MarkdownOutlineDtoCopyWith<_MarkdownOutlineDto> get copyWith => __$MarkdownOut
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MarkdownOutlineDto&&const DeepCollectionEquality().equals(other._spans, _spans)&&(identical(other.linkDefinitions, linkDefinitions) || other.linkDefinitions == linkDefinitions));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MarkdownOutlineDto&&const DeepCollectionEquality().equals(other._spans, _spans)&&(identical(other.linkDefinitions, linkDefinitions) || other.linkDefinitions == linkDefinitions)&&const DeepCollectionEquality().equals(other._footnotes, _footnotes));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_spans),linkDefinitions);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_spans),linkDefinitions,const DeepCollectionEquality().hash(_footnotes));
 
 @override
 String toString() {
-  return 'MarkdownOutlineDto(spans: $spans, linkDefinitions: $linkDefinitions)';
+  return 'MarkdownOutlineDto(spans: $spans, linkDefinitions: $linkDefinitions, footnotes: $footnotes)';
 }
 
 
@@ -258,7 +284,7 @@ abstract mixin class _$MarkdownOutlineDtoCopyWith<$Res> implements $MarkdownOutl
   factory _$MarkdownOutlineDtoCopyWith(_MarkdownOutlineDto value, $Res Function(_MarkdownOutlineDto) _then) = __$MarkdownOutlineDtoCopyWithImpl;
 @override @useResult
 $Res call({
- List<MarkdownSpanDto> spans, String linkDefinitions
+ List<MarkdownSpanDto> spans, String linkDefinitions, List<MarkdownFootnoteDto> footnotes
 });
 
 
@@ -275,11 +301,12 @@ class __$MarkdownOutlineDtoCopyWithImpl<$Res>
 
 /// Create a copy of MarkdownOutlineDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? spans = null,Object? linkDefinitions = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? spans = null,Object? linkDefinitions = null,Object? footnotes = null,}) {
   return _then(_MarkdownOutlineDto(
 spans: null == spans ? _self._spans : spans // ignore: cast_nullable_to_non_nullable
 as List<MarkdownSpanDto>,linkDefinitions: null == linkDefinitions ? _self.linkDefinitions : linkDefinitions // ignore: cast_nullable_to_non_nullable
-as String,
+as String,footnotes: null == footnotes ? _self._footnotes : footnotes // ignore: cast_nullable_to_non_nullable
+as List<MarkdownFootnoteDto>,
   ));
 }
 

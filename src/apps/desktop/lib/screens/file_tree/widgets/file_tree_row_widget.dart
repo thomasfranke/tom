@@ -45,7 +45,7 @@ class FileTreeRowWidget extends ConsumerWidget {
       return FileTreeDesign.rowInset + TomMetrics.mark + 8;
     }
     if (row.holdsChange) {
-      return FileTreeDesign.rowInset + FileTreeDesign.dirtyDot * 2 + 8;
+      return FileTreeDesign.rowInset + TomMetrics.mark + 8;
     }
     return FileTreeDesign.rowInset;
   }
@@ -101,13 +101,20 @@ class FileTreeRowWidget extends ConsumerWidget {
             right: FileTreeDesign.rowInset,
             top: 0,
             height: FileTreeDesign.rowHeight,
-            child: Center(child: FileStateMarkWidget(state: row.change!)),
+            // Bare: the row's own highlight is the only fill the boards draw
+            // behind a letter here, and the square belongs to the changes
+            // list (`docs/design/screens/divergences.md`).
+            child: Center(
+              child: FileStateMarkWidget(state: row.change!, isBare: true),
+            ),
           ),
         // A folder cannot show letters for rows it is not showing, so it
-        // shows that there is something to open.
+        // shows that there is something to open — in the mark's own slot,
+        // because a folder never has both.
         if (row.holdsChange)
           Positioned(
-            right: FileTreeDesign.rowInset + FileTreeDesign.dirtyDot,
+            right: FileTreeDesign.rowInset,
+            width: TomMetrics.mark,
             top: 0,
             height: FileTreeDesign.rowHeight,
             child: Center(

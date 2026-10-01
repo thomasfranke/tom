@@ -6,6 +6,10 @@ import 'package:tom_domain/tom_domain.dart';
 void main() {
   late _RecordingObservability observability;
   late _Git git;
+  late _Documents documents;
+
+  const String conflicted =
+      '# Guide\n\n<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> main\n';
 
   final SpaceEntity docs = SpaceEntity(
     root: '/code/app/docs',
@@ -19,10 +23,12 @@ void main() {
   setUp(() {
     observability = _RecordingObservability();
     git = _Git();
+    documents = _Documents();
   });
 
   StageChangesUseCase staging() => StageChangesUseCase(
     gitFor: (SpaceEntity space) => git,
+    documentsFor: (SpaceEntity space) => documents,
     observability: observability,
   );
 
@@ -62,6 +68,7 @@ void main() {
         asked.add(space);
         return git;
       },
+      documentsFor: (SpaceEntity space) => documents,
       observability: observability,
     ).stage(docs, <RepoRelativePathValueObject>[writing]);
 
@@ -97,6 +104,149 @@ void main() {
     );
     expect(observability.captured.single.layer, 'application');
   });
+
+  group('a document still holding a conflict marker', () {
+    test('is refused, and the refusal names it', () async {
+      documents.contents['guides/writing.md'] = conflicted;
+
+      final Result<void, AppFailure> result = await staging().stage(
+        docs,
+        <RepoRelativePathValueObject>[writing],
+      );
+
+      final AppFailure failure = (result as Failure<void, AppFailure>).failure;
+      expect(failure, isA<GitConflictMarkersPresent>());
+      expect(
+        (failure as GitConflictMarkersPresent).paths,
+        <String>['docs/guides/writing.md'],
+      );
+    });
+
+    test('never reaches git', () async {
+      documents.contents['guides/writing.md'] = conflicted;
+
+      await staging().stage(docs, <RepoRelativePathValueObject>[writing]);
+
+      expect(git.staged, isEmpty);
+    });
+
+    test('refuses the whole batch, naming every one that holds a marker',
+        () async {
+      final RepoRelativePathValueObject reading = RepoRelativePathValueObject(
+        'docs/guides/reading.md',
+      );
+      documents.contents['guides/writing.md'] = conflicted;
+      documents.contents['guides/reading.md'] = conflicted;
+
+      final Result<void, AppFailure> result = await staging().stage(
+        docs,
+        <RepoRelativePathValueObject>[writing, reading],
+      );
+
+      expect(
+        ((result as Failure<void, AppFailure>).failure
+                as GitConflictMarkersPresent)
+            .paths,
+        <String>['docs/guides/writing.md', 'docs/guides/reading.md'],
+      );
+      expect(git.staged, isEmpty);
+    });
+
+    // The rule the check exists for: resolving happens in the buffer and
+    // staging is how the resolution is declared, so a document whose markers
+    // are gone must go through even though git still calls it conflicted.
+    test('goes through once the markers are gone', () async {
+      documents.contents['guides/writing.md'] = '# Guide\n\nours\ntheirs\n';
+
+      final Result<void, AppFailure> result = await staging().stage(
+        docs,
+        <RepoRelativePathValueObject>[writing],
+      );
+
+      expect(result, isA<Success<void, AppFailure>>());
+      expect(git.staged, <RepoRelativePathValueObject>[writing]);
+    });
+
+    test('is not confused by a document that merely quotes a marker', () async {
+      documents.contents['guides/writing.md'] =
+          '# Guide\n\nGit writes `<<<<<<< HEAD` into the file.\n';
+
+      final Result<void, AppFailure> result = await staging().stage(
+        docs,
+        <RepoRelativePathValueObject>[writing],
+      );
+
+      expect(result, isA<Success<void, AppFailure>>());
+    });
+  });
+
+  group('a path the space cannot read', () {
+    // The changes list is the repository's, so it names files this space
+    // cannot open. Refusing those would strand somebody who resolved one in
+    // another editor.
+    test('outside the space is staged without being read', () async {
+      final RepoRelativePathValueObject readme = RepoRelativePathValueObject(
+        'README.md',
+      );
+
+      final Result<void, AppFailure> result = await staging().stage(
+        docs,
+        <RepoRelativePathValueObject>[readme],
+      );
+
+      expect(result, isA<Success<void, AppFailure>>());
+      expect(git.staged, <RepoRelativePathValueObject>[readme]);
+      expect(documents.read_, isEmpty);
+    });
+
+    test('that cannot be read at all is left to git to report', () async {
+      final Result<void, AppFailure> result = await staging().stage(
+        docs,
+        <RepoRelativePathValueObject>[writing],
+      );
+
+      expect(result, isA<Success<void, AppFailure>>());
+      expect(git.staged, <RepoRelativePathValueObject>[writing]);
+    });
+  });
+
+  test('unstaging is never refused, marker or not', () async {
+    documents.contents['guides/writing.md'] = conflicted;
+
+    final Result<void, AppFailure> result = await staging().unstage(
+      docs,
+      <RepoRelativePathValueObject>[writing],
+    );
+
+    expect(result, isA<Success<void, AppFailure>>());
+    expect(git.unstaged, <RepoRelativePathValueObject>[writing]);
+  });
+}
+
+/// Documents, answering from a map keyed by space-relative path; anything
+/// absent reads as `DocumentNotFound`, which is what a deleted file gives.
+final class _Documents implements DocumentRepository {
+  final Map<String, String> contents = <String, String>{};
+  final List<String> read_ = <String>[];
+
+  @override
+  Future<Result<DocumentEntity, DocumentFailure>> read(
+    SpaceRelativePathValueObject path,
+  ) async {
+    read_.add(path.value);
+    final String? content = contents[path.value];
+    return content == null
+        ? Failure<DocumentEntity, DocumentFailure>(
+            DocumentNotFound(path.value),
+          )
+        : Success<DocumentEntity, DocumentFailure>(
+            DocumentEntity(path: path, content: content),
+          );
+  }
+
+  @override
+  Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
+      throw UnimplementedError();
 }
 
 /// Git, remembering what it was asked to stage and unstage and throwing for
@@ -172,6 +322,14 @@ final class _Git implements GitRepository {
 
   @override
   Future<Result<void, GitFailure>> push() async => throw UnimplementedError();
+
+  @override
+  Future<Result<MergeStateValueObject, GitFailure>> mergeState() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> abortMerge() async =>
+      throw UnimplementedError();
 }
 
 /// An [Observability] that keeps what it was handed.

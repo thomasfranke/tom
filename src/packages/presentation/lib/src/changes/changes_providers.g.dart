@@ -172,3 +172,67 @@ final class CommitChangesProvider
 }
 
 String _$commitChangesHash() => r'cd422c8e224175f2390d4198fbc40be95fbd1ca8';
+
+/// Whether a pull stopped mid-merge, read from git rather than remembered.
+///
+/// Here rather than beside the pull that caused it: the changes panel is
+/// what draws the count still to resolve and what starts its message box
+/// from git's own draft.
+
+@ProviderFor(readMergeState)
+final readMergeStateProvider = ReadMergeStateProvider._();
+
+/// Whether a pull stopped mid-merge, read from git rather than remembered.
+///
+/// Here rather than beside the pull that caused it: the changes panel is
+/// what draws the count still to resolve and what starts its message box
+/// from git's own draft.
+
+final class ReadMergeStateProvider
+    extends
+        $FunctionalProvider<
+          ReadMergeStateUseCase,
+          ReadMergeStateUseCase,
+          ReadMergeStateUseCase
+        >
+    with $Provider<ReadMergeStateUseCase> {
+  /// Whether a pull stopped mid-merge, read from git rather than remembered.
+  ///
+  /// Here rather than beside the pull that caused it: the changes panel is
+  /// what draws the count still to resolve and what starts its message box
+  /// from git's own draft.
+  ReadMergeStateProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'readMergeStateProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$readMergeStateHash();
+
+  @$internal
+  @override
+  $ProviderElement<ReadMergeStateUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ReadMergeStateUseCase create(Ref ref) {
+    return readMergeState(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ReadMergeStateUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ReadMergeStateUseCase>(value),
+    );
+  }
+}
+
+String _$readMergeStateHash() => r'1fb62834a02c25bba49993df486f0fd58ec4bdbb';

@@ -101,6 +101,11 @@ void main() {
       ) async {
         // Two commits, neither of them the working copy — which is the claim
         // a version opened from history could not make before.
+        //
+        // The column shows one panel at a time, so the history has to be
+        // asked for: it is not on screen beside the changes
+        // (`docs/product/workspace/columns/doc.md`).
+        await robot.showsTheGitPanel('History');
         await robot.opensTheVersion('docs: expand the index');
 
         await robot.seesInThePreview('as the second commit left it');

@@ -29,3 +29,10 @@ PushRemoteUseCase pushRemote(Ref ref) => throw StateError(
   'pushRemoteProvider has no default. The composition root overrides it '
   '— see runTom() in tom_desktop.',
 );
+
+/// Undoes the merge a conflicted pull left behind.
+@riverpod
+AbortPullUseCase abortPull(Ref ref) => throw StateError(
+  'abortPullProvider has no default. The composition root overrides it '
+  '— see runTom() in tom_desktop.',
+);

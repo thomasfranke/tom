@@ -52,10 +52,55 @@ class EditorNotifier extends _$EditorNotifier {
     return const EditorState.loading();
   }
 
+  /// Turns a button press into markdown, in the source itself.
+  static const MarkdownFormatterService formatter = MarkdownFormatterService();
+
   /// Replaces the buffer with [source]; nothing here writes to a disk.
-  void edit(String source) {
+  ///
+  /// [start] and [end] are where the pane left the selection; left out, the
+  /// last one is kept, which is what a write from somewhere else — a
+  /// replacement, a resolved conflict — has to say about a caret it never
+  /// moved.
+  void edit(String source, {int? start, int? end}) {
     if (state case final EditorReady ready) {
-      state = ready.copyWith(source: source, saveFailure: null);
+      state = ready.copyWith(
+        source: source,
+        selectionStart: start ?? ready.selectionStart,
+        selectionEnd: end ?? ready.selectionEnd,
+        saveFailure: null,
+      );
+    }
+  }
+
+  /// Moves the selection without touching the buffer.
+  void select(int start, int end) {
+    if (state case final EditorReady ready) {
+      if (ready.selectionStart == start && ready.selectionEnd == end) {
+        return;
+      }
+      state = ready.copyWith(selectionStart: start, selectionEnd: end);
+    }
+  }
+
+  /// Writes [command]'s markdown into the buffer, around the selection.
+  ///
+  /// **An edit, not a save**: the unsaved mark appears, undo walks back
+  /// through it, and the file changes when somebody saves
+  /// (`docs/product/editor/formatting-shortcuts/doc.md`).
+  void format(FormatCommandEnum command) {
+    if (state case final EditorReady ready) {
+      final FormattedSourceValueObject written = formatter.apply(
+        ready.source,
+        command,
+        start: ready.selectionStart,
+        end: ready.selectionEnd,
+      );
+      state = ready.copyWith(
+        source: written.text,
+        selectionStart: written.start,
+        selectionEnd: written.end,
+        saveFailure: null,
+      );
     }
   }
 

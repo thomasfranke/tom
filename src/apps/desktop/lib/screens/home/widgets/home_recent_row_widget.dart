@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/screens/home/home_design.dart';
+import 'package:tom_desktop/widgets/home_relative_path.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -50,7 +51,9 @@ class HomeRecentRowWidget extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    recent.root,
+                    // The same spelling the status bar and the breadcrumb
+                    // use: two spellings of one folder read as two folders.
+                    homeRelative(recent.root),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(

@@ -59,4 +59,15 @@ final class GitDataSource {
 
   /// Sends the current branch to its upstream.
   Future<Result<void, GitClientFailure>> push() => client.push();
+
+  /// Whether `MERGE_HEAD` says a merge is in progress.
+  Future<Result<bool, GitClientFailure>> mergeInProgress() =>
+      client.mergeInProgress();
+
+  /// The message git drafted for the merge in progress.
+  Future<Result<String, GitClientFailure>> mergeMessage() =>
+      client.mergeMessage();
+
+  /// Undoes the merge in progress.
+  Future<Result<void, GitClientFailure>> abortMerge() => client.abortMerge();
 }

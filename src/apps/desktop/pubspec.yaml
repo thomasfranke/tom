@@ -38,6 +38,13 @@ dependencies:
   # generates against: the pair moves together or not at all.
   flutter_riverpod: 3.2.1
 
+  # Not a second parser: it is the type `flutter_markdown_plus` takes its
+  # extension points in, the way `re_highlight` is the type its highlighter
+  # takes. The parse that produces blocks is the `markdown_parser`
+  # capability's, behind its contract (Decision 7); what is here is one
+  # inline syntax that draws a footnote's marker.
+  markdown: ^7.3.1
+
   # Source mode. Measured against the fallback and kept: 4.4ms build p50
   # while typing a 2853-line document, against a plain TextField's 38.8ms
   # (Decision 18).

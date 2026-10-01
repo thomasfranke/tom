@@ -22,12 +22,7 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
   ) async {
     try {
       final List<String> lines = markdown.split('\n');
-      final ({
-        List<md.Node> nodes,
-        Map<md.Node, (int, int)> spans,
-        Map<String, md.LinkReference> linkReferences,
-      })
-      parsed = _parseWithPositions(markdown);
+      final _Parsed parsed = _parseWithPositions(markdown);
       return Success<MarkdownOutlineDto, MarkdownParserFailure>(
         MarkdownOutlineDto(
           spans: List<MarkdownSpanDto>.unmodifiable(<MarkdownSpanDto>[
@@ -43,6 +38,7 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
                   ),
           ]),
           linkDefinitions: _definitionsOf(parsed.linkReferences),
+          footnotes: _footnotesOf(parsed, lines),
         ),
       );
     } on Object catch (error) {
@@ -91,6 +87,74 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
     };
   }
 
+  /// Every footnote of the document, in citation order.
+  ///
+  /// The parser moves each definition into a section it synthesises at the
+  /// end, so the definitions are no longer top-level nodes — they are found
+  /// one level down, and each is read from **the lines its own span points
+  /// at** rather than by scanning the text, so a line that looks like a
+  /// definition inside a code block is not one.
+  static List<MarkdownFootnoteDto> _footnotesOf(
+    _Parsed parsed,
+    List<String> lines,
+  ) {
+    final List<MarkdownFootnoteDto> footnotes = <MarkdownFootnoteDto>[];
+    for (final md.Node node in parsed.nodes) {
+      if (node is! md.Element || node.tag != 'section') {
+        continue;
+      }
+      for (final md.Node item in _definitionsIn(node)) {
+        final String? label = item is md.Element ? item.footnoteLabel : null;
+        if (label == null) {
+          continue;
+        }
+        if (parsed.spans[item] case final (int, int) span) {
+          footnotes.add(
+            MarkdownFootnoteDto(
+              label: label,
+              // The order the notes are first cited in, which is the order
+              // the parser collected the labels in.
+              number: parsed.footnoteLabels.indexOf(label) + 1,
+              text: _noteTextOf(span, lines),
+            ),
+          );
+        }
+      }
+    }
+    footnotes.sort(
+      (MarkdownFootnoteDto a, MarkdownFootnoteDto b) =>
+          a.number.compareTo(b.number),
+    );
+    return List<MarkdownFootnoteDto>.unmodifiable(footnotes);
+  }
+
+  /// The definitions inside the synthesised section, which wraps them in a
+  /// list of its own.
+  static Iterable<md.Node> _definitionsIn(md.Element section) sync* {
+    for (final md.Node child in section.children ?? const <md.Node>[]) {
+      if (child is md.Element && child.tag == 'ol') {
+        yield* child.children ?? const <md.Node>[];
+      }
+    }
+  }
+
+  /// What the note says, from the lines [span] points at.
+  ///
+  /// The `[^label]:` that introduced it is dropped and the continuation lines
+  /// are given back their own indentation, so what comes out is the markdown
+  /// somebody wrote rather than the syntax that held it.
+  static String _noteTextOf((int, int) span, List<String> lines) {
+    final List<String> own = <String>[
+      for (int at = span.$1; at <= span.$2 && at < lines.length; at++)
+        lines[at],
+    ];
+    if (own.isEmpty) {
+      return '';
+    }
+    own[0] = own.first.replaceFirst(RegExp(r'^\s*\[\^[^\]]*\]:\s?'), '');
+    return own.join('\n').trim();
+  }
+
   /// [references] written back as the lines that declared them.
   ///
   /// Rebuilt from the parser's own map rather than read off the text, because
@@ -115,12 +179,7 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
 /// `BlockParser` keeps its line private and the AST has no field for it, so
 /// each syntax reads `current` before and after it consumes. A node that
 /// arrives without a position is absent from the map, and the caller drops it.
-({
-  List<md.Node> nodes,
-  Map<md.Node, (int, int)> spans,
-  Map<String, md.LinkReference> linkReferences,
-})
-_parseWithPositions(String markdown) {
+_Parsed _parseWithPositions(String markdown) {
   final Map<md.Node, (int, int)> spans = <md.Node, (int, int)>{};
   final List<md.BlockSyntax> syntaxes = _positionedSyntaxes();
   for (final md.BlockSyntax syntax in syntaxes) {
@@ -134,7 +193,41 @@ _parseWithPositions(String markdown) {
   final List<md.Node> nodes = document.parseLines(markdown.split('\n'));
   // Read after the parse, because that is when the definitions have been
   // collected.
-  return (nodes: nodes, spans: spans, linkReferences: document.linkReferences);
+  return _Parsed(
+    nodes: nodes,
+    spans: spans,
+    linkReferences: document.linkReferences,
+    // Collected as the references were met, which is what makes it citation
+    // order rather than definition order.
+    footnoteLabels: document.footnoteLabels,
+  );
+}
+
+/// One parse, and everything read off it.
+///
+/// A type rather than a record because four fields travel together through
+/// three functions, and a record repeated three times is a shape nobody can
+/// change in one place.
+final class _Parsed {
+  const _Parsed({
+    required this.nodes,
+    required this.spans,
+    required this.linkReferences,
+    required this.footnoteLabels,
+  });
+
+  /// The top-level nodes, in document order.
+  final List<md.Node> nodes;
+
+  /// Where each node came from; a node that arrives without a position is
+  /// absent, and the caller drops it.
+  final Map<md.Node, (int, int)> spans;
+
+  /// The link reference definitions the parse collected.
+  final Map<String, md.LinkReference> linkReferences;
+
+  /// The footnote labels, in the order they were first cited.
+  final List<String> footnoteLabels;
 }
 
 /// The block syntaxes the parser would have used, each recording where it
