@@ -25,12 +25,17 @@ desktop/<page>/<page>.pdf
 | Folder | Page | Product |
 |---|---|---|
 | [`desktop/home/`](desktop/home/) | `Screens: Home` | [home](../../product/home/README.md) |
-| [`desktop/workspace/`](desktop/workspace/) | `Screens: Workspace` | [workspace](../../product/workspace/README.md) |
+| [`desktop/workspace-shell/`](desktop/workspace-shell/) | `Screens: Workspace - Shell` | [workspace](../../product/workspace/README.md) · [tabs](../../product/editor/tabs/doc.md) |
+| [`desktop/workspace-tree/`](desktop/workspace-tree/) | `Screens: Workspace - Tree` | [new document](../../product/navigation/file-tree/new-document/doc.md) · [explorer menu](../../product/navigation/file-tree/explorer-menu/doc.md) |
+| ~~`desktop/workspace/`~~ | ~~`Screens: Workspace`~~ | Split into `workspace-shell/` and `workspace-tree/`; only its stale `workspace.pdf` is left |
 | [`desktop/editor/`](desktop/editor/) | `Screens: Editor` | [editor](../../product/editor/README.md) |
+| [`desktop/editor-links-export/`](desktop/editor-links-export/) | `Screens: Editor - Links & Export` | [wikilinks](../../product/wikilinks/doc.md) · [export](../../product/export/doc.md) |
 | [`desktop/git-commit/`](desktop/git-commit/) | `Screens: Git - Commit` | [commit](../../product/git-workflow/commit/README.md) |
 | [`desktop/git-branches/`](desktop/git-branches/) | `Screens: Git - Branches` | [branch-switch](../../product/git-workflow/branch-switch/doc.md) |
 | [`desktop/git-history/`](desktop/git-history/) | `Screens: Git - History` | [file-history](../../product/git-workflow/file-history/doc.md) |
-| [`desktop/git-remote/`](desktop/git-remote/) | `Screens: Git - Remote` | [push-pull](../../product/git-workflow/push-pull/README.md) |
+| [`desktop/git-push/`](desktop/git-push/) | `Screens: Git - Push` | [push-pull](../../product/git-workflow/push-pull/README.md) · [when it fails](../../product/git-workflow/push-pull/when-it-fails/doc.md) |
+| [`desktop/git-pull/`](desktop/git-pull/) | `Screens: Git - Pull` | [when it works](../../product/git-workflow/push-pull/when-it-works/doc.md) · [when a pull conflicts](../../product/git-workflow/push-pull/when-a-pull-conflicts/doc.md) |
+| ~~`desktop/git-remote/`~~ | ~~`Screens: Git - Remote`~~ | Split into `git-push/` and `git-pull/`; only its stale `git-remote.pdf` is left |
 | [`desktop/git-diff/`](desktop/git-diff/) | `Screens: Git - Diff` | [branch-diff](../../product/diff/branch-diff/doc.md) · [rendered-diff](../../product/diff/rendered-diff/README.md) |
 | [`desktop/git-not-git/`](desktop/git-not-git/) | `Screens: Git - Not git` | [without-a-repository](../../product/workspace/without-a-repository/doc.md) |
 | [`desktop/git-conflict/`](desktop/git-conflict/) | `Screens: Git - Conflict` | [when-a-pull-conflicts](../../product/git-workflow/push-pull/when-a-pull-conflicts/doc.md) · [conflicted-document](../../product/editor/conflicted-document/doc.md) |

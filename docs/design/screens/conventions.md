@@ -7,7 +7,7 @@ themselves are [`README.md`](README.md).
 
 - One screen is two files, always both, named in kebab-case with no platform suffix — the folder already says `desktop`.
 - A product group is one Penpot page and one folder; git is one page per feature, because that group alone carries more than a dozen screens.
-- **A page is one flow, read in order**, and it is split when two flows start sharing it — not at a screen count. Four was the old trigger, and it would have cut the remote's flow in half: a push refused, the pull that answers it, and the conflict that pull can leave are one story, and a reader following it must not change page halfway.
+- **A page is one flow, read in order**, and it is split when two flows start sharing it. ~~Not at a screen count~~ — revised 2026-10-08 on the maintainer's call: **a page past eight screens is split** along its flows, because a card that scrolls is no longer read at once. The remote became `Git - Push` and `Git - Pull`, side by side in the page order, so the push refused and the pull that answers it are still read one after the other.
 - Splitting is the one page operation with a real cost: Penpot cannot move a shape between pages, and duplicating a page that holds main instances duplicates the components. Count `library.local.components` before and after.
 - `<page>.pdf` is the whole page as one sheet: the title, both themes, and what each screen is for.
 

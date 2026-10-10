@@ -25,7 +25,7 @@ variant — unless the number is one of the two the reader controls.
 ## The row above the document
 
 - **It is a `surface_sunken` strip 36 tall, the width of the document container** — which is what makes the toolbar's `surface_raised` tiles read as buttons rather than as glyphs on the page.
-- **It is measured from the pane, not from the window.** The `Diff` chip's right edge sits **9** inside the document container's right edge, and `Source · Split · Preview` ends **24** before the chip begins — so both travel when a column opens.
+- **It is measured from the pane, not from the window.** The `Diff` chip's right edge sits **12** inside the document island's right edge, so it travels when a column opens. ~~`Source · Split · Preview` ends 24 before the chip~~ — the modes are in the top bar now, **10** before the left column's toggle, the gap the bar's window controls keep between each other.
 - **With the formatting bar hidden the modes go to the window's centre instead**, where they line up with the branch control directly above ([formatting shortcuts](../../product/editor/formatting-shortcuts/doc.md)).
 
 ## What the reader controls
