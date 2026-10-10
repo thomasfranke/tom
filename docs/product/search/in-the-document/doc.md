@@ -3,7 +3,7 @@
 The other half of the search column: the words in the document on screen,
 rather than the documents in the space.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3
 
 ## Rules
 

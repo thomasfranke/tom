@@ -2,13 +2,14 @@
 
 Render the document as formatted output, not raw text — the primary way anyone who does not edit will ever see it.
 
-**Status:** Planned · Milestone M0 (desktop) · Exploratory, Phase 3 post-1.0 (mobile)
+**Status:** Shipped · Milestone M0 (desktop) · Exploratory, Phase 3 post-1.0 (mobile)
 
 ## Rules — desktop
 
 - The preview renders headings, lists, tables, code blocks (with syntax highlighting), local images and links.
+- **A link goes where it says.** One to a document in the space opens that document, read from the folder the link is written in, and one that climbs out of the space is not followed. A web or mail address (`http`, `https`, `mailto`) opens in the machine's own browser or mail client; any other scheme does nothing, because the preview is for reading and a link is not a way to run something.
 - The preview is a first-class reading mode on its own, not just a companion to editing — a document can be opened preview-only. With the pane to itself it is set wider and larger than beside the source: reading is not a lesser mode ([source mode](../source-mode/doc.md) is where the three modes are described).
-- **With the preview alone there is no caret, so the formatting buttons have nothing to act on.** The row keeps undo and redo — which still work on the buffer behind it — and drops the rest. The row itself stays, because a row that comes and goes moves the document under the reader ([formatting shortcuts](../formatting-shortcuts/doc.md)).
+- **With the preview alone there is no caret, so the formatting buttons have nothing to act on.** ~~The row keeps undo and redo — which still work on the buffer behind it — and drops the rest.~~ The row keeps the whole bar, disabled rather than dropped (revised 2026-10-08). The row itself stays, because a row that comes and goes moves the document under the reader ([formatting shortcuts](../formatting-shortcuts/doc.md)).
 - Rendering quality is treated as product work, not polish: what shows up here is what an audience that never opens the source will judge.
 
 ## Rules — mobile ("reading")
@@ -19,7 +20,7 @@ Render the document as formatted output, not raw text — the primary way anyone
 ## Mocks
 
 - Desktop: **reading** — preview only, the default for whoever does not edit. [light](../../../design/screens/desktop/editor/reading-light.svg) · [dark](../../../design/screens/desktop/editor/reading-dark.svg).
-- Desktop, alongside source: shown in **shell**. [light](../../../design/screens/desktop/workspace/shell-light.svg) · [dark](../../../design/screens/desktop/workspace/shell-dark.svg).
+- Desktop, alongside source: shown in **shell**. [light](../../../design/screens/desktop/workspace-shell/shell-light.svg) · [dark](../../../design/screens/desktop/workspace-shell/shell-dark.svg).
 - Mobile: not drawn. Phase 3.
 
 ---

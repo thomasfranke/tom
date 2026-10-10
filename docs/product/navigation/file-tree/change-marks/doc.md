@@ -2,7 +2,7 @@
 
 What the tree says about a file git has something to say about.
 
-**Status:** Planned · Milestone M0
+**Status:** Shipped · Milestone M0
 
 ## Rules
 

@@ -3,7 +3,7 @@
 Finding words, at two scopes: the documents of the space, and the document on
 screen.
 
-**Status:** Whole space shipped (M2) · the open document and replacing, M3
+**Status:** Shipped · Milestone M2 (the whole space) · Milestone M3 (the open document, replacing)
 
 | | |
 |---|---|

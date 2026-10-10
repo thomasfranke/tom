@@ -3,7 +3,7 @@
 Reading and writing a document: the source, the preview, the documents that are
 open, and the tools above them.
 
-**Status:** Planned · Milestone M1–M3
+**Status:** Shipped · Milestones M0–M3
 
 The editor is deliberately simple — source plus preview, never WYSIWYG
 ([Decision 3](../../technical/decisions/003-editor-is-source-plus-preview.md)).

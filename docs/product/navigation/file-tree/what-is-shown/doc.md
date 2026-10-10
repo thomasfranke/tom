@@ -2,7 +2,7 @@
 
 The tree describes the folder the user has, not a filtered version of it.
 
-**Status:** Planned · Milestone M0
+**Status:** Shipped · Milestone M0
 
 ## Rules
 
