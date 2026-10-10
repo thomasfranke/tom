@@ -37,6 +37,14 @@ void main() {
     expect(causeOfReading(forgetRecentSpaceProvider), isA<StateError>());
   });
 
+  test('cloneRepositoryProvider has no default', () {
+    expect(causeOfReading(cloneRepositoryProvider), isA<StateError>());
+  });
+
+  test('readRecentBranchProvider has no default', () {
+    expect(causeOfReading(readRecentBranchProvider), isA<StateError>());
+  });
+
   test('and each says where it is supposed to be wired', () {
     expect(
       (causeOfReading(openSpaceProvider) as StateError).message,

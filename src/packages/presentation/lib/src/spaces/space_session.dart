@@ -4,6 +4,7 @@ library;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/src/spaces/document_mode_enum.dart';
+import 'package:tom_presentation/src/spaces/document_tab.dart';
 
 part 'space_session.freezed.dart';
 
@@ -27,6 +28,36 @@ abstract class SpaceSessionState with _$SpaceSessionState {
     /// spelling is [SpaceEntity.toRepoRelative]'s to produce.
     SpaceRelativePathValueObject? openDocument,
 
+    /// A changed file of the repository outside the space, on screen in
+    /// [openDocument]'s place — never both set — or null.
+    ///
+    /// A field of its own so every reader of [openDocument] (the tree's open
+    /// row, the index, history, export) sees no document without being told
+    /// (`docs/product/git-workflow/commit/opening-a-change/doc.md`).
+    RepoRelativePathValueObject? outsideDocument,
+
+    /// The documents open as tabs, left to right; the one [onScreen] names is
+    /// one of them whenever it is set (`docs/product/editor/tabs/doc.md`).
+    ///
+    /// A session's, not a repository's: what somebody has been in, which a
+    /// commit does not empty.
+    @Default(<DocumentTab>[]) List<DocumentTab> tabs,
+
+    /// The app's own file open as a tab — `preferences.json`, or
+    /// `git-approvals.json` beside it, one at a time — by its path in the
+    /// app's folder, never the space's; or null.
+    ///
+    /// A tab after [tabs] rather than one of them, because what reads [tabs]
+    /// takes each for a file of the space or its repository; it is on screen
+    /// while [openDocument] is null ([isShowingPreferencesFile],
+    /// `docs/product/preferences/where-it-is-stored/doc.md`).
+    SpaceRelativePathValueObject? preferencesFile,
+
+    /// The tab opened by a click and not yet kept — italic, and replaced by
+    /// the next click rather than joined by it — or null when every tab is
+    /// kept.
+    DocumentTab? previewTab,
+
     /// How the document area is being looked at; split is where a space
     /// opens.
     ///
@@ -48,25 +79,24 @@ abstract class SpaceSessionState with _$SpaceSessionState {
     /// author and the date and a second lookup could disagree with the list.
     CommitEntity? readingVersion,
 
-    /// The branch or commit the document is compared against, or null for
-    /// the default — `HEAD` for the working copy, nothing for a version
-    /// being read.
+    /// The branch the checked-out one came from and where it left it — the
+    /// working copy is compared at that fork point — or null for `HEAD`: on
+    /// that branch itself, when detached, or before anybody read it.
     ///
-    /// Here because two things read it: the preview, which builds the diff
-    /// against it, and the bar above the document, which says what is being
-    /// compared. It survives opening another document on purpose — comparing
-    /// a branch is done one file at a time, and a base that reset on every
-    /// click would make that a chore (`docs/product/diff/branch-diff/doc.md`).
-    RevisionValueObject? comparingAgainst,
+    /// Nobody chooses it: `DiffBaseNotifier` reads it whenever git is read
+    /// (`docs/product/diff/branch-diff/doc.md`). Here because three things
+    /// read it: the preview, the label beside the `Diff` chip, and the pull
+    /// request's first base.
+    DiffBaseValueObject? comparingAgainst,
 
     /// Whether the preview decorates what changed, which it does until
-    /// somebody turns it off.
+    /// somebody presses the `Diff` chip.
     ///
     /// Here rather than in the preview because the chip that switches it is
     /// in the bar and the marks are in the panel, and one of them has to
-    /// hold the answer. Off is a reading position, not a comparison: what is
-    /// compared is still [comparingAgainst], and turning the marks back on
-    /// brings the same base back (`docs/product/diff/rendered-diff/turning-it-off/doc.md`).
+    /// hold the answer. Off is a reading position, not a comparison: turning
+    /// the marks back on brings the same base back
+    /// (`docs/product/diff/rendered-diff/turning-it-off/doc.md`).
     @Default(true) bool showingDiff,
 
     /// The merge a conflicted pull left behind, or null while nobody has
@@ -79,9 +109,64 @@ abstract class SpaceSessionState with _$SpaceSessionState {
     /// opening it again finds the same conflict
     /// (`docs/product/git-workflow/push-pull/when-a-pull-conflicts/doc.md`).
     MergeStateValueObject? merge,
+
+    /// The branch whose pull request is being written, or null when the
+    /// document area is [openDocument]'s.
+    ///
+    /// One more reading position beside [openDocument], the way
+    /// [readingVersion] is: set, the editor holds the branch's draft and the
+    /// tab strip gives way to the status row; the tabs keep what they hold
+    /// and come back as they were ([Decision
+    /// 33](../../../../../../docs/technical/decisions/033-a-pull-request-draft-is-a-document-outside-the-space.md)).
+    BranchNameValueObject? pullRequest,
+
+    /// The branch the pull request is proposed onto, which starts at the
+    /// remote's own and is chosen in the right column.
+    ///
+    /// Here and not in the column because the draft is seeded from it and
+    /// the status row reads it too.
+    BranchNameValueObject? pullRequestBase,
   }) = _SpaceSessionState;
 
   const SpaceSessionState._();
+
+  /// Whether the document area holds the preferences file: its tab is open
+  /// and no document or pull request has the area instead.
+  ///
+  /// Derived, so every reader of [openDocument] — the tree's open row, the
+  /// diff, the index, the `Diff` chip — sees no document without being told.
+  bool get isShowingPreferencesFile =>
+      preferencesFile != null &&
+      openDocument == null &&
+      outsideDocument == null &&
+      pullRequest == null;
+
+  /// The tab whose document has the area — [openDocument] or
+  /// [outsideDocument] — or null when neither does.
+  DocumentTab? get onScreen => switch ((openDocument, outsideDocument)) {
+    (final SpaceRelativePathValueObject path, _) => DocumentTab.inSpace(path),
+    (null, final RepoRelativePathValueObject path) => DocumentTab.outside(path),
+    (null, null) => null,
+  };
+
+  /// The preferences file's tab, or null while it is not open.
+  DocumentTab? get preferencesTab => switch (preferencesFile) {
+    final SpaceRelativePathValueObject file => DocumentTab.preferences(file),
+    null => null,
+  };
+
+  /// Whether the document area holds a file with no page to render — the
+  /// preferences file, or any file that is not markdown — so `Split` and
+  /// `Preview` are unavailable
+  /// (`docs/product/git-workflow/commit/opening-a-change/doc.md`).
+  bool get isSourceOnly =>
+      isShowingPreferencesFile ||
+      (pullRequest == null && !(onScreen?.kind.isMarkdown ?? true));
+
+  /// The mode the document area is drawn in: [mode], except source for a
+  /// file that is not markdown ([isSourceOnly]).
+  DocumentModeEnum get drawnMode =>
+      isSourceOnly ? DocumentModeEnum.source : mode;
 
   /// The documents git still reports as conflicted, in the order it gave.
   ///

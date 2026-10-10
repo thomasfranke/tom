@@ -8,7 +8,8 @@ part of 'home_notifier.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Drives the first screen: open a folder, go back to one, forget one.
+/// Drives the first screen: open a folder, clone one, go back to one,
+/// forget one.
 ///
 /// No business logic here — it calls a use case and turns [Result] into
 /// state.
@@ -16,13 +17,15 @@ part of 'home_notifier.dart';
 @ProviderFor(HomeNotifier)
 final homeProvider = HomeNotifierProvider._();
 
-/// Drives the first screen: open a folder, go back to one, forget one.
+/// Drives the first screen: open a folder, clone one, go back to one,
+/// forget one.
 ///
 /// No business logic here — it calls a use case and turns [Result] into
 /// state.
 final class HomeNotifierProvider
     extends $NotifierProvider<HomeNotifier, HomeState> {
-  /// Drives the first screen: open a folder, go back to one, forget one.
+  /// Drives the first screen: open a folder, clone one, go back to one,
+  /// forget one.
   ///
   /// No business logic here — it calls a use case and turns [Result] into
   /// state.
@@ -53,9 +56,10 @@ final class HomeNotifierProvider
   }
 }
 
-String _$homeNotifierHash() => r'c38884940e09c3f65ca1341657f3b2200255944b';
+String _$homeNotifierHash() => r'a062291a2e23ab58e561519088a277c91a8a80fa';
 
-/// Drives the first screen: open a folder, go back to one, forget one.
+/// Drives the first screen: open a folder, clone one, go back to one,
+/// forget one.
 ///
 /// No business logic here — it calls a use case and turns [Result] into
 /// state.

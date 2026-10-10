@@ -125,10 +125,10 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  idle,TResult Function( RemoteActionEnum action)?  working,TResult Function()?  rejected,TResult Function( RemoteActionEnum action,  AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int? arrived)?  idle,TResult Function( RemoteActionEnum action)?  working,TResult Function()?  rejected,TResult Function( RemoteActionEnum action,  AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case RemoteIdle() when idle != null:
-return idle();case RemoteWorking() when working != null:
+return idle(_that.arrived);case RemoteWorking() when working != null:
 return working(_that.action);case RemoteRejected() when rejected != null:
 return rejected();case RemoteFailed() when failed != null:
 return failed(_that.action,_that.failure);case _:
@@ -149,10 +149,10 @@ return failed(_that.action,_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  idle,required TResult Function( RemoteActionEnum action)  working,required TResult Function()  rejected,required TResult Function( RemoteActionEnum action,  AppFailure failure)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int? arrived)  idle,required TResult Function( RemoteActionEnum action)  working,required TResult Function()  rejected,required TResult Function( RemoteActionEnum action,  AppFailure failure)  failed,}) {final _that = this;
 switch (_that) {
 case RemoteIdle():
-return idle();case RemoteWorking():
+return idle(_that.arrived);case RemoteWorking():
 return working(_that.action);case RemoteRejected():
 return rejected();case RemoteFailed():
 return failed(_that.action,_that.failure);}
@@ -169,10 +169,10 @@ return failed(_that.action,_that.failure);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  idle,TResult? Function( RemoteActionEnum action)?  working,TResult? Function()?  rejected,TResult? Function( RemoteActionEnum action,  AppFailure failure)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int? arrived)?  idle,TResult? Function( RemoteActionEnum action)?  working,TResult? Function()?  rejected,TResult? Function( RemoteActionEnum action,  AppFailure failure)?  failed,}) {final _that = this;
 switch (_that) {
 case RemoteIdle() when idle != null:
-return idle();case RemoteWorking() when working != null:
+return idle(_that.arrived);case RemoteWorking() when working != null:
 return working(_that.action);case RemoteRejected() when rejected != null:
 return rejected();case RemoteFailed() when failed != null:
 return failed(_that.action,_that.failure);case _:
@@ -187,33 +187,69 @@ return failed(_that.action,_that.failure);case _:
 
 
 class RemoteIdle extends RemoteState {
-  const RemoteIdle(): super._();
+  const RemoteIdle({this.arrived}): super._();
   
 
+/// How many commits the last pull brought in, 0 when the space was
+/// already level; null after anything else, or when git could not count.
+ final  int? arrived;
 
-
+/// Create a copy of RemoteState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$RemoteIdleCopyWith<RemoteIdle> get copyWith => _$RemoteIdleCopyWithImpl<RemoteIdle>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RemoteIdle);
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RemoteIdle&&(identical(other.arrived, arrived) || other.arrived == arrived));
 }
 
 
 @override
-int get hashCode => runtimeType.hashCode;
+int get hashCode => Object.hash(runtimeType,arrived);
 
 @override
 String toString() {
-  return 'RemoteState.idle()';
+  return 'RemoteState.idle(arrived: $arrived)';
 }
 
 
 }
 
+/// @nodoc
+abstract mixin class $RemoteIdleCopyWith<$Res> implements $RemoteStateCopyWith<$Res> {
+  factory $RemoteIdleCopyWith(RemoteIdle value, $Res Function(RemoteIdle) _then) = _$RemoteIdleCopyWithImpl;
+@useResult
+$Res call({
+ int? arrived
+});
 
 
+
+
+}
+/// @nodoc
+class _$RemoteIdleCopyWithImpl<$Res>
+    implements $RemoteIdleCopyWith<$Res> {
+  _$RemoteIdleCopyWithImpl(this._self, this._then);
+
+  final RemoteIdle _self;
+  final $Res Function(RemoteIdle) _then;
+
+/// Create a copy of RemoteState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? arrived = freezed,}) {
+  return _then(RemoteIdle(
+arrived: freezed == arrived ? _self.arrived : arrived // ignore: cast_nullable_to_non_nullable
+as int?,
+  ));
+}
+
+
+}
 
 /// @nodoc
 

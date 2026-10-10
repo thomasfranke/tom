@@ -35,4 +35,8 @@ void main() {
       allOf(contains('composition root'), contains('runTom')),
     );
   });
+
+  test('createDocumentProvider has no default either', () {
+    expect(causeOfReading(createDocumentProvider), isA<StateError>());
+  });
 }

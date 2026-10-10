@@ -4,6 +4,7 @@ library;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/src/home/home_clone_state.dart';
 
 part 'home_state.freezed.dart';
 
@@ -22,7 +23,13 @@ sealed class HomeState with _$HomeState {
 
   /// Home is ready, offering [recents]; an empty list is the first run, not
   /// an error.
-  const factory HomeState.ready(List<RecentSpaceEntity> recents) = HomeReady;
+  ///
+  /// [clone] lives here because the field is drawn over the ready screen,
+  /// recents and all, and a refusal or a reload never shows it.
+  const factory HomeState.ready(
+    List<RecentSpaceEntity> recents, {
+    @Default(HomeCloneState.closed()) HomeCloneState clone,
+  }) = HomeReady;
 
   /// A folder was picked and could not be opened.
   ///

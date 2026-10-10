@@ -23,11 +23,20 @@ sealed class ChangesState with _$ChangesState {
     /// The commit message being written — a draft, so panel-local.
     @Default('') String message,
 
+    /// The body under the summary, optional; a commit joins the two with a
+    /// blank line, which is how git tells them apart.
+    @Default('') String description,
+
     /// Whether a stage, an unstage or a commit is in flight.
     ///
     /// One flag for all three: git is serialized per space underneath, so a
     /// second operation would only queue behind the first.
     @Default(false) bool isBusy,
+
+    /// Whether the operation in flight is the commit: the one that dims the
+    /// staged rows and says `Committing…`
+    /// (`docs/product/git-workflow/commit/confirming/doc.md`).
+    @Default(false) bool isCommitting,
 
     /// Why the last operation did not land, or null when it did.
     AppFailure? failure,

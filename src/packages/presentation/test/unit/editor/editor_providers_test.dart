@@ -37,6 +37,12 @@ void main() {
     expect(causeOfReading(splitDocumentProvider), isA<StateError>());
   });
 
+  test('the three a changed file reads through have no default', () {
+    expect(causeOfReading(readFileProvider), isA<StateError>());
+    expect(causeOfReading(readCommittedFileProvider), isA<StateError>());
+    expect(causeOfReading(diffLinesProvider), isA<StateError>());
+  });
+
   test('and each says where it is supposed to be wired', () {
     expect(
       (causeOfReading(saveDocumentProvider) as StateError).message,

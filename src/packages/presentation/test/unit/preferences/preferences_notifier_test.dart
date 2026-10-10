@@ -8,10 +8,12 @@ import 'package:tom_presentation/tom_presentation.dart';
 
 void main() {
   late _Preferences stored;
+  late _Approvals approvals;
   late ProviderContainer container;
 
   setUp(() {
     stored = _Preferences();
+    approvals = _Approvals();
     container = ProviderContainer(
       overrides: <Override>[
         readPreferencesProvider.overrideWithValue(
@@ -113,10 +115,204 @@ void main() {
     expect(now().showingFormattingBar, isFalse);
   });
 
+  group('the file behind them', () {
+    final SpaceEntity docs = SpaceEntity(
+      root: '/code/docs',
+      repositoryRoot: '/code/docs',
+      name: 'docs',
+    );
+    final SpaceRelativePathValueObject file = SpaceRelativePathValueObject(
+      'preferences.json',
+    );
+
+    setUp(() {
+      container = ProviderContainer(
+        overrides: <Override>[
+          readPreferencesProvider.overrideWithValue(
+            ReadPreferencesUseCase(preferences: stored),
+          ),
+          writePreferencesProvider.overrideWithValue(
+            WritePreferencesUseCase(
+              preferences: stored,
+              observability: const _Silent(),
+            ),
+          ),
+          preferencesFileProvider.overrideWithValue(file),
+          seedApprovalsProvider.overrideWithValue(
+            SeedApprovalsUseCase(
+              approvals: approvals,
+              observability: const _Silent(),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+    });
+
+    group('and the list of what may run unasked', () {
+      final SpaceRelativePathValueObject list = SpaceRelativePathValueObject(
+        'git-approvals.json',
+      );
+
+      test('opens the same way, every command listed first', () async {
+        start();
+        await settle();
+        container.read(spaceSessionProvider.notifier).open(docs);
+
+        await container.read(preferencesProvider.notifier).openApprovalsFile();
+
+        final SpaceSessionState session = container.read(spaceSessionProvider)!;
+        expect(session.preferencesFile, list);
+        expect(session.isShowingPreferencesFile, isTrue);
+        expect(session.preferencesTab?.name, 'git-approvals.json');
+        expect(approvals.seeded, 1);
+        expect(stored.writes, 0, reason: 'the preferences are not its file');
+      });
+
+      test('opens nothing on Home, and lists nothing', () async {
+        start();
+        await settle();
+
+        await container.read(preferencesProvider.notifier).openApprovalsFile();
+
+        expect(container.read(spaceSessionProvider), isNull);
+        expect(approvals.seeded, 0);
+      });
+
+      test('already open, it is chosen and not listed again', () async {
+        start();
+        await settle();
+        container.read(spaceSessionProvider.notifier)
+          ..open(docs)
+          ..openPreferencesFile(list)
+          ..show(SpaceRelativePathValueObject('a.md'));
+
+        await container.read(preferencesProvider.notifier).openApprovalsFile();
+
+        expect(
+          container.read(spaceSessionProvider)!.isShowingPreferencesFile,
+          isTrue,
+        );
+        expect(approvals.seeded, 0);
+      });
+
+      test('takes the preferences file\'s place in the one tab', () async {
+        start();
+        await settle();
+        container.read(spaceSessionProvider.notifier)
+          ..open(docs)
+          ..openPreferencesFile(file);
+
+        await container.read(preferencesProvider.notifier).openApprovalsFile();
+
+        expect(container.read(spaceSessionProvider)?.preferencesFile, list);
+      });
+
+      test('but never over edits nobody saved: those are shown', () async {
+        start();
+        await settle();
+        container.read(spaceSessionProvider.notifier)
+          ..open(docs)
+          ..openPreferencesFile(file)
+          ..show(SpaceRelativePathValueObject('a.md'));
+        container
+            .read(heldBuffersProvider.notifier)
+            .hold(
+              EditorReady(
+                saved: DocumentEntity(path: file, content: '{}'),
+                source: '{"theme": "dark"}',
+                isPreferences: true,
+              ),
+            );
+
+        await container.read(preferencesProvider.notifier).openApprovalsFile();
+
+        final SpaceSessionState session = container.read(spaceSessionProvider)!;
+        expect(session.preferencesFile, file, reason: 'not replaced');
+        expect(session.isShowingPreferencesFile, isTrue, reason: 'but shown');
+        expect(approvals.seeded, 0);
+      });
+
+      test('a choice in the popover does not disturb its tab', () async {
+        start();
+        await settle();
+        container.read(spaceSessionProvider.notifier)
+          ..open(docs)
+          ..openPreferencesFile(list);
+
+        container
+            .read(preferencesProvider.notifier)
+            .chooseGitApprovals(GitApprovalModeEnum.manual);
+        await settle();
+
+        // The editor was never asked to follow a file this did not write.
+        expect(container.exists(editorProvider), isFalse);
+        expect(stored.held.gitApprovals, GitApprovalModeEnum.manual);
+      });
+    });
+
+    test('opens in a tab of the space, what is in force written', () async {
+      start();
+      await settle();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      container
+          .read(preferencesProvider.notifier)
+          .chooseLanguage(LanguageEnum.portuguese);
+      await settle();
+      stored.held = PreferencesValueObject.defaults;
+
+      await container.read(preferencesProvider.notifier).openFile();
+
+      expect(container.read(spaceSessionProvider)?.preferencesFile, file);
+      // A machine that never chose anything still finds them in the file.
+      expect(stored.held.language, LanguageEnum.portuguese);
+    });
+
+    test('opens nothing on Home, which has no tabs', () async {
+      start();
+      await settle();
+
+      await container.read(preferencesProvider.notifier).openFile();
+
+      expect(container.read(spaceSessionProvider), isNull);
+    });
+
+    test(
+      'a tab already open is chosen, and nothing is written over it',
+      () async {
+        start();
+        await settle();
+        container.read(spaceSessionProvider.notifier)
+          ..open(docs)
+          ..openPreferencesFile(file)
+          ..show(SpaceRelativePathValueObject('a.md'));
+        stored.writes = 0;
+
+        await container.read(preferencesProvider.notifier).openFile();
+
+        expect(
+          container.read(spaceSessionProvider)!.isShowingPreferencesFile,
+          isTrue,
+        );
+        expect(stored.writes, 0);
+      },
+    );
+
+    test('reading again is what saving it by hand applies', () async {
+      start();
+      await settle();
+      stored.held = const PreferencesValueObject(theme: ThemeChoiceEnum.dark);
+
+      await container.read(preferencesProvider.notifier).reload();
+
+      expect(now().theme, ThemeChoiceEnum.dark);
+    });
+  });
+
   test('one preference changing leaves the other two alone', () async {
     stored.held = const PreferencesValueObject(
       theme: ThemeChoiceEnum.dark,
-      language: LanguageEnum.german,
+      language: LanguageEnum.portuguese,
       showingFormattingBar: false,
     );
     start();
@@ -127,7 +323,7 @@ void main() {
         .chooseTheme(ThemeChoiceEnum.light);
     await settle();
 
-    expect(stored.held.language, LanguageEnum.german);
+    expect(stored.held.language, LanguageEnum.portuguese);
     expect(stored.held.showingFormattingBar, isFalse);
   });
 }
@@ -136,6 +332,7 @@ void main() {
 final class _Preferences implements PreferencesRepository {
   PreferencesValueObject held = PreferencesValueObject.defaults;
   bool refuses = false;
+  int writes = 0;
 
   @override
   Future<PreferencesValueObject> read() async => held;
@@ -144,12 +341,27 @@ final class _Preferences implements PreferencesRepository {
   Future<Result<void, AppFailure>> write(
     PreferencesValueObject preferences,
   ) async {
+    writes++;
     if (refuses) {
       return const Failure<void, AppFailure>(UnexpectedFailure('no store'));
     }
     held = preferences;
     return const Success<void, AppFailure>(null);
   }
+}
+
+/// The list of allowed commands, counting the times it was asked to list.
+final class _Approvals implements ApprovalsRepository {
+  int seeded = 0;
+
+  @override
+  Future<Result<void, AppFailure>> seed() async {
+    seeded++;
+    return const Success<void, AppFailure>(null);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 /// The no-op observability, which is also the shipping default.

@@ -9,15 +9,25 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/src/commands/command_action_enum.dart';
+import 'package:tom_presentation/src/commands/command_scope.dart';
 import 'package:tom_presentation/src/editor/editor_notifier.dart';
 import 'package:tom_presentation/src/editor/editor_state.dart';
 import 'package:tom_presentation/src/preview/preview_providers.dart';
 import 'package:tom_presentation/src/preview/preview_segment.dart';
 import 'package:tom_presentation/src/preview/preview_state.dart';
+import 'package:tom_presentation/src/spaces/document_tab.dart';
 import 'package:tom_presentation/src/spaces/space_session.dart';
 import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
 
 part 'preview_notifier.g.dart';
+
+/// What the marks are measured by: the base, the git reading, the switch.
+typedef _Measure = ({
+  DiffBaseValueObject? base,
+  GitStatusValueObject? git,
+  bool showing,
+});
 
 /// Renders the editor's buffer, never the disk — or, for an opened history
 /// entry, the version git holds (`docs/product/editor/source-mode/doc.md`).
@@ -48,6 +58,14 @@ class PreviewNotifier extends _$PreviewNotifier {
   /// newer one has already answered.
   int _generation = 0;
 
+  /// Whether the document on screen is a file outside the space, whose path
+  /// is the repository's: git is asked in that frame, and no conflict is cut.
+  bool _isOutside = false;
+
+  /// Whether the buffer is a deleted document's last version, which is drawn
+  /// every block removed rather than compared with anything.
+  bool _isDeleted = false;
+
   @override
   PreviewState build() {
     ref.onDispose(() => _scheduled?.cancel());
@@ -64,9 +82,7 @@ class PreviewNotifier extends _$PreviewNotifier {
     // out again over the blocks already on screen. **The git reading is in
     // here because a commit is what makes a marked document clean** — it
     // moves `HEAD` without touching a character of the buffer.
-    ref.listen<
-      ({RevisionValueObject? base, GitStatusValueObject? git, bool showing})
-    >(
+    ref.listen<_Measure>(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => (
           base: session?.comparingAgainst,
@@ -76,27 +92,27 @@ class PreviewNotifier extends _$PreviewNotifier {
           showing: session?.showingDiff ?? true,
         ),
       ),
-      (
-        ({RevisionValueObject? base, GitStatusValueObject? git, bool showing})?
-        _,
-        ({RevisionValueObject? base, GitStatusValueObject? git, bool showing})
-        _,
-      ) => unawaited(_recompare()),
+      (_Measure? _, _Measure _) => unawaited(_recompare()),
     );
     final SpaceSessionState? session = ref.read(spaceSessionProvider);
     if (version != null && session != null) {
-      if (session.openDocument case final SpaceRelativePathValueObject path) {
+      if (session.onScreen?.addressIn(session.space) case (
+        :final SpaceEntity space,
+        :final SpaceRelativePathValueObject path,
+      )) {
+        _isOutside = session.onScreen is OutsideDocumentTab;
+        _isDeleted = false;
         unawaited(
-          Future<void>.microtask(
-            () => _renderVersion(session.space, version, path),
-          ),
+          Future<void>.microtask(() => _renderVersion(space, version, path)),
         );
         return const PreviewState.loading();
       }
     }
     ref.listen<EditorState>(editorProvider, _follow);
     final EditorState editor = ref.read(editorProvider);
-    if (editor case final EditorReady ready) {
+    if (editor case final EditorReady ready when ready.isRendered) {
+      _isOutside = ready.isOutside;
+      _isDeleted = ready.isDeleted;
       // Scheduled, not awaited: `build` answers synchronously.
       unawaited(Future<void>.microtask(() => _render(_bufferOf(ready))));
       return const PreviewState.loading();
@@ -108,34 +124,42 @@ class PreviewNotifier extends _$PreviewNotifier {
   /// [settle], anything else is drawn at once because nothing on screen is
   /// worth keeping.
   void _follow(EditorState? previous, EditorState next) {
-    _scheduled?.cancel();
-    if (next case final EditorReady ready) {
+    if (next case final EditorReady ready when ready.isRendered) {
+      _isOutside = ready.isOutside;
+      _isDeleted = ready.isDeleted;
       final bool sameDocument =
-          previous is EditorReady && previous.saved.path == ready.saved.path;
+          previous is EditorReady && previous.tab == ready.tab;
       final bool typed = sameDocument && previous.source != ready.source;
       if (!typed) {
-        // The same buffer saved, or reloaded: nothing to redraw. The path is
+        // The same buffer saved, reloaded or a caret moved: nothing to
+        // redraw, and a parse still waiting is left to land. The path is
         // part of "same" — two documents with identical text still resolve
         // their links from different folders.
         if (sameDocument && previous.source == ready.source) {
           return;
         }
+        _scheduled?.cancel();
         unawaited(_render(_bufferOf(ready)));
         return;
       }
+      _scheduled?.cancel();
       _scheduled = Timer(settle, () => unawaited(_render(_bufferOf(ready))));
       return;
     }
+    _scheduled?.cancel();
     state = _announce(next);
   }
 
-  /// What the preview says about an editor that is holding no buffer.
+  /// What the preview says about an editor that is holding no buffer — or
+  /// one that is not markdown to render: the preferences file, a text file,
+  /// a binary one. Their marks, if any, are the line diff's.
   PreviewState _announce(EditorState editor) => switch (editor) {
     EditorEmpty() => const PreviewState.empty(),
     EditorLoading() => const PreviewState.loading(),
     EditorFailed(failure: final AppFailure failure) => PreviewState.failed(
       failure,
     ),
+    EditorReady(isRendered: false) => const PreviewState.empty(),
     EditorReady() => const PreviewState.loading(),
   };
 
@@ -152,15 +176,20 @@ class PreviewNotifier extends _$PreviewNotifier {
     SpaceRelativePathValueObject path,
   ) async {
     final int generation = ++_generation;
-    final Result<DocumentEntity, AppFailure> read = await readVersion.read(
-      space,
-      version.sha,
-      path,
+    final Result<DocumentEntity, AppFailure> read = await CommandScope.run(
+      CommandActionEnum.readVersion,
+      () => readVersion.read(space, version.sha, path),
     );
     if (!ref.mounted || generation != _generation) {
       return;
     }
     switch (read) {
+      // Refused, there is no version to show: the window goes back to the
+      // working copy it was on, and says nothing.
+      case Failure<DocumentEntity, AppFailure>(
+        failure: AppFailure(isDenial: true),
+      ):
+        ref.read(spaceSessionProvider.notifier).read(null);
       case Success<DocumentEntity, AppFailure>(
         value: final DocumentEntity document,
       ):
@@ -256,7 +285,12 @@ class PreviewNotifier extends _$PreviewNotifier {
     // The choices are offered only while git says the document is conflicted:
     // a marker typed into a document *about* merging is text
     // (`docs/product/editor/conflicted-document/doc.md`).
-    if (!(session?.isConflicted(parsed.document.path) ?? false)) {
+    // A file outside the space is never cut: its path is the repository's,
+    // and the conflict's choices are offered on the space's documents only.
+    if (session == null ||
+        _isOutside ||
+        session.pullRequest != null ||
+        !session.isConflicted(parsed.document.path)) {
       return null;
     }
     final List<ConflictSegment> cut = scanner.segment(parsed.document.content);
@@ -325,9 +359,10 @@ class PreviewNotifier extends _$PreviewNotifier {
     };
   }
 
-  /// Asks what [parsed] changed against the session's base: `HEAD` unless a
-  /// revision was chosen, and nothing at all for a version being read that
-  /// nobody asked to compare (`docs/product/diff/branch-diff/doc.md`).
+  /// Asks what [parsed] changed against the session's base — where the
+  /// branch left the one it came from, or `HEAD` — and nothing at all for a
+  /// version being read, which is the past
+  /// (`docs/product/diff/branch-diff/doc.md`).
   ///
   /// A comparison that fails answers null, leaving the document undecorated
   /// rather than replaced by an error: what failed is the diff.
@@ -339,21 +374,39 @@ class PreviewNotifier extends _$PreviewNotifier {
     if (session == null) {
       return null;
     }
+    // A deleted document is every block removed whatever the chip says: it
+    // is the file's state, not a comparison anybody can turn off
+    // (`docs/product/git-workflow/commit/opening-a-change/doc.md`).
+    if (_isDeleted &&
+        session.pullRequest == null &&
+        session.readingVersion == null) {
+      return DocumentDiffValueObject.deleted(parsed);
+    }
     // Turned off is undecorated, which is also how a removed block leaves
     // the column: the marks were the only reason it was being drawn
     // (`docs/product/diff/rendered-diff/turning-it-off/doc.md`).
-    if (!session.showingDiff) {
+    // A pull request draft has no committed version to be compared with
+    // (Decision 33), and a folder with no repository has none at all.
+    if (!session.showingDiff ||
+        !session.space.hasRepository ||
+        session.pullRequest != null ||
+        session.readingVersion != null) {
       return null;
     }
-    final RevisionValueObject? base = session.comparingAgainst;
-    if (base == null && session.readingVersion != null) {
-      return null;
-    }
+    // At the fork point, not the base's tip: what the base did since the
+    // branch left it is not this branch's change.
+    final DiffBaseValueObject? base = session.comparingAgainst;
     final Result<DocumentDiffValueObject, AppFailure> diffed =
-        await diffDocument.diff(
-          space: session.space,
-          after: parsed,
-          revision: base?.spec ?? DiffDocumentUseCase.head,
+        await CommandScope.run(
+          CommandActionEnum.readVersion,
+          () => diffDocument.diff(
+            // A file outside the space carries git's own path.
+            space: _isOutside
+                ? session.space.repositorySpace ?? session.space
+                : session.space,
+            after: parsed,
+            revision: base?.forkPoint.value ?? DiffDocumentUseCase.head,
+          ),
         );
     if (!ref.mounted || generation != _generation) {
       return null;

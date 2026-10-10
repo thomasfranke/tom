@@ -40,6 +40,7 @@ void main() {
     expectNoDefault(listRecentSpacesProvider, 'listRecentSpacesProvider');
     expectNoDefault(forgetRecentSpaceProvider, 'forgetRecentSpaceProvider');
     expectNoDefault(listSpaceEntriesProvider, 'listSpaceEntriesProvider');
+    expectNoDefault(cloneRepositoryProvider, 'cloneRepositoryProvider');
   });
 
   test('the git seams have no default', () {
@@ -60,5 +61,10 @@ void main() {
 
   test('the diff seam has no default', () {
     expectNoDefault(diffDocumentProvider, 'diffDocumentProvider');
+  });
+
+  test('the terminal seam has no default, and no home spells nothing ~', () {
+    expectNoDefault(startTerminalProvider, 'startTerminalProvider');
+    expect(container.read(homeFolderProvider), isNull);
   });
 }

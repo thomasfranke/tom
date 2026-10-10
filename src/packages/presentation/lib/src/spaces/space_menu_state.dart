@@ -10,7 +10,7 @@ part 'space_menu_state.freezed.dart';
 /// The recent spaces, whether the menu is open, and any question standing.
 ///
 /// One class rather than a hierarchy: a menu with no recents yet is the
-/// same menu, and `Close space` works before the list has arrived.
+/// same menu, and the way out works before the list has arrived.
 @freezed
 abstract class SpaceMenuState with _$SpaceMenuState {
   /// Creates the state.
@@ -27,10 +27,11 @@ abstract class SpaceMenuState with _$SpaceMenuState {
     /// Whether a space is being opened; the rows refuse a second click.
     @Default(false) bool isBusy,
 
-    /// Why the space that was chosen could not be opened.
+    /// The space that was chosen and could not be opened, which the screen
+    /// words.
     ///
     /// Said in the menu rather than on a screen of its own: the space that
     /// *is* open never closed, so there is nothing to go back from.
-    String? failure,
+    RecentSpaceEntity? unopened,
   }) = _SpaceMenuState;
 }

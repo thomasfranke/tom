@@ -317,6 +317,14 @@ class SearchNotifier extends _$SearchNotifier {
 
   /// The document the editor last read or wrote, or null when none is open.
   static DocumentEntity? _savedOf(EditorState state) => switch (state) {
+    // A pull request draft is not in the space, so it is not in its index;
+    // nor is the preferences file, a changed file outside the space, a file
+    // that is not markdown, or a deleted document's last version.
+    EditorReady(isDraft: true) ||
+    EditorReady(isPreferences: true) ||
+    EditorReady(isOutside: true) ||
+    EditorReady(isDeleted: true) ||
+    EditorReady(isRendered: false) => null,
     EditorReady(saved: final DocumentEntity document) => document,
     _ => null,
   };

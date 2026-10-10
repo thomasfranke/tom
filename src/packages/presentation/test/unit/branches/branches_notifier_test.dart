@@ -116,6 +116,22 @@ void main() {
     expect(state(), isA<BranchesInitial>());
   });
 
+  test('a folder with no repository has no branches to list', () async {
+    container
+      ..listen<BranchesState>(branchesProvider, (_, _) {})
+      ..listen<ChangesState>(changesProvider, (_, _) {})
+      ..read(
+        spaceSessionProvider.notifier,
+      ).open(SpaceEntity(root: '/notes', repositoryRoot: null, name: 'notes'));
+    await Future<void>.delayed(Duration.zero);
+    await notifier().choose(BranchNameValueObject('main'));
+
+    expect(git.listed, 0);
+    expect(git.statuses, 0);
+    expect(state(), isA<BranchesInitial>());
+    expect(container.read(changesProvider), isA<ChangesInitial>());
+  });
+
   group('the list', () {
     test('it puts the checked-out branch first and keeps the rest', () async {
       await open();
@@ -179,6 +195,44 @@ void main() {
 
       expect(ready().failure, isA<GitOperationFailed>());
       expect(ready().isBusy, isFalse);
+    });
+
+    test('a switch the person refused is not said, and git is read', () async {
+      await open(withDocument: true);
+      git.moveAnswer = const Failure<void, GitFailure>(GitCommandDenied());
+      final int statusBefore = git.statuses;
+      final int readsBefore = documents.reads;
+
+      await notifier().choose(BranchNameValueObject('feat/one'));
+
+      expect(ready().failure, isNull);
+      expect(ready().isBusy, isFalse);
+      expect(git.statuses, greaterThan(statusBefore));
+      expect(documents.reads, readsBefore, reason: 'the buffer is untouched');
+    });
+
+    test('a refused listing keeps the list that was there', () async {
+      await open();
+      git.branchesAnswer = const Failure<List<BranchEntity>, GitFailure>(
+        GitCommandDenied(),
+      );
+
+      await notifier().choose(BranchNameValueObject('feat/one'));
+
+      expect(state(), isA<BranchesReady>());
+      expect(ready().branches, hasLength(3));
+      expect(ready().failure, isNull);
+    });
+
+    test('a first listing refused is an empty list, not a failure', () async {
+      git.branchesAnswer = const Failure<List<BranchEntity>, GitFailure>(
+        GitCommandDenied(),
+      );
+
+      await open();
+
+      expect(ready().branches, isEmpty);
+      expect(ready().failure, isNull);
     });
   });
 
@@ -285,7 +339,7 @@ void main() {
         ..startCreating()
         ..type('feat/..three');
 
-      expect(ready().rejected, isNotNull);
+      expect(ready().rejected, BranchNameRejectionEnum.notAName);
       expect(state().canCreate, isFalse);
     });
 
@@ -295,7 +349,7 @@ void main() {
         ..startCreating()
         ..type('main');
 
-      expect(ready().rejected, isNotNull);
+      expect(ready().rejected, BranchNameRejectionEnum.taken);
       expect(state().canCreate, isFalse);
     });
 
@@ -437,6 +491,10 @@ final class _Documents implements DocumentRepository {
       DocumentEntity(path: path, content: content),
     );
   }
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async {

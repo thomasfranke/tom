@@ -59,7 +59,7 @@ final class SearchNotifierProvider
   }
 }
 
-String _$searchNotifierHash() => r'dedcde6586173859aebccaa11df17f4fbdc6f90e';
+String _$searchNotifierHash() => r'b408d2ce41b9716f1feefb1e49ed4074b470060e';
 
 /// Indexes the space when it opens, answers the box, and opens what is
 /// clicked (`docs/product/search/full-text-search/the-surface/doc.md`).

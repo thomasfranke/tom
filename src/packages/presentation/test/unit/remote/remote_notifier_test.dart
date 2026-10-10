@@ -10,6 +10,7 @@ import 'package:tom_presentation/tom_presentation.dart';
 
 void main() {
   late _Git git;
+  late _Preferences preferences;
   late ProviderContainer container;
 
   final SpaceEntity docs = SpaceEntity(
@@ -30,8 +31,12 @@ void main() {
 
   setUp(() {
     git = _Git()..reported = statusOf(ahead: 2);
+    preferences = _Preferences();
     container = ProviderContainer(
       overrides: <Override>[
+        readPreferencesProvider.overrideWithValue(
+          ReadPreferencesUseCase(preferences: preferences),
+        ),
         readGitStatusProvider.overrideWithValue(
           ReadGitStatusUseCase(
             gitFor: (SpaceEntity space) => git,
@@ -179,6 +184,65 @@ void main() {
     });
   });
 
+  group('the link', () {
+    test('a healthy link says nothing', () async {
+      await open();
+
+      await container.read(remoteProvider.notifier).fetch();
+
+      expect(remote().link, isNull);
+    });
+
+    for (final (GitFailure failure, LinkStateEnum link)
+        in <(GitFailure, LinkStateEnum)>[
+          (const GitNetworkUnavailable(), LinkStateEnum.noNetwork),
+          (const GitAuthenticationFailed(), LinkStateEnum.credentialsRefused),
+          (const GitNoRemote(), LinkStateEnum.noRemote),
+          (const GitTimedOut(), LinkStateEnum.timedOut),
+        ]) {
+      test('${failure.runtimeType} is ${link.name}', () async {
+        await open();
+        git.answer = Failure<void, GitFailure>(failure);
+
+        await container.read(remoteProvider.notifier).fetch();
+
+        expect(remote().link, link);
+      });
+    }
+
+    test('a failure about something else says nothing about the link', () {
+      expect(LinkStateEnum.of(const GitOperationFailed()), isNull);
+    });
+
+    test('only a timeout leaves the buttons live', () {
+      expect(
+        LinkStateEnum.values.where((LinkStateEnum it) => it.isPressable),
+        <LinkStateEnum>[LinkStateEnum.timedOut],
+      );
+    });
+
+    test('a request that lands clears it', () async {
+      await open();
+      git.answer = const Failure<void, GitFailure>(GitNetworkUnavailable());
+      await container.read(remoteProvider.notifier).fetch();
+      git.answer = null;
+
+      await container.read(remoteProvider.notifier).fetch();
+
+      expect(remote().link, isNull);
+    });
+
+    test('Reload forgets it, so the buttons are offered again', () async {
+      await open();
+      git.answer = const Failure<void, GitFailure>(GitNetworkUnavailable());
+      await container.read(remoteProvider.notifier).fetch();
+
+      container.read(remoteProvider.notifier).recheck();
+
+      expect(remote().link, isNull);
+    });
+  });
+
   test('pull brings the commits in and re-reads', () async {
     await open();
     git.reported = statusOf();
@@ -187,6 +251,60 @@ void main() {
 
     expect(git.pulled, 1);
     expect(observed()?.behind, 0);
+  });
+
+  group('a pull that worked', () {
+    test('keeps how many commits arrived', () async {
+      await open();
+      git.arrived = 3;
+
+      await container.read(remoteProvider.notifier).pull();
+
+      expect(remote(), const RemoteState.idle(arrived: 3));
+      expect(git.countedSince, CommitShaValueObject('a' * 40));
+    });
+
+    test('says so when the space was already level', () async {
+      await open();
+      git.arrived = 0;
+
+      await container.read(remoteProvider.notifier).pull();
+
+      expect(remote(), const RemoteState.idle(arrived: 0));
+    });
+
+    test('the news goes when the next action starts', () async {
+      await open();
+      await container.read(remoteProvider.notifier).pull();
+      git.holdUp = true;
+
+      final Future<void> fetching = container
+          .read(remoteProvider.notifier)
+          .fetch();
+      expect(remote(), isA<RemoteWorking>());
+      git.release();
+      await fetching;
+
+      expect(remote(), const RemoteState.idle());
+    });
+
+    test('a pull that failed keeps no count', () async {
+      await open();
+      git.answer = const Failure<void, GitFailure>(GitNetworkUnavailable());
+
+      await container.read(remoteProvider.notifier).pull();
+
+      expect(remote(), isA<RemoteFailed>());
+    });
+
+    test('a fetch or a push never carries one', () async {
+      await open();
+
+      await container.read(remoteProvider.notifier).fetch();
+      expect(remote(), const RemoteState.idle());
+      await container.read(remoteProvider.notifier).push();
+      expect(remote(), const RemoteState.idle());
+    });
   });
 
   test('one action at a time, and the state says which', () async {
@@ -271,10 +389,135 @@ void main() {
 
     expect(remote(), isA<RemoteIdle>());
   });
+
+  group('a command the person refuses', () {
+    test('is not a failure: no band, and git is read again', () async {
+      await open();
+      git
+        ..answer = const Failure<void, GitFailure>(GitCommandDenied())
+        ..reported = statusOf(ahead: 3);
+
+      await container.read(remoteProvider.notifier).push();
+
+      expect(remote(), const RemoteState.idle());
+      expect(remote().link, isNull);
+      expect(observed()?.ahead, 3);
+    });
+
+    test('a refused pull keeps no count and walks no tree', () async {
+      await open();
+      git.answer = const Failure<void, GitFailure>(GitCommandDenied());
+
+      await container.read(remoteProvider.notifier).pull();
+
+      expect(remote(), const RemoteState.idle());
+    });
+
+    test('a refused abort says nothing either', () async {
+      await open();
+      git.abortAnswer = const Failure<void, GitFailure>(GitCommandDenied());
+
+      await container.read(remoteProvider.notifier).abort();
+
+      expect(remote(), isA<RemoteIdle>());
+    });
+  });
+
+  group('waiting for approval', () {
+    late CommandsNotifier commands;
+
+    /// Opens the space in Manual, with git asking the gate before it pushes.
+    setUp(() async {
+      preferences.held = const PreferencesValueObject(
+        gitApprovals: GitApprovalModeEnum.manual,
+      );
+      await open();
+      commands = container.read(commandsProvider.notifier);
+      git
+        ..gate = commands
+        ..holdUp = true;
+      container.listen<bool>(remoteAwaitingApprovalProvider, (_, _) {});
+    });
+
+    bool awaiting() => container.read(remoteAwaitingApprovalProvider);
+
+    Future<void> settle() => Future<void>.delayed(Duration.zero);
+
+    test('nothing waits while nothing was pressed', () {
+      expect(awaiting(), isFalse);
+    });
+
+    test('the pressed control waits, and nothing is on the network', () async {
+      final Future<void> pushing = container
+          .read(remoteProvider.notifier)
+          .push();
+      await settle();
+
+      expect(remote(), const RemoteState.working(RemoteActionEnum.push));
+      expect(remote().isBusy, isTrue, reason: 'the other two are unavailable');
+      expect(awaiting(), isTrue);
+      expect(git.pushed, 0);
+      expect(
+        container.read(commandsProvider).rows.single.action,
+        CommandActionEnum.push,
+      );
+
+      commands.run(container.read(commandsProvider).rows.single.id);
+      await settle();
+
+      expect(awaiting(), isFalse, reason: 'it is running now');
+      expect(remote().isBusy, isTrue);
+      expect(git.pushed, 1);
+
+      git.release();
+      await pushing;
+
+      expect(remote(), isA<RemoteIdle>());
+    });
+
+    test('refused, the control is back as it was, with no band', () async {
+      final Future<void> pushing = container
+          .read(remoteProvider.notifier)
+          .push();
+      await settle();
+
+      commands.deny(container.read(commandsProvider).rows.single.id);
+      await pushing;
+
+      expect(remote(), const RemoteState.idle());
+      expect(awaiting(), isFalse);
+      expect(git.pushed, 0);
+    });
+
+    test('each remote action is named for the panel', () {
+      expect(RemoteActionEnum.fetch.command, CommandActionEnum.fetch);
+      expect(RemoteActionEnum.pull.command, CommandActionEnum.pull);
+      expect(RemoteActionEnum.push.command, CommandActionEnum.push);
+    });
+  });
+}
+
+/// The preferences a machine holds.
+final class _Preferences implements PreferencesRepository {
+  PreferencesValueObject held = PreferencesValueObject.defaults;
+
+  @override
+  Future<PreferencesValueObject> read() async => held;
+
+  @override
+  Future<Result<void, AppFailure>> write(
+    PreferencesValueObject preferences,
+  ) async {
+    held = preferences;
+    return const Success<void, AppFailure>(null);
+  }
 }
 
 /// Git, answering what the test set and remembering what it was asked.
 final class _Git implements GitRepository {
+  /// What a push asks before it starts, when a test gives it one.
+  CommandGate? gate;
+
   GitStatusValueObject? reported;
   Result<void, GitFailure>? answer;
 
@@ -321,10 +564,53 @@ final class _Git implements GitRepository {
     return _done();
   }
 
+  /// How many commits the upstream is said to have brought.
+  int arrived = 1;
+  CommitShaValueObject? countedSince;
+
   @override
-  Future<Result<void, GitFailure>> push() {
+  Future<Result<CommitShaValueObject?, GitFailure>> head() async =>
+      Success<CommitShaValueObject?, GitFailure>(
+        CommitShaValueObject('a' * 40),
+      );
+
+  @override
+  Future<Result<int, GitFailure>> upstreamCommitsSince(
+    CommitShaValueObject? since,
+  ) async {
+    countedSince = since;
+    return Success<int, GitFailure>(arrived);
+  }
+
+  @override
+  Future<Result<void, GitFailure>> push() async {
+    // As the capability does: the gate first, and nothing runs on a no.
+    final CommandVerdict? verdict = await gate?.ask(
+      const CommandRequest(
+        key: 'git push',
+        executable: 'git',
+        arguments: <String>['push'],
+        isWrite: true,
+      ),
+    );
+    if (verdict is CommandDenied) {
+      return const Failure<void, GitFailure>(GitCommandDenied());
+    }
     pushed++;
-    return _done();
+    final Result<void, GitFailure> done = await _done();
+    if (verdict case CommandRun(:final int ticket)) {
+      (gate! as CommandLog).record(
+        CommandRecord.of(
+          executable: 'git',
+          arguments: const <String>['push'],
+          startedAt: DateTime(2026, 10, 9),
+          duration: Duration.zero,
+          exitCode: 0,
+          ticket: ticket,
+        ),
+      );
+    }
+    return done;
   }
 
   @override
@@ -374,6 +660,13 @@ final class _NoDocuments implements DocumentRepository {
     SpaceRelativePathValueObject path,
   ) async =>
       Failure<DocumentEntity, DocumentFailure>(DocumentNotFound(path.value));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

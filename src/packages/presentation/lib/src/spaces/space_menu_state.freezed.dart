@@ -18,11 +18,12 @@ mixin _$SpaceMenuState {
  List<RecentSpaceEntity> get recents;/// Whether the menu is on screen.
  bool get isShowing;/// What is waiting on the unsaved question, or null when nothing is.
  SpaceDeparture? get pending;/// Whether a space is being opened; the rows refuse a second click.
- bool get isBusy;/// Why the space that was chosen could not be opened.
+ bool get isBusy;/// The space that was chosen and could not be opened, which the screen
+/// words.
 ///
 /// Said in the menu rather than on a screen of its own: the space that
 /// *is* open never closed, so there is nothing to go back from.
- String? get failure;
+ RecentSpaceEntity? get unopened;
 /// Create a copy of SpaceMenuState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -33,16 +34,16 @@ $SpaceMenuStateCopyWith<SpaceMenuState> get copyWith => _$SpaceMenuStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpaceMenuState&&const DeepCollectionEquality().equals(other.recents, recents)&&(identical(other.isShowing, isShowing) || other.isShowing == isShowing)&&(identical(other.pending, pending) || other.pending == pending)&&(identical(other.isBusy, isBusy) || other.isBusy == isBusy)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpaceMenuState&&const DeepCollectionEquality().equals(other.recents, recents)&&(identical(other.isShowing, isShowing) || other.isShowing == isShowing)&&(identical(other.pending, pending) || other.pending == pending)&&(identical(other.isBusy, isBusy) || other.isBusy == isBusy)&&(identical(other.unopened, unopened) || other.unopened == unopened));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(recents),isShowing,pending,isBusy,failure);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(recents),isShowing,pending,isBusy,unopened);
 
 @override
 String toString() {
-  return 'SpaceMenuState(recents: $recents, isShowing: $isShowing, pending: $pending, isBusy: $isBusy, failure: $failure)';
+  return 'SpaceMenuState(recents: $recents, isShowing: $isShowing, pending: $pending, isBusy: $isBusy, unopened: $unopened)';
 }
 
 
@@ -53,11 +54,11 @@ abstract mixin class $SpaceMenuStateCopyWith<$Res>  {
   factory $SpaceMenuStateCopyWith(SpaceMenuState value, $Res Function(SpaceMenuState) _then) = _$SpaceMenuStateCopyWithImpl;
 @useResult
 $Res call({
- List<RecentSpaceEntity> recents, bool isShowing, SpaceDeparture? pending, bool isBusy, String? failure
+ List<RecentSpaceEntity> recents, bool isShowing, SpaceDeparture? pending, bool isBusy, RecentSpaceEntity? unopened
 });
 
 
-$SpaceDepartureCopyWith<$Res>? get pending;
+$SpaceDepartureCopyWith<$Res>? get pending;$RecentSpaceEntityCopyWith<$Res>? get unopened;
 
 }
 /// @nodoc
@@ -70,14 +71,14 @@ class _$SpaceMenuStateCopyWithImpl<$Res>
 
 /// Create a copy of SpaceMenuState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? recents = null,Object? isShowing = null,Object? pending = freezed,Object? isBusy = null,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? recents = null,Object? isShowing = null,Object? pending = freezed,Object? isBusy = null,Object? unopened = freezed,}) {
   return _then(_self.copyWith(
 recents: null == recents ? _self.recents : recents // ignore: cast_nullable_to_non_nullable
 as List<RecentSpaceEntity>,isShowing: null == isShowing ? _self.isShowing : isShowing // ignore: cast_nullable_to_non_nullable
 as bool,pending: freezed == pending ? _self.pending : pending // ignore: cast_nullable_to_non_nullable
 as SpaceDeparture?,isBusy: null == isBusy ? _self.isBusy : isBusy // ignore: cast_nullable_to_non_nullable
-as bool,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as String?,
+as bool,unopened: freezed == unopened ? _self.unopened : unopened // ignore: cast_nullable_to_non_nullable
+as RecentSpaceEntity?,
   ));
 }
 /// Create a copy of SpaceMenuState
@@ -91,6 +92,18 @@ $SpaceDepartureCopyWith<$Res>? get pending {
 
   return $SpaceDepartureCopyWith<$Res>(_self.pending!, (value) {
     return _then(_self.copyWith(pending: value));
+  });
+}/// Create a copy of SpaceMenuState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$RecentSpaceEntityCopyWith<$Res>? get unopened {
+    if (_self.unopened == null) {
+    return null;
+  }
+
+  return $RecentSpaceEntityCopyWith<$Res>(_self.unopened!, (value) {
+    return _then(_self.copyWith(unopened: value));
   });
 }
 }
@@ -174,10 +187,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<RecentSpaceEntity> recents,  bool isShowing,  SpaceDeparture? pending,  bool isBusy,  String? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<RecentSpaceEntity> recents,  bool isShowing,  SpaceDeparture? pending,  bool isBusy,  RecentSpaceEntity? unopened)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SpaceMenuState() when $default != null:
-return $default(_that.recents,_that.isShowing,_that.pending,_that.isBusy,_that.failure);case _:
+return $default(_that.recents,_that.isShowing,_that.pending,_that.isBusy,_that.unopened);case _:
   return orElse();
 
 }
@@ -195,10 +208,10 @@ return $default(_that.recents,_that.isShowing,_that.pending,_that.isBusy,_that.f
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<RecentSpaceEntity> recents,  bool isShowing,  SpaceDeparture? pending,  bool isBusy,  String? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<RecentSpaceEntity> recents,  bool isShowing,  SpaceDeparture? pending,  bool isBusy,  RecentSpaceEntity? unopened)  $default,) {final _that = this;
 switch (_that) {
 case _SpaceMenuState():
-return $default(_that.recents,_that.isShowing,_that.pending,_that.isBusy,_that.failure);case _:
+return $default(_that.recents,_that.isShowing,_that.pending,_that.isBusy,_that.unopened);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -215,10 +228,10 @@ return $default(_that.recents,_that.isShowing,_that.pending,_that.isBusy,_that.f
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<RecentSpaceEntity> recents,  bool isShowing,  SpaceDeparture? pending,  bool isBusy,  String? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<RecentSpaceEntity> recents,  bool isShowing,  SpaceDeparture? pending,  bool isBusy,  RecentSpaceEntity? unopened)?  $default,) {final _that = this;
 switch (_that) {
 case _SpaceMenuState() when $default != null:
-return $default(_that.recents,_that.isShowing,_that.pending,_that.isBusy,_that.failure);case _:
+return $default(_that.recents,_that.isShowing,_that.pending,_that.isBusy,_that.unopened);case _:
   return null;
 
 }
@@ -230,7 +243,7 @@ return $default(_that.recents,_that.isShowing,_that.pending,_that.isBusy,_that.f
 
 
 class _SpaceMenuState implements SpaceMenuState {
-  const _SpaceMenuState({final  List<RecentSpaceEntity> recents = const <RecentSpaceEntity>[], this.isShowing = false, this.pending, this.isBusy = false, this.failure}): _recents = recents;
+  const _SpaceMenuState({final  List<RecentSpaceEntity> recents = const <RecentSpaceEntity>[], this.isShowing = false, this.pending, this.isBusy = false, this.unopened}): _recents = recents;
   
 
 /// The spaces to offer going back to, most recent first.
@@ -248,11 +261,12 @@ class _SpaceMenuState implements SpaceMenuState {
 @override final  SpaceDeparture? pending;
 /// Whether a space is being opened; the rows refuse a second click.
 @override@JsonKey() final  bool isBusy;
-/// Why the space that was chosen could not be opened.
+/// The space that was chosen and could not be opened, which the screen
+/// words.
 ///
 /// Said in the menu rather than on a screen of its own: the space that
 /// *is* open never closed, so there is nothing to go back from.
-@override final  String? failure;
+@override final  RecentSpaceEntity? unopened;
 
 /// Create a copy of SpaceMenuState
 /// with the given fields replaced by the non-null parameter values.
@@ -264,16 +278,16 @@ _$SpaceMenuStateCopyWith<_SpaceMenuState> get copyWith => __$SpaceMenuStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SpaceMenuState&&const DeepCollectionEquality().equals(other._recents, _recents)&&(identical(other.isShowing, isShowing) || other.isShowing == isShowing)&&(identical(other.pending, pending) || other.pending == pending)&&(identical(other.isBusy, isBusy) || other.isBusy == isBusy)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SpaceMenuState&&const DeepCollectionEquality().equals(other._recents, _recents)&&(identical(other.isShowing, isShowing) || other.isShowing == isShowing)&&(identical(other.pending, pending) || other.pending == pending)&&(identical(other.isBusy, isBusy) || other.isBusy == isBusy)&&(identical(other.unopened, unopened) || other.unopened == unopened));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_recents),isShowing,pending,isBusy,failure);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_recents),isShowing,pending,isBusy,unopened);
 
 @override
 String toString() {
-  return 'SpaceMenuState(recents: $recents, isShowing: $isShowing, pending: $pending, isBusy: $isBusy, failure: $failure)';
+  return 'SpaceMenuState(recents: $recents, isShowing: $isShowing, pending: $pending, isBusy: $isBusy, unopened: $unopened)';
 }
 
 
@@ -284,11 +298,11 @@ abstract mixin class _$SpaceMenuStateCopyWith<$Res> implements $SpaceMenuStateCo
   factory _$SpaceMenuStateCopyWith(_SpaceMenuState value, $Res Function(_SpaceMenuState) _then) = __$SpaceMenuStateCopyWithImpl;
 @override @useResult
 $Res call({
- List<RecentSpaceEntity> recents, bool isShowing, SpaceDeparture? pending, bool isBusy, String? failure
+ List<RecentSpaceEntity> recents, bool isShowing, SpaceDeparture? pending, bool isBusy, RecentSpaceEntity? unopened
 });
 
 
-@override $SpaceDepartureCopyWith<$Res>? get pending;
+@override $SpaceDepartureCopyWith<$Res>? get pending;@override $RecentSpaceEntityCopyWith<$Res>? get unopened;
 
 }
 /// @nodoc
@@ -301,14 +315,14 @@ class __$SpaceMenuStateCopyWithImpl<$Res>
 
 /// Create a copy of SpaceMenuState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? recents = null,Object? isShowing = null,Object? pending = freezed,Object? isBusy = null,Object? failure = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? recents = null,Object? isShowing = null,Object? pending = freezed,Object? isBusy = null,Object? unopened = freezed,}) {
   return _then(_SpaceMenuState(
 recents: null == recents ? _self._recents : recents // ignore: cast_nullable_to_non_nullable
 as List<RecentSpaceEntity>,isShowing: null == isShowing ? _self.isShowing : isShowing // ignore: cast_nullable_to_non_nullable
 as bool,pending: freezed == pending ? _self.pending : pending // ignore: cast_nullable_to_non_nullable
 as SpaceDeparture?,isBusy: null == isBusy ? _self.isBusy : isBusy // ignore: cast_nullable_to_non_nullable
-as bool,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as String?,
+as bool,unopened: freezed == unopened ? _self.unopened : unopened // ignore: cast_nullable_to_non_nullable
+as RecentSpaceEntity?,
   ));
 }
 
@@ -323,6 +337,18 @@ $SpaceDepartureCopyWith<$Res>? get pending {
 
   return $SpaceDepartureCopyWith<$Res>(_self.pending!, (value) {
     return _then(_self.copyWith(pending: value));
+  });
+}/// Create a copy of SpaceMenuState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$RecentSpaceEntityCopyWith<$Res>? get unopened {
+    if (_self.unopened == null) {
+    return null;
+  }
+
+  return $RecentSpaceEntityCopyWith<$Res>(_self.unopened!, (value) {
+    return _then(_self.copyWith(unopened: value));
   });
 }
 }

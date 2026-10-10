@@ -221,7 +221,20 @@ void main() {
       await notifier().switchTo(elsewhere);
 
       expect(container.read(spaceSessionProvider)?.space, docs);
-      expect(state().failure, contains('handbook'));
+      expect(state().unopened, elsewhere);
+      expect(state().isBusy, isFalse);
+    });
+
+    test('one the person refused to ask git about says nothing', () async {
+      await open();
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
+        GitCommandDenied(),
+      );
+
+      await notifier().switchTo(elsewhere);
+
+      expect(container.read(spaceSessionProvider)?.space, docs);
+      expect(state().unopened, isNull, reason: 'the folder did not move');
       expect(state().isBusy, isFalse);
     });
   });
@@ -242,6 +255,12 @@ void main() {
 final class _Spaces implements SpaceRepository {
   Result<SpaceEntity, AppFailure> answer =
       const Failure<SpaceEntity, AppFailure>(GitNotARepository('/unset'));
+
+  @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
 
   @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async => answer;
@@ -289,6 +308,13 @@ final class _Documents implements DocumentRepository {
   ) async => Success<DocumentEntity, DocumentFailure>(
     DocumentEntity(path: path, content: 'on disk'),
   );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async {

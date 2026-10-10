@@ -21,12 +21,20 @@ mixin _$WorkspaceState {
 /// The reader's, dragged from the divider beside it: it opens at a width
 /// the tree reads well at, and somebody reading search results widens it
 /// (`docs/product/workspace/regions/doc.md`).
- double? get explorerWidth;/// Which of the right column's panels is showing, by the id the module
+ double? get explorerWidth;/// How wide the right column is, or null for the width it opens at —
+/// dragged from its own divider, the same way as the left one.
+ double? get asideWidth;/// Which of the right column's panels is showing, by the id the module
 /// registered it under; null means the first one.
 ///
 /// The column's own state, not the document's — opening another file
 /// does not change it.
- String? get asidePanel;
+ String? get asidePanel;/// Whether the panel under the document is on screen — closed until
+/// somebody opens it, and never opened by the app itself
+/// (`docs/product/workspace/commands/doc.md`).
+ bool get showingBottom;/// Which of its tabs is showing, by id; null means the first one.
+ String? get bottomPanel;/// How tall the panel under the document is, or null for the height it
+/// opens at — dragged from the gutter above it, as the columns are.
+ double? get bottomHeight;
 /// Create a copy of WorkspaceState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -37,16 +45,16 @@ $WorkspaceStateCopyWith<WorkspaceState> get copyWith => _$WorkspaceStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceState&&(identical(other.showingExplorer, showingExplorer) || other.showingExplorer == showingExplorer)&&(identical(other.showingAside, showingAside) || other.showingAside == showingAside)&&(identical(other.explorerWidth, explorerWidth) || other.explorerWidth == explorerWidth)&&(identical(other.asidePanel, asidePanel) || other.asidePanel == asidePanel));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceState&&(identical(other.showingExplorer, showingExplorer) || other.showingExplorer == showingExplorer)&&(identical(other.showingAside, showingAside) || other.showingAside == showingAside)&&(identical(other.explorerWidth, explorerWidth) || other.explorerWidth == explorerWidth)&&(identical(other.asideWidth, asideWidth) || other.asideWidth == asideWidth)&&(identical(other.asidePanel, asidePanel) || other.asidePanel == asidePanel)&&(identical(other.showingBottom, showingBottom) || other.showingBottom == showingBottom)&&(identical(other.bottomPanel, bottomPanel) || other.bottomPanel == bottomPanel)&&(identical(other.bottomHeight, bottomHeight) || other.bottomHeight == bottomHeight));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,showingExplorer,showingAside,explorerWidth,asidePanel);
+int get hashCode => Object.hash(runtimeType,showingExplorer,showingAside,explorerWidth,asideWidth,asidePanel,showingBottom,bottomPanel,bottomHeight);
 
 @override
 String toString() {
-  return 'WorkspaceState(showingExplorer: $showingExplorer, showingAside: $showingAside, explorerWidth: $explorerWidth, asidePanel: $asidePanel)';
+  return 'WorkspaceState(showingExplorer: $showingExplorer, showingAside: $showingAside, explorerWidth: $explorerWidth, asideWidth: $asideWidth, asidePanel: $asidePanel, showingBottom: $showingBottom, bottomPanel: $bottomPanel, bottomHeight: $bottomHeight)';
 }
 
 
@@ -57,7 +65,7 @@ abstract mixin class $WorkspaceStateCopyWith<$Res>  {
   factory $WorkspaceStateCopyWith(WorkspaceState value, $Res Function(WorkspaceState) _then) = _$WorkspaceStateCopyWithImpl;
 @useResult
 $Res call({
- bool showingExplorer, bool showingAside, double? explorerWidth, String? asidePanel
+ bool showingExplorer, bool showingAside, double? explorerWidth, double? asideWidth, String? asidePanel, bool showingBottom, String? bottomPanel, double? bottomHeight
 });
 
 
@@ -74,13 +82,17 @@ class _$WorkspaceStateCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? showingExplorer = null,Object? showingAside = null,Object? explorerWidth = freezed,Object? asidePanel = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? showingExplorer = null,Object? showingAside = null,Object? explorerWidth = freezed,Object? asideWidth = freezed,Object? asidePanel = freezed,Object? showingBottom = null,Object? bottomPanel = freezed,Object? bottomHeight = freezed,}) {
   return _then(_self.copyWith(
 showingExplorer: null == showingExplorer ? _self.showingExplorer : showingExplorer // ignore: cast_nullable_to_non_nullable
 as bool,showingAside: null == showingAside ? _self.showingAside : showingAside // ignore: cast_nullable_to_non_nullable
 as bool,explorerWidth: freezed == explorerWidth ? _self.explorerWidth : explorerWidth // ignore: cast_nullable_to_non_nullable
+as double?,asideWidth: freezed == asideWidth ? _self.asideWidth : asideWidth // ignore: cast_nullable_to_non_nullable
 as double?,asidePanel: freezed == asidePanel ? _self.asidePanel : asidePanel // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,showingBottom: null == showingBottom ? _self.showingBottom : showingBottom // ignore: cast_nullable_to_non_nullable
+as bool,bottomPanel: freezed == bottomPanel ? _self.bottomPanel : bottomPanel // ignore: cast_nullable_to_non_nullable
+as String?,bottomHeight: freezed == bottomHeight ? _self.bottomHeight : bottomHeight // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -165,10 +177,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  String? asidePanel)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  double? asideWidth,  String? asidePanel,  bool showingBottom,  String? bottomPanel,  double? bottomHeight)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WorkspaceState() when $default != null:
-return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.asidePanel);case _:
+return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.asideWidth,_that.asidePanel,_that.showingBottom,_that.bottomPanel,_that.bottomHeight);case _:
   return orElse();
 
 }
@@ -186,10 +198,10 @@ return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  String? asidePanel)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  double? asideWidth,  String? asidePanel,  bool showingBottom,  String? bottomPanel,  double? bottomHeight)  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceState():
-return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.asidePanel);case _:
+return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.asideWidth,_that.asidePanel,_that.showingBottom,_that.bottomPanel,_that.bottomHeight);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +218,10 @@ return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  String? asidePanel)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool showingExplorer,  bool showingAside,  double? explorerWidth,  double? asideWidth,  String? asidePanel,  bool showingBottom,  String? bottomPanel,  double? bottomHeight)?  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceState() when $default != null:
-return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.asidePanel);case _:
+return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_that.asideWidth,_that.asidePanel,_that.showingBottom,_that.bottomPanel,_that.bottomHeight);case _:
   return null;
 
 }
@@ -221,7 +233,7 @@ return $default(_that.showingExplorer,_that.showingAside,_that.explorerWidth,_th
 
 
 class _WorkspaceState implements WorkspaceState {
-  const _WorkspaceState({this.showingExplorer = true, this.showingAside = true, this.explorerWidth, this.asidePanel});
+  const _WorkspaceState({this.showingExplorer = true, this.showingAside = true, this.explorerWidth, this.asideWidth, this.asidePanel, this.showingBottom = false, this.bottomPanel, this.bottomHeight});
   
 
 /// Whether the left column is on screen.
@@ -234,12 +246,24 @@ class _WorkspaceState implements WorkspaceState {
 /// the tree reads well at, and somebody reading search results widens it
 /// (`docs/product/workspace/regions/doc.md`).
 @override final  double? explorerWidth;
+/// How wide the right column is, or null for the width it opens at —
+/// dragged from its own divider, the same way as the left one.
+@override final  double? asideWidth;
 /// Which of the right column's panels is showing, by the id the module
 /// registered it under; null means the first one.
 ///
 /// The column's own state, not the document's — opening another file
 /// does not change it.
 @override final  String? asidePanel;
+/// Whether the panel under the document is on screen — closed until
+/// somebody opens it, and never opened by the app itself
+/// (`docs/product/workspace/commands/doc.md`).
+@override@JsonKey() final  bool showingBottom;
+/// Which of its tabs is showing, by id; null means the first one.
+@override final  String? bottomPanel;
+/// How tall the panel under the document is, or null for the height it
+/// opens at — dragged from the gutter above it, as the columns are.
+@override final  double? bottomHeight;
 
 /// Create a copy of WorkspaceState
 /// with the given fields replaced by the non-null parameter values.
@@ -251,16 +275,16 @@ _$WorkspaceStateCopyWith<_WorkspaceState> get copyWith => __$WorkspaceStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceState&&(identical(other.showingExplorer, showingExplorer) || other.showingExplorer == showingExplorer)&&(identical(other.showingAside, showingAside) || other.showingAside == showingAside)&&(identical(other.explorerWidth, explorerWidth) || other.explorerWidth == explorerWidth)&&(identical(other.asidePanel, asidePanel) || other.asidePanel == asidePanel));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceState&&(identical(other.showingExplorer, showingExplorer) || other.showingExplorer == showingExplorer)&&(identical(other.showingAside, showingAside) || other.showingAside == showingAside)&&(identical(other.explorerWidth, explorerWidth) || other.explorerWidth == explorerWidth)&&(identical(other.asideWidth, asideWidth) || other.asideWidth == asideWidth)&&(identical(other.asidePanel, asidePanel) || other.asidePanel == asidePanel)&&(identical(other.showingBottom, showingBottom) || other.showingBottom == showingBottom)&&(identical(other.bottomPanel, bottomPanel) || other.bottomPanel == bottomPanel)&&(identical(other.bottomHeight, bottomHeight) || other.bottomHeight == bottomHeight));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,showingExplorer,showingAside,explorerWidth,asidePanel);
+int get hashCode => Object.hash(runtimeType,showingExplorer,showingAside,explorerWidth,asideWidth,asidePanel,showingBottom,bottomPanel,bottomHeight);
 
 @override
 String toString() {
-  return 'WorkspaceState(showingExplorer: $showingExplorer, showingAside: $showingAside, explorerWidth: $explorerWidth, asidePanel: $asidePanel)';
+  return 'WorkspaceState(showingExplorer: $showingExplorer, showingAside: $showingAside, explorerWidth: $explorerWidth, asideWidth: $asideWidth, asidePanel: $asidePanel, showingBottom: $showingBottom, bottomPanel: $bottomPanel, bottomHeight: $bottomHeight)';
 }
 
 
@@ -271,7 +295,7 @@ abstract mixin class _$WorkspaceStateCopyWith<$Res> implements $WorkspaceStateCo
   factory _$WorkspaceStateCopyWith(_WorkspaceState value, $Res Function(_WorkspaceState) _then) = __$WorkspaceStateCopyWithImpl;
 @override @useResult
 $Res call({
- bool showingExplorer, bool showingAside, double? explorerWidth, String? asidePanel
+ bool showingExplorer, bool showingAside, double? explorerWidth, double? asideWidth, String? asidePanel, bool showingBottom, String? bottomPanel, double? bottomHeight
 });
 
 
@@ -288,13 +312,17 @@ class __$WorkspaceStateCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? showingExplorer = null,Object? showingAside = null,Object? explorerWidth = freezed,Object? asidePanel = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? showingExplorer = null,Object? showingAside = null,Object? explorerWidth = freezed,Object? asideWidth = freezed,Object? asidePanel = freezed,Object? showingBottom = null,Object? bottomPanel = freezed,Object? bottomHeight = freezed,}) {
   return _then(_WorkspaceState(
 showingExplorer: null == showingExplorer ? _self.showingExplorer : showingExplorer // ignore: cast_nullable_to_non_nullable
 as bool,showingAside: null == showingAside ? _self.showingAside : showingAside // ignore: cast_nullable_to_non_nullable
 as bool,explorerWidth: freezed == explorerWidth ? _self.explorerWidth : explorerWidth // ignore: cast_nullable_to_non_nullable
+as double?,asideWidth: freezed == asideWidth ? _self.asideWidth : asideWidth // ignore: cast_nullable_to_non_nullable
 as double?,asidePanel: freezed == asidePanel ? _self.asidePanel : asidePanel // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,showingBottom: null == showingBottom ? _self.showingBottom : showingBottom // ignore: cast_nullable_to_non_nullable
+as bool,bottomPanel: freezed == bottomPanel ? _self.bottomPanel : bottomPanel // ignore: cast_nullable_to_non_nullable
+as String?,bottomHeight: freezed == bottomHeight ? _self.bottomHeight : bottomHeight // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 

@@ -9,6 +9,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/src/commands/command_action_enum.dart';
+import 'package:tom_presentation/src/commands/command_scope.dart';
 import 'package:tom_presentation/src/history/history_providers.dart';
 import 'package:tom_presentation/src/history/history_state.dart';
 import 'package:tom_presentation/src/spaces/space_session.dart';
@@ -43,7 +45,7 @@ class HistoryNotifier extends _$HistoryNotifier {
         (SpaceSessionState? session) => session?.openDocument,
       ),
     );
-    if (space == null || path == null) {
+    if (space == null || path == null || !space.hasRepository) {
       return const HistoryState.idle();
     }
     // Scheduled, not awaited: `build` answers synchronously.
@@ -54,8 +56,9 @@ class HistoryNotifier extends _$HistoryNotifier {
   /// Asks git again — after a commit, or a switch, the list has moved.
   Future<void> refresh() async {
     final SpaceSessionState? session = ref.read(spaceSessionProvider);
-    if (session?.openDocument case final SpaceRelativePathValueObject path) {
-      await _load(session!.space, path);
+    if (session?.openDocument case final SpaceRelativePathValueObject path
+        when session!.space.hasRepository) {
+      await _load(session.space, path);
     }
   }
 
@@ -72,13 +75,21 @@ class HistoryNotifier extends _$HistoryNotifier {
     SpaceEntity space,
     SpaceRelativePathValueObject path,
   ) async {
-    final Result<List<CommitEntity>, AppFailure> read = await readFileHistory
-        .read(space, path, limit: limit);
+    final HistoryState before = state;
+    final Result<List<CommitEntity>, AppFailure> read = await CommandScope.run(
+      CommandActionEnum.readHistory,
+      () => readFileHistory.read(space, path, limit: limit),
+    );
     // The panel can be gone by the time git answers.
     if (!ref.mounted) {
       return;
     }
     state = switch (read) {
+      // A refused reading leaves the list that was there, or none at all.
+      Failure<List<CommitEntity>, AppFailure>(
+        failure: AppFailure(isDenial: true),
+      ) =>
+        before is HistoryReady ? before : const HistoryState.idle(),
       Success<List<CommitEntity>, AppFailure>(
         value: final List<CommitEntity> commits,
       ) =>

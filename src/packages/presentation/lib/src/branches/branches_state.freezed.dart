@@ -125,7 +125,7 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<BranchEntity> branches,  String draft,  bool isCreating,  bool isBusy,  BranchNameValueObject? pending,  AppFailure? failure,  String? rejected)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<BranchEntity> branches,  String draft,  bool isCreating,  bool isBusy,  BranchNameValueObject? pending,  AppFailure? failure,  BranchNameRejectionEnum? rejected)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case BranchesInitial() when initial != null:
 return initial();case BranchesLoading() when loading != null:
@@ -149,7 +149,7 @@ return failed(_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<BranchEntity> branches,  String draft,  bool isCreating,  bool isBusy,  BranchNameValueObject? pending,  AppFailure? failure,  String? rejected)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<BranchEntity> branches,  String draft,  bool isCreating,  bool isBusy,  BranchNameValueObject? pending,  AppFailure? failure,  BranchNameRejectionEnum? rejected)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
 switch (_that) {
 case BranchesInitial():
 return initial();case BranchesLoading():
@@ -169,7 +169,7 @@ return failed(_that.failure);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<BranchEntity> branches,  String draft,  bool isCreating,  bool isBusy,  BranchNameValueObject? pending,  AppFailure? failure,  String? rejected)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<BranchEntity> branches,  String draft,  bool isCreating,  bool isBusy,  BranchNameValueObject? pending,  AppFailure? failure,  BranchNameRejectionEnum? rejected)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
 switch (_that) {
 case BranchesInitial() when initial != null:
 return initial();case BranchesLoading() when loading != null:
@@ -283,7 +283,7 @@ class BranchesReady extends BranchesState {
 /// What is wrong with the draft as a branch name, or null when nothing
 /// is; said while typing, because a name git would refuse is knowable
 /// without asking git.
- final  String? rejected;
+ final  BranchNameRejectionEnum? rejected;
 
 /// Create a copy of BranchesState
 /// with the given fields replaced by the non-null parameter values.
@@ -315,7 +315,7 @@ abstract mixin class $BranchesReadyCopyWith<$Res> implements $BranchesStateCopyW
   factory $BranchesReadyCopyWith(BranchesReady value, $Res Function(BranchesReady) _then) = _$BranchesReadyCopyWithImpl;
 @useResult
 $Res call({
- List<BranchEntity> branches, String draft, bool isCreating, bool isBusy, BranchNameValueObject? pending, AppFailure? failure, String? rejected
+ List<BranchEntity> branches, String draft, bool isCreating, bool isBusy, BranchNameValueObject? pending, AppFailure? failure, BranchNameRejectionEnum? rejected
 });
 
 
@@ -341,7 +341,7 @@ as bool,isBusy: null == isBusy ? _self.isBusy : isBusy // ignore: cast_nullable_
 as bool,pending: freezed == pending ? _self.pending : pending // ignore: cast_nullable_to_non_nullable
 as BranchNameValueObject?,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as AppFailure?,rejected: freezed == rejected ? _self.rejected : rejected // ignore: cast_nullable_to_non_nullable
-as String?,
+as BranchNameRejectionEnum?,
   ));
 }
 

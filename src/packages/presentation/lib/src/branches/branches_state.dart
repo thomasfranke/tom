@@ -4,6 +4,7 @@ library;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/src/branches/branch_name_rejection_enum.dart';
 
 part 'branches_state.freezed.dart';
 
@@ -49,7 +50,7 @@ sealed class BranchesState with _$BranchesState {
     /// What is wrong with the draft as a branch name, or null when nothing
     /// is; said while typing, because a name git would refuse is knowable
     /// without asking git.
-    String? rejected,
+    BranchNameRejectionEnum? rejected,
   }) = BranchesReady;
 
   /// Git could not be asked at all.
@@ -73,7 +74,7 @@ sealed class BranchesState with _$BranchesState {
     BranchesReady(
       :final bool isCreating,
       :final String draft,
-      :final String? rejected,
+      :final BranchNameRejectionEnum? rejected,
       :final bool isBusy,
     ) =>
       isCreating && draft.isNotEmpty && rejected == null && !isBusy,

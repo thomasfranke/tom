@@ -56,7 +56,7 @@ final class SpaceMenuNotifierProvider
   }
 }
 
-String _$spaceMenuNotifierHash() => r'941a711a8b347a522cc53ddfd8015d0a17b6eb85';
+String _$spaceMenuNotifierHash() => r'2a65254ba0e7c126b766242398b7b2ecb5720361';
 
 /// The way out of a space, and the way straight into another one
 /// (`docs/product/workspace/leaving-a-space/doc.md`).

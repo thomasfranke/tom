@@ -524,6 +524,13 @@ final class _Documents implements DocumentRepository {
   );
 
   @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
+
+  @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
       const Success<void, DocumentFailure>(null);
 }
