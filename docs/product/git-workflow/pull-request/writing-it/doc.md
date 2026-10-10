@@ -2,7 +2,7 @@
 
 The page that takes the editor, and what is in the draft before anybody types.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3
 
 ## Rules
 

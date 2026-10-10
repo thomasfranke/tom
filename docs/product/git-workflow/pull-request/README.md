@@ -3,7 +3,7 @@
 Writing and opening the pull request for the branch that was just pushed,
 without leaving the tool.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3 — created through `gh` on GitHub; without `gh`, and on any other host, it opens the host's compare page
 
 | | |
 |---|---|
@@ -11,7 +11,7 @@ without leaving the tool.
 | [`writing-it/`](writing-it/doc.md) | The page that takes the editor, the title as the first heading, and what the draft starts as |
 | [`the-draft/`](the-draft/doc.md) | The draft as a file on disk, one per branch, and how long it lives |
 | [`the-right-column/`](the-right-column/doc.md) | The two segments, and where each number in the overview comes from |
-| [`opening-it/`](opening-it/doc.md) | The token, the request to the host, and the link when there is no token |
+| [`opening-it/`](opening-it/doc.md) | Creating it through `gh`, the one already open, and the link when there is no `gh` |
 | [`when-it-cannot-be-opened/`](when-it-cannot-be-opened/doc.md) | The status row, the default branch, and uncommitted work |
 
 ## What is deliberately not here
@@ -25,6 +25,8 @@ review thread has become a second product.
 - **writing a pull request** — the page with the whole editor, the status row where the tabs were, and the branch's own column. [light](../../../design/screens/desktop/git-pull-request/writing-a-pull-request-light.svg) · [dark](../../../design/screens/desktop/git-pull-request/writing-a-pull-request-dark.svg).
 - **cannot open yet** — uncommitted work, the row in `removed`, and both actions unavailable. [light](../../../design/screens/desktop/git-pull-request/cannot-open-yet-light.svg) · [dark](../../../design/screens/desktop/git-pull-request/cannot-open-yet-dark.svg).
 - **branch overview** — the same column with the second segment chosen. [light](../../../design/screens/desktop/git-pull-request/branch-overview-light.svg) · [dark](../../../design/screens/desktop/git-pull-request/branch-overview-dark.svg).
+- **not pushed yet** — the row in `modified`, carrying `Push`; opening waits for it. [light](../../../design/screens/desktop/git-pull-request/not-pushed-yet-light.svg) · [dark](../../../design/screens/desktop/git-pull-request/not-pushed-yet-dark.svg).
+- **no title yet** — a draft whose first line is not a `#` heading. [light](../../../design/screens/desktop/git-pull-request/no-title-yet-light.svg) · [dark](../../../design/screens/desktop/git-pull-request/no-title-yet-dark.svg).
 
 **Two screens were drawn and deleted**, and why is worth keeping: a band offering
 the pull request after a push, which was a second place to open one; and a band

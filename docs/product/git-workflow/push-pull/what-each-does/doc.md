@@ -3,7 +3,7 @@
 The difference between fetch and pull, and the one thing a pull is not allowed
 to do.
 
-**Status:** Planned · Milestone M1
+**Status:** Shipped · Milestone M1
 
 ## Rules
 

@@ -2,7 +2,7 @@
 
 The row that opens the draft, and where it is not drawn.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3
 
 ## Rules
 

@@ -2,7 +2,7 @@
 
 See the commits that touched the document currently open, without leaving it.
 
-**Status:** Planned · Milestone M1
+**Status:** Shipped · Milestone M1
 
 ## Rules
 

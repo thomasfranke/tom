@@ -17,6 +17,7 @@ maintained by stakeholders, and what an implementation is checked against.
 | [`diff/`](diff/README.md) | The rendered diff, and the branch/commit diff |
 | [`search/`](search/README.md) | Full-text search, finding in the open document, replacing |
 | [`preferences/`](preferences/README.md) | The popover, what it holds, and the JSON behind it |
+| [`about/`](about/doc.md) | Which TOM this is, and how it learns of a newer one (draft, not built) |
 | [`wikilinks/`](wikilinks/doc.md) · [`export/`](export/doc.md) | Features with no natural group, directly under `product/` |
 
 How these files are shaped and written: [`conventions.md`](conventions.md).

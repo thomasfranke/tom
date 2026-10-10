@@ -2,7 +2,7 @@
 
 What a pull says when the commits arrived, and what a push says when they went.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3
 
 ## Rules
 
@@ -14,8 +14,9 @@ What a pull says when the commits arrived, and what a push says when they went.
 
 ## Mocks
 
-- **pulling** — the pull in flight: `Pulling…` on the button, the bar above the column, and nothing in the band yet. [light](../../../../design/screens/desktop/git-remote/pulling-light.svg) · [dark](../../../../design/screens/desktop/git-remote/pulling-dark.svg).
-- **pull succeeded** — no board. The band that says how many arrived has never been drawn ([not drawn yet](../../../../design/screens/not-drawn-yet.md)).
+- **pulling** — the pull in flight: `Pulling…` on the button, the bar above the column, and nothing in the band yet. [light](../../../../design/screens/desktop/git-pull/pulling-light.svg) · [dark](../../../../design/screens/desktop/git-pull/pulling-dark.svg).
+- **pull worked** — the band in `added`, the count, and `Push` while something of yours is still to publish. [light](../../../../design/screens/desktop/git-pull/pull-worked-light.svg) · [dark](../../../../design/screens/desktop/git-pull/pull-worked-dark.svg).
+- **already up to date** — the same band, saying nothing arrived, offering nothing. [light](../../../../design/screens/desktop/git-pull/already-up-to-date-light.svg) · [dark](../../../../design/screens/desktop/git-pull/already-up-to-date-dark.svg).
 
 ---
 

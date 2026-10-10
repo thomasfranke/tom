@@ -2,7 +2,7 @@
 
 A push the remote refuses, and a remote that will not answer.
 
-**Status:** Planned · Milestone M1
+**Status:** Shipped · Milestone M1 — the pull refused over uncommitted work since 2026-10-09, with no board of its own
 
 ## Rules
 
@@ -16,10 +16,9 @@ A push the remote refuses, and a remote that will not answer.
 - **A failure the app has no name for says what was refused, never why.** "Git refused the pull" is honest where "the remote could not be reached" would be a guess about a remote that may have answered perfectly.
 - **A pull in flight says so on the button that was pressed**, not in the band ([while a request runs](../while-a-request-runs/doc.md)). The band is where the *outcome* lands; the column is where the request is.
 
-A pull git refuses before it starts, because local changes would be
-overwritten, is the nameless one today — and it is the failure someone writing
-documentation meets most often, so it is the next to earn a sentence. A pull
-that *starts* and stops is a different subject:
+- **A pull git refuses because it would overwrite uncommitted work is a named failure** — the one someone writing documentation meets most often. The band names the file when there is one and counts them when there are more, says nothing changed here, and gives the remedy: commit them, then try again. It wears `modified`, the refusal's colour, because nothing failed and there is something to do; `Try again` stays, because after the commit the same press answers differently.
+
+A pull that *starts* and stops is a different subject:
 [when a pull conflicts](../when-a-pull-conflicts/doc.md).
 
 "YOUR COMMITS" under a rejection has no board yet
@@ -27,8 +26,8 @@ that *starts* and stops is a different subject:
 
 ## Mocks
 
-- **push rejected** — [light](../../../../design/screens/desktop/git-remote/push-rejected-light.svg) · [dark](../../../../design/screens/desktop/git-remote/push-rejected-dark.svg).
-- **push failed** — [light](../../../../design/screens/desktop/git-remote/push-failed-light.svg) · [dark](../../../../design/screens/desktop/git-remote/push-failed-dark.svg).
+- **push rejected** — [light](../../../../design/screens/desktop/git-push/push-rejected-light.svg) · [dark](../../../../design/screens/desktop/git-push/push-rejected-dark.svg).
+- **push failed** — [light](../../../../design/screens/desktop/git-push/push-failed-light.svg) · [dark](../../../../design/screens/desktop/git-push/push-failed-dark.svg).
 
 ---
 

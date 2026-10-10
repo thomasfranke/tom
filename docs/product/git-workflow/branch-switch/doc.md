@@ -2,7 +2,7 @@
 
 Move between branches, or start a new one, and watch the documents update — without a terminal.
 
-**Status:** Planned · Milestone M1
+**Status:** Shipped · Milestone M1
 
 ## Rules
 

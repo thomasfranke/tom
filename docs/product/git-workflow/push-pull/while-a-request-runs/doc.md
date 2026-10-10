@@ -17,8 +17,8 @@ What the right column shows between the press and the answer.
 ## Mocks
 
 - **talking to the remote** — the bar at the top of the column, the three controls unavailable, the pressed one naming itself. [light](../../../../design/screens/desktop/git-connection/talking-to-the-remote-light.svg) · [dark](../../../../design/screens/desktop/git-connection/talking-to-the-remote-dark.svg).
-- **pushing** — the same state on the remote page: `Pushing…` on the 248-wide button, `Fetch` and `Pull` dim under it. [light](../../../../design/screens/desktop/git-remote/pushing-light.svg) · [dark](../../../../design/screens/desktop/git-remote/pushing-dark.svg).
-- **pulling** — `Pulling…` on the button that was pressed, and **nothing in the band**: the column reports the request, the band reports what came of it. [light](../../../../design/screens/desktop/git-remote/pulling-light.svg) · [dark](../../../../design/screens/desktop/git-remote/pulling-dark.svg).
+- **pushing** — the same state on the push page: `Pushing…` on the 248-wide button, `Fetch` and `Pull` dim under it. [light](../../../../design/screens/desktop/git-push/pushing-light.svg) · [dark](../../../../design/screens/desktop/git-push/pushing-dark.svg).
+- **pulling** — `Pulling…` on the button that was pressed, and **nothing in the band**: the column reports the request, the band reports what came of it. [light](../../../../design/screens/desktop/git-pull/pulling-light.svg) · [dark](../../../../design/screens/desktop/git-pull/pulling-dark.svg).
 
 ---
 

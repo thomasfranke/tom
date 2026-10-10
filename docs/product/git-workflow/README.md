@@ -3,7 +3,7 @@
 Everything the product does against a repository: recording a change, moving
 between branches, reading what came before, and exchanging both with a remote.
 
-**Status:** Planned · Milestones M1–M3
+**Status:** Shipped · Milestones M1–M3 — the [pull request](pull-request/README.md) through the host's compare page, until there is a token
 
 Git runs through the system binary and is never predicted — what the app shows
 is what git answered ([Decision 2](../../technical/decisions/002-git-via-system-binary.md)).
@@ -17,6 +17,8 @@ The rendered comparison that makes those answers readable is
 | [`file-history/`](file-history/doc.md) | The commits that touched the open document |
 | [`push-pull/`](push-pull/README.md) | The controls, what each does, and every way the link fails |
 | [`pull-request/`](pull-request/README.md) | Writing and opening the request for the branch just pushed |
+| [`git-menu/`](git-menu/doc.md) | The `⋮` at the head of the column: reload, terminal, Finder, discard |
+| [`approvals/`](approvals/doc.md) | Automatic, semi-automatic or manual: who says yes before a command runs (draft, not built) |
 
 ---
 
