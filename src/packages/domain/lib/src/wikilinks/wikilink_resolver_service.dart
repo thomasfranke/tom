@@ -15,14 +15,21 @@ final class WikilinkResolverService {
   /// Creates the resolver.
   const WikilinkResolverService();
 
-  /// What [link] points at among [entries].
+  /// What [link] points at among [entries], written in [origin].
   ///
   /// Total: every link gets an answer, and one that matches nothing is
-  /// [WikilinkMissing] rather than a failure.
+  /// [WikilinkMissing] rather than a failure. `[[#heading]]` is [origin]
+  /// itself, never looked up — and missing only with no [origin] to be in.
   WikilinkTargetValueObject resolve(
     WikilinkValueObject link,
-    List<SpaceEntryValueObject> entries,
-  ) {
+    List<SpaceEntryValueObject> entries, {
+    SpaceRelativePathValueObject? origin,
+  }) {
+    if (link.isWithinDocument) {
+      return origin == null
+          ? const WikilinkTargetValueObject.missing()
+          : WikilinkTargetValueObject.resolved(origin);
+    }
     final Iterable<SpaceEntryValueObject> documents = entries.where(
       (SpaceEntryValueObject entry) => entry.isDocument,
     );

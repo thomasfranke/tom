@@ -17,7 +17,7 @@ part 'space_entity.freezed.dart';
 /// [SpaceRelativePathValueObject] and a [RepoRelativePathValueObject].
 @freezed
 abstract class SpaceEntity with _$SpaceEntity {
-  /// A space; [repositoryRoot] must enclose [root].
+  /// A space; [repositoryRoot], when there is one, must enclose [root].
   ///
   /// Not `const`, because the assertion calls a method; a space is read off a
   /// folder picker at runtime, never written as a literal outside a test.
@@ -29,8 +29,10 @@ abstract class SpaceEntity with _$SpaceEntity {
     /// Absolute path to the folder the user opened; the space's identity.
     required String root,
 
-    /// Absolute path to the enclosing Git repository.
-    required String repositoryRoot,
+    /// Absolute path to the enclosing Git repository, or null for a folder
+    /// git knows nothing about — which opens all the same
+    /// (`docs/product/workspace/without-a-repository/doc.md`).
+    required String? repositoryRoot,
 
     /// What the space is called in the UI, by default [nameOfFolder].
     required String name,
@@ -58,12 +60,37 @@ abstract class SpaceEntity with _$SpaceEntity {
   static bool isEnclosedBy(String root, String repositoryRoot) =>
       _isEnclosedBy(root, repositoryRoot);
 
+  /// Whether git has anything to say here: false is a folder that opened
+  /// with no repository above it, and nothing asks git about it.
+  bool get hasRepository => repositoryRoot != null;
+
+  /// The whole repository seen as a folder, or null with none: the frame a
+  /// changed file outside this space is read, written and compared in
+  /// (`docs/product/git-workflow/commit/opening-a-change/doc.md`).
+  ///
+  /// An address and never a space anybody opens — navigation and search stay
+  /// in [root] — and its paths are git's, since [rootWithinRepository] is null.
+  SpaceEntity? get repositorySpace {
+    final String? repository = repositoryRoot;
+    return repository == null
+        ? null
+        : SpaceEntity(
+            root: repository,
+            repositoryRoot: repository,
+            name: nameOfFolder(repository),
+          );
+  }
+
   /// Where [root] sits inside the repository, or null when it *is* the
-  /// repository; the prefix every conversion below is made of.
+  /// repository — or there is none, where nobody asks for git's spelling.
   RepoRelativePathValueObject? get rootWithinRepository {
+    final String? repository = repositoryRoot;
+    if (repository == null) {
+      return null;
+    }
     final String within = _normalize(
       root,
-    ).substring(_normalize(repositoryRoot).length);
+    ).substring(_normalize(repository).length);
     final String trimmed = within.startsWith('/')
         ? within.substring(1)
         : within;
@@ -127,14 +154,18 @@ abstract class SpaceEntity with _$SpaceEntity {
   }
 }
 
-/// Whether [inner] is [outer] or sits inside it.
+/// Whether [inner] is [outer] or sits inside it; true with no [outer], since
+/// a folder with no repository has nothing to be outside of.
 ///
 /// Top level rather than static, because the assertion is generated into
 /// `space_entity.freezed.dart`, a `part` that sees what is private here but
 /// not what belongs to the class. Compared normalized, since the picker and
 /// `git rev-parse` spell the same folder differently, and with the trailing
 /// separator so `/code/app-docs` is not inside `/code/app`.
-bool _isEnclosedBy(String inner, String outer) {
+bool _isEnclosedBy(String inner, String? outer) {
+  if (outer == null) {
+    return true;
+  }
   final String normalizedInner = _normalize(inner);
   final String normalizedOuter = _normalize(outer);
   return normalizedInner == normalizedOuter ||

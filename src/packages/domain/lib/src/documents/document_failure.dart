@@ -29,6 +29,24 @@ sealed class DocumentFailure with _$DocumentFailure implements AppFailure {
     AppFailure? cause,
   }) = DocumentPermissionDenied;
 
+  /// A document was to be created where one already is.
+  ///
+  /// Said where the name was typed, never by overwriting: the file that is
+  /// there is somebody's work (`docs/product/navigation/file-tree/new-document/doc.md`).
+  const factory DocumentFailure.alreadyExists(
+    /// The path, relative to the space root.
+    String path, {
+    AppFailure? cause,
+  }) = DocumentAlreadyExists;
+
+  /// A name a document cannot be created under: empty, or reaching outside
+  /// the folder it was typed in.
+  const factory DocumentFailure.invalidName(
+    /// The name as typed.
+    String path, {
+    AppFailure? cause,
+  }) = DocumentInvalidName;
+
   /// The file is not valid UTF-8 text.
   ///
   /// Refused rather than opened with replacement characters, because a save

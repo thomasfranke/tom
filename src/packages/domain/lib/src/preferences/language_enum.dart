@@ -1,31 +1,32 @@
 /// Which language the app speaks.
 library;
 
-/// The four the product starts with.
+/// The languages the interface is translated into, and the machine's own.
 ///
-/// **The list is not the feature.** What sits under it is: a language means
-/// every literal the app shows becomes translatable, and nothing here does
-/// that yet (`docs/product/preferences/what-it-holds/doc.md`).
+/// **A member is a translation that exists**: one added here without its ARB
+/// file offers a language the window cannot speak
+/// ([Decision 34](../../../../../../docs/technical/decisions/034-the-interface-is-localised-with-gen-l10n.md)).
 enum LanguageEnum {
-  /// English, which is what every literal is written in today.
-  english('English'),
+  /// Whatever the machine speaks, and English where that is neither of the
+  /// others.
+  system(null, null),
 
-  /// Portuguese.
-  portuguese('Português'),
+  /// English, which every string is written in first.
+  english('en', 'English'),
 
-  /// Spanish.
-  spanish('Español'),
+  /// Brazilian Portuguese.
+  portuguese('pt', 'Português');
 
-  /// German.
-  german('Deutsch');
+  const LanguageEnum(this.code, this.label);
 
-  const LanguageEnum(this.label);
+  /// The language's ISO 639-1 code, or null for [system].
+  final String? code;
 
   /// The language's own name for itself, which is how a chooser names it: a
-  /// reader looking for their language is not reading the current one.
+  /// reader looking for their language is not reading the current one. Null
+  /// for [system], which the interface names in its own words.
   ///
   /// **Not called `name`**, which would shadow `Enum.name` — the store
-  /// writes the declared name and a generic reader compares against it, so
-  /// the two would silently disagree about every language but English.
-  final String label;
+  /// writes the declared name and a generic reader compares against it.
+  final String? label;
 }

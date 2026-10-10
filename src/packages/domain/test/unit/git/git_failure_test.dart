@@ -16,10 +16,17 @@ void main() {
         '${paths.length} documents still hold a marker',
       GitAuthenticationFailed() => 'Authentication failed',
       GitDetachedHead() => 'Detached HEAD',
+      GitNetworkUnavailable() => 'No network',
+      GitNoRemote() => 'No remote configured',
+      GitRemoteNotFound() => 'Nothing to clone there',
+      GitCloneDestinationTaken(path: final String path) => '$path is taken',
       GitPushRejected() => 'The remote moved first',
+      GitLocalChangesOverwritten(paths: final List<String> paths) =>
+        '${paths.length} uncommitted files in the way',
       GitTimedOut() => 'That took too long',
       GitPathNotInRevision(path: final String path) =>
         'No earlier version of $path',
+      GitCommandDenied() => 'Nothing ran',
       GitOperationFailed() => 'Git could not do that',
     };
 
@@ -39,13 +46,44 @@ void main() {
         'Authentication failed',
       );
       expect(headline(const GitDetachedHead()), 'Detached HEAD');
+      expect(headline(const GitNetworkUnavailable()), 'No network');
+      expect(headline(const GitNoRemote()), 'No remote configured');
+      expect(headline(const GitRemoteNotFound()), 'Nothing to clone there');
+      expect(
+        headline(const GitCloneDestinationTaken('/tmp/docs')),
+        contains('/tmp/docs'),
+      );
       expect(headline(const GitPushRejected()), 'The remote moved first');
+      expect(
+        headline(const GitLocalChangesOverwritten(<String>['a.md'])),
+        startsWith('1'),
+      );
       expect(headline(const GitTimedOut()), 'That took too long');
       expect(
         headline(const GitPathNotInRevision('guides/writing.md')),
         contains('guides/writing.md'),
       );
       expect(headline(const GitOperationFailed()), 'Git could not do that');
+      expect(headline(const GitCommandDenied()), 'Nothing ran');
+    });
+
+    test('a refusal is a denial in every hierarchy, and nothing else is', () {
+      expect(const GitCommandDenied().isDenial, isTrue);
+      expect(const PullRequestHostDenied().isDenial, isTrue);
+      expect(const AccountDenied().isDenial, isTrue);
+      expect(const GitOperationFailed().isDenial, isFalse);
+      expect(const PullRequestHostRefused().isDenial, isFalse);
+      expect(const AccountRefused().isDenial, isFalse);
+    });
+
+    test('a refusal under another failure is still one', () {
+      expect(
+        const DocumentOperationFailed(
+          'main.md',
+          cause: GitCommandDenied(),
+        ).isDenial,
+        isTrue,
+      );
     });
   });
 

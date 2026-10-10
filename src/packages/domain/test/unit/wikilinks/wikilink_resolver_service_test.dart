@@ -118,6 +118,32 @@ void main() {
     });
   });
 
+  group('a heading of the document it is in', () {
+    final SpaceRelativePathValueObject here = SpaceRelativePathValueObject(
+      'guides/setup.md',
+    );
+
+    test('resolves to that document, whatever the listing holds', () {
+      expect(
+        resolver.resolve(
+          WikilinkValueObject.tryParse('#Troubleshooting')!,
+          const <SpaceEntryValueObject>[],
+          origin: here,
+        ),
+        WikilinkTargetValueObject.resolved(here),
+      );
+    });
+
+    test('is missing only with no document to be in', () {
+      expect(
+        resolve('#Troubleshooting', <SpaceEntryValueObject>[
+          file('guides/setup.md'),
+        ]),
+        const WikilinkTargetValueObject.missing(),
+      );
+    });
+  });
+
   test('an empty listing answers missing rather than throwing', () {
     expect(
       resolve('anything', const <SpaceEntryValueObject>[]),

@@ -90,6 +90,44 @@ void main() {
     });
   });
 
+  group('discardable', () {
+    StatusEntryValueObject at(
+      String path,
+      FileStateEnum state, {
+      bool isStaged = false,
+    }) => StatusEntryValueObject(
+      path: RepoRelativePathValueObject(path),
+      state: state,
+      isStaged: isStaged,
+    );
+
+    test('counts what goes back to the last commit, each path once', () {
+      expect(
+        statusWith(
+          entries: <StatusEntryValueObject>[
+            at('a.md', FileStateEnum.modified, isStaged: true),
+            at('a.md', FileStateEnum.modified),
+            at('b.md', FileStateEnum.deleted),
+            at('c.md', FileStateEnum.renamed, isStaged: true),
+          ],
+        ).discardable,
+        3,
+      );
+    });
+
+    test('leaves out what git never committed', () {
+      expect(
+        statusWith(
+          entries: <StatusEntryValueObject>[
+            at('new.md', FileStateEnum.untracked),
+            at('added.md', FileStateEnum.added, isStaged: true),
+          ],
+        ).discardable,
+        0,
+      );
+    });
+  });
+
   test('two statuses with the same content are equal', () {
     expect(
       statusWith(

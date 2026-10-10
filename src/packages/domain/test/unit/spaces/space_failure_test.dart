@@ -10,6 +10,8 @@ void main() {
       SpaceFolderMissing(root: final String root) => 'Gone: $root',
       SpaceAccessDenied(path: final String path) => 'Denied: $path',
       SpaceOperationFailed(path: final String path) => 'Failed: $path',
+      SpaceEntryExists(path: final String path) => 'Taken: $path',
+      SpaceInvalidName(path: final String path) => 'Invalid: $path',
     };
 
     test('every variant has a headline, with no default branch', () {
@@ -25,6 +27,8 @@ void main() {
         headline(const SpaceOperationFailed('/code/docs')),
         'Failed: /code/docs',
       );
+      expect(headline(const SpaceEntryExists('adr')), 'Taken: adr');
+      expect(headline(const SpaceInvalidName('a/b')), 'Invalid: a/b');
     });
   });
 

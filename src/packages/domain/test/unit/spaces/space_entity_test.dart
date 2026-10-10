@@ -87,6 +87,30 @@ void main() {
     });
   });
 
+  group('repositorySpace', () {
+    test('is the repository as a folder, whose paths are git\'s', () {
+      final SpaceEntity whole = nested.repositorySpace!;
+      expect(whole.root, '/code/app');
+      expect(whole.repositoryRoot, '/code/app');
+      expect(whole.name, 'app');
+      expect(
+        whole.toRepoRelative(SpaceRelativePathValueObject('README.md')).value,
+        'README.md',
+      );
+    });
+
+    test('is null for a folder with no repository', () {
+      expect(
+        SpaceEntity(
+          root: '/notes',
+          repositoryRoot: null,
+          name: 'notes',
+        ).repositorySpace,
+        isNull,
+      );
+    });
+  });
+
   group('toRepoRelative', () {
     test('prefixes the folder git does not know it is inside', () {
       expect(
@@ -230,6 +254,45 @@ void main() {
 
     test('falls back to the path itself when there is no segment', () {
       expect(SpaceEntity.nameOfFolder('/'), '/');
+    });
+  });
+
+  group('with no repository', () {
+    // A folder git knows nothing about opens all the same
+    // (`docs/product/workspace/without-a-repository/doc.md`).
+    final SpaceEntity loose = SpaceEntity(
+      root: '/notes',
+      repositoryRoot: null,
+      name: 'notes',
+    );
+
+    test('is a space, and says it has no repository', () {
+      expect(loose.hasRepository, isFalse);
+      expect(nested.hasRepository, isTrue);
+    });
+
+    test('has no place inside a repository', () {
+      expect(loose.rootWithinRepository, isNull);
+    });
+
+    test('still finds its own files on disk', () {
+      expect(
+        loose.absolutePathOf(SpaceRelativePathValueObject('a/b.md')),
+        '/notes/a/b.md',
+      );
+      expect(
+        loose.relativize('/notes/a/b.md'),
+        SpaceRelativePathValueObject('a/b.md'),
+      );
+    });
+
+    test('is not the same space as the folder inside a repository', () {
+      expect(
+        loose,
+        isNot(
+          SpaceEntity(root: '/notes', repositoryRoot: '/notes', name: 'notes'),
+        ),
+      );
     });
   });
 

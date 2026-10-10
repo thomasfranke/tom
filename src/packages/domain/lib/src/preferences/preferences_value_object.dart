@@ -2,12 +2,14 @@
 library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:tom_domain/src/preferences/git_approval_mode_enum.dart';
 import 'package:tom_domain/src/preferences/language_enum.dart';
 import 'package:tom_domain/src/preferences/theme_choice_enum.dart';
 
 part 'preferences_value_object.freezed.dart';
 
-/// The three preferences, and nothing else.
+/// The preferences — how the app looks and speaks, and who approves git —
+/// and nothing else.
 ///
 /// **A preference belongs to the machine, not to the space**: opening
 /// another folder changes none of these, and anything that should differ per
@@ -23,8 +25,8 @@ abstract class PreferencesValueObject with _$PreferencesValueObject {
     /// Which theme the window draws; the platform's until somebody chooses.
     @Default(ThemeChoiceEnum.system) ThemeChoiceEnum theme,
 
-    /// Which language the app speaks.
-    @Default(LanguageEnum.english) LanguageEnum language,
+    /// Which language the app speaks; the machine's until somebody chooses.
+    @Default(LanguageEnum.system) LanguageEnum language,
 
     /// Whether the row above the document carries its seventeen buttons.
     ///
@@ -32,6 +34,10 @@ abstract class PreferencesValueObject with _$PreferencesValueObject {
     /// chosen; what this hides is the tools
     /// (`docs/product/editor/formatting-shortcuts/doc.md`).
     @Default(true) bool showingFormattingBar,
+
+    /// Who says yes before git and `gh` run; nobody, until somebody chooses
+    /// (`docs/product/git-workflow/approvals/doc.md`).
+    @Default(GitApprovalModeEnum.automatic) GitApprovalModeEnum gitApprovals,
   }) = _PreferencesValueObject;
 
   const PreferencesValueObject._();

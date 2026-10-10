@@ -32,6 +32,20 @@ sealed class SpaceFailure with _$SpaceFailure implements AppFailure {
     AppFailure? cause,
   }) = SpaceAccessDenied;
 
+  /// A name asked for inside the space is already taken.
+  const factory SpaceFailure.entryExists(
+    /// The space-relative path that was asked for.
+    String path, {
+    AppFailure? cause,
+  }) = SpaceEntryExists;
+
+  /// What was typed is not a name: empty, `.`, `..`, or holding a slash.
+  const factory SpaceFailure.invalidName(
+    /// What was typed.
+    String path, {
+    AppFailure? cause,
+  }) = SpaceInvalidName;
+
   /// Reading the folder failed in a way the product has no name for.
   ///
   /// The typed fallback, with the machine's report in [cause]; a variant

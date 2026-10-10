@@ -53,6 +53,28 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
   const factory GitFailure.authenticationFailed({AppFailure? cause}) =
       GitAuthenticationFailed;
 
+  /// The remote could not be reached: the network, not the repository
+  /// (`docs/product/git-workflow/push-pull/when-the-link-is-broken/doc.md`).
+  const factory GitFailure.networkUnavailable({AppFailure? cause}) =
+      GitNetworkUnavailable;
+
+  /// There is no remote to talk to.
+  const factory GitFailure.noRemote({AppFailure? cause}) = GitNoRemote;
+
+  /// The address names no repository git can clone: a typo, a repository
+  /// that is gone, or a protocol git does not speak
+  /// (`docs/product/home/cloning/doc.md`).
+  const factory GitFailure.remoteNotFound({AppFailure? cause}) =
+      GitRemoteNotFound;
+
+  /// The folder a clone was to fill already holds something, and git never
+  /// clones over it.
+  const factory GitFailure.cloneDestinationTaken(
+    /// The absolute path the clone was asked to create.
+    String path, {
+    AppFailure? cause,
+  }) = GitCloneDestinationTaken;
+
   /// HEAD points at a commit rather than a branch.
   ///
   /// Legal in git and almost never what a documentation author meant, so it
@@ -64,6 +86,17 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
   /// Its own outcome because pulling is the way out
   /// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
   const factory GitFailure.pushRejected({AppFailure? cause}) = GitPushRejected;
+
+  /// Git refused to pull before starting, because what it brings would
+  /// overwrite work that was never committed.
+  ///
+  /// Its own outcome because committing is the way out
+  /// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
+  const factory GitFailure.localChangesOverwritten(
+    /// The files at stake, relative to the repository root.
+    List<String> paths, {
+    AppFailure? cause,
+  }) = GitLocalChangesOverwritten;
 
   /// A git command ran past the time it was allowed and was killed.
   ///
@@ -81,6 +114,15 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
     String path, {
     AppFailure? cause,
   }) = GitPathNotInRevision;
+
+  /// The person refused the command before it ran
+  /// (`docs/product/git-workflow/approvals/doc.md`).
+  ///
+  /// **Never worded as an error**: nothing went wrong, so whoever gets it
+  /// stops quietly, and a refused read leaves the last reading on screen.
+  @Implements<CommandDenial>()
+  const factory GitFailure.commandDenied({AppFailure? cause}) =
+      GitCommandDenied;
 
   /// Git failed in a way the product has no vocabulary for.
   ///
