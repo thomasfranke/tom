@@ -9,6 +9,7 @@ void main() {
       FilesystemEntryNotFound(path: final String path) => 'Not found: $path',
       FilesystemAccessDenied(path: final String path) => 'Denied: $path',
       FilesystemNotUtf8(path: final String path) => 'Not text: $path',
+      FilesystemAlreadyExists(path: final String path) => 'Exists: $path',
       FilesystemOperationFailed(description: final String description) =>
         'Failed: $description',
     };
@@ -25,6 +26,10 @@ void main() {
       expect(
         headline(const FilesystemNotUtf8('/tmp/a.md')),
         startsWith('Not text'),
+      );
+      expect(
+        headline(const FilesystemAlreadyExists('/tmp/a.md')),
+        startsWith('Exists'),
       );
       expect(
         headline(const FilesystemOperationFailed('/tmp/a.md', 'disk full')),

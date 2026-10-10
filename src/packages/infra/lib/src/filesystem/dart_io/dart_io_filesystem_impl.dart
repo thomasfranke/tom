@@ -39,9 +39,26 @@ final class DartIoFilesystemImpl implements Filesystem {
   }
 
   @override
+  Future<Result<Uint8List, FilesystemFailure>> readBytes(String path) async {
+    try {
+      return Success<Uint8List, FilesystemFailure>(
+        await File(path).readAsBytes(),
+      );
+    } on FileSystemException catch (exception) {
+      return Failure<Uint8List, FilesystemFailure>(_translate(path, exception));
+    }
+  }
+
+  @override
   Future<Result<void, FilesystemFailure>> writeFile(
     String path,
     String content,
+  ) => writeBytes(path, utf8.encode(content));
+
+  @override
+  Future<Result<void, FilesystemFailure>> writeBytes(
+    String path,
+    Uint8List bytes,
   ) async {
     final File temporary = File(_temporaryPathFor(path));
     try {
@@ -50,11 +67,48 @@ final class DartIoFilesystemImpl implements Filesystem {
       // the only write the operating system finishes or does not start — and
       // beside it, not in the system's temporary directory, because a rename
       // is atomic within one filesystem only.
-      await temporary.writeAsString(content, flush: true);
+      await temporary.writeAsBytes(bytes, flush: true);
       await temporary.rename(path);
       return const Success<void, FilesystemFailure>(null);
     } on FileSystemException catch (exception) {
       await _discard(temporary);
+      return Failure<void, FilesystemFailure>(_translate(path, exception));
+    }
+  }
+
+  @override
+  Future<Result<void, FilesystemFailure>> createFile(
+    String path,
+    String content,
+  ) async {
+    try {
+      await File(path).parent.create(recursive: true);
+      // `exclusive` is `O_CREAT | O_EXCL`: the machine checks and creates in
+      // one step, so a name taken between a check and a write cannot be
+      // overwritten.
+      await File(path).create(exclusive: true);
+    } on FileSystemException catch (exception) {
+      return Failure<void, FilesystemFailure>(_translate(path, exception));
+    }
+    // The empty file is already the document; content goes through the
+    // atomic write rather than into the file the create just made.
+    return content.isEmpty
+        ? const Success<void, FilesystemFailure>(null)
+        : writeFile(path, content);
+  }
+
+  @override
+  Future<Result<void, FilesystemFailure>> createDirectory(String path) async {
+    try {
+      // A check, then a create: `dart:io` has no exclusive directory create,
+      // and `Directory.create` answers an existing one as success.
+      if (FileSystemEntity.typeSync(path, followLinks: false) !=
+          FileSystemEntityType.notFound) {
+        return Failure<void, FilesystemFailure>(FilesystemAlreadyExists(path));
+      }
+      await Directory(path).create(recursive: true);
+      return const Success<void, FilesystemFailure>(null);
+    } on FileSystemException catch (exception) {
       return Failure<void, FilesystemFailure>(_translate(path, exception));
     }
   }
@@ -109,6 +163,64 @@ final class DartIoFilesystemImpl implements Filesystem {
       return Failure<bool, FilesystemFailure>(_translate(path, exception));
     }
   }
+
+  @override
+  Future<Result<FilesystemEntryTypeEnum?, FilesystemFailure>> entryTypeOf(
+    String path,
+  ) async {
+    try {
+      // Asynchronous for the reason [directoryExists] is: a network mount.
+      // ignore: avoid_slow_async_io
+      final FileSystemEntityType type = await FileSystemEntity.type(
+        path,
+        followLinks: false,
+      );
+      return Success<FilesystemEntryTypeEnum?, FilesystemFailure>(
+        _entryTypeOf(type),
+      );
+    } on FileSystemException catch (exception) {
+      return Failure<FilesystemEntryTypeEnum?, FilesystemFailure>(
+        _translate(path, exception),
+      );
+    }
+  }
+
+  @override
+  Future<Result<void, FilesystemFailure>> delete(String path) async {
+    try {
+      // Asynchronous for the reason [directoryExists] is: a network mount.
+      // ignore: avoid_slow_async_io
+      final FileSystemEntityType type = await FileSystemEntity.type(
+        path,
+        followLinks: false,
+      );
+      // A link is removed through `Link`, because `Directory.delete` on a
+      // link to a folder would empty the folder it points at.
+      await switch (_entryTypeOf(type)) {
+        null => Future<void>.value(),
+        FilesystemEntryTypeEnum.link => Link(path).delete(),
+        FilesystemEntryTypeEnum.directory => Directory(
+          path,
+        ).delete(recursive: true),
+        FilesystemEntryTypeEnum.file => File(path).delete(),
+      };
+      return const Success<void, FilesystemFailure>(null);
+    } on PathNotFoundException {
+      // Gone between the look and the removal: what was asked for.
+      return const Success<void, FilesystemFailure>(null);
+    } on FileSystemException catch (exception) {
+      return Failure<void, FilesystemFailure>(_translate(path, exception));
+    }
+  }
+
+  /// [type] in the capability's terms, null for nothing there.
+  static FilesystemEntryTypeEnum? _entryTypeOf(FileSystemEntityType type) =>
+      switch (type) {
+        FileSystemEntityType.directory => FilesystemEntryTypeEnum.directory,
+        FileSystemEntityType.link => FilesystemEntryTypeEnum.link,
+        FileSystemEntityType.notFound => null,
+        _ => FilesystemEntryTypeEnum.file,
+      };
 
   @override
   Future<Result<String, FilesystemFailure>> resolvePath(String path) async {
@@ -183,6 +295,7 @@ final class DartIoFilesystemImpl implements Filesystem {
     return switch (exception) {
       PathNotFoundException() => FilesystemEntryNotFound(path),
       PathAccessException() => FilesystemAccessDenied(path),
+      PathExistsException() => FilesystemAlreadyExists(path),
       _ => FilesystemOperationFailed(path, exception.message),
     };
   }

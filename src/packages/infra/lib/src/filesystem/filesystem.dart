@@ -1,6 +1,8 @@
 /// Reading, writing and listing files on disk, behind a contract.
 library;
 
+import 'dart:typed_data';
+
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
 import 'package:tom_infra/src/filesystem/filesystem_failure.dart';
@@ -19,6 +21,12 @@ abstract interface class Filesystem {
   /// losing a byte of it.
   Future<Result<String, FilesystemFailure>> readFile(String path);
 
+  /// Reads the file at [path] as it is, for what is not text — an image an
+  /// export embeds first.
+  ///
+  /// Fails with [FilesystemEntryNotFound] if nothing exists at [path].
+  Future<Result<Uint8List, FilesystemFailure>> readBytes(String path);
+
   /// Writes [content] to the file at [path], creating or replacing it, with
   /// the parent directories it needs.
   ///
@@ -29,6 +37,33 @@ abstract interface class Filesystem {
     String path,
     String content,
   );
+
+  /// Writes [bytes] to the file at [path] as [writeFile] writes text: created
+  /// or replaced, with its parent directories, atomically.
+  ///
+  /// For what is not text, an exported PDF first ([Decision
+  /// 30](../../../../../../docs/technical/decisions/030-export-renders-the-preview-not-the-file.md)).
+  Future<Result<void, FilesystemFailure>> writeBytes(
+    String path,
+    Uint8List bytes,
+  );
+
+  /// Creates the file at [path] holding [content], with the parent
+  /// directories it needs — **only if nothing is there yet**.
+  ///
+  /// Fails with [FilesystemAlreadyExists] when the path is taken, and never
+  /// replaces it: the check and the create are one operation on the machine,
+  /// so two creates racing for one name cannot both succeed.
+  Future<Result<void, FilesystemFailure>> createFile(
+    String path,
+    String content,
+  );
+
+  /// Creates an empty directory at [path], and any it needs above it.
+  ///
+  /// [FilesystemAlreadyExists] when anything — a folder or a file — already
+  /// has that name, so a name somebody typed never quietly reuses one.
+  Future<Result<void, FilesystemFailure>> createDirectory(String path);
 
   /// Every entry inside the directory at [path], sorted by path — and, with
   /// [recursive], everything below it too.
@@ -50,6 +85,20 @@ abstract interface class Filesystem {
   /// (`docs/product/home/opening-a-space/doc.md`); a failure when the machine will not say,
   /// which is a different answer.
   Future<Result<bool, FilesystemFailure>> directoryExists(String path);
+
+  /// What is at [path], a link reported as itself, or null for nothing.
+  ///
+  /// Apart from [directoryExists], whose false also covers a file or a link:
+  /// a caller about to remove what it made needs to tell the three apart.
+  Future<Result<FilesystemEntryTypeEnum?, FilesystemFailure>> entryTypeOf(
+    String path,
+  );
+
+  /// Removes what is at [path]: a file, a link but never what it points at,
+  /// or a directory with everything below it.
+  ///
+  /// Nothing there is success, because nothing there is what was asked for.
+  Future<Result<void, FilesystemFailure>> delete(String path);
 
   /// [path] with every symbolic link on it followed, as the machine spells
   /// the real location.

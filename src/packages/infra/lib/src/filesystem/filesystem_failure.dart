@@ -27,6 +27,16 @@ sealed class FilesystemFailure with _$FilesystemFailure implements AppFailure {
     AppFailure? cause,
   }) = FilesystemAccessDenied;
 
+  /// Something already exists at the path a file was to be created at.
+  ///
+  /// Only an exclusive create says this; a write replaces what is there by
+  /// contract, so it never does.
+  const factory FilesystemFailure.alreadyExists(
+    /// The path that was taken.
+    String path, {
+    AppFailure? cause,
+  }) = FilesystemAlreadyExists;
+
   /// The bytes at the path are not valid UTF-8 text.
   ///
   /// Named rather than decoded leniently: a replacement character saved back

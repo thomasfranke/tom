@@ -39,6 +39,9 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
           ]),
           linkDefinitions: _definitionsOf(parsed.linkReferences),
           footnotes: _footnotesOf(parsed, lines),
+          wikilinks: List<String>.unmodifiable(<String>[
+            for (final md.Node node in parsed.nodes) ..._wikilinksIn(node),
+          ]),
         ),
       );
     } on Object catch (error) {
@@ -85,6 +88,23 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
       'hr' => MarkdownSpanKindEnum.rule,
       _ => MarkdownSpanKindEnum.html,
     };
+  }
+
+  /// What each wikilink under [node] holds between its brackets, depth first.
+  ///
+  /// The synthesised footnotes section is walked like any node, so a link in
+  /// a note's text is reported too.
+  static Iterable<String> _wikilinksIn(md.Node node) sync* {
+    if (node is! md.Element) {
+      return;
+    }
+    if (node.tag == _Wikilink.tag) {
+      yield node.textContent;
+      return;
+    }
+    for (final md.Node child in node.children ?? const <md.Node>[]) {
+      yield* _wikilinksIn(child);
+    }
   }
 
   /// Every footnote of the document, in citation order.
@@ -189,6 +209,9 @@ _Parsed _parseWithPositions(String markdown) {
     extensionSet: md.ExtensionSet.gitHubWeb,
     blockSyntaxes: syntaxes,
     withDefaultBlockSyntaxes: false,
+    // Ahead of the package's own, which is where it puts a caller's: at a
+    // `[[` this one is asked before the link syntax claims the bracket.
+    inlineSyntaxes: <md.InlineSyntax>[_Wikilink()],
   );
   final List<md.Node> nodes = document.parseLines(markdown.split('\n'));
   // Read after the parse, because that is when the definitions have been
@@ -228,6 +251,24 @@ final class _Parsed {
 
   /// The footnote labels, in the order they were first cited.
   final List<String> footnoteLabels;
+}
+
+/// `[[…]]` inside prose, as an element of its own.
+///
+/// An inline syntax, so code is safe for free: a fence or an HTML block is
+/// never inline-parsed, and a code span consumes its backticks' run before
+/// this is asked about the bracket inside it.
+class _Wikilink extends md.InlineSyntax {
+  _Wikilink() : super(r'\[\[([^\[\]\n]+)\]\]', startCharacter: 0x5B);
+
+  /// The element's tag, which nothing outside this file ever sees.
+  static const String tag = 'wikilink';
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(md.Element.text(tag, match[1]!));
+    return true;
+  }
 }
 
 /// The block syntaxes the parser would have used, each recording where it

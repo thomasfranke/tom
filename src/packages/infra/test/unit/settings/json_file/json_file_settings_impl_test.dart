@@ -1,6 +1,8 @@
 /// [JsonFileSettingsImpl] over a filesystem that fails on command.
 library;
 
+import 'dart:typed_data';
+
 import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
@@ -83,8 +85,18 @@ void main() {
     test('and reading still works, because the file is intact', () async {
       expect(
         await settings.read('theme'),
-        isA<Success<String?, SettingsFailure>>(),
+        isA<Success<Object?, SettingsFailure>>(),
       );
+    });
+  });
+
+  group('a value JSON cannot hold', () {
+    test('is this capability\'s failure, and nothing is written', () async {
+      expect(
+        failureOf(await settings.write('when', DateTime(2026))),
+        isA<SettingsUnavailable>(),
+      );
+      expect(filesystem.written, isEmpty);
     });
   });
 
@@ -132,6 +144,26 @@ final class _Filesystem implements Filesystem {
   }
 
   @override
+  Future<Result<Uint8List, FilesystemFailure>> readBytes(String path) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> writeBytes(
+    String path,
+    Uint8List bytes,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> createFile(
+    String path,
+    String content,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> createDirectory(String path) async =>
+      throw UnimplementedError();
+
+  @override
   Future<Result<List<FilesystemEntryDto>, FilesystemFailure>> listDirectory(
     String path, {
     bool recursive = false,
@@ -143,5 +175,14 @@ final class _Filesystem implements Filesystem {
 
   @override
   Future<Result<String, FilesystemFailure>> resolvePath(String path) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<FilesystemEntryTypeEnum?, FilesystemFailure>> entryTypeOf(
+    String path,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> delete(String path) async =>
       throw UnimplementedError();
 }

@@ -216,4 +216,84 @@ void main() {
       expect(await notesOf('Text.[^a]\n\n```\n[^a]: Not one.\n```\n'), isEmpty);
     });
   });
+
+  group('the wikilinks it reports', () {
+    /// What sits between the brackets of every wikilink in [markdown].
+    Future<List<String>> linksOf(String markdown) async =>
+        (await outlineOf(markdown)).wikilinks;
+
+    test('a document with none reports none', () async {
+      expect(await linksOf('# Title\n\nSee [the docs](x.md).\n'), isEmpty);
+    });
+
+    test('what was written between the brackets, whole and raw', () async {
+      // Splitting target, anchor and label is the domain's reading.
+      expect(
+        await linksOf('See [[architecture]] and [[a/b#top|the top]].\n'),
+        <String>['architecture', 'a/b#top|the top'],
+      );
+    });
+
+    test('an anchor with no document before it is a link too', () async {
+      expect(
+        await linksOf('Jump to [[#Troubleshooting|the fix]] or [[#Setup]].\n'),
+        <String>['#Troubleshooting|the fix', '#Setup'],
+      );
+    });
+
+    test('in document order, repeats kept, wherever prose is', () async {
+      expect(
+        await linksOf(
+          '# On [[one]]\n\n'
+          '- [[two]]\n  - [[three]]\n\n'
+          '> [[four]]\n\n'
+          '| [[five]] |\n|---|\n| [[one]] |\n',
+        ),
+        <String>['one', 'two', 'three', 'four', 'five', 'one'],
+      );
+    });
+
+    test('in a footnote text too, after the prose', () async {
+      expect(
+        await linksOf('Text.[^a] [[one]]\n\n[^a]: See [[two]].\n'),
+        <String>['one', 'two'],
+      );
+    });
+
+    test('never inside code', () async {
+      expect(
+        await linksOf(
+          'A `[[span]]` here.\n\n'
+          '```\n[[fence]]\n```\n\n'
+          '    [[indented]]\n',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('never escaped, empty, or across a line break', () async {
+      expect(
+        await linksOf(
+          r'\[[escaped]] and [[]] and [[split'
+          '\nline]]\n',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('a link does not swallow the one beside it', () async {
+      expect(await linksOf('[[a]][[b]] and [[c]]d]]\n'), <String>[
+        'a',
+        'b',
+        'c',
+      ]);
+    });
+
+    test('the spans around them are unchanged', () async {
+      expect(await spansOf('Prose [[one]].\n\n# [[two]]\n'), <String>[
+        'paragraph 0..0',
+        'heading 2..2',
+      ]);
+    });
+  });
 }
