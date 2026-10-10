@@ -18,7 +18,7 @@ dartdoc of the code that implements it ([AGENTS.md](../../../AGENTS.md)).
 | [`type.md`](type.md) | The type scale, and Material's own scale for controls |
 | [`elevation.md`](elevation.md) | One level, for what floats over the content |
 | [`icons.md`](icons.md) | The glyph set and how it grows |
-| [`icons/`](icons/) | The glyphs themselves, one SVG each |
+| [`shell.svg`](shell.svg) | The 1b shell masters: top bar, explorer, document, git panel, status bar |
 
 - **Anatomy is Material 3, palette is TOM's, and the button is the product's own.** Material because every control here is a widget that already exists — a 48px button with an 8px radius is a `ButtonStyle` set once in the theme, not an override at every call site.
 - The colour roles are decided in [`visual-language/`](../visual-language/README.md), not here. This chapter maps them onto widgets; it never restates their values.

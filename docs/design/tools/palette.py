@@ -13,41 +13,43 @@ import os
 # Nothing here is called "grey200". A role survives a palette change; a
 # shade number does not, and renaming it later touches every widget.
 LIGHT = {
-    "surface":          "#FAF9F6",  # the page. warm, so long reading does not glare
-    "surface_raised":   "#FFFFFF",  # panels, popovers, cards
-    "surface_sunken":   "#F0EEE9",  # inputs, code blocks, the inactive pane
-    "border":           "#E2DFD8",
-    "border_strong":    "#C9C5BB",
-    "text_primary":     "#26251F",  # warm near-black, never pure #000
-    "text_secondary":   "#57544C",
-    "text_muted":       "#8B877D",
-    "accent":           "#4C7D6E",  # sage. calm, and not the default corporate blue
-    "accent_soft":      "#E4EEEA",
-    "added":            "#3D7A52",
-    "added_soft":       "#E6F0E8",
-    "removed":          "#A24F46",
-    "removed_soft":     "#F6E8E6",
-    "modified":         "#8F6F2E",
-    "modified_soft":    "#F4EDDF",
+    "surface":          "#E8E6E1",  # the window behind the islands. a touch warm, on the maintainer's eye
+    "surface_raised":   "#F6F5F1",  # the islands: columns, popovers, cards. off-white, never #FFF
+    "surface_sunken":   "#ECEAE5",  # inputs, code blocks, the source pane
+    "control":          "#E2E0DA",  # the chosen segment, a secondary button
+    "border":           "#DAD7D1",
+    "border_strong":    "#C4C0B8",
+    "text_primary":     "#1F2328",  # near-black, never pure #000
+    "text_secondary":   "#4E5561",
+    "text_muted":       "#7E7A72",
+    "accent":           "#178F71",  # teal. the brand's green, pushed toward the screen
+    "accent_soft":      "#D4EDE2",
+    "added":            "#558F27",
+    "added_soft":       "#E5EED5",
+    "removed":          "#CF222E",
+    "removed_soft":     "#F8E3DE",
+    "modified":         "#9A6700",
+    "modified_soft":    "#F7EECC",
 }
 
 DARK = {
-    "surface":          "#1A1917",  # warm, matching the light mode's temperature
-    "surface_raised":   "#232220",
-    "surface_sunken":   "#131211",
-    "border":           "#34322D",
-    "border_strong":    "#4C4942",
-    "text_primary":     "#ECEAE4",  # off-white, never pure #FFF
-    "text_secondary":   "#ADA9A0",
-    "text_muted":       "#807C74",
-    "accent":           "#84B5A5",
-    "accent_soft":      "#1E2C28",
-    "added":            "#86BC98",
-    "added_soft":       "#1B2820",
-    "removed":          "#DA9A92",
-    "removed_soft":     "#2C1E1C",
-    "modified":         "#D2B274",
-    "modified_soft":    "#2A2418",
+    "surface":          "#131416",  # the window, darker than the islands on it
+    "surface_raised":   "#1E1F22",
+    "surface_sunken":   "#191A1D",
+    "control":          "#2A2C31",
+    "border":           "#2B2D31",
+    "border_strong":    "#3E4148",
+    "text_primary":     "#DFE1E5",  # off-white, never pure #FFF
+    "text_secondary":   "#A8ADB6",
+    "text_muted":       "#6E737C",
+    "accent":           "#4FD1B0",
+    "accent_soft":      "#15302A",
+    "added":            "#9BCB5E",
+    "added_soft":       "#1E2A17",
+    "removed":          "#EF7B76",
+    "removed_soft":     "#301C1C",
+    "modified":         "#E2B45C",
+    "modified_soft":    "#2C2516",
 }
 
 
@@ -72,6 +74,7 @@ def contrast(a, b):
 PAIRS = [
     ("text_primary", "surface", 4.5),
     ("text_primary", "surface_raised", 4.5),
+    ("text_primary", "control", 4.5),       # a secondary button's label
     ("text_secondary", "surface", 4.5),
     ("text_muted", "surface", 3.0),        # captions and placeholders only
     ("accent", "surface", 3.0),            # marks and borders, not body text
