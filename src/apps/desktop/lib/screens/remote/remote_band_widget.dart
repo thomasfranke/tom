@@ -6,6 +6,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
+import 'package:tom_desktop/screens/commands/commands_panel.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -26,6 +28,7 @@ class RemoteBandWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final RemoteState remote = ref.watch(remoteProvider);
     final TomColors colors = TomColors.of(context);
+    final AppLocalizations l10n = context.l10n;
     final int behind =
         ref.watch(
           spaceSessionProvider.select(
@@ -33,6 +36,20 @@ class RemoteBandWidget extends ConsumerWidget {
           ),
         ) ??
         0;
+    final int ahead =
+        ref.watch(
+          spaceSessionProvider.select(
+            (SpaceSessionState? session) => session?.git?.ahead,
+          ),
+        ) ??
+        0;
+    final String upstream =
+        ref.watch(
+          spaceSessionProvider.select(
+            (SpaceSessionState? session) => session?.git?.upstream?.value,
+          ),
+        ) ??
+        l10n.remoteTheRemote;
     final int conflicted = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) =>
@@ -43,55 +60,86 @@ class RemoteBandWidget extends ConsumerWidget {
     // pull nobody in this session made.
     if (conflicted > 0) {
       return NoticeBandWidget(
-        sentence: _stopped(conflicted),
+        sentence: l10n.remoteStopped(conflicted),
         // `modified` rather than `removed`: nothing failed, and there is
         // something to do about it.
         ink: colors.modified,
         fill: colors.modifiedSoft,
-        raised: colors.surfaceRaised,
         // The band's one action while a merge is open. Resolving is done in
         // the document, not from here, so undoing is all this offers.
-        action: 'Abort the pull',
+        action: l10n.remoteAbortThePull,
         onAction: () => unawaited(_confirmAbort(context, ref)),
       );
     }
     return switch (remote) {
       RemoteWorking(action: RemoteActionEnum.pull) => NoticeBandWidget(
-        sentence: 'Pulling what the remote has…',
+        sentence: l10n.remotePullingWhatTheRemoteHas,
         ink: colors.modified,
         fill: colors.modifiedSoft,
-        raised: colors.surfaceRaised,
+      ),
+      // A pull that worked says how many arrived, and offers Push only while
+      // something of this branch is still to publish
+      // (`git-workflow/push-pull/when-it-works/doc.md`).
+      RemoteIdle(arrived: final int arrived) => NoticeBandWidget(
+        sentence: _arrived(l10n, arrived, ahead, upstream),
+        ink: colors.added,
+        fill: colors.addedSoft,
+        action: arrived > 0 && ahead > 0 ? l10n.commonPush : null,
+        onAction: arrived > 0 && ahead > 0
+            ? () => unawaited(ref.read(remoteProvider.notifier).push())
+            : null,
       ),
       // Fetch and push say they are working on the button that was pressed.
       RemoteIdle() || RemoteWorking() => const SizedBox.shrink(),
       RemoteRejected() => NoticeBandWidget(
-        sentence: _rejection(behind),
+        // Counted only when known, because a fetch may not have happened yet.
+        sentence: behind > 0
+            ? l10n.remoteRejected(behind)
+            : l10n.remoteRejectedUncounted,
         ink: colors.modified,
         fill: colors.modifiedSoft,
-        raised: colors.surfaceRaised,
-        action: 'Pull',
+        action: l10n.commonPull,
         onAction: () => unawaited(ref.read(remoteProvider.notifier).pull()),
+        alternative: l10n.remoteShowTheCommand,
+        onAlternative: () => _showTheCommand(ref, RemoteActionEnum.push),
       ),
       RemoteFailed(
         action: final RemoteActionEnum action,
         failure: final AppFailure failure,
       ) =>
         NoticeBandWidget(
-          sentence: _explain(failure, action),
-          // A conflict is `modified` rather than `removed`: nothing failed,
-          // and there is something to do about it — the same reading the
-          // refusal above gets.
-          ink: failure is GitMergeConflict ? colors.modified : colors.removed,
-          fill: failure is GitMergeConflict
+          sentence: _explain(l10n, failure, action),
+          // A conflict, or a pull held back by uncommitted work, is
+          // `modified` rather than `removed`: nothing failed, and there is
+          // something to do about it — the same reading the refusal above
+          // gets.
+          ink: _isSituation(failure) ? colors.modified : colors.removed,
+          fill: _isSituation(failure)
               ? colors.modifiedSoft
               : colors.removedSoft,
-          raised: colors.surfaceRaised,
-          action: _canRetry(failure) ? 'Try again' : null,
+          action: _canRetry(failure) ? l10n.remoteTryAgain : null,
           onAction: _canRetry(failure)
               ? () => unawaited(_retry(ref, action))
               : null,
+          alternative: l10n.remoteShowTheCommand,
+          onAlternative: () => _showTheCommand(ref, action),
         ),
     };
+  }
+
+  /// Opens the commands panel on the `git <action>` that failed, open onto
+  /// what git said — the one way the panel opens without being asked for
+  /// directly (`docs/product/workspace/commands/doc.md`).
+  ///
+  /// By its verb, because the re-read after it runs commands whose ordinary
+  /// answer is a failure.
+  static void _showTheCommand(WidgetRef ref, RemoteActionEnum action) {
+    ref.read(workspaceProvider.notifier).showBottomPanel(CommandsPanel.id);
+    ref
+        .read(commandsProvider.notifier)
+        .revealLastFailure(
+          (CommandRecord it) => it.arguments.contains(action.name),
+        );
   }
 
   /// Asks before undoing, and says what the undo costs.
@@ -101,20 +149,18 @@ class RemoteBandWidget extends ConsumerWidget {
   /// needs no thought
   /// (`design/screens/desktop/git-conflict/aborting-the-pull-light.svg`).
   static Future<void> _confirmAbort(BuildContext context, WidgetRef ref) async {
+    final AppLocalizations l10n = context.l10n;
     final bool? abort = await TomDialogWidget.show<bool>(
       context,
-      title: 'Abort the pull?',
-      body: const <String>[
-        'The space goes back to what it was before the pull.',
-        'What arrived from the remote stays fetched.',
-      ],
+      title: l10n.remoteAbortQuestion,
+      body: <String>[l10n.remoteAbortGoesBack, l10n.remoteAbortStaysFetched],
       actions: (void Function(bool) answer) => <TomDialogAction>[
         TomDialogAction(
-          label: 'Keep the conflict',
+          label: l10n.remoteKeepTheConflict,
           onPressed: () => answer(false),
         ),
         TomDialogAction(
-          label: 'Abort the pull',
+          label: l10n.remoteAbortThePull,
           onPressed: () => answer(true),
           destructive: true,
         ),
@@ -126,52 +172,70 @@ class RemoteBandWidget extends ConsumerWidget {
     }
   }
 
-  /// What the pull left behind, counted from git rather than from the pull.
-  ///
-  /// The failed pull's own payload is this session's; git's status is the
-  /// repository's, and it is still right after the window was closed.
-  static String _stopped(int conflicted) =>
-      'The pull stopped: $conflicted '
-      'document${conflicted == 1 ? '' : 's'} conflict. '
-      'Nothing you committed has been lost.';
-
-  /// Who got there first, what to do, and that nothing is lost — the three
-  /// the product asks for, in the board's own words.
-  ///
-  /// Counted only when known, because a fetch may not have happened yet.
-  static String _rejection(int behind) =>
-      '${behind > 0 ? 'Someone pushed $behind commit${behind == 1 ? '' : 's'} '
-                'first.' : 'Someone pushed first.'} '
-      'Pull them, then push again — nothing you committed has been lost.';
+  /// What a pull that worked brought, and what of this branch is left to
+  /// publish — the boards' own sentences.
+  static String _arrived(
+    AppLocalizations l10n,
+    int arrived,
+    int ahead,
+    String upstream,
+  ) {
+    if (arrived == 0) {
+      return l10n.remoteAlreadyLevel(upstream);
+    }
+    final String pulled = l10n.remotePulled(arrived, upstream);
+    return ahead == 0 ? pulled : '$pulled ${l10n.remoteStillToPublish(ahead)}';
+  }
 
   /// What went wrong, and what it cost.
   ///
   /// A catch-all, because this switches over [AppFailure] itself and the band
   /// must say something whatever the remote did.
-  static String _explain(AppFailure failure, RemoteActionEnum action) =>
-      switch (failure) {
-        GitNotInstalled() => 'TOM could not find git on this machine.',
-        GitNotARepository() => 'That folder is not inside a Git repository.',
-        GitAuthenticationFailed() =>
-          'The remote would not accept this machine. ${_cost(action)}',
-        // The remote is never named: which one git used is not on the session,
-        // and guessing "origin" would be guessing.
-        GitTimedOut() => 'git could not reach the remote. ${_cost(action)}',
-        GitMergeConflict(conflictedFiles: final List<String> files) =>
-          'The pull stopped: ${files.length} '
-              'document${files.length == 1 ? '' : 's'} conflict.',
-        // What was refused, never why: git may have reached the remote
-        // perfectly and refused for a reason this product cannot yet name.
-        _ => 'Git refused the ${action.name}. ${_cost(action)}',
+  static String _explain(
+    AppLocalizations l10n,
+    AppFailure failure,
+    RemoteActionEnum action,
+  ) => switch (failure) {
+    GitNotInstalled() => l10n.gitNotInstalled,
+    GitNotARepository() => l10n.gitNotARepository,
+    GitAuthenticationFailed() =>
+      '${l10n.remoteNotAccepted} ${_cost(l10n, action)}',
+    // The remote is never named: which one git used is not on the session,
+    // and guessing "origin" would be guessing.
+    GitTimedOut() => '${l10n.remoteCouldNotReach} ${_cost(l10n, action)}',
+    GitMergeConflict(conflictedFiles: final List<String> files) =>
+      l10n.remoteStoppedShort(files.length),
+    // Named when it is one, counted when it is more: the band is one line.
+    GitLocalChangesOverwritten(paths: final List<String> paths) =>
+      switch (paths) {
+        [] => l10n.remoteWouldOverwriteUncounted,
+        [final String only] => l10n.remoteWouldOverwriteOne(only),
+        _ => l10n.remoteWouldOverwriteMany(paths.length),
+      },
+    // What was refused, never why: git may have reached the remote
+    // perfectly and refused for a reason this product cannot yet name.
+    _ => '${_refused(l10n, action)} ${_cost(l10n, action)}',
+  };
+
+  /// That git refused [action], naming the verb.
+  static String _refused(AppLocalizations l10n, RemoteActionEnum action) =>
+      switch (action) {
+        RemoteActionEnum.fetch => l10n.remoteRefusedFetch,
+        RemoteActionEnum.pull => l10n.remoteRefusedPull,
+        RemoteActionEnum.push => l10n.remoteRefusedPush,
       };
 
   /// What the failed action did not manage to do.
-  static String _cost(RemoteActionEnum action) => switch (action) {
-    RemoteActionEnum.fetch => 'Nothing arrived.',
-    RemoteActionEnum.pull => 'Nothing changed here.',
-    RemoteActionEnum.push =>
-      'Nothing was published, and nothing you committed has been lost.',
-  };
+  static String _cost(AppLocalizations l10n, RemoteActionEnum action) =>
+      switch (action) {
+        RemoteActionEnum.fetch => l10n.remoteCostFetch,
+        RemoteActionEnum.pull => l10n.remoteCostPull,
+        RemoteActionEnum.push => l10n.remoteCostPush,
+      };
+
+  /// Whether [failure] is a state of the work to act on rather than a fault.
+  static bool _isSituation(AppFailure failure) =>
+      failure is GitMergeConflict || failure is GitLocalChangesOverwritten;
 
   /// Whether trying the same thing again could answer differently.
   ///

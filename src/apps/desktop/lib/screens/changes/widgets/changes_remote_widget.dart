@@ -6,6 +6,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
+import 'package:tom_desktop/screens/changes/changes_design.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_count_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -25,23 +28,17 @@ class ChangesRemoteWidget extends ConsumerWidget {
   /// Creates the three.
   const ChangesRemoteWidget({super.key});
 
-  /// What `Push` is wide: the column's content, edge to edge.
-  static const double pushWidth = 248;
-
-  /// What each of the two under it is wide.
-  static const double halfWidth = 120;
-
   /// Their height.
-  static const double height = 40;
+  static const double height = 30;
 
   /// The gap between the two on the bottom row.
   static const double gap = 8;
 
   /// The commit line above to `Push`.
-  static const double aboveGap = 14;
+  static const double aboveGap = 10;
 
   /// `Push` to the row under it.
-  static const double rowGap = 12;
+  static const double rowGap = 8;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -55,49 +52,194 @@ class ChangesRemoteWidget extends ConsumerWidget {
     }
     final RemoteState remote = ref.watch(remoteProvider);
     final RemoteNotifier notifier = ref.read(remoteProvider.notifier);
-    return Column(
-      children: <Widget>[
-        const SizedBox(height: aboveGap),
-        _ActionWidget(
-          label: 'Push',
-          // The verb and the number, with nothing between them; the arrow is
-          // the glyph before it.
-          count: git.ahead,
-          glyph: TomGlyphEnum.push,
-          action: RemoteActionEnum.push,
-          remote: remote,
-          width: pushWidth,
-          isPrimary: true,
-          // Nothing to publish is said by the button, not reported after.
-          onPressed: git.ahead == 0 ? null : () => unawaited(notifier.push()),
+    // What the last request said about the link: the line under the buttons,
+    // and whether they stay live (`push-pull/when-the-link-is-broken/doc.md`).
+    final LinkStateEnum? link = remote.link;
+    final bool isReachable = link?.isPressable ?? true;
+    // Ahead is counted against a remote, so with none the number goes.
+    final int ahead = link == LinkStateEnum.noRemote ? 0 : git.ahead;
+    final AppLocalizations l10n = context.l10n;
+    // The column's own inset, as the message and the commit button have it:
+    // the buttons fill what is inside it, whatever width it was dragged to.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: ChangesDesign.inset),
+      child: Column(
+        children: <Widget>[
+          const SizedBox(height: aboveGap),
+          _ActionWidget(
+            label: l10n.commonPush,
+            // The verb and the number, with nothing between them; the arrow is
+            // the glyph before it.
+            count: ahead,
+            glyph: TomGlyphEnum.push,
+            action: RemoteActionEnum.push,
+            remote: remote,
+            // The column's content, edge to edge — 248 at the width the
+            // column opens at, which is what the boards draw.
+            width: double.infinity,
+            isPrimary: true,
+            // Nothing to publish is said by the button, not reported after.
+            onPressed: ahead == 0 || !isReachable
+                ? null
+                : () => unawaited(notifier.push()),
+          ),
+          const SizedBox(height: rowGap),
+          // Half each, less the gap: 120 at the width the column opens at.
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: _ActionWidget(
+                  label: l10n.commonFetch,
+                  // Never a count: it is the button somebody presses to find
+                  // out, and a number on it would answer its own question.
+                  glyph: TomGlyphEnum.fetch,
+                  action: RemoteActionEnum.fetch,
+                  remote: remote,
+                  width: double.infinity,
+                  onPressed: isReachable
+                      ? () => unawaited(notifier.fetch())
+                      : null,
+                ),
+              ),
+              const SizedBox(width: gap),
+              Expanded(
+                child: _ActionWidget(
+                  label: l10n.commonPull,
+                  count: git.behind,
+                  glyph: TomGlyphEnum.pull,
+                  action: RemoteActionEnum.pull,
+                  remote: remote,
+                  width: double.infinity,
+                  onPressed: isReachable
+                      ? () => unawaited(notifier.pull())
+                      : null,
+                ),
+              ),
+            ],
+          ),
+          if (link != null)
+            _LinkLineWidget(link: link)
+          else if (standing(l10n, git) case final String sentence)
+            _StandingLineWidget(sentence: sentence),
+        ],
+      ),
+    );
+  }
+
+  /// Where the branch stands against its upstream, or null when it tracks
+  /// nothing — there is nothing to stand against
+  /// (`push-pull/when-the-link-is-broken/doc.md`).
+  static String? standing(AppLocalizations l10n, GitStatusValueObject git) {
+    final BranchNameValueObject? upstream = git.upstream;
+    if (upstream == null) {
+      return null;
+    }
+    final String name = upstream.value;
+    return switch ((git.ahead, git.behind)) {
+      (0, 0) => l10n.changesUpToDate(name),
+      (0, final int behind) => l10n.changesBehind(behind, name),
+      (final int ahead, 0) => l10n.changesAhead(ahead, name),
+      (final int ahead, final int behind) => l10n.changesAheadAndBehind(
+        ahead,
+        behind,
+        name,
+      ),
+    };
+  }
+}
+
+/// Where a healthy link leaves the branch: the broken line's slot and type,
+/// without its glyph and in `text_muted`, because nothing needs attention.
+class _StandingLineWidget extends StatelessWidget {
+  const _StandingLineWidget({required this.sentence});
+
+  final String sentence;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('sentence', sentence));
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: _LinkLineWidget.top),
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        sentence,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: _LinkLineWidget.text,
+          height: 1.4,
+          color: TomColors.of(context).textMuted,
         ),
-        const SizedBox(height: rowGap),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            _ActionWidget(
-              label: 'Fetch',
-              // Never a count: it is the button somebody presses to find
-              // out, and a number on it would answer its own question.
-              glyph: TomGlyphEnum.fetch,
-              action: RemoteActionEnum.fetch,
-              remote: remote,
-              width: halfWidth,
-              onPressed: () => unawaited(notifier.fetch()),
+      ),
+    ),
+  );
+}
+
+/// What the connection is, under the three — a glyph and the words, never
+/// colour alone, in `modified` because it needs attention rather than
+/// reports a press that failed.
+class _LinkLineWidget extends StatelessWidget {
+  const _LinkLineWidget({required this.link});
+
+  final LinkStateEnum link;
+
+  /// The buttons to the line's glyph
+  /// (`design/screens/desktop/git-connection/no-network-dark.svg`).
+  static const double top = 15;
+
+  /// The glyph, and the gap after it to the words.
+  static const double glyph = 12;
+  static const double glyphGap = 6;
+
+  /// The words.
+  static const double text = 11;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<LinkStateEnum>('link', link));
+  }
+
+  /// What the link is, in the window's language.
+  String _sentenceOf(AppLocalizations l10n) => switch (link) {
+    LinkStateEnum.noNetwork => l10n.changesLinkNoNetwork,
+    LinkStateEnum.credentialsRefused => l10n.changesLinkCredentialsRefused,
+    LinkStateEnum.noRemote => l10n.changesLinkNoRemote,
+    LinkStateEnum.timedOut => l10n.changesLinkTimedOut,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final TomColors colors = TomColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: top),
+      child: Row(
+        children: <Widget>[
+          TomGlyphWidget(
+            glyph: TomGlyphEnum.alert,
+            color: colors.modified,
+            size: glyph,
+          ),
+          const SizedBox(width: glyphGap),
+          Expanded(
+            child: Text(
+              _sentenceOf(context.l10n),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: text,
+                height: 1.4,
+                color: colors.modified,
+              ),
             ),
-            const SizedBox(width: gap),
-            _ActionWidget(
-              label: 'Pull',
-              count: git.behind,
-              glyph: TomGlyphEnum.pull,
-              action: RemoteActionEnum.pull,
-              remote: remote,
-              width: halfWidth,
-              onPressed: () => unawaited(notifier.pull()),
-            ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -124,12 +266,14 @@ class _ActionWidget extends StatelessWidget {
   final int count;
   final bool isPrimary;
 
-  /// The gap between the glyph and the words; the glyph itself is the
-  /// set's own 16.
-  static const double glyphGap = 10;
+  /// The gap between the glyph and the words.
+  static const double glyphGap = 7;
 
-  /// What the words are drawn at.
-  static const double labelSize = 13;
+  /// The glyph.
+  static const double glyphSize = 11;
+
+  /// What the words are drawn at: `Push` a half point over the other two.
+  double get _labelSize => isPrimary ? 12.5 : 12;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -152,34 +296,33 @@ class _ActionWidget extends StatelessWidget {
         remote is RemoteWorking && (remote as RemoteWorking).action == action;
     // The pressed one names itself so nothing has to guess which of the
     // three is in flight; the other two only go dim.
-    final String text = isThisOne
-        ? '${_working[action]}…'
-        : (count > 0 ? '$label ($count)' : label);
+    final String text = isThisOne ? _working(context.l10n) : label;
     final bool enabled = !remote.isBusy && onPressed != null;
-    final Color ink = isPrimary && enabled
-        ? colors.surfaceRaised
-        : (enabled ? colors.textSecondary : colors.textMuted);
+    final Color ink = enabled
+        ? (isPrimary ? colors.textPrimary : colors.textSecondary)
+        : colors.textMuted;
+    final RoundedRectangleBorder shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(ChangesDesign.radius),
+    );
+    // `Push` is filled with the control role and the other two outlined:
+    // on a 1b board the accent belongs to the commit alone, so publishing
+    // is one step quieter than committing.
     return SizedBox(
+      key: ValueKey<RemoteActionEnum>(action),
       width: width,
       height: ChangesRemoteWidget.height,
       child: isPrimary
           ? FilledButton(
               onPressed: remote.isBusy ? null : onPressed,
               style: FilledButton.styleFrom(
-                backgroundColor: colors.accent,
-                foregroundColor: colors.surfaceRaised,
+                backgroundColor: colors.control,
+                foregroundColor: colors.textPrimary,
                 disabledBackgroundColor: colors.surfaceSunken,
                 disabledForegroundColor: colors.textMuted,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(TomMetrics.radius),
-                ),
+                shape: shape,
                 padding: EdgeInsets.zero,
-                textStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
               ),
-              child: _label(text, ink),
+              child: _label(text, ink, colors, showsCount: !isThisOne),
             )
           : OutlinedButton(
               onPressed: remote.isBusy ? null : onPressed,
@@ -191,35 +334,34 @@ class _ActionWidget extends StatelessWidget {
                   // the only thing a secondary button has to dim.
                   color: enabled ? colors.borderStrong : colors.border,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(TomMetrics.radius),
-                ),
+                shape: shape,
                 padding: EdgeInsets.zero,
-                textStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
               ),
-              child: _label(text, ink),
+              child: _label(text, ink, colors, showsCount: !isThisOne),
             ),
     );
   }
 
-  /// The glyph and the words, centred together rather than each on its own.
+  /// The glyph, the words and the count, centred together rather than each
+  /// on its own.
   ///
   /// The size is on the `Text` and not only on the button's `textStyle`:
   /// a style set through `styleFrom` does not reach a `Text` nested inside a
-  /// `Row`, and the label came out large enough to overflow the board's 120.
-  Widget _label(String text, Color ink) => Row(
+  /// `Row`.
+  Widget _label(
+    String text,
+    Color ink,
+    TomColors colors, {
+    required bool showsCount,
+  }) => Row(
     mainAxisAlignment: MainAxisAlignment.center,
     mainAxisSize: MainAxisSize.min,
     children: <Widget>[
-      TomGlyphWidget(glyph: glyph, color: ink),
+      TomGlyphWidget(glyph: glyph, color: ink, size: glyphSize),
       const SizedBox(width: glyphGap),
-      // Flexible so a label longer than the board's width shrinks the row
-      // instead of throwing. It never happens in the app — but a widget test
-      // has no vendored font, so every character measures its font size
-      // square and `Pull (3)` comes out twice as wide as IBM Plex draws it.
+      // Flexible so a label longer than the button shrinks the row instead
+      // of throwing — a widget test has no vendored font, and every
+      // character measures its font size square there.
       Flexible(
         child: Text(
           text,
@@ -227,20 +369,25 @@ class _ActionWidget extends StatelessWidget {
           softWrap: false,
           overflow: TextOverflow.fade,
           style: TextStyle(
-            fontSize: labelSize,
+            fontSize: _labelSize,
             fontWeight: isPrimary ? FontWeight.w600 : FontWeight.w500,
             color: ink,
           ),
         ),
       ),
+      // The count is a badge after the verb, not a number in brackets: a
+      // 1b board reads it the way it reads the git tab's own count.
+      if (showsCount && count > 0) ...<Widget>[
+        const SizedBox(width: 5),
+        ChangesCountWidget(count: count),
+      ],
     ],
   );
 
-  /// What each says while it is the one running.
-  static const Map<RemoteActionEnum, String> _working =
-      <RemoteActionEnum, String>{
-        RemoteActionEnum.fetch: 'Fetching',
-        RemoteActionEnum.pull: 'Pulling',
-        RemoteActionEnum.push: 'Pushing',
-      };
+  /// What this one says while it is the one running.
+  String _working(AppLocalizations l10n) => switch (action) {
+    RemoteActionEnum.fetch => l10n.changesFetching,
+    RemoteActionEnum.pull => l10n.changesPulling,
+    RemoteActionEnum.push => l10n.changesPushing,
+  };
 }

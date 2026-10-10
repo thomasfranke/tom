@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/branches/branches_design.dart';
 import 'package:tom_desktop/screens/branches/widgets/branches_field_widget.dart';
 import 'package:tom_desktop/screens/branches/widgets/branches_row_widget.dart';
@@ -83,10 +84,8 @@ class _ContentsWidget extends ConsumerWidget {
     final BranchesState state = ref.watch(branchesProvider);
     return switch (state) {
       BranchesInitial() ||
-      BranchesLoading() => const _NoteWidget('Asking git…'),
-      BranchesFailed() => const _NoteWidget(
-        'Git could not say what branches there are.',
-      ),
+      BranchesLoading() => _NoteWidget(context.l10n.commonAskingGit),
+      BranchesFailed() => _NoteWidget(context.l10n.branchesUnreadable),
       BranchesReady(pending: final BranchNameValueObject target) => _Padded(
         child: BranchesUnsavedWidget(target: target),
       ),
@@ -118,6 +117,7 @@ class _ListWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
     final List<BranchEntity> visible = state.visible;
+    final AppLocalizations l10n = context.l10n;
     // The height the wireframe fixes belongs to this face alone; the other
     // two are as tall as what they say.
     return ConstrainedBox(
@@ -128,10 +128,10 @@ class _ListWidget extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const _Padded(child: BranchesFieldWidget(hint: 'Filter branches')),
+          _Padded(child: BranchesFieldWidget(hint: l10n.branchesFilterHint)),
           const SizedBox(height: 12),
           if (visible.isEmpty)
-            const _NoteWidget('No branch by that name.')
+            _NoteWidget(l10n.branchesNoneByThatName)
           else
             Flexible(
               child: ListView.builder(
@@ -143,14 +143,13 @@ class _ListWidget extends ConsumerWidget {
                     BranchesRowWidget(branch: visible[index]),
               ),
             ),
-          if (state.failure != null)
-            const _NoteWidget('Git refused that. Nothing has changed.'),
+          if (state.failure != null) _NoteWidget(l10n.branchesRefused),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Divider(height: 1, thickness: 1, color: colors.border),
           ),
           _RowButtonWidget(
-            label: 'Create branch…',
+            label: l10n.branchesCreateEllipsis,
             onPressed: ref.read(branchesProvider.notifier).startCreating,
           ),
         ],
@@ -175,23 +174,28 @@ class _CreateWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
     final BranchesNotifier notifier = ref.read(branchesProvider.notifier);
-    final String from =
-        state.branches
-            .where((BranchEntity it) => it.isCurrent)
-            .map((BranchEntity it) => it.name.value)
-            .firstOrNull ??
-        'where you are';
+    final AppLocalizations l10n = context.l10n;
+    final String? from = state.branches
+        .where((BranchEntity it) => it.isCurrent)
+        .map((BranchEntity it) => it.name.value)
+        .firstOrNull;
     return _Padded(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const BranchesFieldWidget(hint: 'New branch name'),
+          BranchesFieldWidget(hint: l10n.branchesNewNameHint),
           const SizedBox(height: 8),
           Text(
             // What it branches from, said before rather than discovered after
             // (`docs/product/git-workflow/branch-switch/doc.md`).
-            state.rejected ?? 'Starts from $from, and switches to it.',
+            switch ((state.rejected, from)) {
+              (BranchNameRejectionEnum.notAName, _) =>
+                l10n.branchesNameNotAccepted,
+              (BranchNameRejectionEnum.taken, _) => l10n.branchesNameTaken,
+              (null, null) => l10n.branchesStartsFromHere,
+              (null, final String branch) => l10n.branchesStartsFrom(branch),
+            },
             style: TextStyle(
               fontSize: BranchesDesign.note,
               height: 1.4,
@@ -218,7 +222,7 @@ class _CreateWidget extends ConsumerWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              child: const Text('Create branch'),
+              child: Text(l10n.branchesCreate),
             ),
           ),
           const SizedBox(height: 8),
@@ -237,7 +241,7 @@ class _CreateWidget extends ConsumerWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              child: const Text('Back to the list'),
+              child: Text(l10n.branchesBackToTheList),
             ),
           ),
         ],

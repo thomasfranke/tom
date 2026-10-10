@@ -39,7 +39,9 @@ class _BranchesFieldWidgetState extends ConsumerState<BranchesFieldWidget> {
       _ => '',
     },
   );
-  final FocusNode _focus = FocusNode();
+  late final FocusNode _focus = FocusNode()..addListener(_focusChanged);
+
+  void _focusChanged() => setState(() {});
 
   @override
   void initState() {
@@ -51,7 +53,9 @@ class _BranchesFieldWidgetState extends ConsumerState<BranchesFieldWidget> {
   @override
   void dispose() {
     _controller.dispose();
-    _focus.dispose();
+    _focus
+      ..removeListener(_focusChanged)
+      ..dispose();
     super.dispose();
   }
 
@@ -66,37 +70,20 @@ class _BranchesFieldWidgetState extends ConsumerState<BranchesFieldWidget> {
         _controller.clear();
       }
     });
-    final TomColors colors = TomColors.of(context);
-    final TextStyle style = TextStyle(
-      fontSize: BranchesDesign.note,
-      height: 1.4,
-      color: colors.textPrimary,
-    );
-    return SizedBox(
+    // Drawn, not decorated: an `InputDecoration` sized the box from its
+    // content and the empty field collapsed under its own caret.
+    return TomFieldBoxWidget(
       height: BranchesDesign.fieldHeight,
-      child: TextField(
+      fill: TomColors.of(context).surfaceSunken,
+      isFocused: _focus.hasFocus,
+      radius: BranchesDesign.radius,
+      child: TomFieldWidget(
         controller: _controller,
         focusNode: _focus,
         onChanged: ref.read(branchesProvider.notifier).type,
-        style: style,
-        decoration: InputDecoration(
-          hintText: widget.hint,
-          hintStyle: style.copyWith(color: colors.textMuted),
-          filled: true,
-          fillColor: colors.surfaceSunken,
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-          border: _border(colors.border),
-          enabledBorder: _border(colors.border),
-          focusedBorder: _border(colors.accent),
-        ),
+        hint: widget.hint,
+        fontSize: BranchesDesign.note,
       ),
     );
   }
-
-  /// The box's outline in [color].
-  OutlineInputBorder _border(Color color) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(BranchesDesign.radius),
-    borderSide: BorderSide(color: color),
-  );
 }

@@ -4,6 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/branches/branches_design.dart';
 import 'package:tom_desktop/screens/branches/widgets/branches_popover_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -108,28 +109,37 @@ class _TriggerWidget extends StatelessWidget {
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           foregroundColor: colors.textPrimary,
-          side: BorderSide(color: colors.borderStrong),
+          backgroundColor: colors.surfaceRaised,
+          side: BorderSide(color: colors.border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(BranchesDesign.radius),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: BranchesDesign.controlInset,
+          ),
         ),
         child: Row(
           children: <Widget>[
+            TomGlyphWidget(
+              glyph: TomGlyphEnum.branch,
+              color: colors.accent,
+              size: BranchesDesign.controlGlyph,
+            ),
+            const SizedBox(width: 6),
             Expanded(
               child: Text(
-                _name,
+                _name(context.l10n),
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: BranchesDesign.label,
-                  height: 1.4,
+                  fontSize: BranchesDesign.controlLabel,
+                  fontWeight: FontWeight.w500,
                   color: colors.textPrimary,
                 ),
               ),
             ),
             // The one chevron, at the trailing edge of a select control
             // (`docs/design/components/controls.md`).
-            TomChevronWidget(isOpen: true, color: colors.textMuted),
+            TomChevronWidget(isOpen: true, color: colors.textMuted, size: 10),
           ],
         ),
       ),
@@ -140,10 +150,10 @@ class _TriggerWidget extends StatelessWidget {
   ///
   /// A detached `HEAD` is named, in the status bar's words, because it is a
   /// state to get out of rather than a missing value.
-  String get _name => switch (git) {
-    GitStatusValueObject(isDetached: true) => 'detached HEAD',
+  String _name(AppLocalizations l10n) => switch (git) {
+    GitStatusValueObject(isDetached: true) => l10n.commonDetachedHead,
     GitStatusValueObject(branch: final BranchNameValueObject branch) =>
       branch.value,
-    _ => 'no branch',
+    _ => l10n.commonNoBranch,
   };
 }

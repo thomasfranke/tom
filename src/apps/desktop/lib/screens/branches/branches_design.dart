@@ -7,15 +7,20 @@ import 'package:tom_ui/tom_ui.dart';
 /// ([branch-switcher-light.svg](../../../../../../docs/design/screens/desktop/git-branches/branch-switcher-light.svg)).
 ///
 /// **The control is centred on the window, not on what precedes it.** Every
-/// board draws it at `615,11 210×30`, and 615 + 105 is 720 — so a longer
-/// space name pushes nothing, and the control lines up with the modes in the
-/// row below (`docs/design/screens/measurements.md`).
+/// board draws it at `620,8 200×24`, and 620 + 100 is 720 — so a longer
+/// space name pushes nothing (`docs/design/screens/measurements.md`).
 abstract final class BranchesDesign {
-  /// The control in the top bar.
-  static const double controlWidth = 210;
+  /// The control in the top bar: a pill, the branch's glyph and its name.
+  static const double controlWidth = 200;
 
-  /// The control's box, inside the 52 of the bar.
-  static const double controlHeight = 30;
+  /// The control's box, inside the 40 of the bar.
+  static const double controlHeight = 24;
+
+  /// The pill's edge to its glyph, and its chevron to its far edge.
+  static const double controlInset = 10;
+
+  /// The branch's glyph, and the gap after it.
+  static const double controlGlyph = 12;
 
   /// The popover, wider than the control it hangs from.
   static const double popoverWidth = 260;
@@ -45,8 +50,11 @@ abstract final class BranchesDesign {
   /// Corner radius: the control, the popover, a row, the field.
   static const double radius = 6;
 
-  /// A branch's name, in the control and in the list.
+  /// A branch's name, in the list.
   static const double label = 14;
+
+  /// A branch's name, in the pill.
+  static const double controlLabel = 12.5;
 
   /// What the surface says about itself: a refusal, a question, a hint.
   static const double note = 12;

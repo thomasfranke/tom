@@ -1,16 +1,19 @@
 /// The git column: what differs, what is going in, and the commit.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/changes/changes_design.dart';
-import 'package:tom_desktop/screens/changes/widgets/changes_caption_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_commit_button_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_message_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_note_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_remote_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_row_widget.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_section_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -48,30 +51,17 @@ class ChangesPanel extends ConsumerWidget {
             session?.isResolvingMerge ?? false ? session!.toResolve.length : 0,
       ),
     );
+    final AppLocalizations l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        // No gap of its own: the column's switch already leaves one under
-        // itself, and a second would push `All` off the board's line.
-        ChangesCaptionWidget(
-          allStaged:
-              entries.isNotEmpty &&
-              entries.every((StatusEntryValueObject e) => e.isStaged),
-          isBusy: isBusy,
-        ),
-        const SizedBox(
-          height:
-              ChangesDesign.rowsTop -
-              ChangesDesign.captionTop -
-              ChangesDesign.caption * 1.4,
-        ),
-        Expanded(child: _body(state, entries, isBusy: isBusy)),
+        Expanded(child: _body(l10n, ref, state, entries, isBusy: isBusy)),
         // Above the box rather than in place of the list, so a refusal is
         // said while what it refused is still on screen.
         if (state case ChangesReady(failure: final AppFailure refused))
           Padding(
             padding: const EdgeInsets.only(top: ChangesDesign.stackGap),
-            child: ChangesNoteWidget(_explain(refused)),
+            child: ChangesNoteWidget(_explain(l10n, refused)),
           ),
         // Never taken away, not even by a refused push: the refusal is a band
         // above the document and this column keeps working
@@ -96,7 +86,7 @@ class ChangesPanel extends ConsumerWidget {
           const SizedBox(height: ChangesDesign.buttonToStaged),
           Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: TomMetrics.padTight,
+              horizontal: ChangesDesign.inset,
             ),
             child: Text(
               // What is left to resolve takes the line while a merge is
@@ -104,12 +94,12 @@ class ChangesPanel extends ConsumerWidget {
               // asking yet
               // (`design/screens/desktop/git-conflict/conflict-in-source-light.svg`).
               toResolve > 0
-                  ? '$toResolve document${toResolve == 1 ? '' : 's'} to resolve'
-                  : '$staged of ${entries.length} staged',
+                  ? l10n.changesToResolve(toResolve)
+                  : l10n.changesStagedOf(staged, entries.length),
               style: TextStyle(
                 fontSize: ChangesDesign.staged,
                 height: 1.4,
-                color: TomColors.of(context).textSecondary,
+                color: TomColors.of(context).textMuted,
               ),
             ),
           ),
@@ -118,45 +108,99 @@ class ChangesPanel extends ConsumerWidget {
         // commit, then publish
         // (`docs/product/git-workflow/push-pull/the-controls/doc.md`).
         const ChangesRemoteWidget(),
-        // Sixteen, which is where a column's content ends: the containers
-        // run under the status bar and what sits in them does not
-        // (`docs/design/screens/measurements.md`).
-        const SizedBox(height: TomMetrics.padTight),
+        const SizedBox(height: ChangesDesign.inset),
       ],
     );
   }
 
   /// The list, or the sentence that stands in for it.
   static Widget _body(
+    AppLocalizations l10n,
+    WidgetRef ref,
     ChangesState state,
     List<StatusEntryValueObject> entries, {
     required bool isBusy,
   }) => switch (state) {
-    ChangesInitial() => const ChangesNoteWidget('No space is open.'),
-    ChangesLoading() => const ChangesNoteWidget('Asking git…'),
+    ChangesInitial() => ChangesNoteWidget(l10n.commonNoSpaceOpen),
+    ChangesLoading() => ChangesNoteWidget(l10n.commonAskingGit),
     ChangesFailed(failure: final AppFailure failure) => ChangesNoteWidget(
-      _explain(failure),
+      _explain(l10n, failure),
     ),
-    ChangesReady() when entries.isEmpty => const ChangesNoteWidget(
-      'Nothing has changed since the last commit.',
+    ChangesReady() when entries.isEmpty => ChangesNoteWidget(
+      l10n.changesNothingChanged,
     ),
-    ChangesReady() => ListView.builder(
-      itemExtent: ChangesDesign.rowPitch,
-      itemCount: entries.length,
-      itemBuilder: (BuildContext context, int index) =>
-          ChangesRowWidget(entry: entries[index], isBusy: isBusy),
-    ),
+    ChangesReady() => _sections(l10n, ref, entries, isBusy: isBusy),
   };
+
+  /// What is going in, then what is not, each under its own head.
+  ///
+  /// A section with nothing in it is left out rather than drawn empty: a
+  /// `STAGED · 0` is a line read twice and ignored.
+  static Widget _sections(
+    AppLocalizations l10n,
+    WidgetRef ref,
+    List<StatusEntryValueObject> entries, {
+    required bool isBusy,
+  }) {
+    final ChangesNotifier notifier = ref.read(changesProvider.notifier);
+    final List<StatusEntryValueObject> staged = <StatusEntryValueObject>[
+      for (final StatusEntryValueObject each in entries)
+        if (each.isStaged) each,
+    ];
+    final List<StatusEntryValueObject> unstaged = <StatusEntryValueObject>[
+      for (final StatusEntryValueObject each in entries)
+        if (!each.isStaged) each,
+    ];
+    Widget rows(List<StatusEntryValueObject> section) => Column(
+      children: <Widget>[
+        for (final StatusEntryValueObject each in section)
+          SizedBox(
+            height: ChangesDesign.rowPitch,
+            child: ChangesRowWidget(entry: each, isBusy: isBusy),
+          ),
+      ],
+    );
+    return ListView(
+      padding: const EdgeInsets.only(top: ChangesDesign.sectionTop),
+      children: <Widget>[
+        if (staged.isNotEmpty) ...<Widget>[
+          ChangesSectionWidget(
+            title: l10n.changesStagedSection,
+            count: staged.length,
+            action: l10n.changesUnstageAll,
+            onAction: isBusy
+                ? null
+                : () => unawaited(notifier.setAllStaged(staged: false)),
+          ),
+          rows(staged),
+        ],
+        if (staged.isNotEmpty && unstaged.isNotEmpty)
+          const SizedBox(height: ChangesDesign.sectionGap),
+        if (unstaged.isNotEmpty) ...<Widget>[
+          ChangesSectionWidget(
+            title: l10n.changesChangesSection,
+            count: unstaged.length,
+            action: l10n.changesStageAll,
+            onAction: isBusy
+                ? null
+                : () => unawaited(notifier.setAllStaged(staged: true)),
+          ),
+          rows(unstaged),
+        ],
+      ],
+    );
+  }
 
   /// What to say about a repository that would not answer.
   ///
   /// A catch-all, because this switches over [AppFailure] itself and the
   /// panel must say something whatever went wrong.
-  static String _explain(AppFailure failure) => switch (failure) {
-    GitNotInstalled() => 'TOM could not find git on this machine.',
-    GitNotARepository() => 'That folder is not inside a Git repository.',
-    GitMergeConflict() => 'A merge is in progress — resolve it first.',
-    GitTimedOut() => 'Git took too long to answer.',
-    _ => 'Git could not do that.',
-  };
+  static String _explain(AppLocalizations l10n, AppFailure failure) =>
+      switch (failure) {
+        GitNotInstalled() => l10n.gitNotInstalled,
+        GitNotARepository() => l10n.gitNotARepository,
+        GitMergeConflict() => l10n.changesMergeInProgress,
+        GitTimedOut() => l10n.gitTimedOut,
+        _ => l10n.changesGitCouldNot,
+      };
 }

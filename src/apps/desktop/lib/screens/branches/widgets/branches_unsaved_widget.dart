@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/branches/branches_design.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -35,9 +36,9 @@ class BranchesUnsavedWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
-    final SpaceRelativePathValueObject? document = ref.watch(
+    final DocumentTab? document = ref.watch(
       spaceSessionProvider.select(
-        (SpaceSessionState? session) => session?.openDocument,
+        (SpaceSessionState? session) => session?.onScreen,
       ),
     );
     final bool isBusy = ref.watch(
@@ -46,6 +47,7 @@ class BranchesUnsavedWidget extends ConsumerWidget {
       ),
     );
     final BranchesNotifier notifier = ref.read(branchesProvider.notifier);
+    final AppLocalizations l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -53,7 +55,9 @@ class BranchesUnsavedWidget extends ConsumerWidget {
         Text(
           // Named, because half of not losing work quietly is saying which
           // file is at stake.
-          '${document?.value ?? 'The open document'} has unsaved changes.',
+          l10n.commonHasUnsavedChanges(
+            document?.value ?? l10n.commonTheOpenDocument,
+          ),
           style: TextStyle(
             fontSize: BranchesDesign.label,
             height: 1.4,
@@ -63,8 +67,7 @@ class BranchesUnsavedWidget extends ConsumerWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Switching to ${target.value} would replace it with the version '
-          'on that branch.',
+          l10n.branchesSwitchingReplaces(target.value),
           style: TextStyle(
             fontSize: BranchesDesign.note,
             height: 1.5,
@@ -73,13 +76,13 @@ class BranchesUnsavedWidget extends ConsumerWidget {
         ),
         const SizedBox(height: 14),
         _ActionWidget(
-          label: 'Save and switch',
+          label: l10n.branchesSaveAndSwitch,
           isPrimary: true,
           onPressed: isBusy ? null : () => unawaited(notifier.saveAndSwitch()),
         ),
         const SizedBox(height: 8),
         _ActionWidget(
-          label: 'Discard and switch',
+          label: l10n.branchesDiscardAndSwitch,
           isPrimary: false,
           onPressed: isBusy
               ? null
@@ -87,7 +90,7 @@ class BranchesUnsavedWidget extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         _ActionWidget(
-          label: 'Stay on this branch',
+          label: l10n.branchesStayOnThisBranch,
           isPrimary: false,
           onPressed: isBusy ? null : notifier.cancelSwitch,
         ),
