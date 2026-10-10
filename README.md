@@ -73,8 +73,8 @@ Every commit that touched the open document; open one and read that version.
 Source and preview, a formatting bar, tabs, and the file tree carrying each document's change mark.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/design/screens/desktop/workspace/shell-dark.svg">
-  <img alt="Split editor with the file tree, the formatting bar and the open tabs" src="docs/design/screens/desktop/workspace/shell-light.svg" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/design/screens/desktop/workspace-shell/shell-dark.svg">
+  <img alt="Split editor with the file tree, the formatting bar and the open tabs" src="docs/design/screens/desktop/workspace-shell/shell-light.svg" width="100%">
 </picture>
 
 ## The problem
