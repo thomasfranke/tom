@@ -23,6 +23,23 @@ there and empty in the real app.
 
 A feature with no scenario needs a stated reason, the same way "no tests" does.
 
+### What "every" means
+
+The maintainer's bar (2026-10-09), and it is not a figure of speech:
+
+| | Needs |
+|---|---|
+| **Every control** — button, menu row, tab, toggle, chip, pill in a band, dialog action, shortcut, drag, right-click entry | a step that presses it **and asserts what it did** — and, where it has one, a step for its unavailable state |
+| **Every behaviour** a product doc states as a rule | a step that would fail if the rule broke |
+| **Every edge case** — each refusal, empty state, error band, "nothing to do" | a step that provokes it for real |
+| **Every one of the above** | **evidence**: the frame after the step shows it. A rule asserted in state and invisible in the frame is half proven |
+
+- **Under each of them, an integration test — and that layer matters more.** A scenario proves the window; an integration test proves the thing the window trusts, against the real dependency: the real `git` on a real repository, the real filesystem, the real index, the real parser, `gh` as a script on `PATH`. Every method of a capability's contract, every failure it can classify — *provoked from the real tool, not constructed* — and every repository above it.
+- **A widget test is not a substitute for either.** It is the right home only for a state no scenario can hold still (a commit in flight, a frame of an animation), and that list is kept short and argued, never a default.
+- **A fixture is part of the proof.** One whose changes all sat inside the space passed while the real app could not open a single row: a git feature is tested with a space below the repository root *and* a change beside it.
+- **Survey before writing in bulk.** Closing a coverage gap starts with the audit — rule by rule, control by control, proven / partial / missing — and a roadmap the maintainer approves. Scenarios written before that are scenarios written twice.
+- **Writing is not running.** A scenario is run alone, when the maintainer says so; `tom e2e all` and the Penpot export are the end of the work, never part of it.
+
 ## Where it lives
 
 ```
@@ -134,7 +151,8 @@ dart run tool/tom.dart e2e            # the menu: groups, scenarios, last outcom
 ## What is proven elsewhere, and say so
 
 When a step cannot run here, the scenario says which test carries it instead
-rather than pretending. Today: the diff scenario's deleted-code-block step is
+rather than pretending — and each entry is a debt with a reason, not a category
+(see *What "every" means*). Today: the diff scenario's deleted-code-block step is
 proven by widget tests, and re-filing a saved document is
 `search_notifier_test`'s.
 

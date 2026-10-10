@@ -90,7 +90,7 @@ Two Penpot facts the code has to encode: `library.components` lists one entry pe
 The masters live on `Components - Master`, in a board called `Masters`, and **they stay there**. Penpot keeps every component's original as a real shape, so the board cannot be deleted, and it cannot travel either:
 
 - **Duplicating a page that holds main instances duplicates the components.** It did, twice, and both times it was the ten with variants.
-- **Cut-and-paste does the same.** Penpot rebuilds a variant set that crosses a page.
+- **Cut-and-paste rebuilds a variant set** that crosses a page. A plain component is different: on 2026-10-08 the six shell masters went to `05 · Components - Shell` by ⌘X / ⌘V in the Penpot app and kept their component *and* main-instance ids. So a plain master can be moved by hand in the app, a variant set cannot — count the library either way.
 - **The plugin cannot move a shape between pages at all** — `appendChild` answers `Cannot modify a page that is not currently active`, and a reference taken on one page is invalid on another.
 
 What *is* safe to move is an ordinary instance, which is how the catalogue crossed pages without losing a component. **Before and after any page surgery, count the library**: a jump from 19 to 29 is the whole of the damage, and undo is the only clean repair.
