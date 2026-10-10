@@ -42,6 +42,12 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        readPreferencesFileProvider.overrideWithValue(
+          ReadDocumentUseCase(
+            documentsFor: (SpaceEntity space) => documents,
+            observability: const _Silent(),
+          ),
+        ),
         // The preview's three: with no conflict the marks are the diff's,
         // and the diff is the preview's reading. Git here has no earlier
         // version of anything, so the fall-through is *no marks*.
@@ -120,6 +126,21 @@ void main() {
       tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
       '# Title\n\nProse.\n',
     );
+  });
+
+  testWidgets('the preferences file is drawn plain, not as markdown', (
+    WidgetTester tester,
+  ) async {
+    documents.content = '{\n  "theme": "dark"\n}';
+    await pumpEditor(tester);
+    container.read(spaceSessionProvider.notifier)
+      ..open(docs)
+      ..openPreferencesFile(SpaceRelativePathValueObject('preferences.json'));
+    await tester.pumpAndSettle();
+
+    final CodeEditor editor = tester.widget(find.byType(CodeEditor));
+    expect(editor.controller!.text, '{\n  "theme": "dark"\n}');
+    expect(editor.style?.codeTheme, isNull);
   });
 
   testWidgets('a document that is gone is named as that', (
@@ -327,6 +348,13 @@ final class _Documents implements DocumentRepository {
       Success<DocumentEntity, DocumentFailure>(
         DocumentEntity(path: path, content: content),
       );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async {

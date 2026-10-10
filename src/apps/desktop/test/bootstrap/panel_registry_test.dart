@@ -15,7 +15,7 @@ void main() {
     List<DocumentModeEnum> modes = DocumentModeEnum.values,
   }) => PanelDescriptor(
     id: id,
-    title: id,
+    title: (BuildContext context) => id,
     placement: placement,
     order: order,
     modes: modes,
@@ -179,6 +179,37 @@ void main() {
             .map((PanelDescriptor descriptor) => descriptor.id),
         <String>['source'],
       );
+    });
+
+    test('a panel kept alive is kept in the modes it is not drawn in', () {
+      // The source pane, unseen in preview: its undo history is still what
+      // the buttons above the document walk.
+      final PanelRegistry registry = PanelRegistry(<TomModule>[
+        _Module('m', <PanelDescriptor>[
+          PanelDescriptor(
+            id: 'source',
+            title: (BuildContext context) => 'source',
+            placement: PanelPlacementEnum.document,
+            modes: const <DocumentModeEnum>[DocumentModeEnum.source],
+            isKeptAlive: true,
+            builder: (BuildContext context) => const SizedBox.shrink(),
+          ),
+          panel(
+            'preview',
+            order: 1,
+            modes: const <DocumentModeEnum>[DocumentModeEnum.preview],
+          ),
+        ]),
+      ]);
+
+      List<String> kept(DocumentModeEnum mode) => registry
+          .keptAt(PanelPlacementEnum.document, mode: mode)
+          .map((PanelDescriptor descriptor) => descriptor.id)
+          .toList();
+      expect(kept(DocumentModeEnum.preview), <String>['source']);
+      expect(kept(DocumentModeEnum.source), isEmpty);
+      // A region not in a mode draws everything, so keeps nothing apart.
+      expect(registry.keptAt(PanelPlacementEnum.document), isEmpty);
     });
 
     test('asking without a mode asks about the whole region', () {

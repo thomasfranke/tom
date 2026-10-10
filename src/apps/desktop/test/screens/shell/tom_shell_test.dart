@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,14 +11,40 @@ import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_desktop/screens/changes/changes_panel.dart';
+import 'package:tom_desktop/screens/commands/commands_panel.dart';
 import 'package:tom_desktop/screens/editor/editor_panel.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
+import 'package:tom_desktop/screens/search/search_field_widget.dart';
 import 'package:tom_desktop/screens/shell/tom_shell.dart';
+import 'package:tom_desktop/screens/workspace/workspace_bottom_grip_widget.dart';
+import 'package:tom_desktop/screens/workspace/workspace_design.dart';
 import 'package:tom_desktop/screens/workspace/workspace_grip_widget.dart';
+import 'package:tom_desktop/widgets/file_state_mark_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
+
+/// No pull request on offer: the row it would draw has tests of its own.
+final class _NoPullRequest extends PullRequestNotifier {
+  @override
+  PullRequestState build() => const PullRequestState();
+}
+
+/// No account read: the button has tests of its own, and reading one runs
+/// `gh`, git and `ssh`.
+final class _NoAccount extends AccountNotifier {
+  @override
+  AccountState build() => const AccountState();
+}
+
+/// No base read: the shell only makes it exist, and what it reads has tests
+/// of its own (`diff_base_notifier_test`).
+final class _NoBase extends DiffBaseNotifier {
+  @override
+  void build() {}
+}
 
 void main() {
   /// What the registry is built from, read when the shell first asks — a
@@ -24,14 +52,21 @@ void main() {
   List<TomModule> registered = const <TomModule>[CoreModuleImpl()];
   late _Preferences preferences;
   late ProviderContainer container;
+  late _Changed git;
+  late _Listed listing;
 
   setUp(() {
     registered = const <TomModule>[CoreModuleImpl()];
+    git = _Changed();
+    listing = _Listed();
     // One container per test, not per mount: a second container left alive
     // is still scheduling its disposal, a timer the test framework fails on.
     preferences = _Preferences();
     container = ProviderContainer(
       overrides: <Override>[
+        pullRequestProvider.overrideWith(_NoPullRequest.new),
+        accountProvider.overrideWith(_NoAccount.new),
+        diffBaseProvider.overrideWith(_NoBase.new),
         readPreferencesProvider.overrideWithValue(
           ReadPreferencesUseCase(preferences: preferences),
         ),
@@ -45,9 +80,9 @@ void main() {
           (Ref ref) => PanelRegistry(registered),
         ),
         listSpaceEntriesProvider.overrideWithValue(
-          const ListSpaceEntriesUseCase(
-            spaces: _NothingInIt(),
-            observability: _Silent(),
+          ListSpaceEntriesUseCase(
+            spaces: listing,
+            observability: const _Silent(),
           ),
         ),
         // The breadcrumb in the top bar is the menu of recent spaces, so the
@@ -59,19 +94,19 @@ void main() {
             observability: _Silent(),
           ),
         ),
-        // The aside's changes panel asks git once a space is open; a clean
-        // tree keeps these tests about the chrome
+        // The shell reads git once a space is open; a clean tree keeps these
+        // tests about the chrome, unless one says otherwise
         // (`test/screens/changes/changes_panel_test.dart` has the panel).
         readGitStatusProvider.overrideWithValue(
-          const ReadGitStatusUseCase(
-            gitFor: _cleanTree,
-            observability: _Silent(),
+          ReadGitStatusUseCase(
+            gitFor: (SpaceEntity _) => git,
+            observability: const _Silent(),
           ),
         ),
         readMergeStateProvider.overrideWithValue(
-          const ReadMergeStateUseCase(
-            gitFor: _cleanTree,
-            observability: _Silent(),
+          ReadMergeStateUseCase(
+            gitFor: (SpaceEntity _) => git,
+            observability: const _Silent(),
           ),
         ),
         // The aside's search panel reads the space into its index as soon as
@@ -137,7 +172,7 @@ void main() {
     int order = 0,
   }) => PanelDescriptor(
     id: 'test.$text',
-    title: text,
+    title: (BuildContext context) => text,
     placement: placement,
     order: order,
     builder: (BuildContext context) => Text(text),
@@ -226,6 +261,164 @@ void main() {
     });
   });
 
+  group('the panel under the document', () {
+    // `docs/product/workspace/commands/doc.md`.
+    const TargetPlatformVariant platforms = TargetPlatformVariant(
+      <TargetPlatform>{TargetPlatform.macOS, TargetPlatform.linux},
+    );
+
+    Future<void> pressJ(WidgetTester tester) async {
+      final LogicalKeyboardKey held =
+          defaultTargetPlatform == TargetPlatform.macOS
+          ? LogicalKeyboardKey.metaLeft
+          : LogicalKeyboardKey.controlLeft;
+      await tester.sendKeyDownEvent(held);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyJ);
+      await tester.sendKeyUpEvent(held);
+      await tester.pumpAndSettle();
+    }
+
+    Finder islandOf(Type panel) => find
+        .ancestor(
+          of: find.byType(panel),
+          matching: find.byType(TomColumnBoxWidget),
+        )
+        .first;
+
+    /// Drags the gutter above the panel by [dy], by hand for the reason
+    /// [dragGrip] gives.
+    Future<void> dragBottom(WidgetTester tester, double dy) async {
+      final TestGesture gesture = await tester.startGesture(
+        tester.getCenter(find.byType(WorkspaceBottomGripWidget)),
+      );
+      await gesture.moveBy(Offset(0, dy));
+      await gesture.up();
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('dragging the gutter above it raises it, the document giving '
+        'way', (WidgetTester tester) async {
+      await pumpShell(tester, size: const Size(1440, 900));
+      container.read(workspaceProvider.notifier).toggleBottom();
+      await tester.pumpAndSettle();
+
+      await dragBottom(tester, -100);
+
+      final Rect panel = tester.getRect(islandOf(CommandsPanel));
+      final Rect document = tester.getRect(islandOf(EditorPanel));
+      expect(panel.height, 360);
+      expect(panel.top - document.bottom, TomMetrics.gutter);
+      expect(panel.bottom, 900 - TomMetrics.statusBar);
+    });
+
+    testWidgets('and never so high that the document loses its room', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, size: const Size(1440, 900));
+      container.read(workspaceProvider.notifier).toggleBottom();
+      await tester.pumpAndSettle();
+
+      await dragBottom(tester, -2000);
+
+      expect(
+        tester.getRect(islandOf(EditorPanel)).height,
+        WorkspaceDesign.documentLeast,
+      );
+
+      await dragBottom(tester, 2000);
+
+      expect(
+        tester.getRect(islandOf(CommandsPanel)).height,
+        WorkspaceNotifier.bottomLowest,
+      );
+    });
+
+    testWidgets('it is closed until somebody opens it', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, size: const Size(1440, 900));
+
+      expect(find.byType(CommandsPanel), findsNothing);
+    });
+
+    testWidgets(
+      'its keys open it under the document only, and close it again',
+      (WidgetTester tester) async {
+        await pumpShell(tester, size: const Size(1440, 900));
+
+        await pressJ(tester);
+
+        final Rect panel = tester.getRect(islandOf(CommandsPanel));
+        final Rect document = tester.getRect(islandOf(EditorPanel));
+        expect(panel.height, 260);
+        expect(panel.left, document.left);
+        expect(panel.right, document.right);
+        expect(panel.top - document.bottom, TomMetrics.gutter);
+        expect(panel.bottom, 900 - TomMetrics.statusBar);
+        // The columns keep their full height.
+        expect(
+          tester.getRect(islandOf(FileTreePanel)).bottom,
+          900 - TomMetrics.statusBar,
+        );
+
+        await pressJ(tester);
+
+        expect(find.byType(CommandsPanel), findsNothing);
+      },
+      variant: platforms,
+    );
+
+    testWidgets('its head is two tabs, Commands then Terminal, and a count', (
+      WidgetTester tester,
+    ) async {
+      container.read(workspaceProvider.notifier).toggleBottom();
+      await pumpShell(tester);
+
+      expect(find.text('Commands'), findsOneWidget);
+      expect(find.text('Terminal'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Commands')).dx,
+        lessThan(tester.getTopLeft(find.text('Terminal')).dx),
+      );
+      expect(find.text('0 this session'), findsOneWidget);
+    });
+
+    testWidgets('its × puts it away', (WidgetTester tester) async {
+      container.read(workspaceProvider.notifier).toggleBottom();
+      await pumpShell(tester);
+
+      await tester.tap(find.byTooltip('Close the panel'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CommandsPanel), findsNothing);
+      expect(container.read(workspaceProvider).showingBottom, isFalse);
+    });
+
+    testWidgets('a module panel there is a second tab', (
+      WidgetTester tester,
+    ) async {
+      container.read(workspaceProvider.notifier).toggleBottom();
+      await pumpShell(
+        tester,
+        modules: <TomModule>[
+          const CoreModuleImpl(),
+          _Module(<PanelDescriptor>[
+            // Not `Terminal`: the core module registers that tab itself.
+            panelSaying('Tasks', placement: PanelPlacementEnum.bottom),
+          ]),
+        ],
+      );
+      expect(find.byType(CommandsPanel), findsOneWidget);
+
+      // The title is the tab, and the panel draws the same word.
+      await tester.tap(find.text('Tasks').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CommandsPanel), findsNothing);
+      expect(find.text('Tasks'), findsNWidgets(2));
+    });
+  });
+
   group('the right column shows one panel at a time', () {
     testWidgets('the switch names every panel registered into it', (
       WidgetTester tester,
@@ -279,6 +472,67 @@ void main() {
       // The panel is drawn; its title is not, because a control with one
       // choice says nothing the panel does not already say.
       expect(find.text('TASKS'), findsOneWidget);
+    });
+  });
+
+  group('a folder with no repository', () {
+    // The column says so and nothing else, and git is never asked
+    // (`docs/product/workspace/without-a-repository/doc.md`).
+    final SpaceEntity loose = SpaceEntity(
+      root: '/notes',
+      repositoryRoot: null,
+      name: 'notes',
+    );
+
+    testWidgets('the right column says only that', (WidgetTester tester) async {
+      await pumpShell(tester, space: loose);
+
+      expect(
+        find.text('This folder is not inside a Git repository.'),
+        findsOneWidget,
+      );
+      expect(find.text('Reading and editing work as usual.'), findsOneWidget);
+      expect(find.text('Nothing here is versioned.'), findsOneWidget);
+      // No switch, no changes list, no commit, no remote.
+      expect(find.text('History'), findsNothing);
+      expect(find.byType(ChangesPanel), findsNothing);
+      expect(find.text('Fetch'), findsNothing);
+    });
+
+    testWidgets('git is never read for it', (WidgetTester tester) async {
+      await pumpShell(tester, space: loose);
+
+      expect(git.statuses, 0);
+      expect(container.read(spaceSessionProvider)?.git, isNull);
+    });
+
+    testWidgets('the breadcrumb names the folder alone', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, space: loose);
+
+      expect(find.text('notes'), findsWidgets);
+      expect(find.text('/'), findsNothing);
+    });
+
+    testWidgets('a space inside a repository still gets git', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(
+        tester,
+        space: SpaceEntity(
+          root: '/code/notes',
+          repositoryRoot: '/code/notes',
+          name: 'notes',
+        ),
+      );
+
+      expect(
+        find.text('This folder is not inside a Git repository.'),
+        findsNothing,
+      );
+      expect(find.text('History'), findsOneWidget);
+      expect(git.statuses, greaterThan(0));
     });
   });
 
@@ -520,27 +774,196 @@ void main() {
       expect(light.accent, isNot(dark.accent));
     });
   });
+
+  group('git is read whether or not its column is showing', () {
+    final SpaceEntity docs = SpaceEntity(
+      root: '/code/app/docs',
+      repositoryRoot: '/code/app',
+      name: 'docs',
+    );
+
+    testWidgets('a space opened with the column shut still marks the tree', (
+      WidgetTester tester,
+    ) async {
+      // The shell makes the reading exist, never the column: the column is
+      // built only while it shows (`file-tree/change-marks/doc.md`).
+      listing.held = <SpaceEntryValueObject>[
+        SpaceEntryValueObject(
+          path: SpaceRelativePathValueObject('index.md'),
+          type: SpaceEntryTypeEnum.file,
+        ),
+      ];
+      git.changed = <StatusEntryValueObject>[
+        StatusEntryValueObject(
+          path: RepoRelativePathValueObject('docs/index.md'),
+          state: FileStateEnum.modified,
+          isStaged: false,
+        ),
+      ];
+      container.read(workspaceProvider.notifier).toggleAside();
+
+      await pumpShell(tester, space: docs);
+
+      expect(find.byType(ChangesPanel), findsNothing);
+      expect(container.exists(changesProvider), isFalse);
+      expect(container.read(spaceSessionProvider)?.git?.entries, hasLength(1));
+      final Finder mark = find.descendant(
+        of: find.byType(FileTreePanel),
+        matching: find.byType(FileStateMarkWidget),
+      );
+      expect(
+        tester.widget<FileStateMarkWidget>(mark).state,
+        FileStateEnum.modified,
+      );
+    });
+  });
+
+  group('replacing opens by its keys', () {
+    // ⌥⌘F on macOS, Ctrl+H elsewhere — VS Code's keys, and no chevron
+    // (`docs/product/search/replacing/doc.md`).
+    const TargetPlatformVariant platforms = TargetPlatformVariant(
+      <TargetPlatform>{TargetPlatform.macOS, TargetPlatform.linux},
+    );
+    final SpaceEntity docs = SpaceEntity(
+      root: '/code/app/docs',
+      repositoryRoot: '/code/app',
+      name: 'docs',
+    );
+
+    Future<void> pressReplace(WidgetTester tester) async {
+      final bool mac = defaultTargetPlatform == TargetPlatform.macOS;
+      final List<LogicalKeyboardKey> held = mac
+          ? <LogicalKeyboardKey>[
+              LogicalKeyboardKey.metaLeft,
+              LogicalKeyboardKey.altLeft,
+            ]
+          : <LogicalKeyboardKey>[LogicalKeyboardKey.controlLeft];
+      for (final LogicalKeyboardKey key in held) {
+        await tester.sendKeyDownEvent(key);
+      }
+      await tester.sendKeyEvent(
+        mac ? LogicalKeyboardKey.keyF : LogicalKeyboardKey.keyH,
+      );
+      for (final LogicalKeyboardKey key in held.reversed) {
+        await tester.sendKeyUpEvent(key);
+      }
+      await tester.pumpAndSettle();
+    }
+
+    String? focused() => FocusManager.instance.primaryFocus?.debugLabel;
+
+    testWidgets(
+      'they open the box on This file, and the same keys put it away',
+      (WidgetTester tester) async {
+        await pumpShell(tester, space: docs);
+        expect(find.text('Replace with'), findsNothing);
+
+        await pressReplace(tester);
+
+        expect(find.text('Replace with'), findsOneWidget);
+        expect(
+          (container.read(searchProvider) as SearchReady).scope,
+          SearchScopeEnum.thisFile,
+        );
+        // Nothing typed yet, so the words come first.
+        expect(focused(), 'search');
+
+        await pressReplace(tester);
+
+        expect(find.text('Replace with'), findsNothing);
+      },
+      variant: platforms,
+    );
+
+    testWidgets(
+      'with words in the search box, the keyboard goes to the replacement',
+      (WidgetTester tester) async {
+        await pumpShell(tester, space: docs);
+        await container.read(searchProvider.notifier).type('palette');
+        await tester.pumpAndSettle();
+
+        await pressReplace(tester);
+
+        expect(focused(), 'replace');
+
+        await pressReplace(tester);
+
+        expect(find.text('Replace with'), findsNothing);
+        expect(focused(), 'search', reason: 'not dropped with the box');
+      },
+      variant: platforms,
+    );
+
+    testWidgets('a click that took the keyboard out of the field', (
+      WidgetTester tester,
+    ) async {
+      // The field lets go to its nearest focus scope on a desktop click; the
+      // route's is outside the shortcuts, so the shell keeps one of its own.
+      await pumpShell(tester, space: docs);
+      final Finder field = find.descendant(
+        of: find.byType(SearchFieldWidget),
+        matching: find.byType(TextField),
+      );
+      await tester.tap(field);
+      await tester.enterText(field, 'palette');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('This file'));
+      await tester.pumpAndSettle();
+      expect(focused(), isNot('search'), reason: 'the click took it');
+
+      await pressReplace(tester);
+
+      expect(find.text('Replace with'), findsOneWidget);
+    }, variant: platforms);
+
+    testWidgets('a shut explorer opens first, as for ⌘K', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, space: docs);
+      container.read(workspaceProvider.notifier).toggleExplorer();
+      await tester.pumpAndSettle();
+      expect(find.byType(FileTreePanel), findsNothing);
+
+      await pressReplace(tester);
+
+      expect(find.byType(FileTreePanel), findsOneWidget);
+      expect(find.text('Replace with'), findsOneWidget);
+    }, variant: platforms);
+
+    testWidgets('with no space open they do nothing', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester);
+
+      await pressReplace(tester);
+
+      expect(find.text('Replace with'), findsNothing);
+    }, variant: platforms);
+  });
 }
 
-/// Git for any space, reporting a tree with nothing changed in it.
-GitRepository _cleanTree(SpaceEntity space) => const _Clean();
+/// A repository that reports [changed] — clean unless a test says
+/// otherwise — and does nothing else.
+final class _Changed implements GitRepository {
+  List<StatusEntryValueObject> changed = const <StatusEntryValueObject>[];
 
-/// A repository whose working tree is clean and which does nothing else.
-final class _Clean implements GitRepository {
-  const _Clean();
+  /// How many times the status was read.
+  int statuses = 0;
 
   @override
-  Future<Result<GitStatusValueObject, GitFailure>> status() async =>
-      Success<GitStatusValueObject, GitFailure>(
-        GitStatusValueObject(
-          branch: BranchNameValueObject('main'),
-          upstream: null,
-          ahead: 0,
-          behind: 0,
-          entries: const <StatusEntryValueObject>[],
-          isDetached: false,
-        ),
-      );
+  Future<Result<GitStatusValueObject, GitFailure>> status() async {
+    statuses++;
+    return Success<GitStatusValueObject, GitFailure>(
+      GitStatusValueObject(
+        branch: BranchNameValueObject('main'),
+        upstream: null,
+        ahead: 0,
+        behind: 0,
+        entries: changed,
+        isDetached: false,
+      ),
+    );
+  }
 
   @override
   Future<Result<List<CommitEntity>, GitFailure>> history({
@@ -596,11 +1019,17 @@ final class _Clean implements GitRepository {
       throw UnimplementedError();
 
   @override
+  Future<Result<void, GitFailure>> discardAll() async =>
+      throw UnimplementedError();
+
+  @override
   Future<Result<void, GitFailure>> abortMerge() async =>
       throw UnimplementedError();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// A space that holds nothing, so the explorer has nothing to draw.
 /// The index of a space, which these tests only ever fill with nothing.
 SearchRepository _emptyIndex(SpaceEntity space) => const _Empty();
 
@@ -643,8 +1072,15 @@ final class _NoRecents implements RecentSpacesRepository {
       const Success<void, Never>(null);
 }
 
+/// A space that holds nothing, so the explorer has nothing to draw.
 final class _NothingInIt implements SpaceRepository {
   const _NothingInIt();
+
+  @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
 
   @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
@@ -656,6 +1092,16 @@ final class _NothingInIt implements SpaceRepository {
   ) async => const Success<List<SpaceEntryValueObject>, SpaceFailure>(
     <SpaceEntryValueObject>[],
   );
+}
+
+/// A space that holds [held] — nothing unless a test says otherwise.
+final class _Listed extends _NothingInIt {
+  List<SpaceEntryValueObject> held = const <SpaceEntryValueObject>[];
+
+  @override
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async => Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
 }
 
 /// The no-op observability, which is also the shipping default.

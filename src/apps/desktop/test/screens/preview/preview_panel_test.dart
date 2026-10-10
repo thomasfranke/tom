@@ -18,6 +18,7 @@ import 'package:tom_ui/tom_ui.dart';
 void main() {
   late _Documents documents;
   late _Git git;
+  late _Desktop desktop;
   late ProviderContainer container;
 
   final SpaceEntity docs = SpaceEntity(
@@ -30,6 +31,7 @@ void main() {
   );
 
   setUp(() {
+    desktop = _Desktop();
     documents = _Documents();
     git = _Git(committed: () => documents.content);
     container = ProviderContainer(
@@ -59,6 +61,9 @@ void main() {
             ),
             observability: const _Silent(),
           ),
+        ),
+        openUrlProvider.overrideWithValue(
+          OpenUrlUseCase(desktop: desktop, observability: const _Silent()),
         ),
       ],
     );
@@ -344,16 +349,15 @@ void main() {
 
   group('the reading measure', () {
     /// The width of the column the blocks are laid out in.
-    double measure(WidgetTester tester) => tester
-        .widget<SizedBox>(
-          find
-              .ancestor(
-                of: find.byType(ListView),
-                matching: find.byType(SizedBox),
-              )
-              .first,
-        )
-        .width!;
+    double measure(WidgetTester tester) =>
+        tester.getSize(find.byType(PreviewBlockWidget).first).width;
+
+    /// The column's left edge, and its right edge, in the pane.
+    (double, double) edges(WidgetTester tester) {
+      final Rect block = tester.getRect(find.byType(PreviewBlockWidget).first);
+      final Rect pane = tester.getRect(find.byType(PreviewPanel));
+      return (block.left - pane.left, pane.right - block.right);
+    }
 
     testWidgets('beside the source it is the companion measure', (
       WidgetTester tester,
@@ -362,8 +366,45 @@ void main() {
 
       await pumpPreview(tester, document: writing);
 
-      expect(measure(tester), PreviewDesign.measure + TomMetrics.pad * 2);
+      expect(measure(tester), PreviewDesign.measure);
+      // Hung from the pane's left: a column hugging the divider reads as a
+      // leftover.
+      expect(edges(tester).$1, TomMetrics.pad);
     });
+
+    testWidgets(
+      'the scrollbar runs down the pane\'s edge, not the column\'s',
+      (WidgetTester tester) async {
+        // Enough blocks to scroll, so the bar has a thumb to draw.
+        documents.content = List<String>.generate(
+          80,
+          (int i) => 'Paragraph $i.',
+        ).join('\n\n');
+        await pumpPreview(tester, document: writing);
+
+        for (final DocumentModeEnum mode in <DocumentModeEnum>[
+          DocumentModeEnum.split,
+          DocumentModeEnum.preview,
+        ]) {
+          container.read(spaceSessionProvider.notifier).look(mode);
+          await tester.pumpAndSettle();
+
+          final Rect pane = tester.getRect(find.byType(PreviewPanel));
+          // The list's own, the outermost: every selectable block has one too.
+          final Rect bar = tester.getRect(
+            find
+                .descendant(
+                  of: find.byType(ListView),
+                  matching: find.byType(Scrollbar),
+                )
+                .first,
+          );
+          expect(bar.right, pane.right, reason: '$mode');
+          expect(bar.left, pane.left, reason: '$mode');
+        }
+      },
+      variant: TargetPlatformVariant.only(TargetPlatform.macOS),
+    );
 
     testWidgets('with the pane to itself it is wider, and set larger', (
       WidgetTester tester,
@@ -377,10 +418,9 @@ void main() {
           .look(DocumentModeEnum.preview);
       await tester.pumpAndSettle();
 
-      expect(
-        measure(tester),
-        PreviewDesign.readingMeasure + TomMetrics.pad * 2,
-      );
+      expect(measure(tester), PreviewDesign.readingMeasure);
+      // Centred, with the pane to itself.
+      expect(edges(tester).$1, closeTo(edges(tester).$2, 0.5));
       expect(
         tester
             .widgetList<PreviewBlockWidget>(find.byType(PreviewBlockWidget))
@@ -457,6 +497,56 @@ void main() {
 
       expect(shown(), writing);
     });
+
+    testWidgets('to the web opens in the browser, and the document stays', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '[site](https://example.com/guide)\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('site', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(desktop.opened, <Uri>[Uri.parse('https://example.com/guide')]);
+      expect(shown(), writing);
+    });
+
+    testWidgets('to an address opens the mail client', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '[write](mailto:docs@example.com)\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('write', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(desktop.opened, <Uri>[Uri.parse('mailto:docs@example.com')]);
+    });
+
+    testWidgets('with any other scheme is handed to nothing', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '[run](file:///etc/passwd)\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('run', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(desktop.opened, isEmpty);
+      expect(shown(), writing);
+    });
+
+    testWidgets('to a document never reaches the browser', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '[about](../about.md)\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('about', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(desktop.opened, isEmpty);
+    });
   });
 
   testWidgets('an image is looked for beside the document', (
@@ -498,6 +588,20 @@ Set<TextDecoration?> _decorationsOf(WidgetTester tester, String text) {
   return found;
 }
 
+/// The machine's desktop, remembering every address it was asked to open.
+final class _Desktop implements DesktopRepository {
+  final List<Uri> opened = <Uri>[];
+
+  @override
+  Future<Result<void, AppFailure>> openUrl(Uri address) async {
+    opened.add(address);
+    return const Success<void, AppFailure>(null);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 /// A repository answering with whatever content the test set.
 final class _Documents implements DocumentRepository {
   String content = '';
@@ -511,6 +615,13 @@ final class _Documents implements DocumentRepository {
       Success<DocumentEntity, DocumentFailure>(
         DocumentEntity(path: path, content: content),
       );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

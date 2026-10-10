@@ -14,6 +14,12 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
+/// No pull request on offer: the row it would draw has tests of its own.
+final class _NoPullRequest extends PullRequestNotifier {
+  @override
+  PullRequestState build() => const PullRequestState();
+}
+
 void main() {
   late _Search search;
   late ProviderContainer container;
@@ -39,6 +45,7 @@ void main() {
     // is still scheduling its disposal, a timer the test framework fails on.
     container = ProviderContainer(
       overrides: <Override>[
+        pullRequestProvider.overrideWith(_NoPullRequest.new),
         // The column draws the tree when nothing is typed, so it walks the
         // space even in a test about the search.
         listSpaceEntriesProvider.overrideWithValue(
@@ -141,6 +148,27 @@ void main() {
 
     expect(empty, SearchDesign.boxHeight);
     expect(tester.getSize(box).height, SearchDesign.boxHeight);
+  });
+
+  testWidgets('an idle box offers its shortcut, and a question hides it', (
+    WidgetTester tester,
+  ) async {
+    await pumpPanel(tester, space: docs);
+    final Finder keycap = find.descendant(
+      of: find.byType(SearchFieldWidget),
+      matching: find.textContaining('K'),
+    );
+
+    expect(keycap, findsOneWidget);
+    await type(tester, 'rendered');
+
+    expect(
+      find.descendant(
+        of: find.byType(SearchFieldWidget),
+        matching: find.text('⌘K'),
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets('typing turns the column over to the search', (
@@ -360,6 +388,13 @@ final class _Documents implements DocumentRepository {
   ) async => Success<DocumentEntity, DocumentFailure>(
     DocumentEntity(path: path, content: ''),
   );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

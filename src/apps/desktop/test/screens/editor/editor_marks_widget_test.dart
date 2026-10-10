@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:re_editor/re_editor.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/editor/editor_design.dart';
@@ -147,13 +148,33 @@ void main() {
     expect(painter(tester)!.colors, TomColors.light);
   });
 
-  test('the mark fits the gutter the boards keep left of the numbers', () {
-    // `design/screens/desktop/git-diff/comparing-light.svg` draws the letter
-    // at 18 with the numbers ending at 78; the square must not reach them.
-    expect(
-      EditorDesign.markLeft + TomMetrics.mark,
-      lessThanOrEqualTo(EditorDesign.gutter),
-    );
+  testWidgets('the mark, the numbers and the text stand where the boards do', (
+    WidgetTester tester,
+  ) async {
+    documents.content = conflicted;
+
+    await pumpEditor(tester);
+
+    // `design/screens/desktop/git-conflict/conflict-in-source-dark.svg`, from
+    // the pane's edge at 268: the mark's outline at 273..289, the numbers
+    // ending at 300, the first character of source at 318.
+    final double pane = tester.getTopLeft(find.byType(EditorPanel)).dx;
+    final CodeIndicatorValue layout = tester
+        .widget<EditorMarksWidget>(find.byType(EditorMarksWidget))
+        .notifier
+        .value!;
+    final CodeLineRenderParagraph marked = layout.paragraphs[1];
+    final Rect numbers = tester.getRect(find.byType(DefaultCodeLineNumber));
+    final Rect gutter = tester.getRect(find.byType(EditorMarksWidget));
+
+    expect(gutter.left - pane, 0);
+    expect(EditorMarksWidget.squareFor(marked).left, 5);
+    expect(EditorMarksWidget.squareFor(marked).width, TomMetrics.mark);
+    expect(numbers.right - pane, 32);
+    expect(numbers.right + marked.offset.dx - pane, 50);
+    // The band starts in the gap between the two, never under a number.
+    expect(EditorDesign.bandLeft, greaterThan(numbers.right - pane));
+    expect(EditorDesign.bandLeft, lessThan(50));
   });
 
   testWidgets('no merge in progress is no mark, markers or not', (
@@ -249,6 +270,13 @@ final class _Documents implements DocumentRepository {
   ) async => Success<DocumentEntity, DocumentFailure>(
     DocumentEntity(path: path, content: content),
   );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

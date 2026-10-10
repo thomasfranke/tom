@@ -41,11 +41,13 @@ void main() {
 
   GitStatusValueObject statusOf(
     List<StatusEntryValueObject> entries, {
+    int ahead = 0,
     int behind = 0,
+    String? upstream,
   }) => GitStatusValueObject(
     branch: BranchNameValueObject('main'),
-    upstream: null,
-    ahead: 0,
+    upstream: upstream == null ? null : BranchNameValueObject(upstream),
+    ahead: ahead,
     behind: behind,
     entries: entries,
     isDetached: false,
@@ -181,6 +183,74 @@ void main() {
     expect(find.text('notes.md'), findsOneWidget);
   });
 
+  testWidgets('pressing a name opens its document with the diff on', (
+    WidgetTester tester,
+  ) async {
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry('docs/index.md', FileStateEnum.modified, isStaged: true),
+      entry('docs/guides/writing.md', FileStateEnum.modified, isStaged: false),
+    ]);
+    await pumpPanel(tester, space: docs);
+
+    for (final String name in <String>['index.md', 'writing.md']) {
+      await tester.tap(find.text(name));
+      await tester.pumpAndSettle();
+
+      final SpaceSessionState session = container.read(spaceSessionProvider)!;
+      expect(session.openDocument?.value, endsWith(name));
+      expect(session.showingDiff, isTrue);
+    }
+  });
+
+  testWidgets('a space inside the repository opens a change outside it too, '
+      'as a tab the tree does not draw', (WidgetTester tester) async {
+    // The maintainer's case: the space is a folder of the repository and
+    // every change is beside it, so a row that opened only the space's
+    // documents opened nothing at all.
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry('README.md', FileStateEnum.modified, isStaged: true),
+      entry('notes/plan.md', FileStateEnum.added, isStaged: false),
+    ]);
+    container.read(spaceSessionProvider.notifier)
+      ..open(docs)
+      ..decorate(showing: false);
+    await pumpPanel(tester);
+
+    await tester.tap(find.text('README.md'));
+    await tester.pumpAndSettle();
+    SpaceSessionState session = container.read(spaceSessionProvider)!;
+    expect(session.openDocument, isNull);
+    expect(session.outsideDocument?.value, 'README.md');
+    expect(session.showingDiff, isTrue);
+
+    await tester.tap(find.text('plan.md'));
+    await tester.pumpAndSettle();
+    session = container.read(spaceSessionProvider)!;
+    expect(session.outsideDocument?.value, 'notes/plan.md');
+    expect(session.tabs, <DocumentTab>[
+      DocumentTab.outside(RepoRelativePathValueObject('notes/plan.md')),
+    ]);
+  });
+
+  testWidgets('a change that is not markdown opens too, source only', (
+    WidgetTester tester,
+  ) async {
+    git.reported = statusOf(<StatusEntryValueObject>[
+      entry('pubspec.yaml', FileStateEnum.modified, isStaged: false),
+    ]);
+    await pumpPanel(tester, space: docs);
+
+    await tester.tap(find.text('pubspec.yaml'));
+    await tester.pumpAndSettle();
+
+    final SpaceSessionState session = container.read(spaceSessionProvider)!;
+    expect(
+      session.onScreen,
+      DocumentTab.outside(RepoRelativePathValueObject('pubspec.yaml')),
+    );
+    expect(session.isSourceOnly, isTrue);
+  });
+
   testWidgets('a row names the folder under the file, two doc.md apart', (
     WidgetTester tester,
   ) async {
@@ -299,7 +369,7 @@ void main() {
       ]);
       await pumpPanel(tester, space: docs);
 
-      await tester.enterText(find.byType(TextField), 'docs: say it');
+      await tester.enterText(find.byType(TextField).first, 'docs: say it');
       await tester.pumpAndSettle();
 
       expect(isEnabled(tester), isFalse);
@@ -309,7 +379,7 @@ void main() {
       WidgetTester tester,
     ) async {
       await pumpPanel(tester, space: docs);
-      await tester.enterText(find.byType(TextField), 'docs: say it');
+      await tester.enterText(find.byType(TextField).first, 'docs: say it');
       await tester.pumpAndSettle();
       expect(isEnabled(tester), isTrue);
       git.reported = statusOf(const <StatusEntryValueObject>[]);
@@ -319,13 +389,44 @@ void main() {
 
       expect(git.messages, <String>['docs: say it']);
       expect(
-        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        tester.widget<TextField>(find.byType(TextField).first).controller!.text,
         isEmpty,
       );
       expect(
         find.text('Nothing has changed since the last commit.'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('a description goes under the summary, after a blank line', (
+      WidgetTester tester,
+    ) async {
+      await pumpPanel(tester, space: docs);
+      await tester.enterText(find.byType(TextField).first, 'docs: say it');
+      await tester.enterText(
+        find.byType(TextField).last,
+        'Because it was not.',
+      );
+      await tester.pumpAndSettle();
+      git.reported = statusOf(const <StatusEntryValueObject>[]);
+
+      await tester.tap(commitButton);
+      await tester.pumpAndSettle();
+
+      expect(git.messages, <String>['docs: say it\n\nBecause it was not.']);
+      expect(
+        tester.widget<TextField>(find.byType(TextField).last).controller!.text,
+        isEmpty,
+      );
+    });
+
+    testWidgets('the box offers a summary and an optional description', (
+      WidgetTester tester,
+    ) async {
+      await pumpPanel(tester, space: docs);
+
+      expect(find.text('Summary'), findsOneWidget);
+      expect(find.text('Description (optional)'), findsOneWidget);
     });
   });
 
@@ -374,6 +475,136 @@ void main() {
     expect(find.byType(ChangesMessageWidget), findsOneWidget);
     expect(find.byType(ChangesCommitButtonWidget), findsOneWidget);
     expect(find.textContaining('pushed'), findsNothing);
+  });
+
+  group('the link to the remote', () {
+    /// The three at the foot of the column, by their verb.
+    bool isEnabled(WidgetTester tester, String verb) =>
+        tester
+            .widget<ButtonStyleButton>(
+              find.ancestor(
+                of: find.text(verb),
+                matching: find.byWidgetPredicate(
+                  (Widget widget) => widget is ButtonStyleButton,
+                ),
+              ),
+            )
+            .onPressed !=
+        null;
+
+    testWidgets('a healthy link draws no broken line', (
+      WidgetTester tester,
+    ) async {
+      git.reported = statusOf(const <StatusEntryValueObject>[], ahead: 2);
+      await pumpPanel(tester, space: docs);
+
+      for (final String sentence in const <String>[
+        'No network',
+        'Git refused the credentials',
+        'No remote configured',
+        'The remote did not answer',
+      ]) {
+        expect(find.text(sentence), findsNothing);
+      }
+    });
+
+    // A healthy link says where the branch stands, in the broken line's slot
+    // (`push-pull/when-the-link-is-broken/doc.md`).
+    for (final (int ahead, int behind, String sentence)
+        in const <(int, int, String)>[
+          (0, 0, 'Up to date with origin/main'),
+          (0, 2, '2 behind origin/main'),
+          (1, 0, '1 ahead of origin/main'),
+          (1, 2, '1 ahead, 2 behind origin/main'),
+        ]) {
+      testWidgets('ahead $ahead and behind $behind says "$sentence"', (
+        WidgetTester tester,
+      ) async {
+        git.reported = statusOf(
+          const <StatusEntryValueObject>[],
+          ahead: ahead,
+          behind: behind,
+          upstream: 'origin/main',
+        );
+        await pumpPanel(tester, space: docs);
+
+        final Text line = tester.widget<Text>(find.text(sentence));
+        final TomColors colors = TomColors.of(
+          tester.element(find.text(sentence)),
+        );
+        expect(line.style!.color, colors.textMuted);
+        expect(line.style!.fontSize, 11);
+      });
+    }
+
+    testWidgets('a branch with no upstream says nothing', (
+      WidgetTester tester,
+    ) async {
+      git.reported = statusOf(const <StatusEntryValueObject>[], ahead: 2);
+      await pumpPanel(tester, space: docs);
+
+      expect(find.textContaining('Up to date'), findsNothing);
+      expect(find.textContaining('ahead'), findsNothing);
+    });
+
+    testWidgets('a broken link replaces where the branch stands', (
+      WidgetTester tester,
+    ) async {
+      git.reported = statusOf(
+        const <StatusEntryValueObject>[],
+        ahead: 1,
+        upstream: 'origin/main',
+      );
+      await pumpPanel(tester, space: docs);
+      expect(find.text('1 ahead of origin/main'), findsOneWidget);
+      git.writeFailure = const GitNetworkUnavailable();
+
+      await container.read(remoteProvider.notifier).push();
+      await tester.pumpAndSettle();
+
+      expect(find.text('No network'), findsOneWidget);
+      expect(find.textContaining('origin/main'), findsNothing);
+    });
+
+    testWidgets('no network is said, and the three go unavailable', (
+      WidgetTester tester,
+    ) async {
+      git.reported = statusOf(const <StatusEntryValueObject>[], ahead: 2);
+      await pumpPanel(tester, space: docs);
+      git.writeFailure = const GitNetworkUnavailable();
+
+      await container.read(remoteProvider.notifier).push();
+      await tester.pumpAndSettle();
+
+      expect(find.text('No network'), findsOneWidget);
+      expect(isEnabled(tester, 'Fetch'), isFalse);
+      expect(isEnabled(tester, 'Pull'), isFalse);
+    });
+
+    testWidgets('a timeout is said, and the three stay live', (
+      WidgetTester tester,
+    ) async {
+      git.reported = statusOf(const <StatusEntryValueObject>[], ahead: 2);
+      await pumpPanel(tester, space: docs);
+      git.writeFailure = const GitTimedOut();
+
+      await container.read(remoteProvider.notifier).push();
+      await tester.pumpAndSettle();
+
+      expect(find.text('The remote did not answer'), findsOneWidget);
+      expect(isEnabled(tester, 'Fetch'), isTrue);
+    });
+
+    testWidgets('committing is never taken away', (WidgetTester tester) async {
+      await pumpPanel(tester, space: docs);
+      git.writeFailure = const GitNetworkUnavailable();
+
+      await container.read(remoteProvider.notifier).push();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChangesMessageWidget), findsOneWidget);
+      expect(find.byType(ChangesCommitButtonWidget), findsOneWidget);
+    });
   });
 
   testWidgets('both modes render, and differ', (WidgetTester tester) async {
@@ -547,13 +778,25 @@ final class _Git implements GitRepository {
   @override
   Future<Result<void, GitFailure>> push() async => _done();
 
+  // A branch with no upstream is published rather than pushed.
+  @override
+  Future<Result<void, GitFailure>> publish(BranchNameValueObject branch) =>
+      push();
+
   @override
   Future<Result<MergeStateValueObject, GitFailure>> mergeState() async =>
       Success<MergeStateValueObject, GitFailure>(merge);
 
   @override
+  Future<Result<void, GitFailure>> discardAll() async =>
+      throw UnimplementedError();
+
+  @override
   Future<Result<void, GitFailure>> abortMerge() async =>
       throw UnimplementedError();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 /// A space that holds nothing, so the tree has nothing to draw.
@@ -593,6 +836,13 @@ final class _NoDocuments implements DocumentRepository {
     SpaceRelativePathValueObject path,
   ) async =>
       Failure<DocumentEntity, DocumentFailure>(DocumentNotFound(path.value));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

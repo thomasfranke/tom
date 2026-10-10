@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_mode_bar_widget.dart';
+import 'package:tom_desktop/screens/shell/widgets/shell_mode_control_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -49,14 +50,23 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        // The modes ask the editor whether its buffer is binary, which
+        // makes it read the preferences file once that is on screen.
+        readPreferencesFileProvider.overrideWithValue(
+          ReadDocumentUseCase(
+            documentsFor: (SpaceEntity space) => documents,
+            observability: const _Silent(),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
   });
 
-  /// Mounts the bar, with [document] open when one is given.
-  Future<void> pumpBar(
-    WidgetTester tester, {
+  /// Mounts [chrome] with [document] open when one is given.
+  Future<void> pump(
+    WidgetTester tester,
+    Widget chrome, {
     SpaceRelativePathValueObject? document,
   }) async {
     container.read(spaceSessionProvider.notifier).open(docs);
@@ -68,18 +78,29 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: tomTheme(Brightness.light),
-          home: const Scaffold(body: ShellModeBarWidget()),
+          home: Scaffold(body: chrome),
         ),
       ),
     );
     await tester.pumpAndSettle();
   }
 
+  /// The row above the document.
+  Future<void> pumpBar(
+    WidgetTester tester, {
+    SpaceRelativePathValueObject? document,
+  }) => pump(tester, const ShellModeBarWidget(), document: document);
+
+  /// The modes, which the top bar carries
+  /// (`docs/product/workspace/columns/doc.md`).
+  Future<void> pumpModes(WidgetTester tester) =>
+      pump(tester, const ShellModeControlWidget());
+
   testWidgets('it offers the three modes and no fourth', (
     WidgetTester tester,
   ) async {
     // No WYSIWYG (Decision 3).
-    await pumpBar(tester);
+    await pumpModes(tester);
 
     expect(find.text('Source'), findsOneWidget);
     expect(find.text('Split'), findsOneWidget);
@@ -87,17 +108,28 @@ void main() {
   });
 
   testWidgets('a space opens in split', (WidgetTester tester) async {
-    await pumpBar(tester);
+    await pumpModes(tester);
 
     expect(container.read(spaceSessionProvider)?.mode, DocumentModeEnum.split);
+  });
+
+  testWidgets('the row above the document carries no mode', (
+    WidgetTester tester,
+  ) async {
+    // The modes are a choice about the window, so they sit with the
+    // window's own controls in the top bar.
+    await pumpBar(tester);
+
+    expect(find.text('Source'), findsNothing);
+    expect(find.text('Preview'), findsNothing);
   });
 
   testWidgets('choosing a mode writes it to the session', (
     WidgetTester tester,
   ) async {
-    // The bar names no panel; which panels a mode includes is the
+    // The control names no panel; which panels a mode includes is the
     // descriptor's answer.
-    await pumpBar(tester);
+    await pumpModes(tester);
 
     await tester.tap(find.text('Preview'));
     await tester.pumpAndSettle();
@@ -105,6 +137,35 @@ void main() {
     expect(
       container.read(spaceSessionProvider)?.mode,
       DocumentModeEnum.preview,
+    );
+  });
+
+  testWidgets('the preferences file is source, and the other two are off', (
+    WidgetTester tester,
+  ) async {
+    // Not markdown to render (`preferences/where-it-is-stored/doc.md`).
+    await pumpModes(tester);
+    container
+        .read(spaceSessionProvider.notifier)
+        .openPreferencesFile(SpaceRelativePathValueObject('preferences.json'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<Text>(find.text('Source')).style?.color,
+      TomColors.light.textPrimary,
+    );
+    expect(
+      tester.widget<Text>(find.text('Preview')).style?.color,
+      TomColors.light.textMuted,
+    );
+
+    await tester.tap(find.text('Preview'));
+    await tester.pumpAndSettle();
+
+    expect(container.read(spaceSessionProvider)?.mode, DocumentModeEnum.split);
+    expect(
+      container.read(spaceSessionProvider)?.drawnMode,
+      DocumentModeEnum.source,
     );
   });
 
@@ -170,6 +231,13 @@ final class _Documents implements DocumentRepository {
   ) async => Success<DocumentEntity, DocumentFailure>(
     DocumentEntity(path: path, content: '# ${path.name}\n'),
   );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

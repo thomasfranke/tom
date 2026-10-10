@@ -17,6 +17,7 @@ void main() {
     preferences = _Preferences();
     container = ProviderContainer(
       overrides: <Override>[
+        accountProvider.overrideWith(_NoAccount.new),
         readPreferencesProvider.overrideWithValue(
           ReadPreferencesUseCase(preferences: preferences),
         ),
@@ -51,14 +52,14 @@ void main() {
 
   WorkspaceState state() => container.read(workspaceProvider);
 
-  testWidgets('it is three controls, read left to right', (
+  testWidgets('it is four controls, read left to right', (
     WidgetTester tester,
   ) async {
-    // One set: the two columns, then the gear
+    // One set: the three panels, then the gear
     // (`docs/product/preferences/the-popover/doc.md`).
     await pumpControls(tester);
 
-    expect(find.byType(TomPanelToggleWidget), findsNWidgets(2));
+    expect(find.byType(TomPanelToggleWidget), findsNWidgets(3));
     expect(find.byTooltip('Preferences'), findsOneWidget);
     expect(
       tester.getCenter(find.byType(TomPanelToggleWidget).first).dx,
@@ -82,6 +83,34 @@ void main() {
       isTrue,
       reason: 'one toggle hides one column, never the other',
     );
+  });
+
+  testWidgets('the bottom panel toggle sits between the two columns', (
+    WidgetTester tester,
+  ) async {
+    // Closed at the start: the app never opens it on its own
+    // (`docs/product/workspace/commands/doc.md`).
+    await pumpControls(tester);
+    final List<TomPanelToggleWidget> toggles = tester
+        .widgetList<TomPanelToggleWidget>(find.byType(TomPanelToggleWidget))
+        .toList();
+
+    expect(
+      toggles.map((TomPanelToggleWidget it) => it.side),
+      <TomPanelSideEnum>[
+        TomPanelSideEnum.left,
+        TomPanelSideEnum.bottom,
+        TomPanelSideEnum.right,
+      ],
+    );
+    expect(toggles[1].isOpen, isFalse);
+    expect(toggles[1].strip, 6);
+
+    await tester.tap(find.byTooltip('Show the bottom panel'));
+    await tester.pumpAndSettle();
+
+    expect(state().showingBottom, isTrue);
+    expect(find.byTooltip('Hide the bottom panel'), findsOneWidget);
   });
 
   testWidgets('a hidden column says how to bring it back', (
@@ -119,6 +148,24 @@ void main() {
       greaterThan(tester.getCenter(find.byTooltip('Hide git')).dx),
     );
   });
+
+  testWidgets('the account closes the set, 10 after the gear', (
+    WidgetTester tester,
+  ) async {
+    await pumpControls(tester);
+
+    final Rect gear = tester.getRect(find.byTooltip('Preferences'));
+    final Rect account = tester.getRect(find.byTooltip('Account'));
+
+    expect(account.left - gear.right, 10);
+    expect(account.size, const Size.square(24));
+  });
+}
+
+/// No account read: reading one runs `gh`, git and `ssh`.
+final class _NoAccount extends AccountNotifier {
+  @override
+  AccountState build() => const AccountState();
 }
 
 /// Preferences in memory, so a widget test needs no disk.

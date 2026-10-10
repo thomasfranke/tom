@@ -251,6 +251,20 @@ void main() {
         reason: 'the button offered to create a branch that exists',
       );
     });
+
+    testWidgets('and so is a name git would not accept', (
+      WidgetTester tester,
+    ) async {
+      await pumpControl(tester, status: statusOf(branch: 'main'));
+      await openIt(tester);
+      await tester.tap(find.text('Create branch…'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'feat/..three');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Not a name git accepts'), findsOneWidget);
+    });
   });
 
   testWidgets('an unsaved document is named before anything is lost', (
@@ -331,6 +345,10 @@ final class _Documents implements DocumentRepository {
   ) async => Success<DocumentEntity, DocumentFailure>(
     DocumentEntity(path: path, content: content),
   );
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async {

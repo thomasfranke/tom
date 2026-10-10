@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/preferences/preferences_control_widget.dart';
 import 'package:tom_desktop/screens/preferences/widgets/preferences_popover_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -27,15 +28,19 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        preferencesFileProvider.overrideWithValue(
+          SpaceRelativePathValueObject('preferences.json'),
+        ),
       ],
     );
     addTearDown(container.dispose);
   });
 
-  /// Mounts the button, under [brightness].
+  /// Mounts the button, under [brightness], speaking [locale].
   Future<void> pumpControl(
     WidgetTester tester, {
     Brightness brightness = Brightness.light,
+    Locale locale = const Locale('en'),
   }) async {
     tester.view
       ..physicalSize = const Size(900, 600)
@@ -46,6 +51,9 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: tomTheme(brightness),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: locale,
           home: const Scaffold(
             body: Align(
               alignment: Alignment.topRight,
@@ -114,6 +122,26 @@ void main() {
     expect(find.text('Open preferences.json'), findsOneWidget);
   });
 
+  testWidgets('in Portuguese, every word of the popover is translated', (
+    WidgetTester tester,
+  ) async {
+    await pumpControl(tester, locale: const Locale('pt'));
+
+    await tester.tap(find.byTooltip('Preferências'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('TEMA'), findsOneWidget);
+    expect(find.text('IDIOMA'), findsOneWidget);
+    expect(find.text('Claro'), findsOneWidget);
+    expect(find.text('Escuro'), findsOneWidget);
+    // The theme's segment and the language's select, both following the
+    // machine; the languages keep their own names.
+    expect(find.text('Sistema'), findsNWidgets(2));
+    expect(find.text('Mostrar a barra de formatação'), findsOneWidget);
+    expect(find.text('Abrir preferences.json'), findsOneWidget);
+    expect(find.text('THEME'), findsNothing);
+  });
+
   testWidgets('a theme applies when it is pressed, with no OK', (
     WidgetTester tester,
   ) async {
@@ -129,6 +157,43 @@ void main() {
     expect(find.byType(PreferencesPopoverWidget), findsOneWidget);
   });
 
+  testWidgets('the theme offers System beside Light and Dark, and lights '
+      'the choice rather than the colour on screen', (
+    WidgetTester tester,
+  ) async {
+    await pumpControl(tester);
+    await tester.tap(find.byTooltip('Preferences'));
+    await tester.pumpAndSettle();
+
+    // The theme's segment first; the language's select says System too.
+    expect(find.text('System'), findsNWidgets(2));
+    expect(find.text('Light'), findsOneWidget);
+    expect(find.text('Dark'), findsOneWidget);
+
+    await tester.tap(find.text('Dark'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('System').first);
+    await tester.pumpAndSettle();
+
+    expect(now().theme, ThemeChoiceEnum.system);
+    // The lit segment is the one wearing `control`, whatever theme System
+    // landed on.
+    final Iterable<DecoratedBox> lit = tester
+        .widgetList<DecoratedBox>(
+          find.ancestor(
+            of: find.text('System').first,
+            matching: find.byType(DecoratedBox),
+          ),
+        )
+        .where(
+          (DecoratedBox box) =>
+              box.decoration is BoxDecoration &&
+              (box.decoration as BoxDecoration).color != null &&
+              (box.decoration as BoxDecoration).color != Colors.transparent,
+        );
+    expect(lit, isNotEmpty);
+  });
+
   testWidgets('the checkbox takes the formatting bar away', (
     WidgetTester tester,
   ) async {
@@ -142,25 +207,35 @@ void main() {
     expect(now().showingFormattingBar, isFalse);
   });
 
-  testWidgets('the language offers four, and the current one is ticked', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('the language offers System, English and Português — the two '
+      'translations — and ticks the current one', (WidgetTester tester) async {
     await pumpControl(tester);
     await tester.tap(find.byTooltip('Preferences'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('English'));
+    // System is the default, so it is what the select names.
+    await tester.tap(find.text('System').last);
     await tester.pumpAndSettle();
 
-    for (final LanguageEnum language in LanguageEnum.values) {
-      expect(find.text(language.label), findsWidgets);
+    expect(find.byType(MenuItemButton), findsNWidgets(3));
+    for (final String language in <String>['System', 'English', 'Português']) {
+      expect(
+        find.descendant(
+          of: find.byType(MenuItemButton),
+          matching: find.text(language),
+        ),
+        findsOneWidget,
+      );
     }
+    // Offered once, before any translation existed.
+    expect(find.text('Español'), findsNothing);
+    expect(find.text('Deutsch'), findsNothing);
     // A tick, not a highlight alone — colour is never the only signal.
     // Scoped to the rows: the checkbox further down draws one of its own.
     expect(
       find.descendant(
         of: find.byType(MenuItemButton),
-        matching: find.byIcon(Icons.check),
+        matching: find.byType(TomGlyphWidget),
       ),
       findsOneWidget,
     );
@@ -169,30 +244,61 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(now().language, LanguageEnum.portuguese);
+    // The menu opens in the overlay; choosing there is not a tap outside.
+    expect(find.byType(PreferencesPopoverWidget), findsOneWidget);
   });
 
-  testWidgets('the file button is drawn and cannot be pressed yet', (
-    WidgetTester tester,
-  ) async {
-    // What it produces is a tab from outside the tree, and there is no tab
-    // strip yet (`docs/design/screens/not-drawn-yet.md`).
+  OutlinedButton fileButton(WidgetTester tester) => tester.widget(
+    find.ancestor(
+      of: find.text('Open preferences.json'),
+      matching: find.byType(OutlinedButton),
+    ),
+  );
+
+  testWidgets('the file button opens the file in a tab, and the popover '
+      'goes', (WidgetTester tester) async {
+    // A tab from outside the tree
+    // (`docs/product/preferences/where-it-is-stored/doc.md`).
+    container
+        .read(spaceSessionProvider.notifier)
+        .open(
+          SpaceEntity(
+            root: '/code/docs',
+            repositoryRoot: '/code/docs',
+            name: 'docs',
+          ),
+        );
     await pumpControl(tester);
     await tester.tap(find.byTooltip('Preferences'));
     await tester.pumpAndSettle();
 
-    final OutlinedButton button = tester.widget(
-      find.ancestor(
-        of: find.text('Open preferences.json'),
-        matching: find.byType(OutlinedButton),
-      ),
+    await tester.tap(find.text('Open preferences.json'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PreferencesPopoverWidget), findsNothing);
+    expect(
+      container.read(spaceSessionProvider)?.preferencesFile,
+      SpaceRelativePathValueObject('preferences.json'),
     );
-    expect(button.onPressed, isNull);
+    // What is in force is in the file before it is shown.
+    expect(stored.writes, 1);
+  });
+
+  testWidgets('on Home the file button is dim: there are no tabs there', (
+    WidgetTester tester,
+  ) async {
+    await pumpControl(tester);
+    await tester.tap(find.byTooltip('Preferences'));
+    await tester.pumpAndSettle();
+
+    expect(fileButton(tester).onPressed, isNull);
   });
 }
 
 /// Preferences in memory, so a widget test needs no disk.
 final class _Preferences implements PreferencesRepository {
   PreferencesValueObject held = PreferencesValueObject.defaults;
+  int writes = 0;
 
   @override
   Future<PreferencesValueObject> read() async => held;
@@ -201,6 +307,7 @@ final class _Preferences implements PreferencesRepository {
   Future<Result<void, AppFailure>> write(
     PreferencesValueObject preferences,
   ) async {
+    writes++;
     held = preferences;
     return const Success<void, AppFailure>(null);
   }
