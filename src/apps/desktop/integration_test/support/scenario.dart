@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'e2e_module_impl.dart';
 import 'evidence.dart';
 import 'fixture.dart';
 import 'robot.dart';
@@ -75,6 +76,16 @@ void scenario(
     final File store = File(settingsPath);
     if (store.existsSync()) {
       store.deleteSync();
+    }
+    // And the addresses the last run "opened", for the same reason.
+    final File opened = File(E2eModuleImpl.openedPath(settingsPath));
+    if (opened.existsSync()) {
+      opened.deleteSync();
+    }
+    // And the pull request the run's `gh` opened last time.
+    final Directory github = Directory(E2eModuleImpl.githubPath(settingsPath));
+    if (github.existsSync()) {
+      github.deleteSync(recursive: true);
     }
     final Evidence evidence = Evidence(name, group: group, tester: tester);
     final TomRobot robot = TomRobot(

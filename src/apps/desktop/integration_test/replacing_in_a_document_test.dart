@@ -13,7 +13,7 @@ void main() {
     describe:
         'The other half of the box: the same words, asked of the open '
         'document instead of the space, and answered by the buffer rather '
-        'than by the index. The chevron opens what they become, each '
+        'than by the index. ⌥⌘F opens what they become, each '
         'occurrence shows the change before it is made, and the one under '
         'the pointer is the one that can be replaced or skipped.',
     steps: <Step>[
@@ -39,7 +39,7 @@ void main() {
           'Writing',
         ]);
       }),
-      Step('the chevron opens what the words become', (TomRobot robot) async {
+      Step('⌥⌘F opens what the words become', (TomRobot robot) async {
         await robot.opensTheReplacement();
         await robot.typesTheReplacement('section');
 

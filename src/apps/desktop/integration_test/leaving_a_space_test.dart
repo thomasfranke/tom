@@ -12,12 +12,11 @@ void main() {
     'Leaves a space, and goes to another without going home',
     group: 'Workspace',
     describe:
-        'A space is always leavable, and the breadcrumb is the way out: it '
-        'already names the space, so nothing else in the bar has to. The '
-        'menu it opens lists what was open before — marking the one on '
-        'screen — and carries `Close space` at its foot. Going to another '
-        'one from there skips the trip through Home, which is a step with '
-        'nothing in it.',
+        'A space is always leavable: a home button before the breadcrumb is '
+        'the way out, one press to the opening screen. The menu the '
+        'breadcrumb opens lists what was open before — marking the one on '
+        'screen — and going to another one from there skips the trip '
+        'through Home, which is a step with nothing in it.',
     steps: <Step>[
       Step('open a docs folder inside a repository', (TomRobot robot) async {
         await robot.launchWindowed(pickFolder: docsInRepo.root);
@@ -44,7 +43,6 @@ void main() {
           'RECENT SPACES',
           docsInRepo.name,
           theRepo.name,
-          'Close space',
         ]);
       }),
       Step('choosing the other one goes straight there', (
@@ -60,7 +58,7 @@ void main() {
       ) async {
         await robot.clickInTheTree('index.md');
         await robot.typesInTheSource('# Not saved yet\n');
-        await robot.opensTheSpaceMenu();
+        // Pressed with the menu closed: the question opens it.
         await robot.closesTheSpace();
 
         await robot.seesInTheSpaceMenu(<String>['has unsaved changes']);
@@ -70,7 +68,6 @@ void main() {
       Step('and discarding it returns to the opening screen', (
         TomRobot robot,
       ) async {
-        await robot.opensTheSpaceMenu();
         await robot.closesTheSpace();
         await robot.answersTheUnsavedQuestion('Discard and close');
 

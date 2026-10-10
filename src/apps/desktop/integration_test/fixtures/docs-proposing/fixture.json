@@ -1,0 +1,26 @@
+{
+  "summary": "A docs folder on a branch ready for a pull request",
+  "description": "A branch off main with two commits, both pushed, checked out — what a pull request is written for. origin answers get-url with a GitHub address, so the app recognises the host and offers the control, while pushes still reach the bare beside the tree and nothing fetches.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "remote": {
+    "proposing": {
+      "name": "feat/release-notes",
+      "commits": [
+        {
+          "message": "docs: start the release notes",
+          "write": {
+            "docs/release-notes.md": "# Release notes\n\nThe first section, written on a branch.\n"
+          }
+        },
+        {
+          "message": "docs: say what changed in the handbook",
+          "write": {
+            "docs/index.md": "# Handbook\n\nThe documentation of a project with a pull request to write.\n\nThe release notes are new on this branch.\n"
+          }
+        }
+      ]
+    },
+    "address": "https://github.com/acme/docs.git"
+  }
+}

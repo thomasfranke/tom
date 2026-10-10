@@ -1,0 +1,5 @@
+site_name: Field notes
+docs_dir: docs
+nav:
+  - index.md
+  - trips.md

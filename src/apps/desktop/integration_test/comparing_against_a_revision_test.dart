@@ -1,29 +1,31 @@
-/// The same rendered diff, against another branch or another commit.
+/// The same rendered diff, against the branch the checked-out one came from.
 library;
 
 import 'support/harness.dart';
 
 void main() {
   final E2eFixtures fixtures = E2eFixtures.load();
-  final Fixture withBranches = fixtures['docs-with-branches'];
-  final Fixture withHistory = fixtures['docs-with-history'];
+  final Fixture branched = fixtures['docs-branched'];
 
   scenario(
-    'Compares a document against another branch',
+    'Compares a document against the branch it came from',
     group: 'Diff',
     describe:
-        'The rendered diff pointed somewhere else: the working copy against '
-        'a **branch** rather than the last commit '
-        '(`docs/product/diff/branch-diff/doc.md`). The fixture\'s two '
-        'branches hold different versions of the index, so a comparison that '
-        'quietly stayed on `HEAD` could not pass — on `main` the document is '
-        'clean and carries no mark, and against the feature branch its one '
-        'paragraph is rewritten. Taking the base back makes it clean again.',
+        'Nobody picks the base: it is **the branch the current one came '
+        'from** (`docs/product/diff/branch-diff/doc.md`). The fixture\'s '
+        '`feat/glossary` was started from `develop`, which was started from '
+        '`main`, both by plain git — so the app has to deduce it. The guide '
+        'is the proof: the same on `develop` and the feature, different on '
+        '`main`, so it carries a mark only if the wrong branch was chosen. '
+        'The process document is the other proof: `develop` rewrote it after '
+        'the feature was cut, so it carries a mark only if the diff were read '
+        'at `develop`\'s tip rather than where the feature left it. A branch '
+        'started here then compares against the one it left.',
     steps: <Step>[
-      Step('a clean document on main carries no decoration', (
+      Step('on main the document is clean and nothing is named', (
         TomRobot robot,
       ) async {
-        await robot.launchWindowed(pickFolder: withBranches.root);
+        await robot.launchWindowed(pickFolder: branched.root);
         await robot.chooseFolder();
         await robot.seesTheShell();
         await robot.clickInTheTree('index.md');
@@ -32,90 +34,89 @@ void main() {
         await robot.seesNoDiffMarks();
         await robot.seesTheDefaultComparison();
       }),
-      Step('the surface offers the branches and this file\'s commits', (
+      Step('on the feature branch the base is develop, on its own', (
         TomRobot robot,
       ) async {
-        await robot.opensTheComparison();
+        await robot.switchesTo('feat/glossary');
+        await robot.seesTheBranchControl('feat/glossary');
 
-        await robot.seesOnOffer(<String>['main', 'feat/rendered-diff']);
+        await robot.seesTheComparison('Compared to develop');
       }),
-      Step('against the other branch the paragraph is rewritten', (
-        TomRobot robot,
-      ) async {
-        // The heading is the same on both sides and stays undecorated; the
-        // one paragraph that differs is what carries the mark.
-        await robot.comparesAgainst('feat/rendered-diff');
+      Step('what the branch rewrote is marked', (TomRobot robot) async {
+        await robot.seesInThePreview(
+          'The index, as the glossary branch rewrote it.',
+        );
 
         await robot.seesTheDiffMarks(<String>['M']);
-        await robot.seesTheComparison('feat/rendered-diff');
       }),
-      Step('and the document itself is still the working copy', (
-        TomRobot robot,
-      ) async {
-        // Nothing was checked out: comparing is reading, and the branch the
-        // window is on has not moved.
-        await robot.seesInThePreview('The index, as main has it.');
-        await robot.seesTheBranch('main');
-      }),
-      Step('taking the base back leaves it clean again', (
-        TomRobot robot,
-      ) async {
-        await robot.stopsComparing();
+      Step('what develop already had is not', (TomRobot robot) async {
+        // Against main this guide would be rewritten; against develop it is
+        // the same text, which is what a deduction that chose main would get
+        // wrong.
+        await robot.clickInTheTree('writing.md');
+        await robot.seesInThePreview('The guide, as develop rewrote it.');
 
         await robot.seesNoDiffMarks();
-        await robot.seesTheDefaultComparison();
+      }),
+      Step('nor what develop did after the branch left it', (
+        TomRobot robot,
+      ) async {
+        // develop rewrote this document after the feature was cut: read at
+        // develop's tip it would be marked, read where the branch left
+        // develop it is the feature's own, untouched.
+        await robot.clickInTheTree('process.md');
+        await robot.seesInThePreview(
+          'The process, as every branch started with it.',
+        );
+
+        await robot.seesNoDiffMarks();
+      }),
+      Step('a branch started here compares against the one it left', (
+        TomRobot robot,
+      ) async {
+        await robot.startsABranch('feat/more');
+        await robot.seesTheBranchControl('feat/more');
+
+        await robot.seesTheComparison('Compared to feat/glossary');
         robot.seesNothingBroken();
       }),
     ],
   );
 
   scenario(
-    'Compares a document against an earlier commit',
+    'Turns the marks off and back on from the Diff chip',
     group: 'Diff',
     describe:
-        'The other half the product asks for: **any two commits**. The '
-        'fixture writes the index three times, so the working copy compared '
-        'against the second commit shows the one paragraph that changed — '
-        'and a past version opened from the history, which is compared '
-        'against nothing by default, is compared when somebody asks for it.',
+        'The chip is a switch and nothing else '
+        '(`docs/product/diff/rendered-diff/turning-it-off/doc.md`): a press '
+        'takes the marks away and opens nothing to choose from, and the next '
+        'brings them back against the same base — off is a reading position, '
+        'not another comparison.',
     steps: <Step>[
-      Step('open a document whose index has a history', (TomRobot robot) async {
-        await robot.launchWindowed(pickFolder: withHistory.root);
+      Step('a document the branch rewrote, marked', (TomRobot robot) async {
+        await robot.launchWindowed(pickFolder: branched.root);
         await robot.chooseFolder();
         await robot.seesTheShell();
+        await robot.switchesTo('feat/glossary');
         await robot.clickInTheTree('index.md');
 
-        await robot.seesInThePreview('as the working copy has it');
+        await robot.seesTheDiffMarks(<String>['M']);
+      }),
+      Step('a press takes the marks away and offers nothing', (
+        TomRobot robot,
+      ) async {
+        await robot.pressesTheDiffChip();
+
         await robot.seesNoDiffMarks();
+        robot.seesNothingToChooseFrom();
       }),
-      Step('against an earlier commit the paragraph is rewritten', (
+      Step('the next brings them back against the same base', (
         TomRobot robot,
       ) async {
-        await robot.comparesAgainst('docs: write the index');
+        await robot.pressesTheDiffChip();
 
         await robot.seesTheDiffMarks(<String>['M']);
-        await robot.seesTheComparison('Compared to');
-      }),
-      Step('a past version on screen is compared to that commit too', (
-        TomRobot robot,
-      ) async {
-        // Two commits, neither of them the working copy — which is the claim
-        // a version opened from history could not make before.
-        //
-        // The column shows one panel at a time, so the history has to be
-        // asked for: it is not on screen beside the changes
-        // (`docs/product/workspace/columns/doc.md`).
-        await robot.showsTheGitPanel('History');
-        await robot.opensTheVersion('docs: expand the index');
-
-        await robot.seesInThePreview('as the second commit left it');
-        await robot.seesTheDiffMarks(<String>['M']);
-      }),
-      Step('and coming back to now keeps the base', (TomRobot robot) async {
-        await robot.goesBackToNow();
-
-        await robot.seesInThePreview('as the working copy has it');
-        await robot.seesTheDiffMarks(<String>['M']);
+        await robot.seesTheComparison('Compared to develop');
         robot.seesNothingBroken();
       }),
     ],

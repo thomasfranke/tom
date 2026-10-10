@@ -1,0 +1,10 @@
+{
+  "summary": "A docs folder whose changes are all beside it",
+  "description": "The space is docs/ and every change git reports is outside it: the README and mkdocs.yml at the repository's root are modified, and the scenario deletes the CHANGELOG and drops a binary logo.png before the app starts. The changes list is the repository's, so it names all four, and pressing any of them has to open it although the tree lists none.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "uncommitted": {
+    "README.md": "\nA line added beside the docs, uncommitted.\n",
+    "mkdocs.yml": "  - trips.md\n"
+  }
+}

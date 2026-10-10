@@ -55,6 +55,26 @@ void main() {
 
         await robot.seesInTheSource('| Column | Column |');
       }),
+      Step('in preview there is no caret to format at, but undo still works', (
+        TomRobot robot,
+      ) async {
+        await robot.looksAt('Preview');
+        await robot.seesInThePreview('Column');
+        await robot.seesTheToolbarButtonDim('Bold');
+        await robot.seesTheToolbarButtonLive('Undo');
+
+        // The buffer behind the preview, walked back and forth — by the
+        // buttons and by the keys, one history.
+        await robot.pressesTheToolbarButton('Undo');
+        await robot.seesNotInThePreview('Column');
+        await robot.redoesFromTheKeyboard();
+        await robot.seesInThePreview('Column');
+        await robot.undoesFromTheKeyboard();
+        await robot.seesNotInThePreview('Column');
+        await robot.pressesTheToolbarButton('Redo');
+        await robot.seesInThePreview('Column');
+        await robot.looksAt('Split');
+      }),
       Step('the document says it is unsaved, because a press is an edit', (
         TomRobot robot,
       ) async {

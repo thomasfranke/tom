@@ -68,6 +68,13 @@ void main() {
       ) async {
         await robot.seesNotInTheChanges('untracked.md');
         await robot.seesInTheChanges(<String>['writing.md']);
+      }),
+      Step('pressing a change opens it with the diff on', (
+        TomRobot robot,
+      ) async {
+        await robot.opensTheChange('writing.md');
+
+        await robot.seesTheTabs(<String>['writing.md']);
         robot.seesNothingBroken();
       }),
     ],

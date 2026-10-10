@@ -8,6 +8,38 @@ void main() {
   final Fixture docsInRepo = fixtures['docs-in-repo'];
 
   scenario(
+    'Reaches the search from the keyboard',
+    group: 'Search',
+    describe:
+        'The ⌘K the search box shows while it is idle: pressed anywhere in '
+        'the window it puts the keyboard in the box — and when the explorer '
+        'is shut, it opens it first, because the box lives there.',
+    steps: <Step>[
+      Step('open the docs folder, and shut the explorer', (
+        TomRobot robot,
+      ) async {
+        await robot.launchWindowed(pickFolder: docsInRepo.root);
+        await robot.chooseFolder();
+        await robot.seesTheShell();
+        await robot.togglesTheColumn('Hide explorer');
+      }),
+      Step('⌘K opens it again, with the keyboard in the search', (
+        TomRobot robot,
+      ) async {
+        await robot.pressesTheSearchShortcut();
+        await robot.seesTheSearchFocused();
+      }),
+      Step('and what is typed is searched for', (TomRobot robot) async {
+        await robot.typesInTheSearch('paragraph');
+        await robot.seesInTheResults(<String>['writing.md']);
+      }),
+      Step('and nothing is broken', (TomRobot robot) async {
+        robot.seesNothingBroken();
+      }),
+    ],
+  );
+
+  scenario(
     'Finds a document by its contents',
     group: 'Search',
     describe:

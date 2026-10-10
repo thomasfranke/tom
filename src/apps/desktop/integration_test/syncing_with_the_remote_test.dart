@@ -97,6 +97,9 @@ void main() {
         await robot.seesTheDrift(ahead: 2);
         await robot.seesInTheTree(<String>['reviewing.md', 'approvals.md']);
       }),
+      Step('and the band says how many arrived', (TomRobot robot) async {
+        await robot.seesTheBandSaying(<String>['Pulled ', 'still to publish.']);
+      }),
       Step('and then the push lands', (TomRobot robot) async {
         await robot.pushes();
 

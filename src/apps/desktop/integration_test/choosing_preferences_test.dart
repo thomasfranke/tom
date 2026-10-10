@@ -14,9 +14,9 @@ void main() {
         'The rule that makes the absence of OK and Cancel honest: **a '
         'preference applies when it is chosen**. The scenario opens the '
         'popover, takes the formatting bar away and watches seventeen '
-        'buttons leave the row while the popover is still open — then closes '
-        'it by pressing the gear again, which is the one way out that is '
-        'visible.',
+        'buttons leave the row while the popover is still open, speaks '
+        'Portuguese and English again without a restart — then closes it by '
+        'pressing the gear again, which is the one way out that is visible.',
     steps: <Step>[
       Step('open a space, with the bar above the document', (
         TomRobot robot,
@@ -44,6 +44,23 @@ void main() {
         await robot.seesNoFormattingBar();
         // No OK and no Cancel: the window changed behind the popover.
         await robot.seesOnScreen(<String>['THEME']);
+      }),
+      Step('choosing Português speaks it at once, the popover included', (
+        TomRobot robot,
+      ) async {
+        await robot.choosesTheLanguage('Português');
+
+        await robot.seesOnScreen(<String>[
+          'TEMA',
+          'IDIOMA',
+          'Mostrar a barra de formatação',
+        ]);
+        await robot.seesNotOnScreen('THEME');
+      }),
+      Step('and English brings the words back', (TomRobot robot) async {
+        await robot.choosesTheLanguage('English');
+
+        await robot.seesOnScreen(<String>['THEME', 'LANGUAGE']);
       }),
       Step('the gear closes what it opened', (TomRobot robot) async {
         await robot.opensThePreferences();

@@ -1,0 +1,17 @@
+{
+  "summary": "A docs folder whose remote cannot be reached",
+  "description": "The link down rather than the repository: a remote tracked and pushed to once, then pointed at a host under .invalid, which is reserved never to resolve. One commit is waiting to be published, so Push has work and a number; every request to the remote fails the way it does with no network, on every machine, without waiting on a real one.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "remote": {
+    "mine": [
+      {
+        "message": "docs: start the release notes",
+        "write": {
+          "docs/release-notes.md": "# Release notes\n\nCommitted here, never published.\n"
+        }
+      }
+    ],
+    "unreachable": true
+  }
+}

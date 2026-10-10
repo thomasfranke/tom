@@ -1,6 +1,8 @@
 /// The chrome the reader arranges: the columns, their widths, the theme.
 library;
 
+import 'package:tom_domain/tom_domain.dart';
+
 import 'support/harness.dart';
 
 void main() {
@@ -15,7 +17,9 @@ void main() {
         'of the git column are the whole of it. A hidden column is a column '
         'and not a mode — what was on screen comes back unchanged — the '
         'left one is dragged to whatever width the reader wants, and the '
-        'right one shows one git panel at a time rather than stacking two.',
+        'right one shows one git panel at a time rather than stacking two. '
+        'Putting the git column away hides it and nothing else: git is '
+        'still read, so the tree goes on marking what changed.',
     steps: <Step>[
       Step('open the docs folder inside a repository', (TomRobot robot) async {
         await robot.launchWindowed(pickFolder: docsInRepo.root);
@@ -51,6 +55,33 @@ void main() {
 
         await robot.togglesTheColumn('Show explorer');
         await robot.seesInTheTree(<String>['index.md']);
+      }),
+      Step('with the git column put away, the tree still marks changes', (
+        TomRobot robot,
+      ) async {
+        await robot.togglesTheColumn('Hide git');
+        await robot.seesNotOnScreen('History');
+
+        await robot.seesTheTreeMark('untracked.md', FileStateEnum.untracked);
+        await robot.seesTheTreeMark('writing.md', FileStateEnum.modified);
+      }),
+      Step('a document saved there is marked at once', (TomRobot robot) async {
+        await robot.clickInTheTree('index.md');
+        await robot.typesInTheSource('# Index\n\nEdited, the column shut.\n');
+        await robot.saves();
+
+        await robot.seesTheTreeMark('index.md', FileStateEnum.modified);
+      }),
+      Step('and a space opened with it put away is read as well', (
+        TomRobot robot,
+      ) async {
+        await robot.closesTheSpace();
+        await robot.seesHome();
+        await robot.openRecent(docsInRepo.name);
+        await robot.seesTheShell();
+
+        await robot.seesTheTreeMark('untracked.md', FileStateEnum.untracked);
+        await robot.seesTheTreeMark('index.md', FileStateEnum.modified);
       }),
       Step('and nothing is broken', (TomRobot robot) async {
         robot.seesNothingBroken();

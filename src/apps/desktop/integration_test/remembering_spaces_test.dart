@@ -27,6 +27,9 @@ void main() {
         await robot.seesHome();
         await robot.seesRecent(<String>[docsInRepo.name]);
       }),
+      Step('and says the branch it was left on', (TomRobot robot) async {
+        await robot.seesRecentOnBranch(docsInRepo.name, 'main');
+      }),
       Step('clicking it opens the space again', (TomRobot robot) async {
         await robot.openRecent(docsInRepo.name);
         await robot.seesTheShell();

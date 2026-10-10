@@ -22,8 +22,8 @@ file can contain, so `fixture.json` is what says so:
 | `untracked` | files to leave out of that commit |
 | `uncommitted` | path → the tail of it git has not seen, so the file lands modified |
 | `commits` | further commits on the fixture's own branch, oldest first — what gives a document a *history* |
-| `branches` | branches to build from that history, each with its own `commits`; the repository is left back on `main` |
-| `remote` | a bare repository beside the working tree, with `theirs` (pushed by somebody else, never fetched) and `mine` (committed here, never pushed) |
+| `branches` | branches to build from that history, each with its own `commits` and an optional `from` (an earlier branch in the list; `main` otherwise), started by plain git so nothing records it; a name listed again adds its commits to the branch already made, which is how a base moves on after another branch was cut from it; the repository is left back on `main` |
+| `remote` | a bare repository beside the working tree, with `theirs` (pushed by somebody else, never fetched) and `mine` (committed here, never pushed); `proposing` is a branch made off `main`, pushed and left checked out, and `address` what `origin` then says it is while pushes still reach the bare |
 | `outsideTheProject` | staged in the system temporary directory, for the one fixture that has to be outside any repository |
 
 A branch whose commits write the *same* files as the branch below it is
@@ -33,6 +33,11 @@ them differ.
 A commit that writes a file already sitting in `content/` with that exact
 text changes nothing, and git refuses an empty commit — so a document with a
 history belongs in the `commits`, not in the folder.
+
+`"remote": {}` is a remote with no drift at all — a bare holding exactly what
+was committed. `docs-to-clone` is that and nothing else: the bare is what the
+clone scenario pastes as an address, and the scenario clones it into
+`.e2e/clones/`, which it empties first.
 
 Edit the markdown freely: it is what someone reads when a scenario fails, and
 it is also the only realistic documentation the app has to render. Adding a

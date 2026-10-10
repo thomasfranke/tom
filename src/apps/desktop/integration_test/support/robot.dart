@@ -1,38 +1,62 @@
 /// Everything a scenario can do to the app, and everything it can see.
 library;
 
-import 'dart:io' show Platform;
+import 'dart:io' show File, Platform;
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:tom_desktop/bootstrap/run_tom.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_desktop/screens/account/widgets/account_access_widget.dart';
+import 'package:tom_desktop/screens/account/widgets/account_popover_widget.dart';
+import 'package:tom_desktop/screens/account/widgets/account_select_widget.dart';
 import 'package:tom_desktop/screens/branches/branches_control_widget.dart';
 import 'package:tom_desktop/screens/branches/widgets/branches_popover_widget.dart';
 import 'package:tom_desktop/screens/changes/changes_panel.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_count_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_remote_widget.dart';
+import 'package:tom_desktop/screens/changes/widgets/changes_row_widget.dart';
+import 'package:tom_desktop/screens/commands/commands_panel.dart';
+import 'package:tom_desktop/screens/commands/widgets/command_row_widget.dart';
 import 'package:tom_desktop/screens/compare/compare_control_widget.dart';
-import 'package:tom_desktop/screens/compare/compare_design.dart';
-import 'package:tom_desktop/screens/compare/widgets/compare_popover_widget.dart';
 import 'package:tom_desktop/screens/editor/editor_panel.dart';
+import 'package:tom_desktop/screens/editor/editor_tabs_widget.dart';
+import 'package:tom_desktop/screens/editor/widgets/editor_completion_widget.dart';
 import 'package:tom_desktop/screens/editor/widgets/editor_marks_widget.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_body_widget.dart';
+import 'package:tom_desktop/screens/file_tree/widgets/file_tree_draft_widget.dart';
+import 'package:tom_desktop/screens/file_tree/widgets/file_tree_row_widget.dart';
 import 'package:tom_desktop/screens/history/history_panel.dart';
+import 'package:tom_desktop/screens/home/widgets/home_clone_widget.dart';
+import 'package:tom_desktop/screens/preferences/widgets/preferences_popover_widget.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_footnotes_widget.dart';
+import 'package:tom_desktop/screens/preview/widgets/preview_wikilink_widget.dart';
+import 'package:tom_desktop/screens/pull_request/pull_request_panel.dart';
+import 'package:tom_desktop/screens/pull_request/pull_request_row_widget.dart';
+import 'package:tom_desktop/screens/pull_request/pull_request_status_row_widget.dart';
 import 'package:tom_desktop/screens/search/search_boxes.dart';
 import 'package:tom_desktop/screens/search/search_field_widget.dart';
 import 'package:tom_desktop/screens/search/search_occurrences_panel.dart';
 import 'package:tom_desktop/screens/search/search_results_panel.dart';
 import 'package:tom_desktop/screens/shell/status_panel.dart';
+import 'package:tom_desktop/screens/shell/widgets/shell_mode_control_widget.dart';
 import 'package:tom_desktop/screens/spaces/space_menu_control_widget.dart';
 import 'package:tom_desktop/screens/spaces/widgets/space_menu_popover_widget.dart';
+import 'package:tom_desktop/screens/workspace/workspace_bottom_head_widget.dart';
 import 'package:tom_desktop/screens/workspace/workspace_grip_widget.dart';
+import 'package:tom_desktop/widgets/file_state_mark_widget.dart';
+import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:xterm/xterm.dart' show Terminal, TerminalView;
 import 'e2e_module_impl.dart';
 import 'evidence.dart';
 
@@ -69,12 +93,13 @@ final class TomRobot {
   final String settingsPath;
 
   /// Starts the app — the real modules and object graph — with the folder
-  /// dialog answering [pickFolder].
+  /// dialog answering [pickFolder], on a machine with the run's own `gh`
+  /// when [withGh].
   ///
   /// Mounted rather than started, because a scenario relaunches to prove
   /// something survived a restart and `runApp` a second time does not
   /// replace a tree already there. The window's title and size are left out.
-  Future<void> launch({String? pickFolder}) async {
+  Future<void> launch({String? pickFolder, bool withGh = false}) async {
     // Unmounted first: Flutter updates an element in place when the widget's
     // type matches, so a second `ProviderScope` would keep the first one's
     // container and every provider's state with it.
@@ -86,10 +111,20 @@ final class TomRobot {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    // English whatever the machine speaks: every finder here is written in
+    // the template's words, and `System` would follow the developer's locale.
+    tester.platformDispatcher.localesTestValue = const <Locale>[
+      Locale('en', 'US'),
+    ];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       tomApp(
         modules: <TomModule>[
-          E2eModuleImpl(folder: pickFolder, settingsPath: settingsPath),
+          E2eModuleImpl(
+            folder: pickFolder,
+            settingsPath: settingsPath,
+            withGh: withGh,
+          ),
         ],
       ),
     );
@@ -118,12 +153,13 @@ final class TomRobot {
   Future<void> launchWindowed({
     String? pickFolder,
     Size size = const Size(1280, 840),
+    bool withGh = false,
   }) async {
     tester.view
       ..physicalSize = boardWindow ?? size
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await launch(pickFolder: pickFolder);
+    await launch(pickFolder: pickFolder, withGh: withGh);
     await _showTheWindow();
   }
 
@@ -246,6 +282,33 @@ final class TomRobot {
     await settle();
   }
 
+  /// Presses the name on the changes row that shows [name], which opens the
+  /// document with the diff on.
+  Future<void> opensTheChange(String name) async {
+    await _waitUntil(() => _showing(_inTheChanges(name)));
+    await tester.tap(_inTheChanges(name));
+    await settle();
+  }
+
+  /// Presses the ↶ at the end of the changes row that shows [name], which
+  /// asks before putting the file back.
+  Future<void> discardsTheChange(String name) async {
+    await _waitUntil(() => _showing(_inTheChanges(name)));
+    await tester.tap(
+      find.descendant(
+        of: find.ancestor(
+          of: _inTheChanges(name),
+          matching: find.byType(ChangesRowWidget),
+        ),
+        matching: find.byWidgetPredicate(
+          (Widget widget) =>
+              widget is TomGlyphWidget && widget.glyph == TomGlyphEnum.discard,
+        ),
+      ),
+    );
+    await settle();
+  }
+
   /// Ticks the changes row that shows [name], staging it.
   ///
   /// Scoped to the row, because the caption's own checkbox — *All* — would
@@ -253,9 +316,10 @@ final class TomRobot {
   Future<void> stages(String name) async {
     await _waitUntil(() => _showing(_inTheChanges(name)));
     Finder box() => find.descendant(
-      of: find
-          .ancestor(of: _inTheChanges(name), matching: find.byType(Row))
-          .first,
+      of: find.ancestor(
+        of: _inTheChanges(name),
+        matching: find.byType(ChangesRowWidget),
+      ),
       matching: find.byType(TomCheckWidget),
     );
     await tester.tap(box());
@@ -298,24 +362,44 @@ final class TomRobot {
     await settle();
   }
 
+  /// Asserts `Push`, `Fetch` and `Pull` are all unavailable, and that the
+  /// commit box is still there — a broken link never takes committing away.
+  Future<void> seesTheRemoteActionsUnavailable() async {
+    bool isLive(String verb) =>
+        tester
+            .widget<ButtonStyleButton>(
+              find.ancestor(
+                of: find.descendant(
+                  of: find.byType(ChangesRemoteWidget),
+                  matching: find.textContaining(verb),
+                ),
+                matching: find.byWidgetPredicate(
+                  (Widget widget) => widget is ButtonStyleButton,
+                ),
+              ),
+            )
+            .onPressed !=
+        null;
+    await _waitUntil(() => !isLive('Fetch'));
+    for (final String verb in <String>['Push', 'Fetch', 'Pull']) {
+      expect(isLive(verb), isFalse, reason: '$verb is still available');
+    }
+    expect(_anyField, findsOneWidget, reason: 'the commit box went away');
+  }
+
   /// Any of the three saying it is the one in flight.
   Finder get _working => find.descendant(
     of: find.byType(ChangesRemoteWidget),
     matching: find.textContaining('…'),
   );
 
-  /// Ticks *All*, staging everything the panel lists — the caption's own
-  /// checkbox, the one [stages] avoids.
+  /// Presses *Stage all* at the head of the unstaged section, and waits for
+  /// that section to go.
   Future<void> stagesEverything() async {
-    final Finder all = find.descendant(
-      of: find.ancestor(of: find.text('All'), matching: find.byType(Row)).first,
-      matching: find.byType(TomCheckWidget),
-    );
+    final Finder all = find.text('Stage all');
     await _waitUntil(() => _showing(all));
     await tester.tap(all);
-    await _waitUntil(
-      () => _showing(all) && tester.widget<TomCheckWidget>(all).isChecked,
-    );
+    await _waitUntil(() => !_showing(all));
     await settle();
   }
 
@@ -342,7 +426,9 @@ final class TomRobot {
       find.descendant(of: find.byType(ChangesPanel), matching: _anyField),
       message,
     );
-    await settle();
+    // Pumped, not settled: the summary has the keyboard, and its caret
+    // blinks for as long as the window is in front.
+    await tester.pump(const Duration(milliseconds: 300));
   }
 
   /// Presses *Commit*.
@@ -401,6 +487,29 @@ final class TomRobot {
     await tester.pump(const Duration(milliseconds: 300));
   }
 
+  /// Presses ⌘Z (Ctrl+Z off macOS) where the keyboard already is — in
+  /// preview, where no source pane can be clicked into first.
+  Future<void> undoesFromTheKeyboard() => _historyKey(redo: false);
+
+  /// Presses ⌘⇧Z (Ctrl+Shift+Z off macOS) the same way.
+  Future<void> redoesFromTheKeyboard() => _historyKey(redo: true);
+
+  Future<void> _historyKey({required bool redo}) async {
+    final LogicalKeyboardKey modifier = Platform.isMacOS
+        ? LogicalKeyboardKey.meta
+        : LogicalKeyboardKey.control;
+    await tester.sendKeyDownEvent(modifier);
+    if (redo) {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    if (redo) {
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shift);
+    }
+    await tester.sendKeyUpEvent(modifier);
+    await settle();
+  }
+
   /// Clicks the row of the file tree that shows [name], scoped to the
   /// explorer because the top bar names the space's folder too.
   Future<void> clickInTheTree(String name) async {
@@ -409,6 +518,505 @@ final class TomRobot {
     await _waitUntil(() => _showing(_inTheTree(name)));
     await tester.tap(_inTheTree(name));
     await settle();
+  }
+
+  /// Presses the explorer's `+` and names the document [name], pressing
+  /// Enter — accepted or refused, which the caller asserts.
+  Future<void> createsADocument(String name) async {
+    await _waitUntil(() => _showing(find.byTooltip('New document')));
+    await tester.tap(find.byTooltip('New document'));
+    // Pumped, not settled: the field takes the keyboard, and its caret
+    // blinks for as long as it has it.
+    await tester.pump(const Duration(milliseconds: 300));
+    final Finder field = find.descendant(
+      of: find.byType(FileTreeDraftWidget),
+      matching: find.byType(TextField),
+    );
+    await _waitUntil(() => _showing(field));
+    await tester.enterText(field, name);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts the tab strip holds [names], left to right.
+  Future<void> seesTheTabs(List<String> names) async {
+    // The plain text, because a deleted file's tab is one `Text.rich`.
+    List<String> shown() => <String>[
+      for (final Text text in tester.widgetList<Text>(
+        find.descendant(
+          of: find.byType(EditorTabsWidget),
+          matching: find.byType(Text),
+        ),
+      ))
+        text.data ?? text.textSpan?.toPlainText() ?? '',
+    ];
+    await _waitUntil(() => listEquals(shown(), names));
+    expect(shown(), names, reason: 'the tabs are ${shown()}');
+  }
+
+  /// Asserts the tab named [name] is in preview — italic — or kept.
+  void seesTheTabInPreview(String name, {bool inPreview = true}) {
+    final Text text = tester.widget<Text>(
+      find.descendant(
+        of: find.byType(EditorTabsWidget),
+        matching: find.text(name),
+      ),
+    );
+    expect(
+      text.style?.fontStyle == FontStyle.italic,
+      inPreview,
+      reason: '$name is ${inPreview ? 'not' : ''} in preview',
+    );
+  }
+
+  /// Chooses the tab named [name].
+  Future<void> choosesTheTab(String name) async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(EditorTabsWidget),
+        matching: find.text(name),
+      ),
+    );
+    await settle();
+  }
+
+  /// Presses ⌘K (Ctrl+K off macOS), which puts the keyboard in the search.
+  Future<void> pressesTheSearchShortcut() async {
+    final LogicalKeyboardKey modifier = Platform.isMacOS
+        ? LogicalKeyboardKey.metaLeft
+        : LogicalKeyboardKey.controlLeft;
+    await tester.sendKeyDownEvent(modifier);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyK);
+    await tester.sendKeyUpEvent(modifier);
+    // Pumped, not settled: the box takes the keyboard, and a caret blinks.
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts the search box has the keyboard.
+  Future<void> seesTheSearchFocused() async {
+    bool focused() =>
+        _showing(_theSearchField) &&
+        (tester.widget<TextField>(_theSearchField).focusNode?.hasFocus ??
+            false);
+    await _waitUntil(focused);
+    expect(
+      focused(),
+      isTrue,
+      reason: 'the search box does not have the keyboard',
+    );
+  }
+
+  /// Presses ⌘W (Ctrl+W off macOS), which closes the tab on screen.
+  Future<void> closesTheTabFromTheKeyboard() async {
+    final LogicalKeyboardKey modifier = Platform.isMacOS
+        ? LogicalKeyboardKey.metaLeft
+        : LogicalKeyboardKey.controlLeft;
+    await tester.sendKeyDownEvent(modifier);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyW);
+    await tester.sendKeyUpEvent(modifier);
+    await settle();
+  }
+
+  /// Presses ⌘J (Ctrl+J off macOS), which opens the panel under the document
+  /// or puts it away.
+  Future<void> pressesTheCommandsShortcut() async {
+    final LogicalKeyboardKey modifier = Platform.isMacOS
+        ? LogicalKeyboardKey.metaLeft
+        : LogicalKeyboardKey.controlLeft;
+    await tester.sendKeyDownEvent(modifier);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyJ);
+    await tester.sendKeyUpEvent(modifier);
+    await settle();
+  }
+
+  /// A row of the commands panel whose command line holds [fragment] — the
+  /// last one, since the newest is at the bottom.
+  Finder _commandRow(String fragment) => find
+      .ancestor(
+        of: find.descendant(
+          of: find.byType(CommandsPanel),
+          matching: find.textContaining(fragment),
+        ),
+        matching: find.byType(CommandRowWidget),
+      )
+      .last;
+
+  /// Asserts the commands panel is open and lists a command holding each of
+  /// [fragments].
+  Future<void> seesTheCommands(List<String> fragments) async {
+    await _waitUntil(() => _showing(find.byType(CommandsPanel)));
+    expect(
+      find.byType(CommandsPanel),
+      findsOneWidget,
+      reason: 'the commands panel is not open',
+    );
+    for (final String fragment in fragments) {
+      await _waitUntil(
+        () => _showing(
+          find.descendant(
+            of: find.byType(CommandsPanel),
+            matching: find.textContaining(fragment),
+          ),
+        ),
+      );
+      expect(
+        find.descendant(
+          of: find.byType(CommandsPanel),
+          matching: find.textContaining(fragment),
+        ),
+        findsWidgets,
+        reason: 'no command holding "$fragment" was listed',
+      );
+    }
+  }
+
+  /// Presses the last row whose command holds [fragment], which opens it
+  /// onto what the command printed.
+  Future<void> opensTheCommand(String fragment) async {
+    // The list is anchored at its newest row, so an early one can be
+    // scrolled out of the panel.
+    await tester.ensureVisible(_commandRow(fragment));
+    await settle();
+    await tester.tap(_commandRow(fragment));
+    await settle();
+  }
+
+  /// Asserts the last row whose command holds [fragment] is open, showing
+  /// what it printed — [printed] among it, when given.
+  Future<void> seesTheCommandOpen(String fragment, {String? printed}) async {
+    final Finder output = find.descendant(
+      of: _commandRow(fragment),
+      matching: find.byType(SelectableText),
+    );
+    await _waitUntil(() => _showing(output));
+    expect(output, findsOneWidget, reason: '"$fragment" is not open');
+    if (printed != null) {
+      final String shown = tester.widget<SelectableText>(output).data ?? '';
+      expect(shown, contains(printed), reason: 'it printed "$shown"');
+    }
+  }
+
+  /// Presses the `×` at the right of the panel's tabs.
+  Future<void> closesTheCommands() async {
+    await tester.tap(find.byTooltip('Close the panel'));
+    await settle();
+    seesTheCommandsClosed();
+  }
+
+  /// Asserts the panel under the document is not on screen.
+  void seesTheCommandsClosed() => expect(
+    find.byType(CommandsPanel),
+    findsNothing,
+    reason: 'the commands panel is still open',
+  );
+
+  /// Presses the tab called [title] at the head of the panel under the
+  /// document.
+  Future<void> choosesTheBottomTab(String title) async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(WorkspaceBottomHeadWidget),
+        matching: find.text(title),
+      ),
+    );
+    await settle();
+  }
+
+  /// What the terminal's screen holds, scrollback included, one line each.
+  String _terminalText() {
+    final Finder view = find.byType(TerminalView);
+    if (!_showing(view)) {
+      return '';
+    }
+    final Terminal terminal = tester.widget<TerminalView>(view).terminal;
+    return <String>[
+      for (int i = 0; i < terminal.buffer.lines.length; i++)
+        terminal.buffer.lines[i].toString().trimRight(),
+    ].join('\n');
+  }
+
+  /// Asserts the terminal is showing and its shell has answered: the head
+  /// names it, `<shell> · <folder>`, with [folder] at the folder's end.
+  ///
+  /// Long, because this is the person's own shell with their own profile,
+  /// and a profile can take seconds to read.
+  Future<void> seesTheTerminalRunning({required String folder}) async {
+    final Finder place = find.descendant(
+      of: find.byType(WorkspaceBottomHeadWidget),
+      matching: find.textContaining(' · '),
+    );
+    await _waitUntil(() => _showing(place), limit: const Duration(seconds: 30));
+    expect(place, findsOneWidget, reason: 'no shell answered');
+    final String said = tester.widget<Text>(place).data ?? '';
+    expect(said, endsWith(folder), reason: 'the head says "$said"');
+    // The prompt is drawn once the profile is read; typing before it would
+    // land in a shell still starting.
+    await _waitUntil(
+      () => _terminalText().trim().isNotEmpty,
+      limit: const Duration(seconds: 30),
+    );
+  }
+
+  /// Clicks the terminal, types [line] into it, and presses Return.
+  Future<void> runsInTheTerminal(String line) async {
+    await tester.tap(find.byType(TerminalView));
+    // Past the emulator's double-tap window, which is a timer.
+    await tester.pump(const Duration(milliseconds: 500));
+    tester.testTextInput.enterText(line);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await settle();
+  }
+
+  /// Asserts the terminal's screen shows [text], waiting for the shell.
+  Future<void> seesInTheTerminal(String text) async {
+    await _waitUntil(
+      () => _terminalText().contains(text),
+      limit: const Duration(seconds: 20),
+    );
+    expect(
+      _terminalText(),
+      contains(text),
+      reason: 'the terminal shows:\n${_terminalText()}',
+    );
+  }
+
+  /// Asserts the commands panel lists no command reading exactly [line] —
+  /// what is typed into the terminal is not what TOM ran.
+  void seesNoCommandReading(String line) => expect(
+    find.descendant(of: find.byType(CommandsPanel), matching: find.text(line)),
+    findsNothing,
+    reason: '"$line" was written into the commands',
+  );
+
+  /// Presses `Show the command` on the band a failure raised.
+  Future<void> showsTheCommandFromTheBand() async {
+    final Finder action = find.descendant(
+      of: find.byType(NoticeBandWidget),
+      matching: find.text('Show the command'),
+    );
+    await _waitUntil(() => _showing(action));
+    await tester.tap(action);
+    await settle();
+  }
+
+  /// Presses the `Pull request` row at the top of the tree.
+  ///
+  /// Scoped to the row, because once the page is up the right column has a
+  /// tab by the same name.
+  ///
+  /// Pressed again until the page is up: the row is drawn, muted, while git
+  /// is still being read, and a press then opens nothing — which a machine
+  /// whose `gh` is also being asked reaches more often than not.
+  Future<void> opensThePullRequest() async {
+    final Finder row = find.descendant(
+      of: find.byType(PullRequestRowWidget),
+      matching: find.text('Pull request'),
+    );
+    await _waitUntil(() => _showing(row));
+    for (int attempt = 0; attempt < 20; attempt++) {
+      await tester.tap(row);
+      await settle();
+      if (_showing(find.byType(PullRequestStatusRowWidget))) {
+        return;
+      }
+      await tester.pump(const Duration(milliseconds: 250));
+    }
+  }
+
+  /// Presses [label] at the foot of the pull request column — `Create pull
+  /// request`, `View #123 on GitHub` — once the host has answered.
+  Future<void> pressesThePullRequestAction(String label) async {
+    final Finder action = find.descendant(
+      of: find.byType(PullRequestPanel),
+      matching: find.text(label),
+    );
+    await _waitUntil(() => _showing(action));
+    await tester.tap(action);
+    await settle();
+  }
+
+  /// Asserts the tree's `Pull request` row is drawn, says [reason] under its
+  /// name, and that pressing it opens nothing.
+  Future<void> seesThePullRequestUnavailable(String reason) async {
+    final Finder said = find.descendant(
+      of: find.byType(PullRequestRowWidget),
+      matching: find.text(reason),
+    );
+    await _waitUntil(() => _showing(said));
+    expect(said, findsOneWidget, reason: 'the row does not say "$reason"');
+    await tester.tap(
+      find.descendant(
+        of: find.byType(PullRequestRowWidget),
+        matching: find.text('Pull request'),
+      ),
+    );
+    await settle();
+    expect(
+      find.byType(PullRequestStatusRowWidget),
+      findsNothing,
+      reason: 'an unavailable row opened the page',
+    );
+  }
+
+  /// Opens the `⋮` named [menu], and leaves it open.
+  Future<void> opensTheMenu(String menu) async {
+    await _waitUntil(() => _showing(find.byTooltip(menu)));
+    await tester.tap(find.byTooltip(menu));
+    await settle();
+  }
+
+  /// Asserts the open menu offers [labels], in that order.
+  Future<void> seesInTheMenu(List<String> labels) async {
+    await _waitUntil(() => _showing(find.byType(TomMenuWidget)));
+    final List<String> shown = <String>[
+      for (final Text text in tester.widgetList<Text>(
+        find.descendant(
+          of: find.byType(TomMenuWidget),
+          matching: find.byType(Text),
+        ),
+      ))
+        text.data ?? '',
+    ];
+    expect(shown, labels, reason: 'the menu offers $shown');
+  }
+
+  /// Puts the open menu away with Escape.
+  Future<void> dismissesTheMenu() async {
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await settle();
+    expect(find.byType(TomMenuWidget), findsNothing);
+  }
+
+  /// Opens the `⋮` named [menu] and chooses [label] from it.
+  Future<void> choosesFromTheMenu(String menu, String label) async {
+    await _waitUntil(() => _showing(find.byTooltip(menu)));
+    await tester.tap(find.byTooltip(menu));
+    await settle();
+    final Finder row = find.descendant(
+      of: find.byType(TomMenuWidget),
+      matching: find.text(label),
+    );
+    await _waitUntil(() => _showing(row));
+    await tester.tap(row);
+    // Pumped, not settled: a choice can hand the keyboard to a field.
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Right-clicks the tab named [tab] and chooses [label] from its menu.
+  Future<void> choosesFromTheTabMenu(String tab, String label) async {
+    final Finder name = find.descendant(
+      of: find.byType(EditorTabsWidget),
+      matching: find.text(tab),
+    );
+    await _waitUntil(() => _showing(name));
+    await tester.tapAt(tester.getCenter(name), buttons: kSecondaryButton);
+    await settle();
+    final Finder row = find.descendant(
+      of: find.byType(TomMenuWidget),
+      matching: find.text(label),
+    );
+    await _waitUntil(() => _showing(row));
+    await tester.tap(row);
+    await settle();
+  }
+
+  /// Asserts the export dialog's answer, [fileName] beside this scenario's
+  /// preferences, was written, begins with [starts] and — for a text format
+  /// — holds [holding].
+  Future<void> seesTheExportWritten(
+    String fileName,
+    String starts, {
+    String? holding,
+  }) async {
+    final File written = File('${File(settingsPath).parent.path}/$fileName');
+    await _waitUntil(written.existsSync);
+    expect(written.existsSync(), isTrue, reason: '$fileName was not written');
+    final List<int> bytes = written.readAsBytesSync();
+    expect(
+      String.fromCharCodes(bytes.take(starts.length)),
+      starts,
+      reason: '$fileName is not what was asked for',
+    );
+    if (holding != null) {
+      expect(
+        String.fromCharCodes(bytes),
+        contains(holding),
+        reason: '$fileName does not hold $holding',
+      );
+    }
+  }
+
+  /// Names the folder the explorer menu's `New folder` asked for, and
+  /// presses Enter.
+  Future<void> createsAFolder(String name) async {
+    await choosesFromTheMenu('Explorer menu', 'New folder');
+    final Finder field = find.descendant(
+      of: find.byType(FileTreeDraftWidget),
+      matching: find.byType(TextField),
+    );
+    await _waitUntil(() => _showing(field));
+    await tester.enterText(field, name);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts the name typed after the `+` was refused where it was typed:
+  /// the row is still there, outlined `removed`.
+  Future<void> seesTheNameRefused() async {
+    Finder box() => find.descendant(
+      of: find.byType(FileTreeDraftWidget),
+      matching: find.byType(TomFieldBoxWidget),
+    );
+    await _waitUntil(
+      () =>
+          _showing(box()) && tester.widget<TomFieldBoxWidget>(box()).isRefused,
+    );
+    expect(
+      tester.widget<TomFieldBoxWidget>(box()).isRefused,
+      isTrue,
+      reason: 'the new document\'s name was not refused',
+    );
+  }
+
+  /// Takes the `+`'s row away with Escape.
+  Future<void> cancelsTheNewDocument() async {
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await settle();
+    expect(find.byType(FileTreeDraftWidget), findsNothing);
+  }
+
+  /// Asserts the tree marks [name] with git's [state] letter.
+  Future<void> seesTheTreeMark(String name, FileStateEnum state) async {
+    Finder mark() => find.descendant(
+      of: find.ancestor(
+        of: _inTheTree(name),
+        matching: find.byType(FileTreeRowWidget),
+      ),
+      matching: find.byType(FileStateMarkWidget),
+    );
+    await _waitUntil(
+      () =>
+          _showing(mark()) &&
+          tester.widget<FileStateMarkWidget>(mark()).state == state,
+    );
+    expect(
+      tester.widget<FileStateMarkWidget>(mark()).state,
+      state,
+      reason: '$name is not marked ${state.name} in the tree',
+    );
+  }
+
+  /// Asserts the window shows the source pane alone.
+  Future<void> seesOnlyTheSource() async {
+    await _waitUntil(
+      () =>
+          _showing(find.byType(CodeEditor)) &&
+          !_showing(find.byType(PreviewPanel)),
+    );
+    expect(find.byType(PreviewPanel), findsNothing);
   }
 
   /// Types [terms] into the search box above the tree.
@@ -470,15 +1078,20 @@ final class TomRobot {
     await settle();
   }
 
-  /// Opens the breadcrumb's menu of spaces.
+  /// Opens the breadcrumb's menu of spaces, by the chevron that says it is one.
   Future<void> opensTheSpaceMenu() async {
-    await tester.tap(find.byType(SpaceMenuControlWidget));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(SpaceMenuControlWidget),
+        matching: find.byType(TomChevronWidget),
+      ),
+    );
     await settle();
   }
 
-  /// Leaves the space, from that menu.
+  /// Leaves the space, from the home button before the breadcrumb.
   Future<void> closesTheSpace() async {
-    await tester.tap(_saying('Close space'));
+    await tester.tap(find.byTooltip('Close space'));
     await settle();
   }
 
@@ -517,10 +1130,37 @@ final class TomRobot {
     await tester.pump(const Duration(milliseconds: 300));
   }
 
-  /// Opens the second box, the one that says what the words become.
+  /// Opens the second box, the one that says what the words become, with
+  /// ⌥⌘F (Ctrl+H off macOS) — the field carries no control for it.
   Future<void> opensTheReplacement() async {
-    await tester.tap(find.byTooltip('Replace'));
-    await tester.pump(const Duration(milliseconds: 300));
+    final List<LogicalKeyboardKey> held = Platform.isMacOS
+        ? <LogicalKeyboardKey>[
+            LogicalKeyboardKey.metaLeft,
+            LogicalKeyboardKey.altLeft,
+          ]
+        : <LogicalKeyboardKey>[LogicalKeyboardKey.controlLeft];
+    for (final LogicalKeyboardKey key in held) {
+      await tester.sendKeyDownEvent(key);
+    }
+    await tester.sendKeyEvent(
+      Platform.isMacOS ? LogicalKeyboardKey.keyF : LogicalKeyboardKey.keyH,
+    );
+    for (final LogicalKeyboardKey key in held.reversed) {
+      await tester.sendKeyUpEvent(key);
+    }
+    // Two fields, not "a field": the search box alone would satisfy that.
+    // Pumped, not settled: the box takes the keyboard, and a caret blinks.
+    bool open() =>
+        find
+            .descendant(
+              of: find.byType(SearchBoxes),
+              matching: find.byType(TextField),
+            )
+            .evaluate()
+            .length ==
+        2;
+    await _waitUntil(open);
+    expect(open(), isTrue, reason: '⌥⌘F did not open the replace box');
   }
 
   /// Types [text] into that second box.
@@ -658,6 +1298,26 @@ final class TomRobot {
     expect(shown, findsWidgets, reason: 'the preview is not showing "$text"');
   }
 
+  /// Asserts the preview has brought the heading [words] to the top of its
+  /// pane, the way a link's `#anchor` leaves it.
+  Future<void> seesTheHeadingAtTheTopOfThePreview(String words) async {
+    final Finder heading = find.descendant(
+      of: find.byType(PreviewPanel),
+      matching: find.textContaining(words, findRichText: true),
+    );
+    bool atTheTop() {
+      if (!_showing(heading)) {
+        return false;
+      }
+      final Rect pane = tester.getRect(find.byType(PreviewPanel));
+      final double top = tester.getTopLeft(heading.first).dy;
+      return top >= pane.top && top < pane.top + pane.height / 4;
+    }
+
+    await _waitUntil(atTheTop);
+    expect(atTheTop(), isTrue, reason: '"$words" is not at the preview top');
+  }
+
   /// Asserts the preview is **not** showing [text].
   Future<void> seesNotInThePreview(String text) async {
     final Finder shown = find.textContaining(text, findRichText: true);
@@ -677,11 +1337,16 @@ final class TomRobot {
       await _waitUntil(() => _showing(marker));
       expect(marker, findsOneWidget, reason: 'no marker $number in the prose');
     }
-    // In order: the second citation is below the first.
+    // In order: the second citation is below the first. Scoped like the
+    // search above, because the Git tab's count can be the same digit.
+    Finder inThePreview(String number) => find.descendant(
+      of: find.byType(PreviewPanel),
+      matching: find.text(number),
+    );
     for (int at = 1; at < numbers.length; at++) {
       expect(
-        tester.getTopLeft(find.text(numbers[at])).dy,
-        greaterThan(tester.getTopLeft(find.text(numbers[at - 1])).dy),
+        tester.getTopLeft(inThePreview(numbers[at])).dy,
+        greaterThan(tester.getTopLeft(inThePreview(numbers[at - 1])).dy),
         reason: 'marker ${numbers[at]} is not below ${numbers[at - 1]}',
       );
     }
@@ -724,6 +1389,9 @@ final class TomRobot {
   /// Asserts the preview is drawing no diff decoration at all.
   Future<void> seesNoDiffMarks() async {
     await settle();
+    // Re-marking happens off the frame: the marks a press took away go when
+    // git has answered, not when the press settled.
+    await _waitUntil(() => _diffMarks().isEmpty);
     expect(
       _diffMarks(),
       isEmpty,
@@ -742,22 +1410,224 @@ final class TomRobot {
       .map((DiffMarkWidget mark) => mark.letter)
       .toList();
 
-  /// Asserts the status bar names [path] as the open document, scoped to the
-  /// bar because a document at the space's root is spelled the same in the
-  /// tree.
+  /// Asserts [path] is the open document: the tree's open row is it, or —
+  /// while a search has the column — the session says so.
+  ///
+  /// Not the status bar, which stopped naming the document when the 1b
+  /// restyle gave that job to the tab (`docs/product/editor/tabs/doc.md`);
+  /// the session stands in for the tab until tabs are built.
   Future<void> seesTheOpenDocument(String path) async {
-    final Finder shown = find.descendant(
-      of: find.byType(StatusPanel),
-      matching: find.text(path),
+    final Finder open = find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is FileTreeRowWidget &&
+          widget.isOpen &&
+          widget.row.entry.path.value == path,
     );
-    await _waitUntil(() => _showing(shown));
-    expect(shown, findsOneWidget, reason: 'the status bar does not name $path');
+    bool sessionSays() =>
+        ProviderScope.containerOf(
+          tester.element(find.byType(StatusPanel)),
+        ).read(spaceSessionProvider)?.openDocument?.value ==
+        path;
+    await _waitUntil(
+      () =>
+          _showing(open) ||
+          (!_showing(find.byType(FileTreeRowWidget)) && sessionSays()),
+    );
+    expect(
+      _showing(open) || sessionSays(),
+      isTrue,
+      reason: '$path is not the open document',
+    );
+  }
+
+  /// Asserts the file at the absolute [path] holds [text], waiting for a save
+  /// to land, and that the buffer it came from is no longer unsaved.
+  Future<void> seesSavedTo(String path, String text) async {
+    bool holds() => File(path).readAsStringSync().contains(text);
+    await _waitUntil(() => holds() && !_showing(find.text('Unsaved')));
+    expect(
+      holds(),
+      isTrue,
+      reason: '$path reads:\n${File(path).readAsStringSync()}',
+    );
+    expect(find.text('Unsaved'), findsNothing);
+  }
+
+  /// Asserts the tree draws no open row: what is on screen is a file it does
+  /// not list (`docs/product/git-workflow/commit/opening-a-change/doc.md`).
+  void seesNoOpenRowInTheTree() {
+    expect(
+      find.byWidgetPredicate(
+        (Widget widget) => widget is FileTreeRowWidget && widget.isOpen,
+      ),
+      findsNothing,
+      reason: 'the tree marks a row open for a file it does not list',
+    );
+  }
+
+  /// Asserts the tab named [name] says its file is gone: the name, then
+  /// `(deleted)` (`docs/product/git-workflow/commit/opening-a-change/doc.md`).
+  Future<void> seesTheTabDeleted(String name) async {
+    final Finder tab = find.descendant(
+      of: find.byType(EditorTabsWidget),
+      matching: find.text('$name (deleted)'),
+    );
+    await _waitUntil(() => _showing(tab));
+    expect(tab, findsOneWidget, reason: 'the tab does not say $name is gone');
+  }
+
+  /// Asserts the status bar names the open file's kind as [kind], and says
+  /// `Read-only` in place of `Saved` when [readOnly].
+  Future<void> seesTheFileKind(String kind, {bool readOnly = false}) async {
+    Finder inTheBar(String text) => find.descendant(
+      of: find.byType(StatusPanel),
+      matching: find.text(text),
+    );
+    await _waitUntil(
+      () =>
+          _showing(inTheBar(kind)) &&
+          _showing(inTheBar('Read-only')) == readOnly,
+    );
+    expect(inTheBar(kind), findsOneWidget, reason: 'the kind is not $kind');
+    expect(
+      inTheBar('Read-only'),
+      readOnly ? findsOneWidget : findsNothing,
+      reason: readOnly ? 'nothing says read-only' : 'a live file is read-only',
+    );
+    if (readOnly) {
+      expect(inTheBar('Saved'), findsNothing);
+    }
+  }
+
+  /// The three segments of the mode control, each with whether it is chosen
+  /// and whether it can be pressed.
+  Map<String, ({bool chosen, bool offered})> _modes() =>
+      <String, ({bool chosen, bool offered})>{
+        for (final String mode in <String>['Source', 'Split', 'Preview'])
+          mode: (
+            chosen:
+                tester
+                    .widget<Text>(
+                      find.descendant(
+                        of: find.byType(ShellModeControlWidget),
+                        matching: find.text(mode),
+                      ),
+                    )
+                    .style
+                    ?.fontWeight ==
+                FontWeight.w600,
+            offered:
+                tester
+                    .widget<InkWell>(
+                      find
+                          .ancestor(
+                            of: find.descendant(
+                              of: find.byType(ShellModeControlWidget),
+                              matching: find.text(mode),
+                            ),
+                            matching: find.byType(InkWell),
+                          )
+                          .first,
+                    )
+                    .onTap !=
+                null,
+          ),
+      };
+
+  /// Asserts [chosen] is the mode drawn chosen — none when null — and that
+  /// exactly the modes in [offered] can be pressed.
+  Future<void> seesTheModes({
+    required String? chosen,
+    required List<String> offered,
+  }) async {
+    bool matches() => _modes().entries.every(
+      (MapEntry<String, ({bool chosen, bool offered})> mode) =>
+          mode.value.chosen == (mode.key == chosen) &&
+          mode.value.offered == offered.contains(mode.key),
+    );
+    await _waitUntil(matches);
+    expect(matches(), isTrue, reason: 'the modes read ${_modes()}');
+  }
+
+  /// Asserts the source pane's gutter letters [letters], top to bottom, and
+  /// that nothing renders the file: no preview, no `Diff` chip.
+  Future<void> seesTheLineMarks(List<String> letters) async {
+    List<String> lettered() {
+      final Finder gutter = find.byType(EditorMarksWidget);
+      if (!_showing(gutter)) {
+        return const <String>[];
+      }
+      return <String>[
+        for (final EditorMarkSpan span
+            in tester.widget<EditorMarksWidget>(gutter).marks.spans)
+          if (span.letters) EditorMarksPainter.letterOf(span.mark),
+      ];
+    }
+
+    await _waitUntil(() => listEquals(lettered(), letters));
+    expect(lettered(), letters, reason: 'the gutter letters ${lettered()}');
+    expect(find.byType(PreviewPanel), findsNothing);
+  }
+
+  /// Asserts there is no `Diff` chip to turn the marks off with.
+  void seesNoDiffChip() {
+    expect(
+      find.descendant(
+        of: find.byType(CompareControlWidget),
+        matching: find.text('Diff'),
+      ),
+      findsNothing,
+      reason: 'the Diff chip is offered over a file it cannot turn off',
+    );
+  }
+
+  /// Asserts the preview marks every block it draws removed.
+  Future<void> seesEveryBlockRemoved() async {
+    bool allRemoved() =>
+        _diffMarks().isNotEmpty &&
+        _diffMarks().every((String letter) => letter == 'R');
+    await _waitUntil(allRemoved);
+    expect(allRemoved(), isTrue, reason: 'the preview marks ${_diffMarks()}');
+  }
+
+  /// Asserts nothing offers a way back to now: what is on screen is not a
+  /// version being read.
+  void seesNoWayBackToNow() {
+    expect(find.text('Back to now'), findsNothing);
+    expect(find.textContaining('Reading '), findsNothing);
+  }
+
+  /// Asserts the tab holds a binary file: its one sentence and the way to the
+  /// file, and no source pane.
+  Future<void> seesABinaryFile() async {
+    final Finder sentence = find.text('A binary file — not shown as text.');
+    await _waitUntil(() => _showing(sentence));
+    expect(sentence, findsOneWidget);
+    expect(
+      find.ancestor(
+        of: find.text(Platform.isMacOS ? 'Reveal in Finder' : 'Show in Files'),
+        matching: find.byType(OutlinedButton),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byType(CodeEditor, skipOffstage: false), findsNothing);
   }
 
   /// Asserts the source pane is showing [text], through the editor's own
   /// controller (see [typesInTheSource]).
   Future<void> seesInTheSource(String text) async {
-    await _waitUntil(() => _showing(find.byType(CodeEditor)));
+    // Waited for, not read once: a switch re-reads the buffer after git, the
+    // tree and the status, and the pane only shows it once all three answer.
+    await _waitUntil(
+      () =>
+          _showing(find.byType(CodeEditor)) &&
+          (tester
+                  .widget<CodeEditor>(find.byType(CodeEditor))
+                  .controller
+                  ?.text
+                  .contains(text) ??
+              false),
+    );
     expect(
       tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
       contains(text),
@@ -772,10 +1642,178 @@ final class TomRobot {
     await settle();
   }
 
+  /// Presses the account button while its popover is open, which closes it.
+  Future<void> closesTheAccount() async {
+    await tester.tap(find.byTooltip('Account'));
+    await settle();
+  }
+
+  /// Opens the account popover and waits for what the machine's tools said.
+  Future<void> opensTheAccount() async {
+    await _waitUntil(() => _showing(find.byTooltip('Account')));
+    await tester.tap(find.byTooltip('Account'));
+    await settle();
+    await _waitUntil(
+      () =>
+          _showing(find.text('No GitHub credentials on this computer')) ||
+          _showing(find.byType(AccountSelectWidget)),
+    );
+  }
+
+  /// Asserts the popover says the machine holds no GitHub login, and that
+  /// what can be done here is unknown — five dashes, no tick.
+  Future<void> seesNoGithubCredentials() async {
+    await seesOnScreen(<String>[
+      'No GitHub credentials on this computer',
+      'What you can do here shows once git or gh can reach GitHub.',
+    ]);
+    final Finder grid = find.byType(AccountAccessWidget);
+    expect(
+      find.descendant(
+        of: grid,
+        matching: find.byWidgetPredicate(
+          (Widget it) => it is TomGlyphWidget && it.glyph == TomGlyphEnum.rule,
+        ),
+      ),
+      findsNWidgets(5),
+    );
+    expect(
+      find.descendant(
+        of: grid,
+        matching: find.byWidgetPredicate(
+          (Widget it) => it is TomGlyphWidget && it.glyph == TomGlyphEnum.check,
+        ),
+      ),
+      findsNothing,
+    );
+  }
+
+  /// Presses the repository's name in the account popover.
+  Future<void> opensTheRepositoryFromTheAccount(String label) async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AccountPopoverWidget),
+        matching: find.text(label),
+      ),
+    );
+    await settle();
+  }
+
+  /// Asserts the app handed [address] to the browser — written down by the
+  /// run's desktop instead of opening one.
+  Future<void> seesTheBrowserAskedFor(String address) async {
+    final File opened = File(E2eModuleImpl.openedPath(settingsPath));
+    await _waitUntil(opened.existsSync);
+    expect(
+      opened.existsSync() ? opened.readAsLinesSync() : const <String>[],
+      contains(address),
+    );
+  }
+
+  /// Chooses [language] in the open popover's select, by the language's own
+  /// name — which is the one word there that never changes with the choice.
+  Future<void> choosesTheLanguage(String language) async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(PreferencesPopoverWidget),
+        matching: find.byType(TomChevronWidget),
+      ),
+    );
+    await settle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(MenuItemButton),
+        matching: find.text(language),
+      ),
+    );
+    await settle();
+  }
+
+  /// Presses the popover's `Open preferences.json`, which closes the popover
+  /// and opens the file in a tab.
+  Future<void> opensThePreferencesFile() async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(PreferencesPopoverWidget),
+        matching: find.text('Open preferences.json'),
+      ),
+    );
+    await settle();
+    await _waitUntil(() => _showing(find.byType(CodeEditor)));
+  }
+
+  /// Writes [to] over the first [from] in what the source pane holds, as
+  /// somebody selecting the word and typing would.
+  Future<void> rewritesInTheSource(String from, String to) async {
+    final String text = tester
+        .widget<CodeEditor>(find.byType(CodeEditor))
+        .controller!
+        .text;
+    expect(text, contains(from), reason: 'the source has no "$from"');
+    await typesInTheSource(text.replaceFirst(from, to));
+  }
+
+  /// Asserts this scenario's preferences file holds every one of [lines] —
+  /// the disk, since what a person reads by hand is the file, not the app.
+  void seesThePreferencesFileSaying(List<String> lines) {
+    final String text = File(settingsPath).readAsStringSync();
+    for (final String line in lines) {
+      expect(text, contains(line), reason: 'the file reads:\n$text');
+    }
+  }
+
+  /// Asserts the window is drawn in [brightness] — waited for, because the
+  /// app animates a change of theme.
+  Future<void> seesTheWindowIn(Brightness brightness) async {
+    Brightness drawn() =>
+        Theme.of(tester.element(find.byType(StatusPanel))).brightness;
+    await _waitUntil(() => drawn() == brightness);
+    expect(drawn(), brightness, reason: 'the window is not $brightness');
+  }
+
+  /// Asserts the mode control offers `Source` alone: the other two are
+  /// drawn and cannot be pressed.
+  void seesOnlySourceOffered() {
+    for (final String mode in <String>['Split', 'Preview']) {
+      final InkWell segment = tester.widget<InkWell>(
+        find
+            .ancestor(
+              of: find.descendant(
+                of: find.byType(ShellModeControlWidget),
+                matching: find.text(mode),
+              ),
+              matching: find.byType(InkWell),
+            )
+            .first,
+      );
+      expect(segment.onTap, isNull, reason: '$mode can still be chosen');
+    }
+  }
+
   /// Asserts the formatting bar is drawn.
   Future<void> seesTheFormattingBar() async {
     await _waitUntil(() => _showing(find.byType(TomToolbarButtonWidget)));
     expect(find.byType(TomToolbarButtonWidget), findsWidgets);
+  }
+
+  /// Asserts the toolbar button whose tooltip is [word] is drawn and cannot
+  /// be pressed — dim, never absent.
+  Future<void> seesTheToolbarButtonDim(String word) async =>
+      _seesTheToolbarButton(word, live: false);
+
+  /// Asserts the toolbar button whose tooltip is [word] can be pressed.
+  Future<void> seesTheToolbarButtonLive(String word) async =>
+      _seesTheToolbarButton(word, live: true);
+
+  Future<void> _seesTheToolbarButton(String word, {required bool live}) async {
+    final Finder button = find.ancestor(
+      of: find.byTooltip(word),
+      matching: find.byType(TomToolbarButtonWidget),
+    );
+    bool isLive() =>
+        tester.widget<TomToolbarButtonWidget>(button.first).onPressed != null;
+    await _waitUntil(() => _showing(button) && isLive() == live);
+    expect(isLive(), live, reason: '$word is ${live ? 'dim' : 'live'}');
   }
 
   /// Asserts it is not — the whole set, not half of it.
@@ -790,12 +1828,18 @@ final class TomRobot {
   /// pass on the wrong button the day two glyphs look alike, which is what
   /// rendering the set at 48 caught twice on the boards.
   Future<void> pressesTheToolbarButton(String word) async {
-    final Finder button = find
-        .ancestor(
-          of: find.byTooltip(word),
-          matching: find.byType(TomToolbarButtonWidget),
-        )
-        .first;
+    Finder buttons() => find.ancestor(
+      of: find.byTooltip(word),
+      matching: find.byType(TomToolbarButtonWidget),
+    );
+    await _waitUntil(() => _showing(find.byType(TomToolbarButtonWidget)));
+    // A narrow row folds its last groups into `⋯`, and what is folded is not
+    // built until the strip opens.
+    if (!_showing(buttons())) {
+      await tester.tap(find.byTooltip('More formatting'));
+      await settle();
+    }
+    final Finder button = buttons().first;
     await _waitUntil(() => _showing(button));
     // Scrolled to first: the bar never drops a button to fit, so with the git
     // column open the later groups are off the end of the row and a tap at
@@ -824,6 +1868,20 @@ final class TomRobot {
       painter.marks.isEmpty,
       isFalse,
       reason: 'the source pane marks no line as conflicted',
+    );
+  }
+
+  /// Asserts the source pane's gutter marks no line at all.
+  Future<void> seesNoMarksInTheSource() async {
+    final Finder gutter = find.byType(EditorMarksWidget);
+    bool unmarked() =>
+        _showing(gutter) &&
+        tester.widget<EditorMarksWidget>(gutter).marks.isEmpty;
+    await _waitUntil(unmarked);
+    expect(
+      unmarked(),
+      isTrue,
+      reason: 'the source pane marks lines of a file in no repository',
     );
   }
 
@@ -857,37 +1915,37 @@ final class TomRobot {
     expect(find.text(clean), findsOneWidget);
   }
 
-  /// Asserts the buttons say how far the branch has drifted: `Push (2)` and
-  /// `Pull (3)`, the verb and the number, and a bare verb where there is
-  /// nothing to count.
+  /// Asserts the buttons say how far the branch has drifted: a badge with
+  /// the number after `Push` and `Pull`, and no badge where there is nothing
+  /// to count.
   Future<void> seesTheDrift({int ahead = 0, int behind = 0}) async {
-    final String push = ahead > 0 ? 'Push ($ahead)' : 'Push';
-    final String pull = behind > 0 ? 'Pull ($behind)' : 'Pull';
-    Finder saying(String label) => find.descendant(
-      of: find.byType(ChangesRemoteWidget),
-      matching: find.text(label),
+    Finder button(RemoteActionEnum action) =>
+        find.byKey(ValueKey<RemoteActionEnum>(action));
+    Finder badge(RemoteActionEnum action) => find.descendant(
+      of: button(action),
+      matching: find.byType(ChangesCountWidget),
     );
     await _waitUntil(
       () =>
-          _showing(saying(push)) &&
-          _showing(saying(pull)) &&
+          _showing(button(RemoteActionEnum.push)) &&
+          _showing(button(RemoteActionEnum.pull)) &&
           !_showing(_working),
     );
-    expect(
-      saying(push),
-      findsOneWidget,
-      reason: 'the column does not say $push',
-    );
-    expect(
-      saying(pull),
-      findsOneWidget,
-      reason: 'the column does not say $pull',
-    );
-    // The counts are in the buttons and nowhere else: an indicator beside the
-    // branch would be the same fact twice
-    // (`docs/product/git-workflow/push-pull/the-controls/doc.md`).
-    expect(find.textContaining('↑'), findsNothing);
-    expect(find.textContaining('↓'), findsNothing);
+    for (final (RemoteActionEnum action, int count)
+        in <(RemoteActionEnum, int)>[
+          (RemoteActionEnum.push, ahead),
+          (RemoteActionEnum.pull, behind),
+        ]) {
+      if (count == 0) {
+        expect(badge(action), findsNothing, reason: '$action counts nothing');
+      } else {
+        expect(
+          find.descendant(of: badge(action), matching: find.text('$count')),
+          findsOneWidget,
+          reason: '$action does not say $count',
+        );
+      }
+    }
   }
 
   /// Asserts the band above the document is saying each of [fragments].
@@ -953,6 +2011,46 @@ final class TomRobot {
           'the status bar does not say the '
           'branch is $branch',
     );
+  }
+
+  // ── Cloning by URL ────────────────────────────────────────────────────
+
+  /// The address field Home shows in place of `Clone from URL`.
+  Finder get _theCloneField => find.descendant(
+    of: find.byType(HomeCloneWidget),
+    matching: find.byType(TextField),
+  );
+
+  /// Pastes [address] into Home's clone field — opening it first if the
+  /// button is still there — and presses Enter; the folder dialog answers
+  /// what [launch] was given.
+  Future<void> clonesFromUrl(String address) async {
+    if (_showing(find.text('Clone from URL'))) {
+      await tester.tap(find.text('Clone from URL'));
+    }
+    // Pumped, not settled: the field takes the keyboard and its caret
+    // blinks, and a clone with no fraction yet draws a bar that travels.
+    await tester.pump(const Duration(milliseconds: 300));
+    await _waitUntil(() => _showing(_theCloneField));
+    await tester.enterText(_theCloneField, address);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts the clone was refused with [sentence], the address still in
+  /// the field and `Clone` live again.
+  Future<void> seesTheCloneRefused(String sentence) async {
+    await _waitUntil(() => _showing(find.text(sentence)));
+    expect(find.text(sentence), findsOneWidget, reason: 'no refusal shown');
+    expect(_theCloneField, findsOneWidget, reason: 'the field went away');
+    final FilledButton clone = tester.widget<FilledButton>(
+      find.ancestor(
+        of: find.text('Clone'),
+        matching: find.byType(FilledButton),
+      ),
+    );
+    expect(clone.onPressed, isNotNull, reason: '`Clone` is not live again');
   }
 
   // ── History ───────────────────────────────────────────────────────────
@@ -1066,107 +2164,67 @@ final class TomRobot {
     await tapText('Stay on this branch');
   }
 
-  // ── Comparing against a branch or a commit ───────────────────────────
+  // ── What the diff is compared against ────────────────────────────────
 
-  /// Opens the surface that chooses what the document is compared against.
-  Future<void> opensTheComparison() async {
-    // The `Diff` chip is the trigger; the base's name beside it is a label.
-    final Finder control = find.descendant(
+  /// Presses the `Diff` chip, which only turns the marks off or back on.
+  Future<void> pressesTheDiffChip() async {
+    // The chip, not the base's name beside it, which is a label.
+    final Finder chip = find.descendant(
       of: find.byType(CompareControlWidget),
       matching: find.text('Diff'),
     );
-    await _waitUntil(() => _showing(control));
-    await tester.tap(control);
-    await _waitUntil(() => _showing(_theComparisonField));
-  }
-
-  /// Opens it and picks [revision], by the name or subject it is listed under.
-  Future<void> comparesAgainst(String revision) async {
-    await opensTheComparison();
-    // The list's own scrollable, not the filter field's: a `TextField` is a
-    // `Scrollable` too, and the surface holds both.
-    final Finder list = find.descendant(
-      of: find.descendant(
-        of: find.byType(ComparePopoverWidget),
-        matching: find.byType(ListView),
-      ),
-      matching: find.byType(Scrollable),
-    );
-    // The lists are read when the surface opens, so nothing to scroll is
-    // there on the first frame.
-    await _waitUntil(() => _showing(list));
-    // **The surface is as tall as the design fixes it and its list scrolls**,
-    // so a commit past the second is a row the viewport has not built:
-    // tapping it without this is a silent no-op, the trap the toolbar paid
-    // for.
-    await tester.scrollUntilVisible(
-      _inTheComparison(revision),
-      CompareDesign.commitPitch,
-      scrollable: list,
-    );
-    await tester.tap(_inTheComparison(revision));
+    await _waitUntil(() => _showing(chip));
+    await tester.tap(chip);
     await settle();
   }
 
-  /// Opens it and takes the comparison back to the last commit.
-  Future<void> stopsComparing() async {
-    await opensTheComparison();
-    await tapText('Compare against the last commit');
-  }
+  /// The base the bar names, beside the chip when the row has room and in
+  /// the chip's tooltip always.
+  Finder _comparing(String what) => find.descendant(
+    of: find.byType(CompareControlWidget),
+    matching: find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is Tooltip && (widget.message?.contains(what) ?? false),
+    ),
+  );
 
   /// Asserts the bar says the document is compared against [what].
   Future<void> seesTheComparison(String what) async {
-    final Finder shown = find.descendant(
-      of: find.byType(CompareControlWidget),
-      matching: find.textContaining(what),
-    );
-    await _waitUntil(() => _showing(shown));
+    await _waitUntil(() => _showing(_comparing(what)));
     expect(
-      shown,
+      _comparing(what),
       findsOneWidget,
       reason: 'the bar does not say the document is compared to $what',
     );
   }
 
-  /// Asserts the bar names no base, which is the working tree against `HEAD`.
-  ///
-  /// The chip stays; what goes is the name beside it.
+  /// Asserts the working tree is compared against `HEAD`: no branch is
+  /// named, and the chip's tooltip says the last commit.
   Future<void> seesTheDefaultComparison() async {
-    await _waitUntil(
-      () => !_showing(
-        find.descendant(
-          of: find.byType(CompareControlWidget),
-          matching: find.textContaining('Compared to'),
-        ),
-      ),
+    const String last = 'Compared to the last commit';
+    await _waitUntil(() => _showing(_comparing(last)));
+    expect(_comparing(last), findsOneWidget);
+    expect(
+      find.textContaining('Compared to'),
+      findsNothing,
+      reason: 'a base is named beside the chip',
     );
-    expect(find.textContaining('Compared to'), findsNothing);
   }
 
-  /// Asserts the open surface is offering each of [names].
-  Future<void> seesOnOffer(List<String> names) async {
-    await _waitUntil(() => _showing(_inTheComparison(names.first)));
-    for (final String name in names) {
+  /// Asserts pressing the chip opened nothing to choose a base from.
+  void seesNothingToChooseFrom() {
+    for (final String line in <String>[
+      'Filter branches and commits',
+      'Stop marking what changed',
+      'Compare against the last commit',
+    ]) {
       expect(
-        _inTheComparison(name),
-        findsOneWidget,
-        reason: '$name is not among the revisions offered',
+        find.text(line),
+        findsNothing,
+        reason: 'the chip opened a surface to choose from',
       );
     }
   }
-
-  /// Whatever the compare popover shows as [text]; the control above it names
-  /// the base the document is already on.
-  Finder _inTheComparison(String text) => find.descendant(
-    of: find.byType(ComparePopoverWidget),
-    matching: find.text(text),
-  );
-
-  /// The popover's own box, which is the one field on screen while it is up.
-  Finder get _theComparisonField => find.descendant(
-    of: find.byType(ComparePopoverWidget),
-    matching: find.byType(TextField),
-  );
 
   /// Asserts the control in the top bar names [branch].
   Future<void> seesTheBranchControl(String branch) async {
@@ -1226,12 +2284,14 @@ final class TomRobot {
   Finder _inTheChanges(String name) =>
       find.descendant(of: find.byType(ChangesPanel), matching: find.text(name));
 
-  /// The commit box, scoped to the panel because the branch popover has a
-  /// field of its own.
-  Finder get _anyField => find.descendant(
-    of: find.byType(ChangesPanel),
-    matching: find.byType(TextField),
-  );
+  /// The commit box's summary, scoped to the panel because the branch
+  /// popover has a field of its own; the description is the box's second.
+  Finder get _anyField => find
+      .descendant(
+        of: find.byType(ChangesPanel),
+        matching: find.byType(TextField),
+      )
+      .first;
 
   /// Asserts which of the two panes the document area is showing.
   ///
@@ -1253,9 +2313,18 @@ final class TomRobot {
   /// Asserts the app says [path] is unsaved in every place it says it; a
   /// mark missing in one place is a failure while the other two show it.
   Future<void> seesUnsaved(String path) async {
-    await _waitUntil(() => _showing(find.text('Unsaved')));
-    expect(find.text('Unsaved'), findsOneWidget, reason: 'no mark on the bar');
-    await seesTheOpenDocument('$path — unsaved');
+    final Finder status = find.descendant(
+      of: find.byType(StatusPanel),
+      matching: find.text('Unsaved'),
+    );
+    await _waitUntil(() => _showing(status));
+    expect(status, findsOneWidget, reason: 'no mark on the status bar');
+    expect(
+      find.text('Unsaved'),
+      findsNWidgets(2),
+      reason: 'no mark above the document',
+    );
+    await seesTheOpenDocument(path);
     // The explorer's dot is found by being round rather than by a key: the
     // shape is what makes it a mark.
     expect(
@@ -1370,22 +2439,35 @@ final class TomRobot {
       )
       .last;
 
-  /// Asserts the refusal screen is showing, for a folder with no repository.
-  Future<void> seesNotARepository(String folder) async {
-    await _waitUntil(
-      () => _showing(find.text('That folder is not inside a Git repository')),
-    );
-    expect(
-      find.text('That folder is not inside a Git repository'),
-      findsOneWidget,
-    );
-    expect(find.text(folder), findsOneWidget);
-    expect(
-      find.text('Creating a repository is not something TOM does.'),
-      findsOneWidget,
-      reason: 'the screen must say TOM will not create one',
-    );
+  /// Asserts the right column of a folder with no repository: the fact and
+  /// the two sentences under it, and none of git's controls anywhere
+  /// (`docs/product/workspace/without-a-repository/doc.md`).
+  Future<void> seesNoRepository() async {
+    const String fact = 'This folder is not inside a Git repository.';
+    await _waitUntil(() => _showing(find.text(fact)));
+    expect(find.text(fact), findsOneWidget, reason: 'the column says nothing');
+    expect(find.text('Reading and editing work as usual.'), findsOneWidget);
+    expect(find.text('Nothing here is versioned.'), findsOneWidget);
+    for (final String control in <String>[
+      'History',
+      'Fetch',
+      'Pull',
+      'Diff',
+      'Stage all',
+    ]) {
+      expect(find.text(control), findsNothing, reason: '$control is drawn');
+    }
   }
+
+  /// Asserts the commands panel lists no command holding [fragment].
+  void seesNoCommand(String fragment) => expect(
+    find.descendant(
+      of: find.byType(CommandsPanel),
+      matching: find.textContaining(fragment),
+    ),
+    findsNothing,
+    reason: '"$fragment" was run',
+  );
 
   /// Asserts the recent list offers [names], in that order.
   Future<void> seesRecent(List<String> names) async {
@@ -1403,11 +2485,211 @@ final class TomRobot {
     }
   }
 
+  /// Asserts the recent row [name] says it is on [branch], waiting for git
+  /// to answer.
+  Future<void> seesRecentOnBranch(String name, String branch) async {
+    await _waitUntil(() => _showing(find.text(branch)));
+    final Finder row = find.ancestor(
+      of: find.text(name),
+      matching: find.byType(InkWell),
+    );
+    expect(
+      find.descendant(of: row.first, matching: find.text(branch)),
+      findsOneWidget,
+      reason: '$name does not say it is on $branch',
+    );
+  }
+
   /// Asserts nothing is offered to go back to, waiting for the list to go
   /// once the preferences file is written.
   Future<void> seesNoRecent() async {
     await _waitUntil(() => !_showing(find.text('RECENT')));
     expect(find.text('RECENT'), findsNothing);
+  }
+
+  // ── Wikilinks ──────────────────────────────────────────────────────────
+
+  /// The words of the preview's link that reads [shown], count included.
+  Finder _theLink(String shown) => find.descendant(
+    of: find.byType(PreviewWikilinkWidget),
+    matching: find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is Text &&
+          (widget.data ?? widget.textSpan?.toPlainText()) == shown,
+    ),
+  );
+
+  /// The ink the link reading [shown] is drawn in: its words', never the
+  /// count's after them.
+  Color? _inkOfTheLink(String shown) {
+    final Text text = tester.widget<Text>(_theLink(shown).first);
+    if (text.data != null) {
+      return text.style?.color;
+    }
+    final InlineSpan? span = text.textSpan;
+    return span is TextSpan && span.children != null
+        ? span.children!.first.style?.color
+        : span?.style?.color;
+  }
+
+  /// Waits for the link reading [shown] to wear the role [role] names, and
+  /// asserts it.
+  Future<void> _seesTheLinkIn(
+    String shown,
+    Color Function(TomColors colors) role,
+    String what,
+  ) async {
+    Color? expected() => _showing(_theLink(shown))
+        ? role(TomColors.of(tester.element(_theLink(shown).first)))
+        : null;
+    await _waitUntil(
+      () => _showing(_theLink(shown)) && _inkOfTheLink(shown) == expected(),
+    );
+    expect(_theLink(shown), findsWidgets, reason: 'no link "$shown"');
+    expect(
+      _inkOfTheLink(shown),
+      expected(),
+      reason: 'the link "$shown" is not drawn as $what',
+    );
+  }
+
+  /// Asserts the preview draws [label] as a link that resolves: `accent`.
+  Future<void> seesALinkThatResolves(String label) =>
+      _seesTheLinkIn(label, (TomColors c) => c.accent, 'resolved');
+
+  /// Asserts the preview draws [label] as a link to nothing: `removed`.
+  Future<void> seesALinkThatIsMissing(String label) =>
+      _seesTheLinkIn(label, (TomColors c) => c.removed, 'missing');
+
+  /// Asserts the preview draws [label] as a name [count] documents share:
+  /// `modified`, the count raised after it.
+  Future<void> seesALinkThatIsAmbiguous(String label, int count) =>
+      _seesTheLinkIn(
+        '$label${PreviewWikilinkWidget.superscript(count)}',
+        (TomColors c) => c.modified,
+        'ambiguous',
+      );
+
+  /// Clicks the preview's link reading [label].
+  Future<void> followsTheLink(String label) async {
+    await _waitUntil(() => _showing(_theLink(label)));
+    await tester.tap(_theLink(label).first);
+    await settle();
+  }
+
+  /// Rests the mouse on the preview's link reading [label], the way the tip
+  /// is asked for.
+  Future<void> pointsAtTheLink(String label) async {
+    await _waitUntil(() => _showing(_theLink(label)));
+    final TestGesture mouse = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+    );
+    await mouse.addPointer(location: Offset.zero);
+    addTearDown(mouse.removePointer);
+    await mouse.moveTo(tester.getCenter(_theLink(label).first));
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts the tip under a missing link names [target] and offers to
+  /// create it.
+  Future<void> seesTheLinkOffersToCreate(String target) async {
+    final Finder tip = find.byType(PreviewWikilinkTipWidget);
+    await _waitUntil(() => _showing(tip));
+    expect(
+      find.descendant(
+        of: tip,
+        matching: find.text('No document called $target.'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: tip, matching: find.text('Create it')),
+      findsOneWidget,
+    );
+  }
+
+  /// Presses the tip's `Create it`.
+  Future<void> createsTheLinkedDocument() async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(PreviewWikilinkTipWidget),
+        matching: find.text('Create it'),
+      ),
+    );
+    await settle();
+  }
+
+  /// Asserts the menu an ambiguous link opened lists one row per document
+  /// sharing [name], each named by its folder in [folders].
+  Future<void> seesTheLinkCandidates(String name, List<String> folders) async {
+    final Finder menu = find.byType(TomMenuWidget);
+    await _waitUntil(() => _showing(menu));
+    expect(
+      find.descendant(of: menu, matching: find.text(name)),
+      findsNWidgets(folders.length),
+      reason: 'the menu does not list every "$name"',
+    );
+    for (final String folder in folders) {
+      expect(
+        find.descendant(of: menu, matching: find.text(folder)),
+        findsOneWidget,
+        reason: 'no candidate in "$folder"',
+      );
+    }
+  }
+
+  /// Chooses the candidate in [folder] from an ambiguous link's menu.
+  Future<void> choosesTheLinkCandidate(String folder) async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(TomMenuWidget),
+        matching: find.text(folder),
+      ),
+    );
+    await settle();
+  }
+
+  /// Types [typed] at the very end of the source, the way a keystroke
+  /// does: the editor takes the keyboard first, then the text lands at the
+  /// caret.
+  ///
+  /// The one other place this file drives the editor's controller: a code
+  /// editor has no `enterText`, and a whole-text assignment is not typing.
+  Future<void> typesAtTheEndOfTheSource(String typed) async {
+    await tester.tap(find.byType(CodeEditor));
+    await tester.pump(const Duration(milliseconds: 200));
+    final CodeLineEditingController editor = tester
+        .widget<CodeEditor>(find.byType(CodeEditor))
+        .controller!;
+    final int last = editor.lineCount - 1;
+    editor
+      ..selection = CodeLineSelection.collapsed(
+        index: last,
+        offset: editor.codeLines[last].text.length,
+      )
+      ..replaceSelection(typed);
+    // Pumped, not settled: the caret blinks for as long as it has the
+    // keyboard.
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts `[[` is offering exactly [names], best first.
+  Future<void> seesTheLinkSuggestions(List<String> names) async {
+    final Finder offer = find.byType(EditorCompletionWidget);
+    await _waitUntil(() => _showing(offer));
+    expect(offer, findsOneWidget, reason: '`[[` offered nothing');
+    expect(<String>[
+      for (final WikilinkCandidateValueObject candidate
+          in tester.widget<EditorCompletionWidget>(offer).candidates)
+        candidate.path.value.split('/').last,
+    ], names);
+  }
+
+  /// Presses Enter while `[[` is offering, which writes the chosen row.
+  Future<void> acceptsTheLinkSuggestion() async {
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(EditorCompletionWidget), findsNothing);
   }
 
   /// Asserts the app is not showing an unhandled error, which makes every
