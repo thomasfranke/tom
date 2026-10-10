@@ -135,6 +135,60 @@ void main() {
     });
   });
 
+  group('wikilinks are read by the domain', () {
+    test('what was between the brackets becomes a link, in order', () async {
+      final MarkdownBlockReaderImpl reader = readerOf(
+        const Success<MarkdownOutlineDto, MarkdownParserFailure>(
+          MarkdownOutlineDto(
+            spans: <MarkdownSpanDto>[],
+            linkDefinitions: '',
+            wikilinks: <String>['roadmap', 'a/b#top|the top', 'roadmap'],
+          ),
+        ),
+      );
+
+      final Result<ParsedDocumentValueObject, DocumentFailure> result =
+          await reader.read(documentOf('ignored'));
+
+      expect(
+        (result as Success<ParsedDocumentValueObject, DocumentFailure>)
+            .value
+            .wikilinks,
+        const <WikilinkValueObject>[
+          WikilinkValueObject(target: 'roadmap'),
+          WikilinkValueObject(target: 'a/b', anchor: 'top', label: 'the top'),
+          WikilinkValueObject(target: 'roadmap'),
+        ],
+      );
+    });
+
+    test('brackets around neither a target nor an anchor are left out, and '
+        'an anchor alone is kept', () async {
+      final MarkdownBlockReaderImpl reader = readerOf(
+        const Success<MarkdownOutlineDto, MarkdownParserFailure>(
+          MarkdownOutlineDto(
+            spans: <MarkdownSpanDto>[],
+            linkDefinitions: '',
+            wikilinks: <String>['  ', '#only-anchor', '|only-label', 'doc'],
+          ),
+        ),
+      );
+
+      final Result<ParsedDocumentValueObject, DocumentFailure> result =
+          await reader.read(documentOf('ignored'));
+
+      expect(
+        (result as Success<ParsedDocumentValueObject, DocumentFailure>)
+            .value
+            .wikilinks,
+        const <WikilinkValueObject>[
+          WikilinkValueObject(target: '', anchor: 'only-anchor'),
+          WikilinkValueObject(target: 'doc'),
+        ],
+      );
+    });
+  });
+
   group('every kind has a word in the domain', () {
     test('and the translation is one to one', () async {
       final MarkdownBlockReaderImpl reader = readerOf(

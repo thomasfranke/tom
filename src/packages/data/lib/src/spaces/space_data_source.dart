@@ -33,6 +33,10 @@ final class SpaceDataSource {
   Future<Result<String, FilesystemFailure>> resolve(String folder) =>
       filesystem.resolvePath(folder);
 
+  /// Makes an empty folder at [folder], refusing a name already taken.
+  Future<Result<void, FilesystemFailure>> createFolder(String folder) =>
+      filesystem.createDirectory(folder);
+
   /// The root of the repository [folder] sits in, usually a folder above it
   /// (rule 12).
   Future<Result<String, GitClientFailure>> repositoryRootOf(String folder) =>

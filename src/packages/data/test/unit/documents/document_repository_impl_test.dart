@@ -2,6 +2,8 @@
 /// because a real disk cannot be asked for `EIO` on demand.
 library;
 
+import 'dart:typed_data';
+
 import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
@@ -23,7 +25,7 @@ void main() {
     filesystem = _ScriptedFilesystem();
     repository = DocumentRepositoryImpl(
       documents: DocumentDataSource(filesystem: filesystem),
-      space: space,
+      root: space.root,
     );
   });
 
@@ -110,6 +112,38 @@ void main() {
     });
   });
 
+  group('creating', () {
+    test('creates the file where the document says, never writing', () async {
+      await repository.create(
+        DocumentEntity(
+          path: SpaceRelativePathValueObject('adr/002.md'),
+          content: '',
+        ),
+      );
+
+      expect(filesystem.createdPath, '/code/app/docs/adr/002.md');
+      expect(filesystem.writtenPath, isNull);
+    });
+
+    test('a name already taken is refused, naming the document', () async {
+      filesystem.failure = const FilesystemAlreadyExists(
+        '/code/app/docs/adr/002.md',
+      );
+
+      expect(
+        failureOf(
+          await repository.create(
+            DocumentEntity(
+              path: SpaceRelativePathValueObject('adr/002.md'),
+              content: '',
+            ),
+          ),
+        ),
+        named<DocumentAlreadyExists>('adr/002.md'),
+      );
+    });
+  });
+
   group('translation of failures', () {
     /// The repository's answer to a filesystem that failed with [failure].
     Future<AppFailure> translationOf(FilesystemFailure failure) async {
@@ -183,6 +217,8 @@ final class _ScriptedFilesystem implements Filesystem {
   String? readPath;
   String? writtenPath;
   String? writtenContent;
+  String? createdPath;
+  String? createdContent;
 
   @override
   Future<Result<String, FilesystemFailure>> readFile(String path) async {
@@ -207,6 +243,33 @@ final class _ScriptedFilesystem implements Filesystem {
   }
 
   @override
+  Future<Result<Uint8List, FilesystemFailure>> readBytes(String path) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> writeBytes(
+    String path,
+    Uint8List bytes,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> createFile(
+    String path,
+    String content,
+  ) async {
+    createdPath = path;
+    createdContent = content;
+    final FilesystemFailure? pending = failure;
+    return pending == null
+        ? const Success<void, FilesystemFailure>(null)
+        : Failure<void, FilesystemFailure>(pending);
+  }
+
+  @override
+  Future<Result<void, FilesystemFailure>> createDirectory(String path) async =>
+      throw UnimplementedError();
+
+  @override
   Future<Result<List<FilesystemEntryDto>, FilesystemFailure>> listDirectory(
     String path, {
     bool recursive = false,
@@ -218,5 +281,14 @@ final class _ScriptedFilesystem implements Filesystem {
 
   @override
   Future<Result<String, FilesystemFailure>> resolvePath(String path) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<FilesystemEntryTypeEnum?, FilesystemFailure>> entryTypeOf(
+    String path,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> delete(String path) async =>
       throw UnimplementedError();
 }

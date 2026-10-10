@@ -106,15 +106,19 @@ void main() {
     expect((stored! as Map<String, Object?>).keys, contains('spaces.recent'));
   });
 
-  test('a folder outside any repository is refused, and not remembered', () {
+  test('a folder outside any repository opens, and is remembered', () async {
+    // A space is a folder, not a repository
+    // (`docs/product/workspace/without-a-repository/doc.md`).
     final String loose = '$base/loose';
     Directory(loose).createSync();
 
-    expect(
-      spaces.open(loose),
-      completion(isA<Failure<SpaceEntity, AppFailure>>()),
-    );
-    expect(File(preferences).existsSync(), isFalse);
+    final SpaceEntity space = valueOf(await spaces.open(loose));
+    valueOf(await recents.remember(space));
+
+    expect(space.repositoryRoot, isNull);
+    final List<RecentSpaceEntity> remembered = valueOf(await recents.list());
+    expect(remembered.single.root, loose);
+    expect(remembered.single.name, 'loose');
   });
 
   test('nothing is written until something is actually stored', () {

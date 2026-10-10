@@ -53,6 +53,18 @@ final class SpaceRepositoryImpl implements SpaceRepository {
     final Result<String, GitClientFailure> located = await spaces
         .repositoryRootOf(root);
     switch (located) {
+      // Not a refusal: a folder git knows nothing about is still a folder of
+      // markdown (`docs/product/workspace/without-a-repository/doc.md`).
+      case Failure<String, GitClientFailure>(
+        failure: GitClientNotARepository(),
+      ):
+        return Success<SpaceEntity, AppFailure>(
+          SpaceEntity(
+            root: root,
+            repositoryRoot: null,
+            name: SpaceEntity.nameOfFolder(root),
+          ),
+        );
       case Failure<String, GitClientFailure>(
         failure: final GitClientFailure failure,
       ):
@@ -96,6 +108,23 @@ final class SpaceRepositoryImpl implements SpaceRepository {
       )
       .mapFailure(_asSpaceFailure);
 
+  @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) => spaces
+      .createFolder(space.absolutePathOf(path))
+      .mapFailure(
+        (FilesystemFailure failure) => switch (failure) {
+          // Named by what was asked for, which is what the tree shows.
+          FilesystemAlreadyExists() => SpaceEntryExists(
+            path.value,
+            cause: failure,
+          ),
+          _ => _asSpaceFailure(failure),
+        },
+      );
+
   /// The same kind, in the product's vocabulary.
   ///
   /// Written out although one to one, so a capability reporting something
@@ -128,6 +157,10 @@ final class SpaceRepositoryImpl implements SpaceRepository {
           path,
           cause: failure,
         ),
+        FilesystemAlreadyExists(path: final String path) => SpaceEntryExists(
+          path,
+          cause: failure,
+        ),
         FilesystemOperationFailed(path: final String path) =>
           SpaceOperationFailed(path, cause: failure),
       };
@@ -141,12 +174,18 @@ final class SpaceRepositoryImpl implements SpaceRepository {
         GitClientNotARepository() => GitNotARepository(folder, cause: failure),
         GitClientExecutableNotFound() => GitNotInstalled(cause: failure),
         GitClientTimedOut() => GitTimedOut(cause: failure),
+        GitClientCommandDenied() => GitCommandDenied(cause: failure),
         // The rest cannot come from asking where the repository is, and are
         // named rather than defaulted so a new failure mode breaks this.
         GitClientCommandFailed() ||
         GitClientMergeConflict() ||
         GitClientAuthenticationFailed() ||
         GitClientPushRejected() ||
+        GitClientLocalChangesOverwritten() ||
+        GitClientNetworkUnavailable() ||
+        GitClientNoRemote() ||
+        GitClientRemoteNotFound() ||
+        GitClientDestinationTaken() ||
         GitClientPathNotInRevision() => GitOperationFailed(cause: failure),
       };
 }

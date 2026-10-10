@@ -60,6 +60,12 @@ final class MarkdownBlockReaderImpl implements BlockReaderPort {
             text: note.text,
           ),
       ]),
+      // What the domain cannot read as a link — brackets around nothing, or
+      // nothing but a label — is left out rather than carried empty.
+      wikilinks: List<WikilinkValueObject>.unmodifiable(<WikilinkValueObject>[
+        for (final String inner in outline.wikilinks)
+          ?WikilinkValueObject.tryParse(inner),
+      ]),
     );
   }
 

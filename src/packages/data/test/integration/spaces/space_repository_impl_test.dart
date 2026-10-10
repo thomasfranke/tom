@@ -149,36 +149,48 @@ void main() {
     });
   });
 
-  group('when it is not a space', () {
-    test('a folder outside any repository is named, not worked around', () {
+  group('a folder outside any repository', () {
+    // It opens: reading and editing markdown needs no git
+    // (`docs/product/workspace/without-a-repository/doc.md`).
+    test('opens as a space with no repository', () async {
       final String path = '$base/loose';
       Directory(path).createSync();
 
-      expect(
-        repository.open(path),
-        completion(
-          isA<Failure<SpaceEntity, AppFailure>>().having(
-            (Failure<SpaceEntity, AppFailure> result) => result.failure,
-            'failure',
-            isA<GitNotARepository>().having(
-              (GitNotARepository failure) => failure.path,
-              'path',
-              path,
-            ),
-          ),
-        ),
-      );
+      final SpaceEntity space = valueOf(await repository.open(path));
+
+      expect(space.root, path);
+      expect(space.repositoryRoot, isNull);
+      expect(space.hasRepository, isFalse);
+      expect(space.name, 'loose');
     });
 
-    test('a folder that is not there is a different failure', () async {
+    test('lists itself like any other space', () async {
+      final String path = '$base/loose';
+      Directory('$path/guides').createSync(recursive: true);
+      File('$path/guides/writing.md').writeAsStringSync('w');
+      File('$path/about.md').writeAsStringSync('a');
+
+      final SpaceEntity space = valueOf(await repository.open(path));
+      final List<SpaceEntryValueObject> entries = valueOf(
+        await repository.entries(space),
+      );
+
+      expect(
+        entries.map((SpaceEntryValueObject entry) => entry.path.value),
+        <String>['guides', 'guides/writing.md', 'about.md'],
+      );
+    });
+  });
+
+  group('when it is not a space', () {
+    test('a folder that is not there is named', () async {
       final String path = '$base/gone';
 
       expect(failureOf(await repository.open(path)), SpaceFolderMissing(path));
     });
 
     test('no infrastructure failure reaches the caller', () async {
-      final String path = '$base/loose';
-      Directory(path).createSync();
+      final String path = '$base/gone';
 
       final AppFailure failure = failureOf(await repository.open(path));
       expect(failure, isNot(isA<GitClientFailure>()));

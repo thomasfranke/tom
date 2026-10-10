@@ -1,6 +1,8 @@
 /// Reading and writing one document's bytes.
 library;
 
+import 'dart:typed_data';
+
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_infra/tom_infra.dart';
 
@@ -20,6 +22,16 @@ final class DocumentDataSource {
   /// The text at [absolutePath].
   Future<Result<String, FilesystemFailure>> read(String absolutePath) =>
       filesystem.readFile(absolutePath);
+
+  /// The bytes at [absolutePath], whatever they are.
+  Future<Result<Uint8List, FilesystemFailure>> readBytes(String absolutePath) =>
+      filesystem.readBytes(absolutePath);
+
+  /// Puts [content] at [absolutePath] only if nothing is there yet.
+  Future<Result<void, FilesystemFailure>> create(
+    String absolutePath,
+    String content,
+  ) => filesystem.createFile(absolutePath, content);
 
   /// Puts [content] at [absolutePath], creating what the path needs.
   Future<Result<void, FilesystemFailure>> write(

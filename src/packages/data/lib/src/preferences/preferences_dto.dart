@@ -3,7 +3,7 @@ library;
 
 import 'package:tom_domain/tom_domain.dart';
 
-/// One JSON object, keys to strings, and the translation both ways.
+/// One JSON object — three names and a flag — and the translation both ways.
 ///
 /// Names rather than indexes, so reordering an enum cannot silently change
 /// somebody's theme, and so the file stays readable — which is the point of
@@ -15,6 +15,7 @@ final class PreferencesDto {
     required this.theme,
     required this.language,
     required this.showingFormattingBar,
+    required this.gitApprovals,
   });
 
   /// [row] as a DTO, with anything missing or unreadable left null.
@@ -23,6 +24,9 @@ final class PreferencesDto {
     language: row['language'] is String ? row['language']! as String : null,
     showingFormattingBar: row['showingFormattingBar'] is bool
         ? row['showingFormattingBar']! as bool
+        : null,
+    gitApprovals: row['gitApprovals'] is String
+        ? row['gitApprovals']! as String
         : null,
   );
 
@@ -35,12 +39,16 @@ final class PreferencesDto {
   /// Whether the formatting bar is drawn, or null.
   final bool? showingFormattingBar;
 
+  /// Who approves git's commands, by name, or null.
+  final String? gitApprovals;
+
   /// The row this becomes in the file.
   Map<String, Object?> toRow() => <String, Object?>{
     if (theme != null) 'theme': theme,
     if (language != null) 'language': language,
     if (showingFormattingBar != null)
       'showingFormattingBar': showingFormattingBar,
+    if (gitApprovals != null) 'gitApprovals': gitApprovals,
   };
 
   /// [preferences] as a row.
@@ -49,13 +57,22 @@ final class PreferencesDto {
         theme: preferences.theme.name,
         language: preferences.language.name,
         showingFormattingBar: preferences.showingFormattingBar,
+        gitApprovals: preferences.gitApprovals.name,
       );
 
   /// What this says, with the defaults standing in for anything it does not.
   PreferencesValueObject toValueObject() => PreferencesValueObject(
     theme: _named(ThemeChoiceEnum.values, theme, ThemeChoiceEnum.system),
-    language: _named(LanguageEnum.values, language, LanguageEnum.english),
+    // A language this build no longer speaks (`spanish`, `german` were
+    // offered once) reads as the machine's, silently.
+    language: _named(LanguageEnum.values, language, LanguageEnum.system),
     showingFormattingBar: showingFormattingBar ?? true,
+    // A mode nobody can read asks nobody: the default, not the strictest.
+    gitApprovals: _named(
+      GitApprovalModeEnum.values,
+      gitApprovals,
+      GitApprovalModeEnum.automatic,
+    ),
   );
 
   /// The member of [values] called [name], or [fallback].
