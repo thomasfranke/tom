@@ -244,6 +244,13 @@ final class _Documents implements DocumentRepository {
   }
 
   @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
+
+  @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
       throw UnimplementedError();
 }
@@ -251,6 +258,9 @@ final class _Documents implements DocumentRepository {
 /// Git, remembering what it was asked to stage and unstage and throwing for
 /// everything else, so a use case that called an unasked method fails loudly.
 final class _Git implements GitRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   Result<void, GitFailure>? answer;
   bool throws = false;
 
@@ -325,6 +335,33 @@ final class _Git implements GitRepository {
   @override
   Future<Result<MergeStateValueObject, GitFailure>> mergeState() async =>
       throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> discardAll() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<List<CommitEntity>, GitFailure>> commitsSince(
+    BranchNameValueObject base,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<List<BranchChangeValueObject>, GitFailure>> changesSince(
+    BranchNameValueObject base,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<String?, GitFailure>> remoteAddress() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<BranchNameValueObject?, GitFailure>> defaultBranch() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<CommitShaValueObject?, GitFailure>> forkPoint(
+    BranchNameValueObject base,
+  ) async => throw UnimplementedError();
 
   @override
   Future<Result<void, GitFailure>> abortMerge() async =>

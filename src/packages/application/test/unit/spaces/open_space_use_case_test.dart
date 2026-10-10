@@ -51,17 +51,6 @@ void main() {
   });
 
   group('an expected failure stays expected', () {
-    test('a folder outside any repository is passed through', () async {
-      final Result<SpaceEntity, AppFailure> result = await openingWith(
-        const Failure<SpaceEntity, AppFailure>(GitNotARepository('/loose')),
-      ).open('/loose');
-
-      expect(
-        (result as Failure<SpaceEntity, AppFailure>).failure,
-        const GitNotARepository('/loose'),
-      );
-    });
-
     test('a folder that is gone is passed through', () async {
       final Result<SpaceEntity, AppFailure> result = await openingWith(
         const Failure<SpaceEntity, AppFailure>(SpaceFolderMissing('/gone')),
@@ -75,8 +64,8 @@ void main() {
 
     test('and nothing is reported to observability', () async {
       await openingWith(
-        const Failure<SpaceEntity, AppFailure>(GitNotARepository('/loose')),
-      ).open('/loose');
+        const Failure<SpaceEntity, AppFailure>(SpaceFolderMissing('/gone')),
+      ).open('/gone');
 
       expect(observability.captured, isEmpty);
     });
@@ -91,12 +80,17 @@ void main() {
       expect(recents.remembered, <SpaceEntity>[opened]);
     });
 
-    test('a folder outside a repository is not a place to return to', () async {
-      await openingWith(
-        const Failure<SpaceEntity, AppFailure>(GitNotARepository('/loose')),
-      ).open('/loose');
+    test('a folder with no repository, which opened like any other', () async {
+      // It is a space (`docs/product/workspace/without-a-repository/doc.md`).
+      final SpaceEntity loose = SpaceEntity(
+        root: '/loose',
+        repositoryRoot: null,
+        name: 'loose',
+      );
 
-      expect(recents.remembered, isEmpty);
+      await openingWith(Success<SpaceEntity, AppFailure>(loose)).open('/loose');
+
+      expect(recents.remembered, <SpaceEntity>[loose]);
     });
 
     test('nor is a folder that is gone', () async {
@@ -184,6 +178,12 @@ final class _Spaces implements SpaceRepository {
   String? asked;
 
   @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
+
+  @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async {
     asked = folder;
     return answer;
@@ -197,6 +197,12 @@ final class _Spaces implements SpaceRepository {
 
 /// A repository that breaks its contract by throwing.
 final class _ThrowingSpaces implements SpaceRepository {
+  @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
+
   @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
       throw StateError('the disk caught fire');

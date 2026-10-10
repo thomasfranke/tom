@@ -29,9 +29,38 @@ final class SwitchBranchUseCase with UseCase {
     BranchNameValueObject name,
   ) => guard(() => gitFor(space).switchBranch(name));
 
-  /// Starts [name] at the current `HEAD` of [space] and moves onto it.
+  /// Starts [name] at the current `HEAD` of [space], moves onto it, and
+  /// records the branch it was started from — what its diff is read against
+  /// from then on (`docs/product/diff/branch-diff/doc.md`).
+  ///
+  /// A record that fails is reported and not returned: the branch exists,
+  /// which is what was asked, and its base is deduced instead.
   Future<Result<void, AppFailure>> create(
     SpaceEntity space,
     BranchNameValueObject name,
-  ) => guard(() => gitFor(space).createBranch(name));
+  ) => guard<void, GitFailure>(() async {
+    final GitRepository git = gitFor(space);
+    final BranchNameValueObject? from = switch (await git.branches()) {
+      Success<List<BranchEntity>, GitFailure>(
+        value: final List<BranchEntity> branches,
+      ) =>
+        branches.where((BranchEntity it) => it.isCurrent).firstOrNull?.name,
+      Failure<List<BranchEntity>, GitFailure>() => null,
+    };
+    final Result<void, GitFailure> created = await git.createBranch(name);
+    if (created is Failure<void, GitFailure> || from == null) {
+      return created;
+    }
+    final Result<void, GitFailure> recorded = await git.recordBase(name, from);
+    if (recorded case Failure<void, GitFailure>(
+      failure: final GitFailure failure,
+    )) {
+      await observability.capture(
+        failure,
+        StackTrace.current,
+        layer: 'application',
+      );
+    }
+    return created;
+  });
 }

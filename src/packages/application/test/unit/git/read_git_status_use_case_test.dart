@@ -86,6 +86,9 @@ void main() {
 final class _Git implements GitRepository {
   const _Git({this.answer});
 
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   /// What `status()` reports, or null to throw instead.
   final Result<GitStatusValueObject, GitFailure>? answer;
 
@@ -145,6 +148,33 @@ final class _Git implements GitRepository {
   @override
   Future<Result<MergeStateValueObject, GitFailure>> mergeState() async =>
       throw UnimplementedError();
+
+  @override
+  Future<Result<void, GitFailure>> discardAll() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<List<CommitEntity>, GitFailure>> commitsSince(
+    BranchNameValueObject base,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<List<BranchChangeValueObject>, GitFailure>> changesSince(
+    BranchNameValueObject base,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<String?, GitFailure>> remoteAddress() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<BranchNameValueObject?, GitFailure>> defaultBranch() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<CommitShaValueObject?, GitFailure>> forkPoint(
+    BranchNameValueObject base,
+  ) async => throw UnimplementedError();
 
   @override
   Future<Result<void, GitFailure>> abortMerge() async =>

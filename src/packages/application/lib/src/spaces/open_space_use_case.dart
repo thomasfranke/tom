@@ -7,9 +7,9 @@ import 'package:tom_domain/tom_domain.dart';
 
 /// A folder opened as a space (`docs/product/home/opening-a-space/doc.md`).
 ///
-/// A folder outside any repository answers `GitNotARepository` and a folder
-/// that is gone `SpaceFolderMissing`, because Home sends each somewhere
-/// different; TOM never creates a repository on the user's behalf.
+/// A folder outside any repository opens with no repository, and one that
+/// is gone answers `SpaceFolderMissing`; TOM never creates a repository on
+/// the user's behalf.
 final class OpenSpaceUseCase with UseCase {
   /// Creates the use case.
   const OpenSpaceUseCase({

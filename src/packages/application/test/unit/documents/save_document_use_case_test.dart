@@ -91,6 +91,13 @@ final class _Documents implements DocumentRepository {
   ) async => throw UnimplementedError();
 
   @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
+
+  @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async {
     written.add(document);
     return answer ?? const Success<void, DocumentFailure>(null);
@@ -103,6 +110,13 @@ final class _ThrowingDocuments implements DocumentRepository {
   Future<Result<DocumentEntity, DocumentFailure>> read(
     SpaceRelativePathValueObject path,
   ) async => throw UnimplementedError();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

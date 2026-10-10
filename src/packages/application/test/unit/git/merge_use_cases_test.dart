@@ -1,5 +1,6 @@
 /// [ReadMergeStateUseCase] and [AbortPullUseCase], the two halves of the
-/// state a conflicted pull leaves behind.
+/// state a conflicted pull leaves behind — and [DiscardAllChangesUseCase],
+/// the other way back to the last commit.
 library;
 
 import 'package:test/test.dart';
@@ -132,15 +133,53 @@ void main() {
       expect(observability.captured.single.layer, 'application');
     });
   });
+
+  group('discarding everything', () {
+    DiscardAllChangesUseCase discarding() => DiscardAllChangesUseCase(
+      gitFor: (SpaceEntity space) => git,
+      observability: observability,
+    );
+
+    test('asks git to put the tracked files back', () async {
+      final Result<void, AppFailure> result = await discarding().discard(docs);
+
+      expect(result, isA<Success<void, AppFailure>>());
+      expect(git.discarded, 1);
+    });
+
+    test('a refusal is passed through, not reported', () async {
+      git.failure = const GitOperationFailed();
+
+      final Result<void, AppFailure> result = await discarding().discard(docs);
+
+      expect(result, isA<Failure<void, AppFailure>>());
+      expect(observability.captured, isEmpty);
+    });
+
+    test('an exception never escapes, and is reported', () async {
+      git.throws = true;
+
+      final Result<void, AppFailure> result = await discarding().discard(docs);
+
+      expect(
+        (result as Failure<void, AppFailure>).failure,
+        isA<UnexpectedFailure>(),
+      );
+    });
+  });
 }
 
 /// Git, answering only about the merge and throwing for everything else, so
 /// a use case that reached for another method fails loudly.
 final class _Git implements GitRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   MergeStateValueObject state = MergeStateValueObject.none;
   GitFailure? failure;
   bool throws = false;
   int aborted = 0;
+  int discarded = 0;
 
   @override
   Future<Result<MergeStateValueObject, GitFailure>> mergeState() async {
@@ -152,6 +191,41 @@ final class _Git implements GitRepository {
         ? Success<MergeStateValueObject, GitFailure>(state)
         : Failure<MergeStateValueObject, GitFailure>(refused);
   }
+
+  @override
+  Future<Result<void, GitFailure>> discardAll() async {
+    if (throws) {
+      throw StateError('git fell over');
+    }
+    discarded += 1;
+    final GitFailure? refused = failure;
+    return refused == null
+        ? const Success<void, GitFailure>(null)
+        : Failure<void, GitFailure>(refused);
+  }
+
+  @override
+  Future<Result<List<CommitEntity>, GitFailure>> commitsSince(
+    BranchNameValueObject base,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<List<BranchChangeValueObject>, GitFailure>> changesSince(
+    BranchNameValueObject base,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<String?, GitFailure>> remoteAddress() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<BranchNameValueObject?, GitFailure>> defaultBranch() async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<CommitShaValueObject?, GitFailure>> forkPoint(
+    BranchNameValueObject base,
+  ) async => throw UnimplementedError();
 
   @override
   Future<Result<void, GitFailure>> abortMerge() async {
