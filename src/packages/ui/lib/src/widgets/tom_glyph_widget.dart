@@ -1,98 +1,165 @@
-/// The icon set's stroked glyphs, painted rather than loaded.
+/// The icon set: Font Awesome Free's solid glyphs, from the vendored face.
 library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:tom_ui/src/theme/tom_fonts.dart';
 
 /// Which glyph of the set to draw.
 ///
-/// The set is fourteen files and this holds the ones a screen actually
-/// leads a control with; it grows a glyph at a time, as the boards ask
-/// (`docs/design/components/icons.md`).
+/// Grows a glyph at a time, as the boards ask; each one is a glyph of Font
+/// Awesome Free 6 Solid — whose name each dartdoc gives — called after what
+/// it does here (`docs/design/components/icons.md`).
 enum TomGlyphEnum {
-  /// A folder with its tab: picking one (`icons/folder.svg`).
+  /// `folder`: picking one.
   folder,
 
-  /// Two links of a chain: a URL (`icons/link.svg`).
+  /// `link`: a URL.
   link,
 
-  /// An arrow up over its stem: publishing (`icons/push.svg`).
+  /// `arrow-up`: publishing.
   push,
 
-  /// An arrow down over its stem: bringing back (`icons/pull.svg`).
+  /// `arrow-down`: bringing back.
   pull,
 
-  /// A circle open at the top right, with a tick: asking what is there
-  /// (`icons/fetch.svg`).
+  /// `arrows-rotate`: asking what is there — not an arrow one way, because
+  /// a fetch writes nothing to disk.
   fetch,
 
-  /// An arrow curving back on itself: taking the last thing back
-  /// (`icons/undo.svg`).
+  /// `rotate-left`: taking the last thing back.
   undo,
 
-  /// The same arrow the other way (`icons/redo.svg`).
+  /// `rotate-right`.
   redo,
 
-  /// Two uprights joined by a bar: the letter H (`icons/heading.svg`).
+  /// `heading`.
   heading,
 
-  /// An S with a line through it (`icons/strikethrough.svg`).
+  /// `bold`.
+  bold,
+
+  /// `italic`.
+  italic,
+
+  /// `strikethrough`.
   strikethrough,
 
-  /// Three lines, each with a dot (`icons/list.svg`).
+  /// `list-ul`.
   list,
 
-  /// Three lines, the first numbered (`icons/ordered-list.svg`).
+  /// `list-ol`.
   orderedList,
 
-  /// Two lines, each with a tick (`icons/task-list.svg`).
+  /// `list-check`.
   taskList,
 
-  /// An upright and two lines beside it (`icons/quote.svg`).
+  /// `quote-left`.
   quote,
 
-  /// Two angle brackets facing away (`icons/code.svg`).
+  /// `code`.
   code,
 
-  /// A box divided into cells (`icons/table.svg`).
+  /// `table`.
   table,
 
-  /// One line across the middle (`icons/rule.svg`).
+  /// `minus`: a horizontal rule — and a permission nobody could read.
   rule,
 
-  /// A frame with a horizon and a sun (`icons/image.svg`).
+  /// `image`.
   image,
 
-  /// Lines of text with a raised one (`icons/footnote.svg`).
+  /// `superscript`: a footnote's raised mark.
   footnote,
 
-  /// A triangle with an exclamation in it (`icons/alert.svg`).
+  /// `triangle-exclamation`: an alert block.
   alert,
 
-  /// A cogwheel: the one symbol for settings nobody has to learn
-  /// (`icons/preferences.svg`).
+  /// `gear`: the one symbol for settings nobody has to learn.
   preferences,
 
-  /// Three dots: what a row too narrow for its last group collapses into
-  /// (`icons/more.svg`).
+  /// `ellipsis`: what a row too narrow for its last group collapses into.
   more,
+
+  /// `chevron-down`: what it opens is open.
+  chevronDown,
+
+  /// `chevron-right`: what it opens is closed.
+  chevronRight,
+
+  /// `xmark`: closing, forgetting, dismissing.
+  close,
+
+  /// `circle-xmark`: emptying a field.
+  clear,
+
+  /// `check`.
+  check,
+
+  /// `right-left`: replacing one thing with another.
+  replace,
+
+  /// `code-branch`: a branch.
+  branch,
+
+  /// `folder-open`: a folder whose contents are shown.
+  folderOpen,
+
+  /// `file-lines`: a document.
+  file,
+
+  /// `plus`: making something new.
+  plus,
+
+  /// `ellipsis-vertical`: a column's own menu.
+  menu,
+
+  /// `magnifying-glass`: finding.
+  search,
+
+  /// `house`: the opening screen, which is the way out of a space.
+  home,
+
+  /// `terminal`: where a `git` command is typed.
+  terminal,
+
+  /// `user`: a person nobody has named yet.
+  person,
+
+  /// `arrow-up-right-from-square`: a page that opens outside the app.
+  external,
+
+  /// `copy`: putting a line on the clipboard.
+  copy,
+
+  /// `arrow-rotate-left`: putting one file back as git has it — not
+  /// [undo]'s `rotate-left`, which takes back an edit.
+  discard,
 }
 
-/// One glyph of the icon set, at the size the host control gives it.
+/// One glyph of the set, in a box of [size].
 ///
-/// Painted from the set's own `d`, so a glyph costs no dependency —
-/// `flutter_svg` would be a licence check under
-/// [rule 1](../../../../../../AGENTS.md) for fourteen shapes
-/// (`docs/design/components/icons.md`). The chevron is filled and has its
-/// own widget; everything here is stroked.
+/// A glyph is a character of a vendored face, the way the three IBM Plex
+/// faces are, so the set costs no package and nothing is fetched at
+/// runtime (`docs/technical/stack/fonts.md`).
 class TomGlyphWidget extends StatelessWidget {
-  /// Creates [glyph] in [color], in a box of [size].
+  /// Creates [glyph] in [color], in a box of [size], filled unless
+  /// [outline].
   const TomGlyphWidget({
     required this.glyph,
     required this.color,
-    this.size = 16,
+    this.size = defaultSize,
+    this.outline = false,
     super.key,
   });
+
+  /// The size beside a label: a step under the text's cap height reads as
+  /// the same weight as a 13 word.
+  static const double defaultSize = 14;
+
+  /// The line an [outline] is drawn with, the top bar's house and gear on
+  /// the 1b boards.
+  static const double outlineStroke = 1.25;
 
   /// Which one.
   final TomGlyphEnum glyph;
@@ -100,8 +167,14 @@ class TomGlyphWidget extends StatelessWidget {
   /// The ink, which is the host control's colour and never its own.
   final Color color;
 
-  /// The box, 16 where the boards put one.
+  /// The box, which the glyph fills at its tallest.
   final double size;
+
+  /// Whether the glyph is stroked rather than filled.
+  ///
+  /// The same Solid glyph with its edge painted, not a second set: Font
+  /// Awesome Free has no regular house or gear (Decision 32, revised).
+  final bool outline;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -109,343 +182,254 @@ class TomGlyphWidget extends StatelessWidget {
     properties
       ..add(EnumProperty<TomGlyphEnum>('glyph', glyph))
       ..add(ColorProperty('color', color))
-      ..add(DoubleProperty('size', size));
+      ..add(DoubleProperty('size', size))
+      ..add(FlagProperty('outline', value: outline, ifTrue: 'outline'));
   }
 
   @override
-  Widget build(BuildContext context) => SizedBox.square(
-    dimension: size,
-    child: CustomPaint(
-      painter: _GlyphPainter(glyph: glyph, color: color),
-    ),
-  );
-}
-
-/// The paths, written on the 16 grid and scaled to whatever the box is.
-class _GlyphPainter extends CustomPainter {
-  const _GlyphPainter({required this.glyph, required this.color});
-
-  final TomGlyphEnum glyph;
-  final Color color;
-
-  /// The grid every number below is on.
-  static const double _grid = 16;
-
-  /// The stroke the set draws every glyph at.
-  ///
-  /// The home board renders its two at 1.5, which is the board disagreeing
-  /// with the set rather than a rule: `icons.md` calls the files the source,
-  /// and the twelve other glyphs are 2.
-  static const double _stroke = 2;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint ink = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    canvas
-      ..save()
-      ..scale(size.width / _grid)
-      ..drawPath(switch (glyph) {
-        TomGlyphEnum.folder => _folder(),
-        TomGlyphEnum.link => _link(),
-        TomGlyphEnum.push => _push(),
-        TomGlyphEnum.pull => _pull(),
-        TomGlyphEnum.fetch => _fetch(),
-        TomGlyphEnum.undo => _undo(),
-        TomGlyphEnum.redo => _redo(),
-        TomGlyphEnum.heading => _heading(),
-        TomGlyphEnum.strikethrough => _strikethrough(),
-        TomGlyphEnum.list => _list(),
-        TomGlyphEnum.orderedList => _orderedList(),
-        TomGlyphEnum.taskList => _taskList(),
-        TomGlyphEnum.quote => _quote(),
-        TomGlyphEnum.code => _code(),
-        TomGlyphEnum.table => _table(),
-        TomGlyphEnum.rule => _rule(),
-        TomGlyphEnum.image => _image(),
-        TomGlyphEnum.footnote => _footnote(),
-        TomGlyphEnum.alert => _alert(),
-        TomGlyphEnum.preferences => _preferences(),
-        TomGlyphEnum.more => _more(),
-      }, ink)
-      ..restore();
-  }
-
-  /// `icons/more.svg`.
-  ///
-  /// Three dots as half-unit circles: stroked at [_stroke] they come out
-  /// three across, which is the diameter the set's other round marks have.
-  static Path _more() {
-    final Path path = Path();
-    for (final double x in <double>[4, 8, 12]) {
-      path.addOval(Rect.fromCircle(center: Offset(x, 8), radius: 0.5));
+  Widget build(BuildContext context) {
+    final IconData icon = _icons[glyph]!;
+    if (!outline) {
+      return Icon(icon, size: size, color: color);
     }
-    return path;
+    // What `Icon` builds, with a stroke for the fill: `Icon` takes a colour
+    // and never a paint.
+    return ExcludeSemantics(
+      child: SizedBox.square(
+        dimension: size,
+        child: Center(
+          child: RichText(
+            overflow: TextOverflow.visible,
+            textDirection: Directionality.of(context),
+            text: TextSpan(
+              text: String.fromCharCode(icon.codePoint),
+              style: TextStyle(
+                inherit: false,
+                fontSize: size,
+                fontFamily: icon.fontFamily,
+                package: icon.fontPackage,
+                height: 1,
+                leadingDistribution: TextLeadingDistribution.even,
+                foreground: Paint()
+                  ..style = PaintingStyle.stroke
+                  ..strokeWidth = outlineStroke
+                  ..strokeJoin = StrokeJoin.round
+                  ..color = color,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
-
-  /// `icons/folder.svg`.
-  static Path _folder() => Path()
-    ..moveTo(2, 5)
-    ..cubicTo(2, 4.2, 2.6, 3.5, 3.5, 3.5)
-    ..lineTo(6.5, 3.5)
-    ..lineTo(8, 5)
-    ..lineTo(12.5, 5)
-    ..cubicTo(13.4, 5, 14, 5.6, 14, 6.5)
-    ..lineTo(14, 11.5)
-    ..cubicTo(14, 12.4, 13.4, 13, 12.5, 13)
-    ..lineTo(3.5, 13)
-    ..cubicTo(2.6, 13, 2, 12.4, 2, 11.5)
-    ..close();
-
-  /// `icons/link.svg`: the bar, then a loop at each end of it.
-  static Path _link() => Path()
-    ..moveTo(6.5, 9.5)
-    ..lineTo(9.5, 6.5)
-    ..moveTo(7, 11.5)
-    ..lineTo(5.5, 13)
-    ..cubicTo(4.5, 14, 2.8, 14, 2, 13)
-    ..cubicTo(1.2, 12, 1.2, 10.5, 2.2, 9.6)
-    ..lineTo(3.7, 8.1)
-    ..moveTo(9, 4.5)
-    ..lineTo(10.5, 3)
-    ..cubicTo(11.5, 2, 13.2, 2, 14, 3)
-    ..cubicTo(14.8, 4, 14.8, 5.5, 13.8, 6.4)
-    ..lineTo(12.3, 7.9);
-
-  /// `icons/push.svg`: the stem, then the head over its top.
-  static Path _push() => Path()
-    ..moveTo(8, 14)
-    ..lineTo(8, 3)
-    ..moveTo(3, 8)
-    ..lineTo(8, 3)
-    ..lineTo(13, 8);
-
-  /// `icons/pull.svg`: the same shape, pointing the other way.
-  static Path _pull() => Path()
-    ..moveTo(8, 2)
-    ..lineTo(8, 13)
-    ..moveTo(3, 8)
-    ..lineTo(8, 13)
-    ..lineTo(13, 8);
-
-  /// `icons/fetch.svg`: a circle left open at the top right, and the tick
-  /// that says which way it turns.
-  ///
-  /// The arc is the SVG's `a 5.5 5.5 0 1 1 -1.61 -3.89` — the long way
-  /// round from three o'clock, which is what leaves the gap the tick fills.
-  static Path _fetch() => Path()
-    ..moveTo(13.5, 8)
-    ..arcToPoint(
-      const Offset(11.89, 4.11),
-      radius: const Radius.circular(5.5),
-      largeArc: true,
-    )
-    ..moveTo(13.5, 2)
-    ..lineTo(13.5, 5.5)
-    ..lineTo(10, 5.5);
-
-  @override
-  bool shouldRepaint(_GlyphPainter old) =>
-      old.glyph != glyph || old.color != color;
-
-  /// `icons/undo.svg`: the arrowhead, then the line curving back under it.
-  static Path _undo() => Path()
-    ..moveTo(6, 4.5)
-    ..lineTo(2.5, 8)
-    ..lineTo(6, 11.5)
-    ..moveTo(2.5, 8)
-    ..lineTo(10.5, 8)
-    ..arcToPoint(const Offset(10.5, 15), radius: const Radius.circular(3.5))
-    ..lineTo(8.5, 15);
-
-  /// `icons/redo.svg`: [_undo] mirrored.
-  static Path _redo() => Path()
-    ..moveTo(10, 4.5)
-    ..lineTo(13.5, 8)
-    ..lineTo(10, 11.5)
-    ..moveTo(13.5, 8)
-    ..lineTo(5.5, 8)
-    ..arcToPoint(
-      const Offset(5.5, 15),
-      radius: const Radius.circular(3.5),
-      clockwise: false,
-    )
-    ..lineTo(7.5, 15);
-
-  /// `icons/heading.svg`: the letter H.
-  static Path _heading() => Path()
-    ..moveTo(3.5, 3)
-    ..lineTo(3.5, 13)
-    ..moveTo(12.5, 3)
-    ..lineTo(12.5, 13)
-    ..moveTo(3.5, 8)
-    ..lineTo(12.5, 8);
-
-  /// `icons/strikethrough.svg`: the S, and the line through it.
-  static Path _strikethrough() => Path()
-    ..moveTo(11, 4.6)
-    ..cubicTo(11, 3.3, 9.7, 2.5, 8, 2.5)
-    ..cubicTo(6.2, 2.5, 5, 3.5, 5, 5)
-    ..cubicTo(5, 7.5, 11, 8.2, 11, 11)
-    ..cubicTo(11, 12.5, 9.8, 13.5, 8, 13.5)
-    ..cubicTo(6.3, 13.5, 5, 12.7, 5, 11.4)
-    ..moveTo(2, 8)
-    ..lineTo(14, 8);
-
-  /// `icons/list.svg`: three lines, each with a dot.
-  ///
-  /// The dots are zero-length segments, which a round cap draws as circles —
-  /// the set's own way of writing a dot without a second shape.
-  static Path _list() => Path()
-    ..moveTo(6, 4)
-    ..lineTo(14, 4)
-    ..moveTo(6, 8)
-    ..lineTo(14, 8)
-    ..moveTo(6, 12)
-    ..lineTo(14, 12)
-    ..moveTo(2.5, 4)
-    ..lineTo(2.5, 4)
-    ..moveTo(2.5, 8)
-    ..lineTo(2.5, 8)
-    ..moveTo(2.5, 12)
-    ..lineTo(2.5, 12);
-
-  /// `icons/ordered-list.svg`: three lines, the first numbered.
-  static Path _orderedList() => Path()
-    ..moveTo(7, 4)
-    ..lineTo(14, 4)
-    ..moveTo(7, 8)
-    ..lineTo(14, 8)
-    ..moveTo(7, 12)
-    ..lineTo(14, 12)
-    ..moveTo(2, 3.4)
-    ..lineTo(3.2, 2.8)
-    ..lineTo(3.2, 6);
-
-  /// `icons/task-list.svg`: two lines, each with a tick.
-  static Path _taskList() => Path()
-    ..moveTo(2, 4)
-    ..lineTo(3.2, 5.2)
-    ..lineTo(5.5, 2.9)
-    ..moveTo(2, 11)
-    ..lineTo(3.2, 12.2)
-    ..lineTo(5.5, 9.9)
-    ..moveTo(8.5, 4)
-    ..lineTo(14, 4)
-    ..moveTo(8.5, 11)
-    ..lineTo(14, 11);
-
-  /// `icons/quote.svg`: the upright, and two lines beside it.
-  static Path _quote() => Path()
-    ..moveTo(3, 3.5)
-    ..lineTo(3, 12.5)
-    ..moveTo(7, 5.5)
-    ..lineTo(13.5, 5.5)
-    ..moveTo(7, 10.5)
-    ..lineTo(13.5, 10.5);
-
-  /// `icons/code.svg`: two angle brackets facing away.
-  static Path _code() => Path()
-    ..moveTo(5.5, 4)
-    ..lineTo(2, 8)
-    ..lineTo(5.5, 12)
-    ..moveTo(10.5, 4)
-    ..lineTo(14, 8)
-    ..lineTo(10.5, 12);
-
-  /// `icons/table.svg`: the box, its header rule and one divider.
-  static Path _table() => Path()
-    ..moveTo(2.5, 3.5)
-    ..lineTo(13.5, 3.5)
-    ..lineTo(13.5, 12.5)
-    ..lineTo(2.5, 12.5)
-    ..close()
-    ..moveTo(2.5, 7)
-    ..lineTo(13.5, 7)
-    ..moveTo(8, 7)
-    ..lineTo(8, 12.5);
-
-  /// `icons/rule.svg`: one line across the middle.
-  static Path _rule() => Path()
-    ..moveTo(2.5, 8)
-    ..lineTo(13.5, 8);
-
-  /// `icons/image.svg`: the frame, the horizon and the sun.
-  static Path _image() => Path()
-    ..moveTo(2.5, 3.5)
-    ..lineTo(13.5, 3.5)
-    ..lineTo(13.5, 12.5)
-    ..lineTo(2.5, 12.5)
-    ..close()
-    ..moveTo(3.5, 11.5)
-    ..lineTo(6, 8.5)
-    ..lineTo(8, 10.5)
-    ..lineTo(9.5, 9.2)
-    ..lineTo(12.5, 11.5)
-    ..moveTo(10.6, 6)
-    ..lineTo(10.6, 6);
-
-  /// `icons/footnote.svg`: lines of text, with the reference raised.
-  static Path _footnote() => Path()
-    ..moveTo(2.5, 4)
-    ..lineTo(9, 4)
-    ..moveTo(11.2, 2.4)
-    ..lineTo(12.2, 2)
-    ..lineTo(12.2, 5.5)
-    ..moveTo(2.5, 9.5)
-    ..lineTo(6.5, 9.5)
-    ..moveTo(2.5, 12.5)
-    ..lineTo(10.5, 12.5);
-
-  /// `icons/alert.svg`: the triangle, and the exclamation in it.
-  static Path _alert() => Path()
-    ..moveTo(8, 2.5)
-    ..lineTo(14, 13)
-    ..lineTo(2, 13)
-    ..close()
-    ..moveTo(8, 6.5)
-    ..lineTo(8, 9.5)
-    ..moveTo(8, 11.3)
-    ..lineTo(8, 11.3);
-
-  /// `icons/preferences.svg`: the cogwheel, and the hole at its centre.
-  ///
-  /// Twelve arcs rather than teeth drawn one by one, which is what makes it
-  /// read as a gear at 16 — a sliders mark read as `rule`, as `list` and as
-  /// a control panel at every size tried before this one.
-  static Path _preferences() => Path()
-    ..moveTo(6.24, 1.85)
-    ..arcToPoint(const Offset(9.76, 1.85), radius: const Radius.circular(6.40))
-    ..lineTo(9.84, 3.86)
-    ..arcToPoint(const Offset(10.66, 4.33), radius: const Radius.circular(4.53))
-    ..lineTo(12.45, 3.40)
-    ..arcToPoint(const Offset(14.21, 6.45), radius: const Radius.circular(6.40))
-    ..lineTo(12.51, 7.53)
-    ..arcToPoint(const Offset(12.51, 8.47), radius: const Radius.circular(4.53))
-    ..lineTo(14.21, 9.55)
-    ..arcToPoint(
-      const Offset(12.45, 12.60),
-      radius: const Radius.circular(6.40),
-    )
-    ..lineTo(10.66, 11.67)
-    ..arcToPoint(const Offset(9.84, 12.14), radius: const Radius.circular(4.53))
-    ..lineTo(9.76, 14.15)
-    ..arcToPoint(const Offset(6.24, 14.15), radius: const Radius.circular(6.40))
-    ..lineTo(6.16, 12.14)
-    ..arcToPoint(const Offset(5.34, 11.67), radius: const Radius.circular(4.53))
-    ..lineTo(3.55, 12.60)
-    ..arcToPoint(const Offset(1.79, 9.55), radius: const Radius.circular(6.40))
-    ..lineTo(3.49, 8.47)
-    ..arcToPoint(const Offset(3.49, 7.53), radius: const Radius.circular(4.53))
-    ..lineTo(1.79, 6.45)
-    ..arcToPoint(const Offset(3.55, 3.40), radius: const Radius.circular(6.40))
-    ..lineTo(5.34, 4.33)
-    ..arcToPoint(const Offset(6.16, 3.86), radius: const Radius.circular(4.53))
-    ..close()
-    ..addOval(Rect.fromCircle(center: const Offset(8, 8), radius: 2));
 }
+
+/// One `IconData` per glyph, built once and constant so a release build can
+/// still shake the face down to what is used.
+const Map<TomGlyphEnum, IconData> _icons = <TomGlyphEnum, IconData>{
+  TomGlyphEnum.folder: IconData(
+    0xf07b,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.link: IconData(
+    0xf0c1,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.push: IconData(
+    0xf062,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.pull: IconData(
+    0xf063,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.fetch: IconData(
+    0xf021,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.undo: IconData(
+    0xf2ea,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.redo: IconData(
+    0xf2f9,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.heading: IconData(
+    0xf1dc,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.bold: IconData(
+    0xf032,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.italic: IconData(
+    0xf033,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.strikethrough: IconData(
+    0xf0cc,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.list: IconData(
+    0xf0ca,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.orderedList: IconData(
+    0xf0cb,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.taskList: IconData(
+    0xf0ae,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.quote: IconData(
+    0xf10d,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.code: IconData(
+    0xf121,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.table: IconData(
+    0xf0ce,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.rule: IconData(
+    0xf068,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.image: IconData(
+    0xf03e,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.footnote: IconData(
+    0xf12b,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.alert: IconData(
+    0xf071,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.preferences: IconData(
+    0xf013,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.more: IconData(
+    0xf141,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.chevronDown: IconData(
+    0xf078,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.chevronRight: IconData(
+    0xf054,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.close: IconData(
+    0xf00d,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.clear: IconData(
+    0xf057,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.check: IconData(
+    0xf00c,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.replace: IconData(
+    0xf362,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.branch: IconData(
+    0xf126,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.folderOpen: IconData(
+    0xf07c,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.file: IconData(
+    0xf15c,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.plus: IconData(
+    0x2b,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.menu: IconData(
+    0xf142,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.search: IconData(
+    0xf002,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.terminal: IconData(
+    0xf120,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.home: IconData(
+    0xf015,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.person: IconData(
+    0xf007,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.external: IconData(
+    0xf08e,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.copy: IconData(
+    0xf0c5,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+  TomGlyphEnum.discard: IconData(
+    0xf0e2,
+    fontFamily: TomFonts.icons,
+    fontPackage: TomFonts.iconsPackage,
+  ),
+};

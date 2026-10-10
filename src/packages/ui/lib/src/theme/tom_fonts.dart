@@ -17,4 +17,14 @@ abstract final class TomFonts {
   /// The rendered document's prose — the one place the reader is reading
   /// rather than operating.
   static const String serif = 'packages/tom_ui/IBMPlexSerif';
+
+  /// The icon set: Font Awesome Free's solid face, one glyph per code point
+  /// ([icons](../../../../../../docs/design/components/icons.md)).
+  ///
+  /// Unprefixed, unlike the faces above: an `IconData` names its package
+  /// separately, in [iconsPackage].
+  static const String icons = 'FontAwesomeSolid';
+
+  /// The package [icons] is declared in.
+  static const String iconsPackage = 'tom_ui';
 }

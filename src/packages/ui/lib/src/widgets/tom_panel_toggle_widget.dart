@@ -12,6 +12,9 @@ enum TomPanelSideEnum {
 
   /// The right column's: the strip is at the right.
   right,
+
+  /// The panel under the document's: the strip is along the bottom.
+  bottom,
 }
 
 /// The `Panel toggle` component: an outline with a divider inside it, and
@@ -53,7 +56,8 @@ class TomPanelToggleWidget extends StatelessWidget {
   /// The outline's width, which the divider and the strip share.
   final double stroke;
 
-  /// How far in from its own edge the divider sits.
+  /// How far in from its own edge the divider sits — the bottom edge for
+  /// [TomPanelSideEnum.bottom].
   final double strip;
 
   @override
@@ -112,25 +116,45 @@ class _TogglePainter extends CustomPainter {
       ..color = ink
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke;
-    final double at = side == TomPanelSideEnum.left
-        ? strip
-        : size.width - strip;
+    final double at = switch (side) {
+      TomPanelSideEnum.left => strip,
+      TomPanelSideEnum.right => size.width - strip,
+      TomPanelSideEnum.bottom => size.height - strip,
+    };
     if (isOpen) {
       // The strip is filled by clipping the outline's own shape, so the fill
       // takes the corner with it rather than squaring it off.
       canvas
         ..save()
-        ..clipRect(
-          side == TomPanelSideEnum.left
-              ? Rect.fromLTRB(0, 0, at, size.height)
-              : Rect.fromLTRB(at, 0, size.width, size.height),
-        )
+        ..clipRect(switch (side) {
+          TomPanelSideEnum.left => Rect.fromLTRB(0, 0, at, size.height),
+          TomPanelSideEnum.right => Rect.fromLTRB(
+            at,
+            0,
+            size.width,
+            size.height,
+          ),
+          TomPanelSideEnum.bottom => Rect.fromLTRB(
+            0,
+            at,
+            size.width,
+            size.height,
+          ),
+        })
         ..drawRRect(box, Paint()..color = ink)
         ..restore();
     }
     canvas
       ..drawRRect(box, line)
-      ..drawLine(Offset(at, stroke), Offset(at, size.height - stroke), line);
+      ..drawLine(
+        side == TomPanelSideEnum.bottom
+            ? Offset(stroke, at)
+            : Offset(at, stroke),
+        side == TomPanelSideEnum.bottom
+            ? Offset(size.width - stroke, at)
+            : Offset(at, size.height - stroke),
+        line,
+      );
   }
 
   @override

@@ -108,10 +108,11 @@ void main() {
         app(const TomFieldClearWidget(on: Color(0xFF131211))),
       );
 
-      expect(
-        tester.widget<Icon>(find.byIcon(Icons.close)).color,
-        const Color(0xFF131211),
+      final TomGlyphWidget glyph = tester.widget<TomGlyphWidget>(
+        find.byType(TomGlyphWidget),
       );
+      expect(glyph.glyph, TomGlyphEnum.close);
+      expect(glyph.color, const Color(0xFF131211));
     });
   });
 }

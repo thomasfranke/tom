@@ -87,6 +87,29 @@ void main() {
       expect(await pixelAt(tester, 4, 8), isNot(TomColors.dark.textSecondary));
     });
 
+    testWidgets('the bottom panel fills its strip along the bottom', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        app(
+          const TomPanelToggleWidget(
+            side: TomPanelSideEnum.bottom,
+            isOpen: true,
+            width: 20,
+            height: 16,
+            radius: 3,
+            stroke: 1.5,
+            strip: 6,
+          ),
+        ),
+      );
+
+      // Three up from the bottom is inside the strip; four down from the
+      // top is the empty part.
+      expect(await pixelAt(tester, 10, 13), TomColors.dark.textSecondary);
+      expect(await pixelAt(tester, 10, 4), isNot(TomColors.dark.textSecondary));
+    });
+
     testWidgets('it is the size the design gives it, never its own', (
       WidgetTester tester,
     ) async {

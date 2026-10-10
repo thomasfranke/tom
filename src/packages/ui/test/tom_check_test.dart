@@ -45,16 +45,16 @@ void main() {
     );
   });
 
-  testWidgets('off is the raised surface behind a hairline', (
+  testWidgets('off is a hairline and nothing behind it', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
       app(TomCheckWidget(isChecked: false, onChanged: (bool _) {})),
     );
 
-    expect(boxOf(tester).color, TomColors.dark.surfaceRaised);
+    expect(boxOf(tester).color, isNull);
     expect(boxOf(tester).border?.top.color, TomColors.dark.borderStrong);
-    expect(find.byIcon(Icons.check), findsNothing);
+    expect(find.byType(TomGlyphWidget), findsNothing);
   });
 
   testWidgets('on is the accent, with the tick knocked out of it', (
@@ -69,7 +69,7 @@ void main() {
     expect(boxOf(tester).color, TomColors.dark.accent);
     expect(boxOf(tester).border, isNull);
     expect(
-      tester.widget<Icon>(find.byIcon(Icons.check)).color,
+      tester.widget<TomGlyphWidget>(find.byType(TomGlyphWidget)).color,
       TomColors.dark.surfaceRaised,
     );
   });

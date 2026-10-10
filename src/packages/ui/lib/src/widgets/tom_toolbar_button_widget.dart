@@ -9,7 +9,7 @@ import 'package:tom_ui/src/widgets/tom_glyph_widget.dart';
 
 /// The toolbar button of
 /// [components](../../../../../../docs/design/components/controls.md): a 28
-/// square on the raised surface, carrying one glyph at 24.
+/// square on the raised surface, carrying one glyph at 16.
 ///
 /// A component rather than a rectangle because seventeen of them are the
 /// [formatting bar](../../../../../../docs/product/editor/formatting-shortcuts/doc.md)
@@ -22,26 +22,17 @@ class TomToolbarButtonWidget extends StatelessWidget {
     required this.glyph,
     required this.tooltip,
     required this.onPressed,
-    this.letter,
     super.key,
   });
 
   /// The cell the boards draw.
-  static const double size = 28;
+  static const double size = 24;
 
   /// The glyph inside it, centred.
-  static const double glyphSize = 24;
+  static const double glyphSize = 15;
 
-  /// A letterform instead of a glyph, which the boards set larger than a
-  /// label because it is standing in for a 24 icon.
-  static const double letterSize = 20;
-
-  /// Which glyph, or the one [letter] replaces.
-  final TomGlyphEnum? glyph;
-
-  /// A letterform instead of a glyph — `B` and `I`, which are letters
-  /// everywhere and would be a worse icon than themselves.
-  final String? letter;
+  /// Which glyph.
+  final TomGlyphEnum glyph;
 
   /// The whole word, for whoever does not read the shape.
   final String tooltip;
@@ -53,8 +44,7 @@ class TomToolbarButtonWidget extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(EnumProperty<TomGlyphEnum?>('glyph', glyph))
-      ..add(StringProperty('letter', letter))
+      ..add(EnumProperty<TomGlyphEnum>('glyph', glyph))
       ..add(StringProperty('tooltip', tooltip))
       ..add(ObjectFlagProperty<VoidCallback?>.has('onPressed', onPressed));
   }
@@ -69,31 +59,15 @@ class TomToolbarButtonWidget extends StatelessWidget {
       message: tooltip,
       child: SizedBox.square(
         dimension: size,
+        // Flat on the island: a 1b toolbar is glyphs, and the hover is
+        // what says one is a button.
         child: Material(
-          color: colors.surfaceRaised,
-          borderRadius: BorderRadius.circular(TomMetrics.radius),
+          type: MaterialType.transparency,
           child: InkWell(
             onTap: onPressed,
-            borderRadius: BorderRadius.circular(TomMetrics.radius),
+            borderRadius: BorderRadius.circular(TomMetrics.radiusTight),
             child: Center(
-              child: letter != null
-                  ? Text(
-                      letter!,
-                      style: TextStyle(
-                        fontSize: letterSize,
-                        height: 1,
-                        // `B` bold and `I` italic: the letterform is the
-                        // icon, so it carries what it means.
-                        fontWeight: letter == 'B'
-                            ? FontWeight.w700
-                            : FontWeight.w400,
-                        fontStyle: letter == 'I'
-                            ? FontStyle.italic
-                            : FontStyle.normal,
-                        color: ink,
-                      ),
-                    )
-                  : TomGlyphWidget(glyph: glyph!, color: ink, size: glyphSize),
+              child: TomGlyphWidget(glyph: glyph, color: ink, size: glyphSize),
             ),
           ),
         ),

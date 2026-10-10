@@ -13,13 +13,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      app(
-        const DiffMarkWidget(
-          letter: 'A',
-          ink: Color(0xFF3D7A52),
-          fill: Color(0xFFE6F0E8),
-        ),
-      ),
+      app(const DiffMarkWidget(letter: 'A', ink: Color(0xFF3D7A52))),
     );
 
     expect(find.text('A'), findsOneWidget);
@@ -27,17 +21,11 @@ void main() {
     expect(tester.getSize(find.byType(DiffMarkWidget)).height, TomMetrics.mark);
   });
 
-  testWidgets('the letter is drawn in the ink and the square in the fill', (
+  testWidgets('the letter and the outline are both drawn in the ink', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      app(
-        const DiffMarkWidget(
-          letter: 'R',
-          ink: Color(0xFFA24F46),
-          fill: Color(0xFFF6E8E6),
-        ),
-      ),
+      app(const DiffMarkWidget(letter: 'R', ink: Color(0xFFA24F46))),
     );
 
     expect(
@@ -47,8 +35,8 @@ void main() {
     expect(
       (tester.widget<DecoratedBox>(find.byType(DecoratedBox)).decoration
               as BoxDecoration)
-          .color,
-      const Color(0xFFF6E8E6),
+          .border,
+      Border.all(color: const Color(0xFFA24F46)),
     );
   });
 
@@ -60,7 +48,6 @@ void main() {
         const DiffMarkWidget(
           letter: 'M',
           ink: Color(0xFF8F6F2E),
-          fill: Color(0xFFF4EDDF),
           tooltip: 'Modified',
         ),
       ),
@@ -74,13 +61,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      app(
-        const DiffMarkWidget(
-          letter: 'A',
-          ink: Color(0xFF3D7A52),
-          fill: Color(0xFFE6F0E8),
-        ),
-      ),
+      app(const DiffMarkWidget(letter: 'A', ink: Color(0xFF3D7A52))),
     );
 
     expect(find.byType(Tooltip), findsNothing);
