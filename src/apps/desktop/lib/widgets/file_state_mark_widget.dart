@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_ui/tom_ui.dart';
 
@@ -41,33 +42,33 @@ class FileStateMarkWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TomColors colors = TomColors.of(context);
-    final (Color ink, Color fill) = _rolesOf(colors);
+    final Color ink = _inkOf(colors);
+    final String word = _wordOf(context.l10n);
     return isBare
-        ? DiffMarkWidget.bare(
-            letter: _letters[state]!,
-            ink: ink,
-            tooltip: _words[state]!,
-          )
-        : DiffMarkWidget(
-            letter: _letters[state]!,
-            ink: ink,
-            fill: fill,
-            tooltip: _words[state]!,
-          );
+        ? DiffMarkWidget.bare(letter: _letters[state]!, ink: ink, tooltip: word)
+        : DiffMarkWidget(letter: _letters[state]!, ink: ink, tooltip: word);
   }
 
-  /// The pair of roles this state is drawn in.
+  /// What the letter stands for, in the window's language.
+  String _wordOf(AppLocalizations l10n) => switch (state) {
+    FileStateEnum.modified => l10n.fileStateModified,
+    FileStateEnum.added => l10n.fileStateAdded,
+    FileStateEnum.deleted => l10n.fileStateDeleted,
+    FileStateEnum.renamed => l10n.fileStateRenamed,
+    FileStateEnum.untracked => l10n.fileStateUntracked,
+    FileStateEnum.conflicted => l10n.fileStateConflicted,
+  };
+
+  /// The role this state is drawn in.
   ///
   /// Three roles for six states: the palette names appeared, went and
   /// changed, and the letter tells the rest apart.
-  (Color, Color) _rolesOf(TomColors colors) => switch (state) {
-    FileStateEnum.added ||
-    FileStateEnum.untracked => (colors.added, colors.addedSoft),
-    FileStateEnum.deleted => (colors.removed, colors.removedSoft),
-    FileStateEnum.modified ||
-    FileStateEnum.renamed => (colors.modified, colors.modifiedSoft),
+  Color _inkOf(TomColors colors) => switch (state) {
+    FileStateEnum.added || FileStateEnum.untracked => colors.added,
+    FileStateEnum.deleted => colors.removed,
+    FileStateEnum.modified || FileStateEnum.renamed => colors.modified,
     // A conflict is the one thing here that cannot be committed as it stands.
-    FileStateEnum.conflicted => (colors.removed, colors.removedSoft),
+    FileStateEnum.conflicted => colors.removed,
   };
 
   static const Map<FileStateEnum, String> _letters = <FileStateEnum, String>{
@@ -77,14 +78,5 @@ class FileStateMarkWidget extends StatelessWidget {
     FileStateEnum.renamed: 'R',
     FileStateEnum.untracked: 'N',
     FileStateEnum.conflicted: 'C',
-  };
-
-  static const Map<FileStateEnum, String> _words = <FileStateEnum, String>{
-    FileStateEnum.modified: 'Modified',
-    FileStateEnum.added: 'Added',
-    FileStateEnum.deleted: 'Deleted',
-    FileStateEnum.renamed: 'Renamed',
-    FileStateEnum.untracked: 'New — git has never been told about it',
-    FileStateEnum.conflicted: 'Conflicted — resolve it before committing',
   };
 }

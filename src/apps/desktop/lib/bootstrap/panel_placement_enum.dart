@@ -19,6 +19,10 @@ enum PanelPlacementEnum {
   /// The fixed-width column on the right: git, and later search results.
   aside,
 
+  /// The panel under the document, closed until somebody opens it: tabs,
+  /// one panel at a time — the commands, and later a terminal.
+  bottom,
+
   /// The strip along the bottom, read and never worked in.
   statusBar,
 }

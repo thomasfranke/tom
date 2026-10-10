@@ -8,6 +8,7 @@ import 'package:tom_desktop/bootstrap/core_module_impl.dart';
 import 'package:tom_desktop/bootstrap/panel_registry.dart';
 import 'package:tom_desktop/bootstrap/providers.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/home/home_screen.dart';
 import 'package:tom_desktop/screens/shell/tom_shell.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -94,6 +95,15 @@ class TomApp extends ConsumerWidget {
     debugShowCheckedModeBanner: false,
     theme: tomTheme(Brightness.light),
     darkTheme: tomTheme(Brightness.dark),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    // Null for `System`, which lets the platform's locale choose and falls
+    // back to English where it is neither language ([localeOf]).
+    locale: localeOf(
+      ref.watch(
+        preferencesProvider.select((PreferencesValueObject it) => it.language),
+      ),
+    ),
     // The platform's until somebody says otherwise, and then theirs — the
     // choice is inside the preferences popover, which is where it is also
     // stored (`docs/product/preferences/what-it-holds/doc.md`).

@@ -8,3 +8,5 @@ analyzer:
     # at, holding a token non-markdown file or two so a space is a *part* of
     # a repository rather than all of it. Analysing it would lint a fixture.
     - integration_test/fixtures/**
+    # Written by `flutter gen-l10n` from the ARB files, to its own style.
+    - lib/l10n/generated/**
