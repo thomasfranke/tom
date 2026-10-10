@@ -1,17 +1,18 @@
-/// The one way opening a folder fails, and everything else.
+/// What Home says when a folder does not open.
 library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/home/folder_picker.dart';
 import 'package:tom_desktop/screens/home/home_design.dart';
 import 'package:tom_desktop/screens/home/widgets/home_primary_button_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The one way opening a folder fails, and everything else.
+/// Why a folder did not open: gone, no git on the machine, or anything else.
 ///
 /// No recent list, as the design draws it: a state to move on from in one
 /// click, and a second list of choices would make the retry look optional.
@@ -31,28 +32,22 @@ class HomeRefusedWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
+    final AppLocalizations l10n = context.l10n;
     final (String headline, String? path, String explanation) said =
+        // No case for a folder outside a repository: it opens
+        // (`docs/product/workspace/without-a-repository/doc.md`).
         switch (failure) {
-          GitNotARepository(path: final String folder) => (
-            'That folder is not inside a Git repository',
-            folder,
-            'TOM works on documentation that is already versioned. Open a '
-                'folder inside a repository — the repository root, or any '
-                'folder within it.',
-          ),
           SpaceFolderMissing(root: final String root) => (
-            'That folder is no longer there',
+            l10n.homeRefusedFolderMissing,
             root,
-            'It may be on a disk that is not connected, or it was moved or '
-                'renamed outside TOM.',
+            l10n.homeRefusedFolderMissingWhy,
           ),
           GitNotInstalled() => (
-            'TOM cannot find git on this machine',
+            l10n.homeRefusedNoGit,
             null,
-            'TOM drives the git you already have. Install it, or make sure it '
-                'is on your PATH, and try again.',
+            l10n.homeRefusedNoGitWhy,
           ),
-          _ => ('That folder could not be opened', null, failure.toString()),
+          _ => (l10n.homeRefusedUnopened, null, l10n.homeRefusedUnopenedWhy),
         };
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -110,16 +105,9 @@ class HomeRefusedWidget extends ConsumerWidget {
         ),
         const SizedBox(height: HomeDesign.bodyToRetry),
         HomePrimaryButtonWidget(
-          label: 'Choose another folder…',
+          label: l10n.homeChooseAnotherFolder,
           width: HomeDesign.retry,
           onPressed: () => chooseFolder(ref),
-        ),
-        const SizedBox(height: HomeDesign.retryToHint),
-        // TOM never runs `git init` for anyone, and says so rather than
-        // leaving them looking for the button.
-        Text(
-          'Creating a repository is not something TOM does.',
-          style: TextStyle(fontSize: 13, height: 1.5, color: colors.textMuted),
         ),
       ],
     );

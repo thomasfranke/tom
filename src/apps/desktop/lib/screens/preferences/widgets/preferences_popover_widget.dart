@@ -1,9 +1,12 @@
 /// What opens under the gear: three preferences, and the file behind them.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/preferences/preferences_design.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -13,7 +16,7 @@ import 'package:tom_ui/tom_ui.dart';
 /// (`docs/product/preferences/the-popover/doc.md`).
 ///
 /// **A popover, not a menu**: a menu is a list of choices in one tall row
-/// each, and these are controls — a two-way choice, a select and a checkbox.
+/// each, and these are controls — a three-way choice, a select and a checkbox.
 /// **No scrim**, because dimming would say the rest of the window is blocked
 /// and the point is to watch the app change behind it.
 ///
@@ -21,7 +24,24 @@ import 'package:tom_ui/tom_ui.dart';
 /// so closing decides nothing.
 class PreferencesPopoverWidget extends ConsumerWidget {
   /// Creates the popover.
-  const PreferencesPopoverWidget({super.key});
+  const PreferencesPopoverWidget({this.tapGroup, this.onDismissed, super.key});
+
+  /// The tap region the popover closes outside of, which the language's
+  /// menu joins: it opens in the overlay, so a choice there would otherwise
+  /// read as a tap outside and close the popover before the window answers.
+  final Object? tapGroup;
+
+  /// Closes the popover — what opening the file does first, since the tab
+  /// it opens is behind it.
+  final VoidCallback? onDismissed;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty<Object?>('tapGroup', tapGroup))
+      ..add(ObjectFlagProperty<VoidCallback?>.has('onDismissed', onDismissed));
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -52,14 +72,15 @@ class PreferencesPopoverWidget extends ConsumerWidget {
                   height:
                       PreferencesDesign.captionTop - PreferencesDesign.inset,
                 ),
-                const _CaptionWidget('THEME'),
+                _CaptionWidget(context.l10n.preferencesTheme),
                 _ThemeControlWidget(
                   chosen: chosen.theme,
                   onChoose: notifier.chooseTheme,
                 ),
                 const SizedBox(height: PreferencesDesign.settingGap),
-                const _CaptionWidget('LANGUAGE'),
+                _CaptionWidget(context.l10n.preferencesLanguage),
                 _LanguageControlWidget(
+                  tapGroup: tapGroup,
                   chosen: chosen.language,
                   onChoose: notifier.chooseLanguage,
                 ),
@@ -71,7 +92,7 @@ class PreferencesPopoverWidget extends ConsumerWidget {
                 const SizedBox(height: PreferencesDesign.ruleGap),
                 Divider(height: 1, color: colors.border),
                 const SizedBox(height: PreferencesDesign.ruleGap),
-                const _OpenTheFileWidget(),
+                _OpenTheFileWidget(onDismissed: onDismissed),
               ],
             ),
           ),
@@ -136,30 +157,32 @@ class _ThemeControlWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TomColors colors = TomColors.of(context);
-    // What is drawn, not what was chosen: `system` is whichever the platform
-    // gave us, and the control must show the theme on screen.
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final AppLocalizations l10n = context.l10n;
+    // What was chosen, not what is drawn: `System` is a choice of its own —
+    // follow the machine — and lit as one, whichever theme it lands on.
     return SizedBox(
       height: PreferencesDesign.switchHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: colors.surfaceSunken,
+          border: Border.all(color: colors.border),
           borderRadius: BorderRadius.circular(TomMetrics.radius),
         ),
         child: Padding(
           padding: const EdgeInsets.all(PreferencesDesign.switchInset),
           child: Row(
             children: <Widget>[
-              _HalfWidget(
-                label: 'Light',
-                isChosen: !isDark,
-                onPressed: () => onChoose(ThemeChoiceEnum.light),
-              ),
-              _HalfWidget(
-                label: 'Dark',
-                isChosen: isDark,
-                onPressed: () => onChoose(ThemeChoiceEnum.dark),
-              ),
+              for (final (ThemeChoiceEnum choice, String label)
+                  in <(ThemeChoiceEnum, String)>[
+                    (ThemeChoiceEnum.system, l10n.preferencesThemeSystem),
+                    (ThemeChoiceEnum.light, l10n.preferencesThemeLight),
+                    (ThemeChoiceEnum.dark, l10n.preferencesThemeDark),
+                  ])
+                _HalfWidget(
+                  label: label,
+                  isChosen: chosen == choice,
+                  onPressed: () => onChoose(choice),
+                ),
             ],
           ),
         ),
@@ -168,7 +191,7 @@ class _ThemeControlWidget extends StatelessWidget {
   }
 }
 
-/// One side of the two-way control.
+/// One segment of the theme control.
 class _HalfWidget extends StatelessWidget {
   const _HalfWidget({
     required this.label,
@@ -198,7 +221,7 @@ class _HalfWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(TomMetrics.radiusTight),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: isChosen ? colors.accentSoft : Colors.transparent,
+            color: isChosen ? colors.control : Colors.transparent,
             borderRadius: BorderRadius.circular(TomMetrics.radiusTight),
           ),
           child: Center(
@@ -208,7 +231,7 @@ class _HalfWidget extends StatelessWidget {
                 fontSize: PreferencesDesign.label,
                 height: 1,
                 fontWeight: isChosen ? FontWeight.w600 : FontWeight.w500,
-                color: isChosen ? colors.accent : colors.textSecondary,
+                color: isChosen ? colors.textPrimary : colors.textSecondary,
               ),
             ),
           ),
@@ -220,8 +243,13 @@ class _HalfWidget extends StatelessWidget {
 
 /// The language, as a select whose current choice carries a tick.
 class _LanguageControlWidget extends StatelessWidget {
-  const _LanguageControlWidget({required this.chosen, required this.onChoose});
+  const _LanguageControlWidget({
+    required this.tapGroup,
+    required this.chosen,
+    required this.onChoose,
+  });
 
+  final Object? tapGroup;
   final LanguageEnum chosen;
   final void Function(LanguageEnum) onChoose;
 
@@ -229,6 +257,7 @@ class _LanguageControlWidget extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
+      ..add(DiagnosticsProperty<Object?>('tapGroup', tapGroup))
       ..add(EnumProperty<LanguageEnum>('chosen', chosen))
       ..add(
         ObjectFlagProperty<void Function(LanguageEnum)>.has(
@@ -238,6 +267,10 @@ class _LanguageControlWidget extends StatelessWidget {
       );
   }
 
+  /// What [language] is called: its own name, or `System` in the window's.
+  static String _nameOf(BuildContext context, LanguageEnum language) =>
+      language.label ?? context.l10n.preferencesLanguageSystem;
+
   @override
   Widget build(BuildContext context) {
     final TomColors colors = TomColors.of(context);
@@ -246,14 +279,26 @@ class _LanguageControlWidget extends StatelessWidget {
       child: MenuAnchor(
         menuChildren: <Widget>[
           for (final LanguageEnum language in LanguageEnum.values)
-            MenuItemButton(
-              onPressed: () => onChoose(language),
-              // **A tick, not a highlight alone** — colour is never the only
-              // signal, here as everywhere else.
-              trailingIcon: language == chosen
-                  ? Icon(Icons.check, size: 16, color: colors.accent)
-                  : const SizedBox(width: 16),
-              child: Text(language.label),
+            TapRegion(
+              groupId: tapGroup,
+              child: MenuItemButton(
+                onPressed: () => onChoose(language),
+                // **A tick, not a highlight alone** — colour is never the only
+                // signal, here as everywhere else.
+                trailingIcon: language == chosen
+                    ? SizedBox.square(
+                        dimension: 16,
+                        child: Center(
+                          child: TomGlyphWidget(
+                            glyph: TomGlyphEnum.check,
+                            color: colors.accent,
+                            size: 12,
+                          ),
+                        ),
+                      )
+                    : const SizedBox(width: 16),
+                child: Text(_nameOf(context, language)),
+              ),
             ),
         ],
         builder: (BuildContext context, MenuController menu, Widget? child) =>
@@ -274,7 +319,7 @@ class _LanguageControlWidget extends StatelessWidget {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      chosen.label,
+                      _nameOf(context, chosen),
                       style: const TextStyle(
                         fontSize: PreferencesDesign.label,
                         height: 1.4,
@@ -323,7 +368,7 @@ class _FormattingBarCheckWidget extends StatelessWidget {
         // font, so every character measures its font size square.
         Flexible(
           child: Text(
-            'Show the formatting bar',
+            context.l10n.preferencesShowFormattingBar,
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.fade,
@@ -339,25 +384,52 @@ class _FormattingBarCheckWidget extends StatelessWidget {
   );
 }
 
-/// The button at the foot, which opens the store in TOM's own editor.
+/// The button at the foot, which opens the store in TOM's own editor as **a
+/// tab from outside the tree** (`docs/product/preferences/where-it-is-stored/doc.md`).
 ///
-/// Drawn and unavailable: what it produces is **a tab from outside the
-/// tree**, and there is no tab strip yet
-/// (`docs/design/screens/not-drawn-yet.md`). A control that cannot act is
-/// dim, never absent.
-class _OpenTheFileWidget extends StatelessWidget {
-  const _OpenTheFileWidget();
+/// Dim on Home, which has no tabs to open it in: a control that cannot act
+/// is dim, never absent.
+class _OpenTheFileWidget extends ConsumerWidget {
+  const _OpenTheFileWidget({required this.onDismissed});
+
+  final VoidCallback? onDismissed;
 
   @override
-  Widget build(BuildContext context) {
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(
+      ObjectFlagProperty<VoidCallback?>.has('onDismissed', onDismissed),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
+    final bool hasSpace = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) => session != null,
+      ),
+    );
     return SizedBox(
       height: PreferencesDesign.rowHeight,
       child: OutlinedButton(
-        onPressed: null,
+        onPressed: hasSpace
+            ? () {
+                // Read before closing: the popover leaves the tree with it.
+                final PreferencesNotifier preferences = ref.read(
+                  preferencesProvider.notifier,
+                );
+                onDismissed?.call();
+                unawaited(preferences.openFile());
+              }
+            : null,
         style: OutlinedButton.styleFrom(
+          // Secondary while it can act (`design/components/controls.md`).
+          foregroundColor: colors.textSecondary,
+          side: BorderSide(
+            color: hasSpace ? colors.borderStrong : colors.border,
+          ),
           disabledForegroundColor: colors.textMuted,
-          side: BorderSide(color: colors.border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(TomMetrics.radius),
           ),
@@ -366,7 +438,7 @@ class _OpenTheFileWidget extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        child: const Text('Open preferences.json'),
+        child: Text(context.l10n.preferencesOpenFile),
       ),
     );
   }

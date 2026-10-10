@@ -26,17 +26,14 @@ class ShellStatusBarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TomBarWidget(
     height: TomMetrics.statusBar,
-    rule: TomBarEdgeEnum.top,
     child: Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: TomMetrics.pad + TomMetrics.chromeInset,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: TomMetrics.barEdge),
       child: Row(
         children: <Widget>[
           for (final PanelDescriptor panel in registry.at(
             PanelPlacementEnum.statusBar,
           ))
-            Builder(builder: panel.builder),
+            Expanded(child: Builder(builder: panel.builder)),
         ],
       ),
     ),

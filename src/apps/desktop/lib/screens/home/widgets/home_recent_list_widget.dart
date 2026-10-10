@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/home/home_design.dart';
 import 'package:tom_desktop/screens/home/widgets/home_recent_row_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -34,7 +35,7 @@ class HomeRecentListWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            'RECENT',
+            context.l10n.homeRecent,
             style: TextStyle(
               fontSize: 10,
               height: 1.4,

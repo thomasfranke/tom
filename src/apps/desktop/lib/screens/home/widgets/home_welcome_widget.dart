@@ -4,26 +4,37 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/home/folder_picker.dart';
 import 'package:tom_desktop/screens/home/home_design.dart';
+import 'package:tom_desktop/screens/home/widgets/home_clone_widget.dart';
 import 'package:tom_desktop/screens/home/widgets/home_primary_button_widget.dart';
 import 'package:tom_desktop/screens/home/widgets/home_recent_list_widget.dart';
-import 'package:tom_desktop/screens/home/widgets/home_secondary_button_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// The empty state: brand, the ways in, and what was open before.
 class HomeWelcomeWidget extends ConsumerWidget {
-  /// Creates the welcome, offering [recents].
-  const HomeWelcomeWidget({required this.recents, super.key});
+  /// Creates the welcome, offering [recents], cloning as far as [clone].
+  const HomeWelcomeWidget({
+    required this.recents,
+    this.clone = const HomeCloneState.closed(),
+    super.key,
+  });
 
   /// What to offer going back to.
   final List<RecentSpaceEntity> recents;
 
+  /// Where cloning by URL has got to.
+  final HomeCloneState clone;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<RecentSpaceEntity>('recents', recents));
+    properties
+      ..add(IterableProperty<RecentSpaceEntity>('recents', recents))
+      ..add(DiagnosticsProperty<HomeCloneState>('clone', clone));
   }
 
   @override
@@ -51,38 +62,18 @@ class HomeWelcomeWidget extends ConsumerWidget {
         ),
         const SizedBox(height: HomeDesign.expansionToTagline),
         Text(
-          'A Git client built for documentation, not code.',
+          context.l10n.homeTagline,
           style: TextStyle(fontSize: 15, height: 1.5, color: colors.textMuted),
         ),
         const SizedBox(height: HomeDesign.taglineToChoose),
         HomePrimaryButtonWidget(
-          label: 'Choose folder…',
+          label: context.l10n.homeChooseFolder,
           glyph: TomGlyphEnum.folder,
           onPressed: () => chooseFolder(ref),
         ),
         const SizedBox(height: HomeDesign.chooseToClone),
-        // M3, shown disabled rather than hidden: a control that appears later
-        // moves everything under it. The row is the column plus the chip, so
-        // the column itself stays centred.
-        const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            SizedBox(width: HomeDesign.chipGutter),
-            Tooltip(
-              message: 'Cloning arrives in M3',
-              child: HomeSecondaryButtonWidget(
-                label: 'Clone from URL',
-                glyph: TomGlyphEnum.link,
-              ),
-            ),
-            SizedBox(width: TomMetrics.padTight),
-            MilestoneChipWidget(label: 'M3'),
-          ],
-        ),
-        if (recents.isNotEmpty) ...<Widget>[
-          const SizedBox(height: HomeDesign.cloneToRecent),
-          HomeRecentListWidget(recents: recents),
-        ],
+        HomeCloneWidget(clone: clone, keepsGap: recents.isNotEmpty),
+        if (recents.isNotEmpty) HomeRecentListWidget(recents: recents),
       ],
     );
   }

@@ -4,6 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/preferences/preferences_design.dart';
 import 'package:tom_desktop/screens/preferences/widgets/preferences_popover_widget.dart';
 import 'package:tom_desktop/screens/workspace/workspace_design.dart';
@@ -68,16 +69,23 @@ class _PreferencesControlWidgetState extends State<PreferencesControlWidget> {
       child: TapRegion(
         groupId: _group,
         child: Tooltip(
-          message: 'Preferences',
+          message: context.l10n.preferencesTooltip,
           child: InkWell(
             key: _button,
             onTap: _toggle,
             borderRadius: BorderRadius.circular(WorkspaceDesign.toggleRadius),
-            child: TomGlyphWidget(
-              glyph: TomGlyphEnum.preferences,
-              // Lit while it is open: the way to close it must be visible.
-              color: _isOpen ? colors.accent : colors.textSecondary,
-              size: WorkspaceDesign.gear,
+            child: SizedBox.square(
+              dimension: WorkspaceDesign.gearBox,
+              child: Center(
+                child: TomGlyphWidget(
+                  glyph: TomGlyphEnum.preferences,
+                  // Lit while it is open: the way to close it must be
+                  // visible.
+                  color: _isOpen ? colors.accent : colors.textSecondary,
+                  size: WorkspaceDesign.gear,
+                  outline: true,
+                ),
+              ),
             ),
           ),
         ),
@@ -116,9 +124,12 @@ class _PreferencesControlWidgetState extends State<PreferencesControlWidget> {
               bindings: <ShortcutActivator, VoidCallback>{
                 const SingleActivator(LogicalKeyboardKey.escape): _close,
               },
-              child: const Focus(
+              child: Focus(
                 autofocus: true,
-                child: PreferencesPopoverWidget(),
+                child: PreferencesPopoverWidget(
+                  tapGroup: _group,
+                  onDismissed: _close,
+                ),
               ),
             ),
           ),

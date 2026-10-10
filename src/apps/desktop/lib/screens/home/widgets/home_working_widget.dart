@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// Something is happening and there is nothing to decide yet.
@@ -15,7 +16,7 @@ class HomeWorkingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-    'Opening…',
+    context.l10n.homeOpening,
     style: TextStyle(fontSize: 13, color: TomColors.of(context).textMuted),
   );
 }

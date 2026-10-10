@@ -1,16 +1,19 @@
-/// The three controls at the right of the top bar.
+/// The five controls at the right of the top bar.
 library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
+import 'package:tom_desktop/screens/account/account_control_widget.dart';
 import 'package:tom_desktop/screens/preferences/preferences_control_widget.dart';
 import 'package:tom_desktop/screens/workspace/workspace_design.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The two column toggles, then the preferences gear — one set, read left
-/// to right (`docs/product/workspace/columns/doc.md`).
+/// The three panel toggles — left column, bottom panel, right column — the
+/// preferences gear, then the account: one set, read left to right
+/// (`docs/product/workspace/columns/doc.md`).
 ///
 /// ~~The theme control sits with them~~: the theme moved inside the
 /// [preferences popover](../preferences/preferences_control_widget.dart) and
@@ -28,7 +31,9 @@ class WorkspaceControlsWidget extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         _TapWidget(
-          tooltip: state.showingExplorer ? 'Hide explorer' : 'Show explorer',
+          tooltip: state.showingExplorer
+              ? context.l10n.workspaceHideExplorer
+              : context.l10n.workspaceShowExplorer,
           onPressed: notifier.toggleExplorer,
           child: TomPanelToggleWidget(
             side: TomPanelSideEnum.left,
@@ -41,8 +46,27 @@ class WorkspaceControlsWidget extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: WorkspaceDesign.toggleGap),
+        // Between the two columns' toggles, as the panel sits between them.
         _TapWidget(
-          tooltip: state.showingAside ? 'Hide git' : 'Show git',
+          tooltip: state.showingBottom
+              ? context.l10n.workspaceHideBottom
+              : context.l10n.workspaceShowBottom,
+          onPressed: notifier.toggleBottom,
+          child: TomPanelToggleWidget(
+            side: TomPanelSideEnum.bottom,
+            isOpen: state.showingBottom,
+            width: WorkspaceDesign.toggleWidth,
+            height: WorkspaceDesign.toggleHeight,
+            radius: WorkspaceDesign.toggleRadius,
+            stroke: WorkspaceDesign.toggleStroke,
+            strip: WorkspaceDesign.toggleStripBottom,
+          ),
+        ),
+        const SizedBox(width: WorkspaceDesign.toggleGap),
+        _TapWidget(
+          tooltip: state.showingAside
+              ? context.l10n.workspaceHideGit
+              : context.l10n.workspaceShowGit,
           onPressed: notifier.toggleAside,
           child: TomPanelToggleWidget(
             side: TomPanelSideEnum.right,
@@ -58,8 +82,14 @@ class WorkspaceControlsWidget extends ConsumerWidget {
         // **The bar's last control, and it replaces the light/dark toggle**:
         // the theme moved inside it, so the bar trades one control for
         // another instead of squeezing a fourth into the same margin
-        // (`docs/product/preferences/the-popover/doc.md`).
+        // (`docs/product/preferences/the-popover/doc.md`). The account
+        // button comes after it, `WorkspaceDesign.accountGap` away.
         const PreferencesControlWidget(),
+        const SizedBox(width: WorkspaceDesign.accountGap),
+        // **Last, at the far right**: who is behind the window closes the
+        // set, after what the window looks like
+        // (`docs/product/workspace/the-account/doc.md`).
+        const AccountControlWidget(),
       ],
     );
   }

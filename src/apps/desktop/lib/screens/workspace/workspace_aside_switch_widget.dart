@@ -9,7 +9,7 @@ import 'package:tom_desktop/screens/workspace/workspace_design.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// `Changes · History`, in place of the caption that named one panel
+/// `Git · History`, as tabs, in place of the caption that named one panel
 /// (`docs/product/workspace/columns/doc.md`).
 ///
 /// It names no panel: the segments are the registered panels' own titles, so
@@ -42,39 +42,45 @@ class WorkspaceAsideSwitchWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        WorkspaceDesign.switchInsetX,
-        WorkspaceDesign.switchTop,
-        WorkspaceDesign.switchInsetX,
-        WorkspaceDesign.switchTop,
+    // Tabs, not a segmented control: a 1b board draws the right column's
+    // head as names with the chosen one underlined, the way an IDE's tool
+    // window does, and a rule under the row.
+    return Container(
+      height: WorkspaceDesign.tabsHeight,
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.border)),
       ),
-      child: SizedBox(
-        height: WorkspaceDesign.switchHeight,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: colors.surface,
-            border: Border.all(color: colors.border),
-            borderRadius: BorderRadius.circular(WorkspaceDesign.switchRadius),
+      padding: const EdgeInsets.only(left: WorkspaceDesign.tabsInset),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          // The tabs take what the actions leave and scroll past it, so a
+          // third panel from a module never pushes the menu off the column.
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  for (final PanelDescriptor each in panels) ...<Widget>[
+                    _SegmentWidget(panel: each, isChosen: each.id == chosen.id),
+                    const SizedBox(width: WorkspaceDesign.tabsGap),
+                  ],
+                ],
+              ),
+            ),
           ),
-          child: Row(
-            children: <Widget>[
-              for (final PanelDescriptor each in panels)
-                Expanded(
-                  child: _SegmentWidget(
-                    panel: each,
-                    isChosen: each.id == chosen.id,
-                  ),
-                ),
-            ],
-          ),
-        ),
+          // Flush with the column's edge: where the actions sit inside that is
+          // the panel's measurement, not the switch's.
+          if (chosen.actions case final WidgetBuilder actions)
+            Center(child: actions(context)),
+        ],
       ),
     );
   }
 }
 
-/// One of them, raised when it is the one showing.
+/// One of them, underlined when it is the one showing.
 class _SegmentWidget extends ConsumerWidget {
   const _SegmentWidget({required this.panel, required this.isChosen});
 
@@ -92,32 +98,47 @@ class _SegmentWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
-    return Padding(
-      // The whole inset, not one less: a `DecoratedBox` paints its border
-      // over the child rather than reserving room for it, so the padding is
-      // the only thing holding the tile off the edge.
-      padding: const EdgeInsets.all(WorkspaceDesign.switchInset),
-      child: Material(
-        color: isChosen ? colors.surfaceRaised : Colors.transparent,
-        borderRadius: BorderRadius.circular(WorkspaceDesign.switchTileRadius),
-        child: InkWell(
-          onTap: () =>
-              ref.read(workspaceProvider.notifier).showAsidePanel(panel.id),
-          borderRadius: BorderRadius.circular(WorkspaceDesign.switchTileRadius),
-          child: Center(
-            child: Text(
-              panel.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: WorkspaceDesign.switchLabel,
-                height: 1.4,
-                fontWeight: isChosen ? FontWeight.w600 : FontWeight.w400,
-                color: isChosen ? colors.textPrimary : colors.textMuted,
-              ),
+    return InkWell(
+      onTap: () =>
+          ref.read(workspaceProvider.notifier).showAsidePanel(panel.id),
+      child: Stack(
+        children: <Widget>[
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  panel.title(context),
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: WorkspaceDesign.tabsLabel,
+                    height: 1.4,
+                    fontWeight: isChosen ? FontWeight.w600 : FontWeight.w500,
+                    color: isChosen ? colors.textPrimary : colors.textMuted,
+                  ),
+                ),
+                // Inside the segment, so the underline runs under both.
+                if (panel.badge case final WidgetBuilder badge) ...<Widget>[
+                  const SizedBox(width: WorkspaceDesign.tabsBadgeGap),
+                  badge(context),
+                ],
+              ],
             ),
           ),
-        ),
+          if (isChosen)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: WorkspaceDesign.tabsUnderlineBottom,
+              height: WorkspaceDesign.tabsUnderline,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colors.accent,
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

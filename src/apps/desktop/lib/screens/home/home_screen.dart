@@ -41,7 +41,10 @@ class HomeScreen extends ConsumerWidget {
               ),
               // The trunk is drawn off the wordmark, which the refusal does
               // not show.
-              HomeReady(recents: final List<RecentSpaceEntity> recents) =>
+              HomeReady(
+                recents: final List<RecentSpaceEntity> recents,
+                clone: final HomeCloneState clone,
+              ) =>
                 CommitTrunkWidget(
                   child: HomeCanvasWidget(
                     // The board's own empty space, measured off the render
@@ -49,7 +52,7 @@ class HomeScreen extends ConsumerWidget {
                     // taller window does not hug the chrome.
                     above: 94,
                     below: 119,
-                    child: HomeWelcomeWidget(recents: recents),
+                    child: HomeWelcomeWidget(recents: recents, clone: clone),
                   ),
                 ),
               HomeFailed(failure: final AppFailure failure) => HomeCanvasWidget(
