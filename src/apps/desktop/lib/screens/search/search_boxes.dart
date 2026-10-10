@@ -1,98 +1,50 @@
-/// The search box, the chevron that reveals the second one, and that one.
+/// The search box and, once revealed, the replace box under it.
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/search/search_design.dart';
 import 'package:tom_desktop/screens/search/search_field_widget.dart';
+import 'package:tom_desktop/screens/search/search_focus.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// What is being looked for, and — once revealed — what it becomes.
 ///
-/// The chevron sits left of the first box and opens the second, because
-/// replacing is the rarer half and a box nobody uses is a box in the way of
-/// the results (`docs/product/search/replacing/doc.md`).
+/// No control opens the second box: ⌥⌘F does (Ctrl+H off macOS), from the
+/// shell, because replacing is the rarer half and the field is the
+/// `Explorer` master's shape (`docs/product/search/replacing/doc.md`).
 class SearchBoxes extends ConsumerWidget {
   /// Creates the boxes.
   const SearchBoxes({super.key});
 
+  /// Whether [state] shows the replace box: only for `This file`, the one
+  /// scope with a buffer to write into.
+  static bool isReplacing(SearchState state) => switch (state) {
+    SearchReady(
+      isReplacing: final bool showing,
+      scope: SearchScopeEnum.thisFile,
+    ) =>
+      showing,
+    _ => false,
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // The second box belongs to the open file, which is why it shows only
-    // there — the chevron is drawn either way, and opening it is what makes
-    // the file the question (`docs/product/search/replacing/doc.md`).
-    final bool replacing = ref.watch(
-      searchProvider.select(
-        (SearchState state) => switch (state) {
-          SearchReady(
-            isReplacing: final bool showing,
-            scope: SearchScopeEnum.thisFile,
-          ) =>
-            showing,
-          _ => false,
-        },
+    final bool replacing = ref.watch(searchProvider.select(isReplacing));
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SearchDesign.controlInset,
       ),
-    );
-    return Column(
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            _ChevronWidget(isOpen: replacing),
-            const SizedBox(width: SearchDesign.chevronGap),
-            const Expanded(child: SearchFieldWidget()),
-            const SizedBox(width: SearchDesign.controlInset),
+      child: Column(
+        children: <Widget>[
+          const SearchFieldWidget(),
+          if (replacing) ...<Widget>[
+            const SizedBox(height: SearchDesign.boxGap),
+            const _ReplacementWidget(),
           ],
-        ),
-        if (replacing) ...<Widget>[
-          const SizedBox(height: SearchDesign.boxGap),
-          // Indented to the first box's left edge: the chevron belongs to the
-          // pair, not to either one of them.
-          const Padding(
-            padding: EdgeInsets.only(
-              left:
-                  SearchDesign.controlInset +
-                  SearchDesign.chevronBox +
-                  SearchDesign.chevronGap,
-              right: SearchDesign.controlInset,
-            ),
-            child: _ReplacementWidget(),
-          ),
         ],
-      ],
-    );
-  }
-}
-
-/// The control that reveals the second box.
-class _ChevronWidget extends ConsumerWidget {
-  const _ChevronWidget({required this.isOpen});
-
-  final bool isOpen;
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<bool>('isOpen', isOpen));
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final TomColors colors = TomColors.of(context);
-    return SizedBox(
-      width: SearchDesign.controlInset + SearchDesign.chevronBox,
-      height: SearchDesign.boxHeight,
-      child: IconButton(
-        onPressed: () =>
-            ref.read(searchProvider.notifier).showReplacing(showing: !isOpen),
-        padding: EdgeInsets.zero,
-        tooltip: isOpen ? 'Hide replace' : 'Replace',
-        // Pinned to the right of a target that starts at the column's own
-        // edge: the boards draw the glyph one inset in, and a mark centred
-        // in the whole target lands eight points left of it.
-        alignment: Alignment.centerRight,
-        icon: TomChevronWidget(isOpen: isOpen, color: colors.textMuted),
       ),
     );
   }
@@ -113,15 +65,21 @@ class _ReplacementState extends ConsumerState<_ReplacementWidget> {
       _ => '',
     },
   );
-  late final FocusNode _focus = FocusNode()..addListener(_focusChanged);
+
+  /// The shell's node when there is one, so ⌥⌘F can put the keyboard here;
+  /// its own otherwise, and only then is it this box's to dispose.
+  late final FocusNode? _borrowed = SearchFocusScope.replaceOf(context);
+  late final FocusNode _focus = (_borrowed ?? FocusNode())
+    ..addListener(_focusChanged);
 
   void _focusChanged() => setState(() {});
 
   @override
   void dispose() {
-    _focus
-      ..removeListener(_focusChanged)
-      ..dispose();
+    _focus.removeListener(_focusChanged);
+    if (_borrowed == null) {
+      _focus.dispose();
+    }
     _controller.dispose();
     super.dispose();
   }
@@ -143,7 +101,7 @@ class _ReplacementState extends ConsumerState<_ReplacementWidget> {
         controller: _controller,
         focusNode: _focus,
         onChanged: ref.read(searchProvider.notifier).replaceWith,
-        hint: 'Replace with',
+        hint: context.l10n.searchReplaceWith,
         fontSize: SearchDesign.boxText,
       ),
     );

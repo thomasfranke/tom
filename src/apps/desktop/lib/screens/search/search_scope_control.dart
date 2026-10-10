@@ -4,6 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/search/search_design.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -33,7 +34,7 @@ class SearchScopeControl extends ConsumerWidget {
       height: SearchDesign.scopeHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: colors.surface,
+          color: colors.surfaceSunken,
           border: Border.all(color: colors.border),
           borderRadius: BorderRadius.circular(SearchDesign.scopeRadius),
         ),
@@ -68,26 +69,36 @@ class _SegmentWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
+    final BorderRadius corner = BorderRadius.circular(
+      SearchDesign.scopeTileRadius,
+    );
+    // The whole inset, not less the stroke: a `DecoratedBox` paints its
+    // border over the child rather than around it.
     return Padding(
-      padding: const EdgeInsets.all(
-        SearchDesign.scopeInset - SearchDesign.scopeStroke,
-      ),
+      padding: const EdgeInsets.all(SearchDesign.scopeInset),
       child: Material(
-        color: isChosen ? colors.surfaceRaised : Colors.transparent,
-        borderRadius: BorderRadius.circular(SearchDesign.scopeTileRadius),
-        child: InkWell(
-          onTap: () => ref.read(searchProvider.notifier).scopeTo(scope),
-          borderRadius: BorderRadius.circular(SearchDesign.scopeTileRadius),
-          child: Center(
-            child: Text(
-              _labels[scope]!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: SearchDesign.scopeLabel,
-                height: 1.4,
-                fontWeight: isChosen ? FontWeight.w600 : FontWeight.w400,
-                color: isChosen ? colors.textPrimary : colors.textMuted,
+        type: MaterialType.transparency,
+        child: Ink(
+          // The chosen tile takes the control fill and no outline: a step
+          // off the well it sits in is what reads as pressed on a 1b board.
+          decoration: BoxDecoration(
+            color: isChosen ? colors.control : null,
+            borderRadius: corner,
+          ),
+          child: InkWell(
+            onTap: () => ref.read(searchProvider.notifier).scopeTo(scope),
+            borderRadius: corner,
+            child: Center(
+              child: Text(
+                _labelOf(context.l10n, scope),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: SearchDesign.scopeLabel,
+                  height: 1.4,
+                  fontWeight: isChosen ? FontWeight.w600 : FontWeight.w500,
+                  color: isChosen ? colors.textPrimary : colors.textMuted,
+                ),
               ),
             ),
           ),
@@ -98,7 +109,8 @@ class _SegmentWidget extends ConsumerWidget {
 }
 
 /// What each scope is called on screen.
-const Map<SearchScopeEnum, String> _labels = <SearchScopeEnum, String>{
-  SearchScopeEnum.thisFile: 'This file',
-  SearchScopeEnum.wholeSpace: 'Whole space',
-};
+String _labelOf(AppLocalizations l10n, SearchScopeEnum scope) =>
+    switch (scope) {
+      SearchScopeEnum.thisFile => l10n.searchThisFile,
+      SearchScopeEnum.wholeSpace => l10n.searchWholeSpace,
+    };

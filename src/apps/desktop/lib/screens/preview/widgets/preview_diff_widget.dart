@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_block_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -53,7 +54,7 @@ class PreviewDiffWidget extends StatelessWidget {
       body: body,
       struckThrough: block is DiffBlockRemoved,
     );
-    final (Color, Color, String, String)? role = _roleOf(colors);
+    final (Color, Color, String, String)? role = _roleOf(colors, context.l10n);
     // Every block is laid out the same way, marked or not: insetting only
     // the changed ones would shorten their line and rag the column.
     return Row(
@@ -63,12 +64,7 @@ class PreviewDiffWidget extends StatelessWidget {
           width: TomMetrics.mark,
           child: role == null
               ? null
-              : DiffMarkWidget(
-                  letter: role.$3,
-                  ink: role.$1,
-                  fill: colors.surface,
-                  tooltip: role.$4,
-                ),
+              : DiffMarkWidget(letter: role.$3, ink: role.$1, tooltip: role.$4),
         ),
         const SizedBox(width: PreviewDesign.diffPad),
         Expanded(
@@ -96,15 +92,28 @@ class PreviewDiffWidget extends StatelessWidget {
 
   /// The ink, the tint, the letter and the word; null for a block nothing
   /// happened to.
-  (Color, Color, String, String)? _roleOf(TomColors colors) => switch (block) {
+  (Color, Color, String, String)? _roleOf(
+    TomColors colors,
+    AppLocalizations l10n,
+  ) => switch (block) {
     DiffBlockUnchanged() => null,
-    DiffBlockAdded() => (colors.added, colors.addedSoft, 'A', 'Added'),
-    DiffBlockRemoved() => (colors.removed, colors.removedSoft, 'R', 'Removed'),
+    DiffBlockAdded() => (
+      colors.added,
+      colors.addedSoft,
+      'A',
+      l10n.fileStateAdded,
+    ),
+    DiffBlockRemoved() => (
+      colors.removed,
+      colors.removedSoft,
+      'R',
+      l10n.previewRemoved,
+    ),
     DiffBlockModified() => (
       colors.modified,
       colors.modifiedSoft,
       'M',
-      'Modified',
+      l10n.fileStateModified,
     ),
   };
 }

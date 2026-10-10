@@ -101,14 +101,15 @@ class EditorMarksPainter extends CustomPainter {
     EditorMarkEnum.conflicted => 'C',
   };
 
-  /// The ink and the square for [mark].
-  (Color, Color) _roleOf(EditorMarkEnum mark) => switch (mark) {
-    EditorMarkEnum.added => (colors.added, colors.addedSoft),
-    EditorMarkEnum.removed => (colors.removed, colors.removedSoft),
-    // A conflict is `modified`: nothing failed, and neither side is leaving
-    // until somebody chooses.
-    EditorMarkEnum.modified ||
-    EditorMarkEnum.conflicted => (colors.modified, colors.modifiedSoft),
+  /// The ink the letter and its outline are drawn in.
+  ///
+  /// A conflict is `removed` here, as in the tree and the changes list; its
+  /// band stays `modified`, since neither side is leaving until somebody
+  /// chooses (`design/screens/desktop/git-conflict/conflict-in-source-dark.svg`).
+  Color _inkOf(EditorMarkEnum mark) => switch (mark) {
+    EditorMarkEnum.added => colors.added,
+    EditorMarkEnum.removed || EditorMarkEnum.conflicted => colors.removed,
+    EditorMarkEnum.modified => colors.modified,
   };
 
   @override
@@ -127,22 +128,27 @@ class EditorMarksPainter extends CustomPainter {
       if (mark == null) {
         continue;
       }
-      final (Color ink, Color fill) = _roleOf(mark);
+      final Color ink = _inkOf(mark);
       final Rect square = EditorMarksWidget.squareFor(line);
+      // An outline at half the letter's ink, inside the square the way
+      // `Border.all` draws one — the board's `#874C4C` around `#EF7B76`.
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          square,
+          square.deflate(0.5),
           const Radius.circular(TomMetrics.radiusTight),
         ),
-        Paint()..color = fill,
+        Paint()
+          ..color = ink.withValues(alpha: 0.5)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
       );
       final TextPainter painter = TextPainter(
         text: TextSpan(
           text: letterOf(mark),
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 9.5,
             height: 1,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             fontFamily: TomFonts.sans,
             color: ink,
           ),

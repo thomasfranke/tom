@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_document_widget.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_note_widget.dart';
@@ -30,20 +31,23 @@ class PreviewPanel extends ConsumerWidget {
           ),
         ) ==
         DocumentModeEnum.preview;
+    // Watched here, above the document, so a followed `#anchor` outlives
+    // the moment between one document and the next.
+    final PreviewAnchor? anchor = ref.watch(previewAnchorProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         const SizedBox(height: PreviewDesign.bodyTop),
         Expanded(
           child: switch (state) {
-            PreviewEmpty() => const PreviewNoteWidget(
-              'Choose a document in the explorer.',
+            PreviewEmpty() => PreviewNoteWidget(
+              context.l10n.commonChooseADocument,
             ),
-            PreviewLoading() => const PreviewNoteWidget(
-              'Reading the document…',
+            PreviewLoading() => PreviewNoteWidget(
+              context.l10n.commonReadingTheDocument,
             ),
             PreviewFailed(failure: final AppFailure failure) =>
-              PreviewNoteWidget(_explain(failure)),
+              PreviewNoteWidget(_explain(context.l10n, failure)),
             PreviewReady(
               document: final ParsedDocumentValueObject document,
               diff: final DocumentDiffValueObject? diff,
@@ -54,6 +58,9 @@ class PreviewPanel extends ConsumerWidget {
                 isReading: isReading,
                 diff: diff,
                 segments: segments,
+                anchor: anchor,
+                onAnchor: () =>
+                    ref.read(previewAnchorProvider.notifier).take(document),
                 onChoose:
                     (
                       ConflictRegionValueObject region,
@@ -88,11 +95,11 @@ class PreviewPanel extends ConsumerWidget {
   ///
   /// A catch-all, because this switches over [AppFailure] itself and the
   /// panel must say something whatever went wrong.
-  static String _explain(AppFailure failure) => switch (failure) {
-    DocumentNotFound() => 'That document is no longer there.',
-    DocumentPermissionDenied() => 'TOM is not allowed to read that document.',
-    DocumentNotUtf8() =>
-      'That file is not UTF-8 text, so TOM will not open it.',
-    _ => 'That document could not be read.',
-  };
+  static String _explain(AppLocalizations l10n, AppFailure failure) =>
+      switch (failure) {
+        DocumentNotFound() => l10n.documentNotFound,
+        DocumentPermissionDenied() => l10n.documentPermissionDenied,
+        DocumentNotUtf8() => l10n.documentNotUtf8,
+        _ => l10n.documentUnreadable,
+      };
 }

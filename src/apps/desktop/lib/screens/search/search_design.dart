@@ -22,11 +22,11 @@ abstract final class SearchDesign {
   /// Panel edge to a hit's row, which is the hairline's own inset: the
   /// whole-space list draws its text against that edge rather than inside a
   /// pill (`searching-every-document-dark.svg`).
-  static const double hitInset = 16;
+  static const double hitInset = 4;
 
   /// The padding inside an occurrence's pill, which is what puts its text
   /// eight points further in than a hit's.
-  static const double hitPad = 8;
+  static const double hitPad = 6;
 
   /// The folder to the excerpt under it.
   static const double excerptGap = 5;
@@ -77,27 +77,38 @@ abstract final class SearchDesign {
   static const double boxHeight = 28;
 
   /// The text inside it, and its placeholder.
-  static const double boxText = 12;
+  static const double boxText = 12.5;
 
   /// Its own left and right padding.
   static const double boxPad = 12;
 
-  /// The chevron left of the first box, which opens the second.
-  static const double chevronBox = 16;
+  /// The `Field clear` disc at the box's right end.
+  static const double clearGlyph = 16;
 
-  /// Chevron to box.
-  static const double chevronGap = 4;
+  /// The `⇄` beside the clear: the room it takes in the row, so its centre
+  /// lands 30 left of the clear's (`search/searching-replace-dark.svg`: 208
+  /// against 238). Narrower than its fill, which overhangs into the field.
+  static const double replaceToggleBox = 12;
 
-  /// Column edge to the chevron, which is the inset everything else in the
-  /// column takes; the boxes start a chevron further in.
-  static const double controlInset = 16;
+  /// The fill it wears while the replace box is open.
+  static const double replaceToggleFill = 20;
+
+  /// That fill's corner.
+  static const double replaceToggleRadius = 4;
+
+  /// Its glyph.
+  static const double replaceToggleGlyph = 11;
+
+  /// Column edge to either box, on both sides — the inset everything else in
+  /// the column takes (`Explorer` master: 14..254 in an island at 6).
+  static const double controlInset = 8;
 
   /// The scope control under the box, measured off
   /// `design/screens/desktop/search/searching-every-document-dark.svg`.
-  static const double scopeHeight = 28;
+  static const double scopeHeight = 26;
 
   /// The control's corner.
-  static const double scopeRadius = 7;
+  static const double scopeRadius = 6;
 
   /// How far a segment's tile sits inside the control's outer edge.
   ///
@@ -109,16 +120,16 @@ abstract final class SearchDesign {
   static const double scopeStroke = 1;
 
   /// The tile's corner, tighter than the control's.
-  static const double scopeTileRadius = 5;
+  static const double scopeTileRadius = 4;
 
   /// Either segment's label, a point under the count beside it.
-  static const double scopeLabel = 11;
+  static const double scopeLabel = 11.5;
 
   /// Box to scope control, and scope control to what is under it.
-  static const double scopeGap = 12;
+  static const double scopeGap = 6;
 
   /// Between the two boxes, and between the second and the scope control.
-  static const double boxGap = 12;
+  static const double boxGap = 6;
 
   /// The glyph of an action on an occurrence's row.
   static const double rowAction = 16;
@@ -127,7 +138,7 @@ abstract final class SearchDesign {
   static const double rowActionBox = 24;
 
   /// The panel's caption.
-  static const double caption = 10;
+  static const double caption = 10.5;
 
   /// The line under it, counting what matched.
   static const double count = 12;
@@ -140,4 +151,20 @@ abstract final class SearchDesign {
 
   /// The stretch of text that matched.
   static const double excerpt = 12;
+
+  /// The `⌘K` keycap at the box's right end
+  /// (`design/screens/desktop/workspace-tree/new-document-dark.svg`).
+  static const double keycapWidth = 32;
+
+  /// Its height, centred in the box.
+  static const double keycapHeight = 18;
+
+  /// Its corner.
+  static const double keycapRadius = 4;
+
+  /// Its right edge to the box's.
+  static const double keycapRight = 8;
+
+  /// Its two characters.
+  static const double keycapText = 10;
 }

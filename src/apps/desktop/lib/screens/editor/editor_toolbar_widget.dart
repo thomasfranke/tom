@@ -4,6 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/editor/editor_history.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -12,13 +13,9 @@ import 'package:tom_ui/tom_ui.dart';
 /// One button of the bar, or the rule between two groups.
 ///
 /// A record rather than a class: the bar is a list, and every entry is a
-/// glyph, a word and a command.
-typedef ToolbarEntry = ({
-  TomGlyphEnum? glyph,
-  String? letter,
-  String word,
-  FormatCommandEnum? command,
-});
+/// glyph and a command. Its word is the window's language's
+/// ([EditorToolbarWidget.wordOf]).
+typedef ToolbarEntry = ({TomGlyphEnum glyph, FormatCommandEnum? command});
 
 /// Everything the preview renders, in the order somebody reaches for it
 /// (`docs/product/editor/formatting-shortcuts/doc.md`).
@@ -37,23 +34,23 @@ class EditorToolbarWidget extends ConsumerWidget {
   const EditorToolbarWidget({super.key});
 
   /// Row edge to the first button.
-  static const double inset = 24;
+  static const double inset = 10;
 
   /// Between two buttons of one group.
   static const double gap = 4;
 
   /// The last button of a group to the rule.
-  static const double beforeRule = 12;
+  static const double beforeRule = 8;
 
   /// The rule to the first button of the next group; the boards draw it
   /// nearer the group it closes than the one it opens.
-  static const double afterRule = 8;
+  static const double afterRule = 5;
 
   /// The rule itself, a hairline as tall as a letter.
   static const double ruleWidth = 1;
 
   /// How tall that hairline is.
-  static const double ruleHeight = 16;
+  static const double ruleHeight = 14;
 
   /// One group's width: its buttons and the gaps between them.
   static double widthOfGroup(List<ToolbarEntry> group) =>
@@ -103,105 +100,59 @@ class EditorToolbarWidget extends ConsumerWidget {
   /// apart by more than its position.
   static const List<List<ToolbarEntry>> groups = <List<ToolbarEntry>>[
     <ToolbarEntry>[
-      (glyph: TomGlyphEnum.undo, letter: null, word: 'Undo', command: null),
-      (glyph: TomGlyphEnum.redo, letter: null, word: 'Redo', command: null),
+      (glyph: TomGlyphEnum.undo, command: null),
+      (glyph: TomGlyphEnum.redo, command: null),
     ],
     <ToolbarEntry>[
-      (
-        glyph: TomGlyphEnum.heading,
-        letter: null,
-        word: 'Heading',
-        command: FormatCommandEnum.heading,
-      ),
-      // `B` and `I` are letterforms, not icons: a letter everywhere else
-      // would be a worse icon than itself.
-      (glyph: null, letter: 'B', word: 'Bold', command: FormatCommandEnum.bold),
-      (
-        glyph: null,
-        letter: 'I',
-        word: 'Italic',
-        command: FormatCommandEnum.italic,
-      ),
+      (glyph: TomGlyphEnum.heading, command: FormatCommandEnum.heading),
+      (glyph: TomGlyphEnum.bold, command: FormatCommandEnum.bold),
+      (glyph: TomGlyphEnum.italic, command: FormatCommandEnum.italic),
       (
         glyph: TomGlyphEnum.strikethrough,
-        letter: null,
-        word: 'Strikethrough',
         command: FormatCommandEnum.strikethrough,
       ),
     ],
     <ToolbarEntry>[
-      (
-        glyph: TomGlyphEnum.list,
-        letter: null,
-        word: 'List',
-        command: FormatCommandEnum.list,
-      ),
-      (
-        glyph: TomGlyphEnum.orderedList,
-        letter: null,
-        word: 'Ordered list',
-        command: FormatCommandEnum.orderedList,
-      ),
-      (
-        glyph: TomGlyphEnum.taskList,
-        letter: null,
-        word: 'Task list',
-        command: FormatCommandEnum.taskList,
-      ),
-      (
-        glyph: TomGlyphEnum.quote,
-        letter: null,
-        word: 'Quote',
-        command: FormatCommandEnum.quote,
-      ),
+      (glyph: TomGlyphEnum.list, command: FormatCommandEnum.list),
+      (glyph: TomGlyphEnum.orderedList, command: FormatCommandEnum.orderedList),
+      (glyph: TomGlyphEnum.taskList, command: FormatCommandEnum.taskList),
+      (glyph: TomGlyphEnum.quote, command: FormatCommandEnum.quote),
     ],
     <ToolbarEntry>[
-      (
-        glyph: TomGlyphEnum.code,
-        letter: null,
-        word: 'Code',
-        command: FormatCommandEnum.code,
-      ),
-      (
-        glyph: TomGlyphEnum.table,
-        letter: null,
-        word: 'Table',
-        command: FormatCommandEnum.table,
-      ),
-      (
-        glyph: TomGlyphEnum.rule,
-        letter: null,
-        word: 'Rule',
-        command: FormatCommandEnum.rule,
-      ),
+      (glyph: TomGlyphEnum.code, command: FormatCommandEnum.code),
+      (glyph: TomGlyphEnum.table, command: FormatCommandEnum.table),
+      (glyph: TomGlyphEnum.rule, command: FormatCommandEnum.rule),
     ],
     <ToolbarEntry>[
-      (
-        glyph: TomGlyphEnum.link,
-        letter: null,
-        word: 'Link',
-        command: FormatCommandEnum.link,
-      ),
-      (
-        glyph: TomGlyphEnum.image,
-        letter: null,
-        word: 'Image',
-        command: FormatCommandEnum.image,
-      ),
-      (
-        glyph: TomGlyphEnum.footnote,
-        letter: null,
-        word: 'Footnote',
-        command: FormatCommandEnum.footnote,
-      ),
-      (
-        glyph: TomGlyphEnum.alert,
-        letter: null,
-        word: 'Alert',
-        command: FormatCommandEnum.alert,
-      ),
+      (glyph: TomGlyphEnum.link, command: FormatCommandEnum.link),
+      (glyph: TomGlyphEnum.image, command: FormatCommandEnum.image),
+      (glyph: TomGlyphEnum.footnote, command: FormatCommandEnum.footnote),
+      (glyph: TomGlyphEnum.alert, command: FormatCommandEnum.alert),
     ],
   ];
+
+  /// The word a button's tooltip says for [entry], in [l10n]'s language.
+  static String wordOf(AppLocalizations l10n, ToolbarEntry entry) =>
+      switch (entry.glyph) {
+        TomGlyphEnum.undo => l10n.editorUndo,
+        TomGlyphEnum.redo => l10n.editorRedo,
+        TomGlyphEnum.heading => l10n.editorHeading,
+        TomGlyphEnum.bold => l10n.editorBold,
+        TomGlyphEnum.italic => l10n.editorItalic,
+        TomGlyphEnum.strikethrough => l10n.editorStrikethrough,
+        TomGlyphEnum.list => l10n.editorList,
+        TomGlyphEnum.orderedList => l10n.editorOrderedList,
+        TomGlyphEnum.taskList => l10n.editorTaskList,
+        TomGlyphEnum.quote => l10n.editorQuote,
+        TomGlyphEnum.code => l10n.editorCode,
+        TomGlyphEnum.table => l10n.editorTable,
+        TomGlyphEnum.rule => l10n.editorRule,
+        TomGlyphEnum.link => l10n.editorLink,
+        TomGlyphEnum.image => l10n.editorImage,
+        TomGlyphEnum.footnote => l10n.editorFootnote,
+        TomGlyphEnum.alert => l10n.editorAlert,
+        _ => entry.glyph.name,
+      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -217,15 +168,37 @@ class EditorToolbarWidget extends ConsumerWidget {
     if (!showing) {
       return const SizedBox.shrink();
     }
-    // A document open is what the buttons act on; with none, they are drawn
-    // and dim rather than taken away.
-    final bool editable = ref.watch(
-      editorProvider.select((EditorState state) => state is EditorReady),
+    // A markdown buffer somebody can type into is what the buttons act on;
+    // with none, they are drawn and dim rather than taken away — and so with
+    // any other file, which takes no markdown, or one that is read-only.
+    final ({bool open, bool readOnly}) buffer = ref.watch(
+      editorProvider.select(
+        (EditorState state) => (
+          open: state.isRendered && !state.isReadOnly,
+          readOnly: state.isReadOnly,
+        ),
+      ),
     );
+    final bool open = buffer.open;
+    // And a caret: with the source pane off screen — preview, or a version
+    // being read — formatting has no selection to act on, while undo and
+    // redo still act on the buffer (`editor/formatting-shortcuts/doc.md`).
+    final bool sourceShown = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) =>
+            session != null &&
+            session.readingVersion == null &&
+            session.drawnMode != DocumentModeEnum.preview,
+      ),
+    );
+    final bool editable = open && sourceShown;
     // Undo and redo are the editor's own, reached through the context the
     // pane leaves here: one history, the same one ⌘Z walks
     // ([EditorHistory]).
-    final EditorHistory? history = EditorHistoryScope.of(context);
+    // Not over a read-only buffer, whose history has nothing to walk.
+    final EditorHistory? history = buffer.readOnly
+        ? null
+        : EditorHistoryScope.of(context);
     final TomColors colors = TomColors.of(context);
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints room) {
@@ -242,7 +215,7 @@ class EditorToolbarWidget extends ConsumerWidget {
             children: <Widget>[
               for (final (int index, List<ToolbarEntry> group)
                   in shown.indexed) ...<Widget>[
-                _buttons(group, ref, history, editable: editable),
+                _buttons(context.l10n, group, ref, history, editable: editable),
                 if (index < shown.length - 1 || !whole) ...<Widget>[
                   const SizedBox(width: beforeRule),
                   SizedBox(
@@ -268,6 +241,7 @@ class EditorToolbarWidget extends ConsumerWidget {
 
   /// One group, drawn as the boards draw it.
   static Widget _buttons(
+    AppLocalizations l10n,
     List<ToolbarEntry> group,
     WidgetRef ref,
     EditorHistory? history, {
@@ -279,8 +253,7 @@ class EditorToolbarWidget extends ConsumerWidget {
         if (at > 0) const SizedBox(width: gap),
         TomToolbarButtonWidget(
           glyph: entry.glyph,
-          letter: entry.letter,
-          tooltip: entry.word,
+          tooltip: wordOf(l10n, entry),
           onPressed: _pressingIn(entry, ref, history, editable),
         ),
       ],
@@ -376,7 +349,7 @@ class _OverflowWidgetState extends ConsumerState<_OverflowWidget> {
       child: TapRegion(
         groupId: _group,
         child: Tooltip(
-          message: 'More formatting',
+          message: context.l10n.editorMoreFormatting,
           child: SizedBox.square(
             key: _button,
             dimension: TomToolbarButtonWidget.size,
@@ -433,6 +406,7 @@ class _OverflowWidgetState extends ConsumerState<_OverflowWidget> {
               child: Padding(
                 padding: const EdgeInsets.all(EditorToolbarWidget.gap),
                 child: EditorToolbarWidget._buttons(
+                  context.l10n,
                   widget.group,
                   ref,
                   widget.history,

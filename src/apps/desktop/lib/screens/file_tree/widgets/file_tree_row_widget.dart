@@ -41,13 +41,10 @@ class FileTreeRowWidget extends ConsumerWidget {
     if (isDirty) {
       return FileTreeDesign.dirtyDotRight + FileTreeDesign.dirtyDot + 8;
     }
-    if (row.change != null) {
-      return FileTreeDesign.rowInset + TomMetrics.mark + 8;
+    if (row.change != null || row.holdsChange) {
+      return FileTreeDesign.markRight + TomMetrics.mark;
     }
-    if (row.holdsChange) {
-      return FileTreeDesign.rowInset + TomMetrics.mark + 8;
-    }
-    return FileTreeDesign.rowInset;
+    return FileTreeDesign.markRight;
   }
 
   @override
@@ -66,14 +63,14 @@ class FileTreeRowWidget extends ConsumerWidget {
         FileTreeDesign.labelLeft + row.depth * FileTreeDesign.indent;
     final bool isOpenable = row.isFolder || row.entry.isDocument;
     final Color color = switch ((isOpen, row.isFolder, isOpenable)) {
-      (true, _, _) => colors.accent,
+      (true, _, _) => colors.textPrimary,
       (false, true, _) => colors.textPrimary,
       (false, false, true) => colors.textSecondary,
       (false, false, false) => colors.textMuted,
     };
     final Widget content = Stack(
       children: <Widget>[
-        if (isOpen)
+        if (isOpen) ...<Widget>[
           Positioned(
             left: FileTreeDesign.rowInset,
             right: FileTreeDesign.rowInset,
@@ -86,19 +83,48 @@ class FileTreeRowWidget extends ConsumerWidget {
               ),
             ),
           ),
+          // The bar says which row is open in a shape as well as a fill.
+          Positioned(
+            left: FileTreeDesign.rowInset,
+            top: (FileTreeDesign.rowHeight - FileTreeDesign.barHeight) / 2,
+            width: FileTreeDesign.barWidth,
+            height: FileTreeDesign.barHeight,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.accent,
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+          ),
+        ],
         if (row.isFolder)
           FileTreeCentredWidget(
             left: labelLeft - FileTreeDesign.chevronOffset,
             child: TomChevronWidget(
               isOpen: row.isExpanded,
               color: colors.textMuted,
+              size: FileTreeDesign.chevron,
             ),
           ),
+        FileTreeCentredWidget(
+          left: labelLeft - FileTreeDesign.glyphOffset,
+          child: TomGlyphWidget(
+            glyph: row.isFolder
+                ? (row.isExpanded
+                      ? TomGlyphEnum.folderOpen
+                      : TomGlyphEnum.folder)
+                : TomGlyphEnum.file,
+            color: row.isFolder
+                ? fileTreeFolderInk(Theme.of(context).brightness)
+                : (isOpen ? colors.accent : colors.textMuted),
+            size: FileTreeDesign.glyph,
+          ),
+        ),
         // Git's letter, at the right of the row, in the changes column's own
         // alphabet — the tree and that column never disagree about a file.
         if (row.change != null)
           Positioned(
-            right: FileTreeDesign.rowInset,
+            right: FileTreeDesign.markRight - 4,
             top: 0,
             height: FileTreeDesign.rowHeight,
             // Bare: the row's own highlight is the only fill the boards draw
@@ -113,8 +139,8 @@ class FileTreeRowWidget extends ConsumerWidget {
         // because a folder never has both.
         if (row.holdsChange)
           Positioned(
-            right: FileTreeDesign.rowInset,
-            width: TomMetrics.mark,
+            right: FileTreeDesign.markRight,
+            width: FileTreeDesign.dirtyDot,
             top: 0,
             height: FileTreeDesign.rowHeight,
             child: Center(
@@ -160,9 +186,7 @@ class FileTreeRowWidget extends ConsumerWidget {
             style: fileTreeRowText(
               size: FileTreeDesign.row,
               color: color,
-              weight: isOpen
-                  ? FontWeight.w600
-                  : (row.isFolder ? FontWeight.w500 : FontWeight.w400),
+              weight: isOpen ? FontWeight.w600 : FontWeight.w400,
             ),
           ),
         ),
