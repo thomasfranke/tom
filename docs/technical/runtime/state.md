@@ -9,6 +9,10 @@
   `ref.invalidate`.
 - `SpaceChanged` has a single recipient: the session reloads, and everything
   derived reacts.
+- **The git half — `git` and `merge` — has one writer**, `GitReadingNotifier`,
+  kept alive and made to exist by the shell, never by the git column: a column
+  that is not showing is not built. Every operation that writes to the
+  repository, and every save, ends in its `refresh()`.
 
 ## One notifier per panel
 

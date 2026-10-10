@@ -23,7 +23,7 @@ which thirty-eight are built and fourteen are not yet drawn or not yet due.
 | [navigation/file-tree/order-and-shape](../../product/navigation/file-tree/order-and-shape/doc.md) | *Navigates the tree of a docs folder* |
 | [workspace/columns](../../product/workspace/columns/doc.md) · [regions](../../product/workspace/regions/doc.md) | *Arranges the window: the columns, their width and the git panel* |
 | [workspace/leaving-a-space](../../product/workspace/leaving-a-space/doc.md) | *Leaves a space, and goes to another without going home* |
-| [workspace/without-a-repository](../../product/workspace/without-a-repository/doc.md) | *Refuses a folder that is not inside a repository* · *Offers another folder after refusing one* |
+| [workspace/without-a-repository](../../product/workspace/without-a-repository/doc.md) | *Opens a folder that is not inside a repository* |
 | [editor/source-mode](../../product/editor/source-mode/doc.md) | *Edits a document and saves it* · *Reads a document with the source out of the way* |
 | [editor/markdown-preview](../../product/editor/markdown-preview/doc.md) | *Reads a document with the source out of the way* · *Reads a document whose notes are at its foot* |
 | [editor/formatting-shortcuts](../../product/editor/formatting-shortcuts/doc.md) | *Formats a document from the bar above it* |
@@ -31,7 +31,7 @@ which thirty-eight are built and fourteen are not yet drawn or not yet due.
 | [search/full-text-search/the-surface](../../product/search/full-text-search/the-surface/doc.md) · [what-is-searched](../../product/search/full-text-search/what-is-searched/doc.md) | *Finds a document by its contents* |
 | [search/in-the-document](../../product/search/in-the-document/doc.md) · [replacing](../../product/search/replacing/doc.md) | *Replaces a word inside the open document* |
 | [diff/rendered-diff/how-it-is-drawn](../../product/diff/rendered-diff/how-it-is-drawn/doc.md) · [what-is-compared](../../product/diff/rendered-diff/what-is-compared/doc.md) | *Sees what changed, rendered* |
-| [diff/branch-diff](../../product/diff/branch-diff/doc.md) | *Compares a document against another branch* · *…against an earlier commit* |
+| [diff/branch-diff](../../product/diff/branch-diff/doc.md) · [rendered-diff/turning-it-off](../../product/diff/rendered-diff/turning-it-off/doc.md) | *Compares a document against the branch it came from* · *Turns the marks off and back on from the Diff chip* |
 | [git-workflow/commit/the-changes-list](../../product/git-workflow/commit/the-changes-list/doc.md) · [the-message](../../product/git-workflow/commit/the-message/doc.md) | *Commits one of two changes* · *Refuses to commit without a message, and stages everything at once* |
 | [git-workflow/branch-switch](../../product/git-workflow/branch-switch/doc.md) | *Switches branches, and the documents follow* · *Refuses to switch away from unsaved work, and starts a branch* |
 | [git-workflow/file-history](../../product/git-workflow/file-history/doc.md) | *Lists what changed this document, and nothing else* · *Opens a past version rendered, and comes back to now* |

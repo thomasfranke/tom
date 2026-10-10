@@ -20,7 +20,7 @@ rather than `ref.read` while wiring.
 
 | Lifetime | What | Mechanism |
 |---|---|---|
-| **App** | parsers, `BlockDiffer`, `Observability`, config | `keepAlive` |
+| **App** | parsers, `BlockDiffer`, `Observability`, the `CommandLog` every process-running capability is handed ([Decision 36](../decisions/036-every-command-is-written-down.md)), config | `keepAlive` |
 | **Space** | `GitClient` (the queue is per space), watcher, FTS5 index, the session | a `family` keyed by the space root; disposal tears down watcher and connections when the space closes |
 | **Transient** | use cases | default; lightweight objects created on demand |
 

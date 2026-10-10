@@ -30,6 +30,8 @@ Three things already constrain the answer.
 - A heading anchor is carried but not resolved here: the link resolves to the document, and the anchor is the preview's problem.
 - Resolution never leaves the space root. A target that escapes it does not resolve, the same as one that is missing.
 
+**Revised (2026-10-08):** the anchor is still not part of resolving a link, but matching it to a heading is now a domain rule — `HeadingAnchorService`, GitHub's slug over a heading block's words, repeats as `-1`, `-2` — because the rule is pure and testable without a widget. The preview asks it once the document is drawn and scrolls there; an anchor that matches nothing opens the document at the top ([wikilinks](../../product/wikilinks/doc.md)). ~~`[[#heading]]` with no document part still does not parse.~~ It parses now, as a link with an empty target (`WikilinkValueObject.isWithinDocument`), and the resolver answers it with the document it is written in rather than looking it up — so it is never missing while it is drawn in a document.
+
 `WikilinkValueObject` carries what was written; `WikilinkTargetValueObject` is the sealed answer — `resolved`, `missing`, `ambiguous` — so the preview can draw the three differently and the product rule that an unresolved link is *visibly distinguished* has something to read.
 
 ## Rationale

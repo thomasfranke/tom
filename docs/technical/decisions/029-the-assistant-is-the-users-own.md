@@ -1,6 +1,6 @@
 # Decision 29 — The assistant is the user's own, reached through one contract
 
-**Status:** proposed — **draft, not accepted.** It carries two open questions the maintainer settles before this becomes a decision; they are named at the foot.
+**Status:** accepted (2026-10-08). The two questions at the foot stay open on purpose: each is settled when the first surface is designed, by a revision of this file.
 
 ## Context
 

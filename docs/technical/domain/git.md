@@ -24,16 +24,22 @@ offset: it reads `2026-09-20T01:44:01-03:00` and answers the instant
 Sunday morning. The instant is what commits sort by; the offset is what a
 history row displays.
 
-## `RevisionValueObject`
+## `BranchRefValueObject` and the base of a branch
 
-A branch or a commit, as something to compare a document against — sealed,
-with `spec` answering what git resolves it by: the branch's name, or the
-commit's full sha.
+A local branch, or a remote's copy of one: the branch's own `name` and the
+`remote` it belongs to, apart, because git resolves the two together (`spec`,
+`origin/develop`) while a pull request is proposed onto the name alone.
+`DiffBaseValueObject` pairs it with its `forkPoint` — `GitRepository.forkPoint`,
+the `merge-base` a pull request onto that branch reads — and the rendered diff
+is read at that commit, never at the branch's tip, so what the base did since
+is not this branch's change
+([the product rule](../../product/diff/branch-diff/doc.md)).
 
-It carries the whole `BranchEntity` or `CommitEntity` rather than that string,
-because the control that says what is being compared names a commit's author
-and age; a sha alone would need a second lookup, and a second answer is one
-that can disagree with the list it came from.
+`BranchBaseService` holds the rule that picks it, pure, over what git answers:
+`BranchStandingValueObject` — every branch's `ahead`/`behind` against `HEAD`,
+read in one `for-each-ref %(ahead-behind:HEAD)` — and the base TOM recorded
+in `branch.<name>.tomBase` when it started the branch. ~~`RevisionValueObject`
+— a branch or a commit somebody chose~~ — deleted 2026-10-08 with the choice.
 
 ## `GitRepository`
 

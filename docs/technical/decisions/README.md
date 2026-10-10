@@ -40,9 +40,16 @@ An ADR is the one file here that is **not** split by subject: its sections are f
 | [026](026-the-look-is-a-package.md) | The look is a package both applications draw from; the screens are each application's own |
 | [027](027-blocks-are-aligned-by-myers-and-paired-by-words.md) | Blocks are aligned by Myers over `diffutil_dart`, and paired as rewrites by word overlap |
 | [028](028-a-wikilink-resolves-by-name-inside-the-space.md) | A wikilink resolves by name inside the space, and says so when it cannot |
-| [029](029-the-assistant-is-the-users-own.md) | **Draft.** The assistant is the user's own — one contract, the user's endpoint and credential, nothing shipped or proxied |
-| [030](030-export-renders-the-preview-not-the-file.md) | **Draft.** Export renders the AST the preview already holds, through one capability with a folder per format |
+| [029](029-the-assistant-is-the-users-own.md) | The assistant is the user's own — one contract, the user's endpoint and credential, nothing shipped or proxied |
+| [030](030-export-renders-the-preview-not-the-file.md) | Export renders the AST the preview already holds, through one capability with a folder per format |
 | [031](031-where-a-footnotes-text-goes.md) | A footnote's marker stays in the prose and its text goes to the foot; the number is the document's |
+| [032](032-the-icon-set-is-font-awesome.md) | Every glyph is Font Awesome Free 6 Solid, vendored as a font beside IBM Plex |
+| [033](033-a-pull-request-draft-is-a-document-outside-the-space.md) | A pull request draft is a document read through the same repository, rooted in `.git/tom/pull-request/` instead of the space |
+| [034](034-the-interface-is-localised-with-gen-l10n.md) | The interface is localised with Flutter's gen-l10n: ARB files, English the template, the preference the locale |
+| [035](035-github-is-reached-through-the-gh-cli.md) | GitHub is reached through the `gh` CLI with the logins the computer already holds; TOM stores no token |
+| [036](036-every-command-is-written-down.md) | Every process TOM starts is written down through a `CommandLog` port in `tom_core`, secrets removed, and shown in a bottom region |
+| [037](037-the-terminal-is-the-persons-own-shell-in-a-pty.md) | The Terminal tab is the person's own shell in a pseudo-terminal: the rules in `tom_infra`, the pty from `flutter_pty` in the composition root, the screen from `xterm` |
+| [038](038-a-command-waits-at-a-gate-in-tom-core.md) | Draft: git and `gh` commands wait at a `CommandGate` port in `tom_core` before they run; what may run unasked is `git-approvals.json`, keyed by the command with its flags |
 
 ---
 

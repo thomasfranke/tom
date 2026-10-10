@@ -14,8 +14,10 @@ This chapter is *which* ones are taken.
 | [`state-and-models.md`](state-and-models.md) | Riverpod, Freezed, and the code generators — all pinned exactly |
 | [`markdown-and-diff.md`](markdown-and-diff.md) | The heart: the parser, the block renderer, Myers, the highlighter |
 | [`editor.md`](editor.md) | Source mode — `re_editor` and what it does not ship |
-| [`platform.md`](platform.md) | sqlite/FTS5, the watcher, paths, and the desktop shell |
+| [`platform.md`](platform.md) | sqlite/FTS5, the watcher, paths, the desktop shell, and the terminal's pty and emulator |
 | [`fonts.md`](fonts.md) | The three IBM Plex faces, vendored rather than fetched |
+| [`export.md`](export.md) | PDF and HTML — `pdf`, and the `markdown` package again |
+| [`localisation.md`](localisation.md) | The interface's languages — `flutter_localizations`, `intl` and `gen-l10n` |
 
 ## Deliberately excluded
 

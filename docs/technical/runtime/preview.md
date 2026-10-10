@@ -13,13 +13,14 @@ the rendered diff impossible to express, and would have to be undone at M2.
 
 ## What the base is, is the session's answer
 
-`HEAD` unless somebody chose a branch or a commit
-([the product rule](../../product/diff/branch-diff/doc.md); the type is
-[`RevisionValueObject`](../domain/git.md)), and nothing at all for a version
-opened from the history that nobody asked to compare.
+Where the checked-out branch left the one it came from, or `HEAD` on that
+branch itself ([the product rule](../../product/diff/branch-diff/doc.md); the
+type is [`DiffBaseValueObject`](../domain/git.md)), and nothing at all for a
+version opened from the history. The document is read at the fork point; the
+bar names the branch.
 
+- `DiffBaseNotifier` writes it from the session's git reading — so a switch made in a terminal is followed like one made here. Another branch is read whole; any other reading only asks the fork point again, which a merge or a pull can move. It is kept alive and made to exist by the shell, beside `GitReadingNotifier`, whose reading it follows.
 - The preview **listens** to that answer rather than watching it: another base is the same text with other marks, so nothing is parsed again and the pane is never sent back to "reading it".
-- What offers the choice reads no git of its own — the branches are the switcher's reading, the commits the history panel's, which is what keeps one answer to "which revisions are there".
 
 ## Document-scope constructs, measured
 
