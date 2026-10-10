@@ -2,7 +2,7 @@
 
 What the app does with a folder git knows nothing about.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3 — the breadcrumb names the folder alone, where the board still draws `tom / docs`
 
 ## Rules
 

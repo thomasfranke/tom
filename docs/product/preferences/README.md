@@ -3,7 +3,7 @@
 The handful of choices that belong to the machine rather than to a space:
 the theme, the language, and whether the formatting bar is drawn.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3 — ~~except `Open preferences.json`, drawn and dim~~: it opens the file in a tab ([where it is stored](where-it-is-stored/doc.md))
 
 | | |
 |---|---|

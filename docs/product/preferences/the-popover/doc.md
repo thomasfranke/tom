@@ -6,7 +6,7 @@ Where preferences are reached from, and what opening them looks like.
 
 ## Rules
 
-- **The button is the last control in the top bar**, after the two column toggles, drawn in their grammar so the three read as one group. It is a gear, the one symbol nobody has to learn.
+- ~~**The button is the last control in the top bar**, after the two column toggles~~ **The button comes after the panel toggles and before [the account](../../workspace/the-account/doc.md)**, which is the bar's last control (revised 2026-10-08), drawn in the toggles' grammar so they read as one group. It is a gear, the one symbol nobody has to learn.
 - **It replaces the light/dark toggle, which is gone from the bar.** ~~A control beside the two column toggles switches the theme~~ — the theme moved inside, and the bar trades one control for another instead of squeezing a fourth into the same margin ([columns](../../workspace/columns/doc.md)).
 - **The bar carries it on every screen, Home included.** The language the app speaks is chosen before a space is open, not after, so a screen with nothing else in its bar still has this.
 - **What opens is a popover, not a menu.** A menu is a list of choices in one tall row each; these are controls — a two-way choice, a select and a checkbox — and a menu would turn the language into a submenu.

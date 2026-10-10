@@ -2,7 +2,7 @@
 
 The first screen anyone sees: open a space, or start one from a remote URL.
 
-**Status:** Planned · Milestone M0 (clone by URL: M3) · Mobile: not designed yet
+**Status:** Shipped · Milestone M0 (clone by URL: Shipped · M3) · Mobile: not designed yet
 
 | | |
 |---|---|
@@ -14,7 +14,7 @@ The first screen anyone sees: open a space, or start one from a remote URL.
 ## Mocks
 
 - **empty state** — no space open: the wordmark over the trunk, opening a folder, and what was open before. [light](../../design/screens/desktop/home/empty-state-light.svg) · [dark](../../design/screens/desktop/home/empty-state-dark.svg).
-Home refuses nothing, so it has no failure screen. A folder git knows nothing
+~~Home refuses nothing, so it has no failure screen.~~ Home refuses only what it cannot open at all — a folder that is gone, or a machine without git — and that refusal is its one failure screen (revised 2026-10-08). A folder git knows nothing
 about opens like any other, and the right column is what says so
 ([without a repository](../workspace/without-a-repository/doc.md)).
 

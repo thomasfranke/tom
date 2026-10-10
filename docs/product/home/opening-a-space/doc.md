@@ -2,7 +2,7 @@
 
 The three ways in, and what a folder without a repository does instead.
 
-**Status:** Planned · Milestone M0
+**Status:** Shipped · Milestone M0 — cloning ([cloning](../cloning/doc.md)) and a folder outside a repository opening ([without a repository](../../workspace/without-a-repository/doc.md)) since M3
 
 ## Rules
 
