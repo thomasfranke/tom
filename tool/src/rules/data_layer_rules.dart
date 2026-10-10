@@ -12,7 +12,7 @@ import '../rule.dart';
 Iterable<Offence> repositoriesReadThroughDataSources(Directory root) sync* {
   final holdsACapability = RegExp(
     r'^  final (Filesystem|GitClient|GitClientFor|Settings|MarkdownParser|'
-    r'PlatformPaths|SearchIndex|TextDiffer) ',
+    r'PlatformPaths|SearchIndex|TextDiffer|DocumentExporter) ',
     multiLine: true,
   );
   final isRepository = RegExp(r'_(?:repository|reader|aligner)_impl\.dart$');

@@ -458,7 +458,27 @@ Future<int> runE2eClean() async {
 /// take the same code path with no network, no credentials and a divergence
 /// built to order.
 final class E2eRemote {
-  const E2eRemote({required this.theirs, required this.mine});
+  const E2eRemote({
+    required this.theirs,
+    required this.mine,
+    this.isUnreachable = false,
+    this.proposing,
+    this.address,
+  });
+
+  /// A branch made off `main`, committed, pushed and left checked out —
+  /// what a pull request is written for — or null for none.
+  final E2eBranch? proposing;
+
+  /// What `origin` says it is, once everything is pushed — a host the app
+  /// recognises — while pushes keep going to the bare beside it. Null leaves
+  /// the bare's own path.
+  final String? address;
+
+  /// Whether `origin` ends pointing at a host that never resolves, once the
+  /// drift is built — `.invalid` is reserved never to (RFC 2606), so the
+  /// link is down on every machine and nothing waits on a real network.
+  final bool isUnreachable;
 
   /// Reads the `remote` block, or answers null when there is none.
   static E2eRemote? read(Object? decoded) {
@@ -469,6 +489,11 @@ final class E2eRemote {
     return E2eRemote(
       theirs: _commits(decoded['theirs']),
       mine: _commits(decoded['mine']),
+      isUnreachable: decoded['unreachable'] == true,
+      proposing: decoded['proposing'] == null
+          ? null
+          : E2eBranch.read(<Object?>[decoded['proposing']]).single,
+      address: decoded['address'] as String?,
     );
   }
 
@@ -490,10 +515,15 @@ final class E2eRemote {
 
 /// A branch to manufacture, and the commits that make it differ.
 ///
-/// Branched off the fixture's whole history and left behind; the repository
-/// ends on `main`, so a scenario starts where the user would.
+/// Branched off the fixture's whole history — or off an earlier branch named
+/// in `from` — and left behind; the repository ends on `main`, so a scenario
+/// starts where the user would.
 final class E2eBranch {
-  const E2eBranch({required this.name, required this.commits});
+  const E2eBranch({
+    required this.name,
+    required this.commits,
+    this.from = 'main',
+  });
 
   /// Reads the `branches` block, which may be absent.
   static List<E2eBranch> read(Object? decoded) {
@@ -505,11 +535,10 @@ final class E2eBranch {
       for (final entry in decoded)
         E2eBranch(
           name: (entry! as Map<String, Object?>)['name']! as String,
+          from: (entry as Map<String, Object?>)['from'] as String? ?? 'main',
           commits: <E2eCommit>[
             for (final commit
-                in ((entry as Map<String, Object?>)['commits']
-                        as List<Object?>? ??
-                    const <Object?>[]))
+                in (entry['commits'] as List<Object?>? ?? const <Object?>[]))
               E2eCommit.read(commit! as Map<String, Object?>),
           ],
         ),
@@ -518,6 +547,10 @@ final class E2eBranch {
 
   /// What it is called, and what a scenario clicks on.
   final String name;
+
+  /// The branch it starts from, built earlier in the same list; started by
+  /// plain git, so nothing records it and the app has to deduce it.
+  final String from;
 
   /// What is on it that is not on the branch it started from.
   final List<E2eCommit> commits;
@@ -586,9 +619,20 @@ Map<String, Object?> _build(E2eFixture fixture, Directory root) {
       _commit(destination, commit);
     }
     // The repository comes back to `main`, so a scenario opens where a person
-    // would.
+    // would. A name listed a second time adds commits to the branch already
+    // made — what moves a base on after another branch was cut from it.
+    final built = <String>{};
     for (final branch in fixture.branches) {
-      _git(destination, ['switch', '--quiet', '--create', branch.name]);
+      _git(destination, [
+        'switch',
+        '--quiet',
+        if (built.add(branch.name)) ...[
+          '--create',
+          branch.name,
+          branch.from,
+        ] else
+          branch.name,
+      ]);
       for (final commit in branch.commits) {
         _commit(destination, commit);
       }
@@ -611,7 +655,9 @@ Map<String, Object?> _build(E2eFixture fixture, Directory root) {
     // So a scenario can ask the remote what actually arrived.
     if (fixture.remote != null) 'remoteRoot': '$destination.git',
     if (fixture.branches.isNotEmpty)
-      'branches': <String>[for (final branch in fixture.branches) branch.name],
+      'branches': <String>{
+        for (final branch in fixture.branches) branch.name,
+      }.toList(),
     'name': space.split('/').last,
     'documents': _documentsIn(space),
     if (fixture.untracked.isNotEmpty)
@@ -710,6 +756,25 @@ void _attachRemote(String path, E2eRemote remote) {
 
   for (final commit in remote.mine) {
     _commit(path, commit);
+  }
+
+  if (remote.proposing case final E2eBranch branch) {
+    _git(path, ['switch', '--quiet', '--create', branch.name]);
+    for (final commit in branch.commits) {
+      _commit(path, commit);
+    }
+    _git(path, ['push', '--quiet', '--set-upstream', 'origin', branch.name]);
+  }
+
+  if (remote.isUnreachable) {
+    _git(path, ['remote', 'set-url', 'origin', 'https://tom.invalid/docs.git']);
+  }
+
+  // The address is only what `get-url` answers: a push still reaches the
+  // bare, and nothing in a scenario fetches.
+  if (remote.address case final String address) {
+    _git(path, ['config', 'remote.origin.pushurl', bare]);
+    _git(path, ['remote', 'set-url', 'origin', address]);
   }
 }
 
