@@ -182,7 +182,7 @@ void main() {
   });
 
   test('the silent log takes a record and keeps nothing', () {
-    expect(() => const SilentCommandLog().record(of()), returnsNormally);
+    expect(() => const SilentCommandLogImpl().record(of()), returnsNormally);
   });
 
   test('a timed command is written down once it ends, as it ran', () {

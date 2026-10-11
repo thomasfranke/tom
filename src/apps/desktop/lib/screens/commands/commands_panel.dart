@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/commands/commands_design.dart';
+import 'package:tom_desktop/screens/commands/widgets/command_plan_head_widget.dart';
 import 'package:tom_desktop/screens/commands/widgets/command_row_widget.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -60,16 +61,54 @@ class _CommandsPanelState extends ConsumerState<CommandsPanel> {
     ref.read(commandsProvider.notifier).revealed();
   }
 
+  /// `Switch to Semi-automatic?` — `Stay in Manual` first, because it is the
+  /// answer that changes nothing (`approvals/doc.md`).
+  Future<void> _askToSwitch() async {
+    final AppLocalizations l10n = context.l10n;
+    final CommandsNotifier notifier = ref.read(commandsProvider.notifier);
+    final bool? switching = await TomDialogWidget.show<bool>(
+      context,
+      title: l10n.approvalsSwitchTitle,
+      body: <String>[l10n.approvalsSwitchBody],
+      actions: (void Function(bool) answer) => <TomDialogAction>[
+        TomDialogAction(
+          label: l10n.approvalsStayManual,
+          onPressed: () => answer(false),
+        ),
+        TomDialogAction(
+          label: l10n.approvalsSwitch,
+          onPressed: () => answer(true),
+        ),
+      ],
+    );
+    // Dismissed without choosing is *stay*, never a default.
+    if (switching ?? false) {
+      await notifier.switchToSemiAndAllow();
+    } else {
+      notifier.stayInManual();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    ref.listen<int?>(
-      commandsProvider.select((CommandsState it) => it.revealing),
-      (_, int? next) {
-        if (next != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) => _reveal());
-        }
-      },
-    );
+    ref
+      ..listen<int?>(
+        commandsProvider.select((CommandsState it) => it.revealing),
+        (_, int? next) {
+          if (next != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) => _reveal());
+          }
+        },
+      )
+      // `Always allow` in Manual asks first whether to leave it.
+      ..listen<int?>(
+        commandsProvider.select((CommandsState it) => it.pendingSwitch),
+        (_, int? next) {
+          if (next != null) {
+            unawaited(_askToSwitch());
+          }
+        },
+      );
     final CommandsState state = ref.watch(commandsProvider);
     final TomColors colors = TomColors.of(context);
     if (state.rows.isEmpty) {
@@ -86,17 +125,34 @@ class _CommandsPanelState extends ConsumerState<CommandsPanel> {
       // Anchored at the end: the newest row is the one in view, and a row
       // that arrives while the reader is there keeps them there.
       reverse: true,
-      padding: const EdgeInsets.only(top: CommandsDesign.listTop),
+      padding: const EdgeInsets.only(
+        top: CommandsDesign.listTop,
+        bottom: CommandsDesign.listBottom,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          for (final CommandRow row in state.rows)
+          for (final CommandRow row in state.rows) ...<Widget>[
+            // The head of a plan stands over its first command.
+            if (row.plan case final int plan
+                when row.action != null &&
+                    state.planOf(plan).first.id == row.id)
+              CommandPlanHeadWidget(
+                state: state,
+                plan: plan,
+                action: row.action!,
+              ),
             CommandRowWidget(
               key: _keys.putIfAbsent(row.id, GlobalKey.new),
               row: row,
               isOpen: state.expanded.contains(row.id),
               onToggle: () => notifier.toggle(row.id),
+              isApprovable: state.isApprovable(row),
+              onRun: () => notifier.run(row.id),
+              onAlways: () => unawaited(notifier.alwaysAllow(row.id)),
+              onDeny: () => notifier.deny(row.id),
             ),
+          ],
         ],
       ),
     );

@@ -10,6 +10,9 @@ import 'package:tom_core/tom_core.dart';
 /// command the list does not hold cannot run. A placeholder stands where a
 /// value goes; square brackets hold what [log] passes only when asked.
 enum GitCommandKeyEnum implements CommandKey {
+  /// Which git this machine has.
+  version('git --version'),
+
   /// Where the enclosing repository is.
   repositoryRoot('git rev-parse --show-toplevel'),
 
@@ -130,6 +133,10 @@ enum GitCommandKeyEnum implements CommandKey {
     'git restore --staged --worktree --source=HEAD -- <file>',
     isWrite: true,
   ),
+
+  /// Which of the files about to be deleted `HEAD` holds — asked before
+  /// deleting one as never committed.
+  committedPaths('git ls-tree --full-tree --name-only -z HEAD -- <files>'),
 
   /// Taking a never-committed file out of the index — the first half of
   /// deleting it.

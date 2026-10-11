@@ -77,7 +77,7 @@ final class CommandsNotifierProvider
   }
 }
 
-String _$commandsNotifierHash() => r'eeeacc0d0648a76fd3adbf9e9becb999c04b6a24';
+String _$commandsNotifierHash() => r'5912ec07ad46ffd79a8cb7d4777c7a21075c2c1c';
 
 /// The [CommandLog] the capabilities write to, the [CommandGate] they ask,
 /// and the one list the panel reads — a command is the same row before and

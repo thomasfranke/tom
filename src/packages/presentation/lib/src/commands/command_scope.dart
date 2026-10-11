@@ -14,6 +14,12 @@ import 'package:tom_presentation/src/commands/command_action_enum.dart';
 final class CommandScope {
   CommandScope._(this.action);
 
+  /// A run of [action] that has not started: [within] runs a part of it, and
+  /// can be called again later — opening a space is one run whose reading
+  /// comes after the window has changed
+  /// (`docs/product/git-workflow/approvals/doc.md`).
+  CommandScope.start(CommandActionEnum action) : this._(action);
+
   /// What the run is called.
   final CommandActionEnum action;
 
@@ -24,10 +30,12 @@ final class CommandScope {
   static Future<T> run<T>(
     CommandActionEnum action,
     Future<T> Function() body,
-  ) => runZoned(
-    body,
-    zoneValues: <Object, Object>{_zoneKey: CommandScope._(action)},
-  );
+  ) => CommandScope._(action).within(body);
+
+  /// Runs [body] as part of this run: what it asks joins the plan the run's
+  /// earlier parts already made.
+  Future<T> within<T>(Future<T> Function() body) =>
+      runZoned(body, zoneValues: <Object, Object>{_zoneKey: this});
 
   /// The run the caller is inside, or null outside any.
   static CommandScope? get current => Zone.current[_zoneKey] as CommandScope?;

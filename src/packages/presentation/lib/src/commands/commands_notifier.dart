@@ -381,12 +381,15 @@ class CommandsNotifier extends _$CommandsNotifier
     if (!ref.mounted) {
       return;
     }
-    final SpaceRelativePathValueObject? open = ref
-        .read(spaceSessionProvider)
-        ?.preferencesFile;
     // The list's own tab, when it is open, is told the file changed.
-    if (open == PreferencesNotifier.approvalsFile) {
-      await ref.read(editorProvider.notifier).preferencesFileChanged();
+    if (ref
+            .read(spaceSessionProvider)
+            ?.appFiles
+            .contains(PreferencesNotifier.approvalsFile) ??
+        false) {
+      await ref
+          .read(editorProvider.notifier)
+          .appFileChanged(PreferencesNotifier.approvalsFile);
     }
     await reconsider();
   }

@@ -54,13 +54,3 @@ extension CommandTiming on CommandLog {
         );
   }
 }
-
-/// The log that keeps nothing — what a capability writes to when nobody
-/// gave it one, so a test or a tool never has to.
-final class SilentCommandLog implements CommandLog {
-  /// Creates the log.
-  const SilentCommandLog();
-
-  @override
-  void record(CommandRecord record) {}
-}

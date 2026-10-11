@@ -32,7 +32,7 @@ final class CommandLineCredentialsImpl implements Credentials {
     this.environment = const <String, String>{},
     this.includeParentEnvironment = true,
     this.timeout = const Duration(seconds: 10),
-    this.commandLog = const SilentCommandLog(),
+    this.commandLog = const SilentCommandLogImpl(),
     this.commandGate = const OpenCommandGateImpl(),
     CredentialsRunner? run,
   }) {
@@ -137,6 +137,10 @@ final class CommandLineCredentialsImpl implements Credentials {
         answers: const <int>{1, 255},
       )).map((ProcessResult? result) => '${result?.stderr ?? ''}'.trim());
 
+  /// The shell's "command not found", what a probe of a program the machine
+  /// does not have is written down as.
+  static const int _notInstalled = 127;
+
   /// What it printed when it worked; a refusal is "nothing here", and its
   /// output is never carried, because a refusal's output may be a secret.
   static String _printedOnSuccess(ProcessResult? result) =>
@@ -177,7 +181,7 @@ final class CommandLineCredentialsImpl implements Credentials {
       executable,
       arguments,
       secretOutput: secretOutput,
-      answers: answers,
+      answers: <int>{...answers, _notInstalled},
       ticket: ticket,
     );
     try {
@@ -195,13 +199,18 @@ final class CommandLineCredentialsImpl implements Credentials {
         CredentialsTimedOut(executable),
       );
     } on ProcessException catch (error) {
+      // ENOENT on every platform `dart:io` runs on: not installed. These
+      // are probes, and a machine without `gh` or `ssh` is "nothing here",
+      // so it is written as the shell's own 127 — declared an answer above —
+      // and still `ran: false`.
+      if (error.errorCode == 2) {
+        ended(_notInstalled, stderr: error.message, ran: false);
+        return const Success<ProcessResult?, CredentialsFailure>(null);
+      }
       ended(null, stderr: error.message, ran: false);
-      // ENOENT on every platform `dart:io` runs on: not installed.
-      return error.errorCode == 2
-          ? const Success<ProcessResult?, CredentialsFailure>(null)
-          : Failure<ProcessResult?, CredentialsFailure>(
-              CredentialsOperationFailed('$executable: ${error.message}'),
-            );
+      return Failure<ProcessResult?, CredentialsFailure>(
+        CredentialsOperationFailed('$executable: ${error.message}'),
+      );
     }
   }
 

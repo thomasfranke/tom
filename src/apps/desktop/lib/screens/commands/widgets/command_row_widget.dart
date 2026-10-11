@@ -23,6 +23,10 @@ class CommandRowWidget extends StatefulWidget {
     required this.row,
     required this.isOpen,
     required this.onToggle,
+    this.isApprovable = false,
+    this.onRun,
+    this.onAlways,
+    this.onDeny,
     super.key,
   });
 
@@ -35,12 +39,29 @@ class CommandRowWidget extends StatefulWidget {
   /// Opens it, or closes it.
   final VoidCallback onToggle;
 
+  /// Whether this is the row of its plan that can be answered now: only it
+  /// wears the three buttons, the rows under it say they wait.
+  final bool isApprovable;
+
+  /// `Run`.
+  final VoidCallback? onRun;
+
+  /// `Always allow`.
+  final VoidCallback? onAlways;
+
+  /// `Deny`.
+  final VoidCallback? onDeny;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty<CommandRow>('row', row))
       ..add(DiagnosticsProperty<bool>('isOpen', isOpen))
+      ..add(DiagnosticsProperty<bool>('isApprovable', isApprovable))
+      ..add(ObjectFlagProperty<VoidCallback?>.has('onRun', onRun))
+      ..add(ObjectFlagProperty<VoidCallback?>.has('onAlways', onAlways))
+      ..add(ObjectFlagProperty<VoidCallback?>.has('onDeny', onDeny))
       ..add(ObjectFlagProperty<VoidCallback>.has('onToggle', onToggle));
   }
 
@@ -65,7 +86,12 @@ class _CommandRowWidgetState extends State<CommandRowWidget> {
     );
     // Hover wins over the failure's tint, so the row under the pointer reads
     // the same whatever it holds.
-    final Color? fill = _hovering
+    // The row that can be answered now is tinted, so the one waiting for a
+    // yes reads apart from the ones that wait behind it.
+    final bool isWaiting = record.stage == CommandStageEnum.waiting;
+    final Color? fill = widget.isApprovable
+        ? colors.accentSoft
+        : _hovering
         ? colors.control
         : (failed ? colors.removedSoft : null);
     final String took = durationOf(l10n, record.duration);
@@ -108,25 +134,13 @@ class _CommandRowWidgetState extends State<CommandRowWidget> {
                 bottom: 0,
                 // An exit the app asked for as an answer is neither: no mark,
                 // no tint, only its code.
-                child: Center(
-                  child: switch ((failed, record.answered)) {
-                    (true, _) => TomGlyphWidget(
-                      glyph: TomGlyphEnum.close,
-                      color: colors.removed,
-                      size: CommandsDesign.cross,
-                    ),
-                    (false, true) => const SizedBox.shrink(),
-                    (false, false) => TomGlyphWidget(
-                      glyph: TomGlyphEnum.check,
-                      color: colors.added,
-                      size: CommandsDesign.check,
-                    ),
-                  },
-                ),
+                child: Center(child: _mark(colors, record, failed)),
               ),
               Positioned(
                 left: CommandsDesign.commandLeft,
-                right: CommandsDesign.durationRight,
+                right: isWaiting
+                    ? CommandsDesign.waitingRight
+                    : CommandsDesign.durationRight,
                 top: 0,
                 bottom: 0,
                 child: Row(
@@ -143,20 +157,13 @@ class _CommandRowWidgetState extends State<CommandRowWidget> {
                       ),
                     ),
                     const SizedBox(width: CommandsDesign.copy),
-                    Text(
-                      failed || record.answered
-                          ? '${_ending(l10n, record)} · $took'
-                          : took,
-                      maxLines: 1,
-                      style: small.copyWith(
-                        fontFamily: TomFonts.sans,
-                        color: failed ? colors.removed : colors.textMuted,
-                      ),
-                    ),
+                    _trailing(l10n, colors, small, record, took, failed),
                   ],
                 ),
               ),
-              if (_hovering)
+              // Not on a waiting row: its answers now run to 14 from the
+              // edge, where the glyph would sit on top of `Deny`.
+              if (_hovering && !isWaiting)
                 Positioned(
                   right: CommandsDesign.copyRight - CommandsDesign.copy,
                   width: CommandsDesign.copy,
@@ -219,6 +226,105 @@ class _CommandRowWidgetState extends State<CommandRowWidget> {
         ),
       ],
     );
+  }
+
+  /// The mark where a command's check goes, by where the command is.
+  Widget _mark(TomColors colors, CommandRecord record, bool failed) =>
+      switch (record.stage) {
+        // Hollow: asked for, and not yet allowed to start.
+        CommandStageEnum.waiting => DecoratedBox(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: colors.textMuted, width: 1.5),
+          ),
+          child: const SizedBox.square(dimension: CommandsDesign.dot),
+        ),
+        CommandStageEnum.running => const TomSpinnerWidget(),
+        CommandStageEnum.denied => TomGlyphWidget(
+          glyph: TomGlyphEnum.close,
+          color: colors.removed,
+          size: CommandsDesign.cross,
+        ),
+        CommandStageEnum.cancelled => const SizedBox.shrink(),
+        CommandStageEnum.ended => switch ((failed, record.answered)) {
+          // An exit the app asked for as an answer is neither: no mark, no
+          // tint, only its code.
+          (true, _) => TomGlyphWidget(
+            glyph: TomGlyphEnum.close,
+            color: colors.removed,
+            size: CommandsDesign.cross,
+          ),
+          (false, true) => const SizedBox.shrink(),
+          (false, false) => TomGlyphWidget(
+            glyph: TomGlyphEnum.check,
+            color: colors.added,
+            size: CommandsDesign.check,
+          ),
+        },
+      };
+
+  /// What closes the line: the three answers while the row can be answered,
+  /// a word where it cannot, else the time taken.
+  Widget _trailing(
+    AppLocalizations l10n,
+    TomColors colors,
+    TextStyle small,
+    CommandRecord record,
+    String took,
+    bool failed,
+  ) {
+    final TextStyle sans = small.copyWith(fontFamily: TomFonts.sans);
+    switch (record.stage) {
+      case CommandStageEnum.waiting:
+        if (!widget.isApprovable) {
+          return Text(l10n.commandsWaitsForAbove, maxLines: 1, style: sans);
+        }
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TomRowActionWidget(
+              kind: TomRowActionKind.confirm,
+              label: l10n.commandsApproveRun,
+              onPressed: widget.onRun ?? () {},
+            ),
+            const SizedBox(width: CommandsDesign.actionGap),
+            TomRowActionWidget(
+              kind: TomRowActionKind.always,
+              label: l10n.commandsApproveAlways,
+              onPressed: widget.onAlways ?? () {},
+            ),
+            const SizedBox(width: CommandsDesign.actionGap),
+            TomRowActionWidget(
+              kind: TomRowActionKind.refuse,
+              label: l10n.commandsApproveDeny,
+              onPressed: widget.onDeny ?? () {},
+            ),
+          ],
+        );
+      case CommandStageEnum.running:
+        return const SizedBox.shrink();
+      case CommandStageEnum.denied:
+        return Text(
+          l10n.commandsDenied,
+          maxLines: 1,
+          style: sans.copyWith(color: colors.removed),
+        );
+      case CommandStageEnum.cancelled:
+        return Text(l10n.commandsCancelled, maxLines: 1, style: sans);
+      case CommandStageEnum.ended:
+        // A command the list let through without asking says so before its
+        // time.
+        final String allowed = widget.row.isAllowed && widget.row.plan != null
+            ? '${l10n.commandsAllowed} · '
+            : '';
+        return Text(
+          failed || record.answered
+              ? '$allowed${_ending(l10n, record)} · $took'
+              : '$allowed$took',
+          maxLines: 1,
+          style: sans.copyWith(color: failed ? colors.removed : null),
+        );
+    }
   }
 
   /// `HH:MM:SS`, on the machine's clock.

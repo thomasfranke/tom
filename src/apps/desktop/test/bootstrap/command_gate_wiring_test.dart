@@ -3,6 +3,7 @@
 /// ([Decision 38](../../../../../docs/technical/decisions/038-a-command-waits-at-a-gate-in-tom-core.md)).
 library;
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -191,6 +192,221 @@ void main() {
     expect(rows(), hasLength(2));
     expect(rows().last.stage, CommandStageEnum.ended);
     expect(rows().last.isAllowed, isTrue);
+  });
+
+  /// Answers whatever waits, the way a person at the panel would: [answer]
+  /// is called with each approvable row until [done] is true.
+  Future<void> approver(
+    bool Function() done,
+    void Function(CommandsNotifier commands, CommandRow row) answer,
+  ) async {
+    for (int tries = 0; !done() && tries < 500; tries++) {
+      final CommandsState state = container.read(commandsProvider);
+      final Iterable<CommandRow> ready = state.rows.where(state.isApprovable);
+      if (ready.isNotEmpty) {
+        answer(container.read(commandsProvider.notifier), ready.first);
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  }
+
+  test('in Manual Home asks git nothing by itself: the account is read, '
+      'through the gate, when the popover opens', () async {
+    mode('manual');
+    container
+      ..listen<PreferencesValueObject>(preferencesProvider, (_, _) {})
+      ..listen<AccountState>(accountProvider, (_, _) {});
+    await container.read(preferencesProvider.notifier).loaded;
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+
+    expect(container.read(accountProvider).isUnread, isTrue);
+    expect(rows(), isEmpty);
+
+    unawaited(container.read(accountProvider.notifier).readIfUnread());
+    for (int tries = 0; rows().isEmpty && tries < 200; tries++) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+
+    expect(rows(), isNotEmpty);
+    expect(rows().first.stage, CommandStageEnum.waiting);
+    expect(container.read(accountProvider).isUnread, isFalse);
+  });
+
+  test('opening a space in Manual waits at the panel, and opens once every '
+      'command it asks was let', () async {
+    mode('manual');
+    bool finished = false;
+    final Future<Result<SpaceEntity, AppFailure>> opening = container
+        .read(openSpaceProvider)
+        .open(repository)
+        .whenComplete(() => finished = true);
+    await listed(1);
+    expect(container.read(workspaceProvider).showingBottom, isTrue);
+    expect(finished, isFalse, reason: 'it ran before anybody said Run');
+
+    await approver(
+      () => finished,
+      (CommandsNotifier commands, CommandRow row) => commands.run(row.id),
+    );
+
+    expect(await opening, isA<Success<SpaceEntity, AppFailure>>());
+    expect(rows().length, greaterThan(1));
+    expect(
+      rows().map((CommandRow it) => it.stage),
+      everyElement(CommandStageEnum.ended),
+    );
+  });
+
+  test('opening a space is one plan: what opens the folder and the first '
+      'reading of the git column wait together, approved top down', () async {
+    mode('manual');
+    final CommandScope plan = CommandScope.start(
+      CommandActionEnum.readRepository,
+    );
+    bool opened = false;
+    final Future<Result<SpaceEntity, AppFailure>> opening = plan
+        .within(() => container.read(openSpaceProvider).open(repository))
+        .whenComplete(() => opened = true);
+    await listed(1);
+    await approver(
+      () => opened,
+      (CommandsNotifier commands, CommandRow row) => commands.run(row.id),
+    );
+    final SpaceEntity space =
+        (await opening as Success<SpaceEntity, AppFailure>).value;
+
+    // What Home does once the window changes: hand the plan over, open the
+    // session, and let the shell's reader make the first reading.
+    container.read(openingPlanProvider.notifier).handed = plan;
+    container.read(spaceSessionProvider.notifier).open(space);
+    container.listen<GitReadingState>(gitReadingProvider, (_, _) {});
+    await approver(
+      () => container.read(gitReadingProvider) is GitReadingReady,
+      (CommandsNotifier commands, CommandRow row) => commands.run(row.id),
+    );
+
+    expect(rows().length, greaterThanOrEqualTo(4));
+    expect(rows().map((CommandRow it) => it.plan).toSet(), hasLength(1));
+    expect(rows().first.plan, isNotNull);
+    expect(
+      rows().map((CommandRow it) => it.action).toSet(),
+      <CommandActionEnum?>{CommandActionEnum.readRepository},
+    );
+
+    // The next reading is an action of its own, not the tail of this one.
+    final int before = rows().length;
+    unawaited(container.read(gitReadingProvider.notifier).refresh());
+    await listed(before + 1);
+    expect(rows().last.plan, isNot(rows().first.plan));
+  });
+
+  test('in Manual a folder opens from the disk with no command asked, and '
+      'its repository is found once the person lets git run', () async {
+    mode('manual');
+
+    final Result<SpaceEntity, AppFailure> opened = await container
+        .read(openSpaceProvider)
+        .openFolder(repository);
+
+    final SpaceEntity folder =
+        (opened as Success<SpaceEntity, AppFailure>).value;
+    expect(folder.repositoryRoot, isNull, reason: 'git was not asked');
+    expect(rows(), isEmpty, reason: 'nothing waited for a yes');
+
+    bool located = false;
+    final Future<Result<SpaceEntity, AppFailure>> locating = container
+        .read(openSpaceProvider)
+        .locate(folder)
+        .whenComplete(() => located = true);
+    await listed(1);
+    expect(located, isFalse, reason: 'it ran before anybody said Run');
+    await approver(
+      () => located,
+      (CommandsNotifier commands, CommandRow row) => commands.run(row.id),
+    );
+
+    final SpaceEntity found =
+        (await locating as Success<SpaceEntity, AppFailure>).value;
+    expect(found.repositoryRoot, repository);
+    expect(found.root, folder.root);
+  });
+
+  test('a folder opened from the disk, whose repository was denied, keeps '
+      'its files and the denial', () async {
+    mode('manual');
+    final SpaceEntity folder =
+        ((await container.read(openSpaceProvider).openFolder(repository))
+                as Success<SpaceEntity, AppFailure>)
+            .value;
+    final Future<Result<SpaceEntity, AppFailure>> locating = container
+        .read(openSpaceProvider)
+        .locate(folder);
+    await listed(1);
+
+    container.read(commandsProvider.notifier).deny(rows().first.id);
+
+    final Result<SpaceEntity, AppFailure> result = await locating.timeout(
+      const Duration(seconds: 5),
+    );
+    expect(
+      (result as Failure<SpaceEntity, AppFailure>).failure.isDenial,
+      isTrue,
+    );
+    final Result<List<SpaceEntryValueObject>, SpaceFailure> files =
+        await container.read(spaceRepositoryProvider).entries(folder);
+    expect(
+      (files as Success<List<SpaceEntryValueObject>, SpaceFailure>).value,
+      isNotEmpty,
+    );
+  });
+
+  test('opening a space in Manual and denying a command ends the opening '
+      'with the denial, never waiting for ever', () async {
+    mode('manual');
+    final Future<Result<SpaceEntity, AppFailure>> opening = container
+        .read(openSpaceProvider)
+        .open(repository);
+    await listed(1);
+    final int first = rows().first.id;
+
+    container.read(commandsProvider.notifier).deny(first);
+
+    final Result<SpaceEntity, AppFailure> result = await opening.timeout(
+      const Duration(seconds: 5),
+    );
+    expect(result, isA<Failure<SpaceEntity, AppFailure>>());
+    expect(
+      (result as Failure<SpaceEntity, AppFailure>).failure.isDenial,
+      isTrue,
+    );
+    expect(rows().first.stage, CommandStageEnum.denied);
+  });
+
+  test('Always allow in the middle of an opening makes the next command of '
+      'it run unasked', () async {
+    mode('semi');
+    await container.read(approvalsRepositoryProvider).seed();
+    bool finished = false;
+    final Future<Result<SpaceEntity, AppFailure>> opening = container
+        .read(openSpaceProvider)
+        .open(repository)
+        .whenComplete(() => finished = true);
+    await listed(1);
+
+    int allowed = 0;
+    await approver(() => finished, (CommandsNotifier commands, CommandRow row) {
+      allowed++;
+      unawaited(commands.alwaysAllow(row.id));
+    });
+
+    expect(await opening, isA<Success<SpaceEntity, AppFailure>>());
+    expect(allowed, greaterThan(0));
+    // Each command has a key of its own: allowing one writes that one, and
+    // the rest of the opening still asks, so every command was answered.
+    final Map<String, Object?> held =
+        jsonDecode(list.readAsStringSync()) as Map<String, Object?>;
+    expect(held['git --version'], isTrue);
+    expect(rows().length, 2);
   });
 
   test('discarding everything waits as one plan of two, approved top '

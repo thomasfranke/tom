@@ -197,15 +197,29 @@ void main() {
       expect(written.single.output, '{"hosts":{}}');
     });
 
-    test('a program not installed is written down as never run', () async {
-      missing.add('gh');
+    test(
+      'a program not installed is never run and an answer, not red',
+      () async {
+        missing
+          ..add('gh')
+          ..add('ssh');
 
-      await credentials().ghAccounts('github.com');
+        await credentials().ghAccounts('github.com');
+        await credentials().sshGreeting('github.com');
 
-      expect(written.single.exitCode, isNull);
-      expect(written.single.ran, isFalse);
-      expect(written.single.output, 'not found');
-    });
+        expect(written.map((CommandRecord it) => it.failed), <bool>[
+          false,
+          false,
+        ]);
+        expect(written.map((CommandRecord it) => it.answered), <bool>[
+          true,
+          true,
+        ]);
+        expect(written.first.ran, isFalse);
+        expect(written.first.exitCode, 127);
+        expect(written.first.output, 'not found');
+      },
+    );
 
     test('nobody signed in is an answer, not a failure', () async {
       answers['gh'] = ProcessResult(0, 1, '', 'not logged in');
