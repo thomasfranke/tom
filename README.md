@@ -25,7 +25,7 @@
 
 ### Rendered diff
 
-Changes over the *formatted* document, marks in both panes, against `HEAD` or any branch or commit.
+Changes over the *formatted* document, marks in both panes, against the branch the current one came from — nobody picks the base.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/design/screens/desktop/git-diff/comparing-dark.svg">
@@ -47,7 +47,7 @@ Every document in the space, name · folder · excerpt, with the typed words mar
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/design/screens/desktop/search/searching-every-document-dark.svg">
-  <img alt="Search panel listing twelve documents with marked excerpts" src="docs/design/screens/desktop/search/searching-every-document-light.svg" width="100%">
+  <img alt="Search panel listing twelve documents with marked excerpts" src="docs/design/screens/desktop/search/searching-in-every-document-light.svg" width="100%">
 </picture>
 
 ### Conflict resolution
@@ -74,7 +74,7 @@ Source and preview, a formatting bar, tabs, and the file tree carrying each docu
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/design/screens/desktop/workspace-shell/shell-dark.svg">
-  <img alt="Split editor with the file tree, the formatting bar and the open tabs" src="docs/design/screens/desktop/workspace-shell/shell-light.svg" width="100%">
+  <img alt="Split editor with the file tree, the formatting bar and the open tabs" src="docs/design/screens/desktop/workspace-shell/shell-reading-and-editing-light.svg" width="100%">
 </picture>
 
 ## The problem
@@ -123,8 +123,8 @@ Everything is in [`docs/`](docs/) — edited the way TOM proposes: markdown, in 
 |---|---|
 | Phase | 1 — MVP |
 | Done | M0 foundation · M1 essential Git · M2 the rendered diff and search |
-| In progress | M3 — wikilinks, formatting, export, clone by URL, packaging |
-| Released | Nothing yet. No binary, no installer; macOS release builds are blocked on a `flutter_tools` bug |
+| In progress | M3 — wikilinks, formatting, export, clone by URL, tabs and the pull request are built; git approvals, About, the alignment pass and packaging are left |
+| Released | Nothing yet. No binary, no installer; packaging has not started |
 
 Milestones: [`docs/roadmap.md`](docs/roadmap.md). Watch or star the repository if you want to know when there is something to run.
 

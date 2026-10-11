@@ -27,7 +27,7 @@ Types mirror the commit types: `feat/`, `fix/`, `refactor/`, `docs/`, `chore/`, 
 
 ```
 feat/rendered-diff-v0
-fix/watcher-echo-suppression
+fix/stale-text-after-branch-switch
 docs/decision-013-space-config
 ```
 
@@ -51,15 +51,17 @@ Rules:
 
 Types: `feat` · `fix` · `docs` · `refactor` · `test` · `chore` · `perf` · `ci` · `build`
 
-Scopes follow the monorepo structure: `core` · `desktop` · `git` · `diff` · `editor` · `search` · `watcher` · `di`
+**The scope is the feature the change is about, never the package it landed in** — a feature crosses every layer, so a package scope would split one change into six commits or name only one of them. The set is `CONTRIBUTING.md`'s, and the two change together:
 
-For a documentation change the scope names the docs area instead: `decisions` · `architecture` · `patterns`. The scope is optional — omit it when a change genuinely spans the repository rather than picking one.
+- A feature: `home` · `workspace` · `editor` · `search` · `diff` · `git`.
+- What is not a feature: `design` · `docs` · `tool`.
+- The scope is optional — omit it when a change genuinely spans the repository rather than picking one.
 
 ```
 feat(diff): classify modified blocks by similarity
-fix(watcher): ignore echo events from our own saves
-docs(decisions): add 013 on space configuration format
-refactor(core): move BlockDiffer to domain/services
+fix(editor): keep the selection after a formatting press
+docs: add decision 013 on the space configuration format
+refactor(git): read the merge state through one use case
 ```
 
 Rules:
@@ -75,6 +77,8 @@ Applies whenever an AI agent prepares a commit or opens a PR on your behalf, in 
 - **Draft, then approve, then act.** Show the proposed commit message (and file groupings, if splitting into several) as plain text in the reply — not written to a scratch file — and wait for approval before running `git commit`. Same for a PR: draft the title + body (see the `tom-pr-writer` skill for the format), show it inline, wait for approval, before running `gh pr create`.
 - **Push is always its own checkpoint**, separate from commit approval or PR-text approval — even within the same request, and even when push is a prerequisite for something else just approved (e.g. opening a PR needs the branch pushed first). Ask explicitly before every `git push`.
 - This holds even if the request already says "commit this" or "open a PR" — that approves the intent, not the specific text or the push.
+- **No attribution lines.** A commit message and a PR description carry no `Co-Authored-By`, no session link and no "generated with" line, whatever the agent's own defaults add.
+- **Say what did not run.** A commit made before the Penpot export or the whole end-to-end suite — both run only when the maintainer asks — says so in its body.
 
 ## Merging
 
@@ -92,7 +96,7 @@ v0.4.0-beta.1     # pre-release channel
 ```
 
 - Tagging is the release trigger and is restricted to maintainers.
-- The changelog is generated from the Conventional Commits since the previous tag — the reason the convention is enforced rather than suggested.
+- The changelog will be generated from the Conventional Commits since the previous tag — the reason the convention is kept from the first commit, though nothing generates it or enforces the format yet.
 - A release never waits for a branch to stabilize: unfinished features are already on `main`, dormant behind disabled flags.
 - Version alignment across the two repos: the public repo defines the number; see `docs/technical/process/versioning.md`.
 

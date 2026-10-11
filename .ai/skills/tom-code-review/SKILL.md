@@ -78,12 +78,12 @@ Every repository method and every use case returns `Result<T>`; an exception nev
 - Entity, value object with more than one field, presentation view-state, sealed hierarchy → `@freezed`. A hand-written `==`/`hashCode`/`copyWith` on a class that qualifies is a finding, not a preference.
 - Single-field identifier/path wrapper (`BranchNameValueObject`, `CommitShaValueObject`, `RepoRelativePathValueObject`) → `extension type`, *recommended* — a Freezed single-field class is a note, not a finding. A wrapper that grows a second field is the trigger to revisit.
 - Use cases, repositories, infra implementations, notifiers, widgets are not data — leave them alone.
-- **Freezed compares collections element-wise but does not copy them.** A Freezed field holding a `List` is handed over, not owned: the producer passes `List.unmodifiable` and the field's dartdoc states it (`GitStatusValueObject.entries`, `GitMergeConflict.conflictedFiles`). A new collection field without both is a finding. Making it structural needs an immutable-collection package — license check plus an ADR — and is the maintainer's call, not a PR's.
+- **Freezed compares collections element-wise but does not copy them.** A Freezed field holding a `List` is handed over, not owned: the producer passes `List.unmodifiable` and the field's dartdoc states it (`GitStatusValueObject.entries`, `GitMergeConflict.conflictedFiles`). A new collection field without both is a finding. `List.unmodifiable` is enough: an immutable-collection package is not wanted, and proposing one is not a finding's remedy.
 - A `@Assert` is evaluated in the generated part and cannot see a static: its helpers are private top-level functions (`SpaceEntity` shows the shape). A constructor that stops being `const` for the sake of an invariant is the right trade and says so.
 
 ### Paths and vocabulary (Decision 15, rule 12)
 
-**A space is a folder, not a repository.** `SpaceEntity` carries `root` and `repositoryRoot` separately; git runs against the repository, navigation, search and the watcher stay inside the folder.
+**A space is a folder, not a repository.** `SpaceEntity` carries `root` and `repositoryRoot` separately; git runs against the repository, navigation and search stay inside the folder.
 
 - `RepoRelativePathValueObject`, `SpaceRelativePathValueObject` and absolute `String` paths are distinct types on purpose — path confusion is the most probable bug in this application. A new signature taking a `String` where one of the two relative types belongs is a finding.
 - `SpaceEntity` is the only converter: `toRepoRelative`, `toSpaceRelative` (null for what the space does not contain — an ordinary answer, handled, never `!`-ed), `relativize` (from the absolute paths the filesystem reports), `absolutePathOf`. A conversion written anywhere else is a finding. `SpaceRelativePathValueObject.resolve` is the one place a document's own `..` is folded — a link or an image is read from the document's folder, and a second resolver in a widget is a finding.
@@ -96,11 +96,11 @@ Every repository method and every use case returns `Result<T>`; an exception nev
 | Changed | Expected |
 |---|---|
 | a parser | unit, fixtures of real git output |
-| `BlockDiffer` | unit / golden, versioned md pairs + expected classification |
+| `BlockDiffer` | unit, versioned md pairs + expected classification |
 | a use case | unit, fake repositories, failure propagation covered |
 | a repository or capability implementation | **integration against a real `git init` repo or real disk** |
 | a notifier | unit, `ProviderContainer` with overridden use cases |
-| UI | widget / golden for the main states |
+| UI | an end-to-end scenario whose frames show it, and a render test per state a board draws ([`tom-testing`](../tom-testing/SKILL.md)); a widget test only for a state no scenario can hold still |
 
 Integration against real git is the project's confidence differentiator — a diff that mocks it away is a finding even when the mocked test passes. A bug fix without a test that fails without the fix is an unfinished fix. "No tests" is acceptable only with a stated reason.
 
@@ -108,7 +108,7 @@ Integration against real git is the project's confidence differentiator — a di
 
 - Behavior changed → the documentation, in the **same PR**. A technical doc **links** to the `docs/product/` chapter that owns a rule and never restates it; a new paragraph in `docs/technical/` that spells out a product rule is a finding.
 - Behavior that contradicts `docs/product/<feature>/doc.md` is a finding even if the code is clean: that file is the source of truth for what a feature does, and its rules are atomic on purpose so they can be checked one by one.
-- User-facing interface changed → the Penpot board edited **and both themes re-exported** into `docs/design/screens/desktop/<page>/` in the same PR, plus the page's PDF if the card changed. A board that no longer matches what shipped is worse than none, because it carries the appearance of authority (rule 13). A control drawn inline instead of placed from the library is the same finding one level down.
+- User-facing interface changed → the Penpot board was changed **and approved before the code**, and both themes are exported into `docs/design/screens/desktop/<page>/` **before the merge** — the export runs only when the maintainer asks, so a branch whose export has not run yet says so and is not a finding until it asks to merge. Card PDFs are not exported. A board that no longer matches what shipped is worse than none, because it carries the appearance of authority (rule 13). A control drawn inline instead of placed from the library is the same finding one level down.
 - A question answered in `domain/open-questions.md` → moved into the `domain/` file it belongs to, in the same PR, question deleted.
 - Architectural change → a new file in `docs/technical/decisions/` (Status · Context · Decision · Rationale · Consequences · Revisit when); revising an existing decision is an explicit revision, never an edit in passing.
 - A new dependency → its license stated in the PR, and it is not AGPL/GPL (rule 1). Check it; do not assume. The excluded list in `stack/README.md` is a rule: no `dartz`, no routing package, no HTTP client before layer 3, no `sqflite` on desktop.
@@ -160,13 +160,14 @@ What to check when the diff touches each one. The last three are empty today; th
 - **One notifier per panel, explicit states** `initial / loading / data / error(AppFailure)`. Panel-local state (scroll, selection, a message being typed) stays in the notifier; shared state stays in the session. **No business logic in a notifier**: it calls a use case and turns `Result` into state, nothing else.
 - `ref.watch` in build, `ref.read` in callbacks. Presentation never sees a raw file event — it sees the session change.
 
-**`tom_desktop`** — the composition root and the widgets; the only package that knows Flutter exists.
-- **The composition root only instantiates and wires — zero logic**, and `ref.watch` rather than `ref.read` while wiring. Three lifetimes, and a provider in the wrong one is a finding: app (`keepAlive` — parsers, `BlockDiffer`, `Observability`, config), space (a `family` keyed by the space root — `GitClient`, watcher, index, session; disposal tears them down), transient (use cases, default).
+**`tom_desktop`** — the composition root and the widgets. Flutter exists here, in `tom_mobile` and in `tom_ui`, and in no layer package.
+- **The composition root only instantiates and wires — zero logic**, and `ref.watch` rather than `ref.read` while wiring. Three lifetimes, and a provider in the wrong one is a finding: app (`keepAlive` — parsers, `BlockDiffer`, `Observability`, config), space (a `family` keyed by the space root — `GitClient`, index, session; disposal tears them down), transient (use cases, default).
 - **Panels are registered, never hardcoded** (Decision 12): a `TomModule` contributes `PanelDescriptor`s and provider overrides, `runTom(modules: [...])` collects them, and the built-in panels go through an internal `CoreModuleImpl` on exactly the same path. A panel wired straight into the shell widget is a finding even when it is the only panel. Modules add; they never change or degrade what the app does, and none may need the network to start. The app never imports a module.
 - **Feature flags are build-time only** — `bool.fromEnvironment`, declared in one file, enabled with `--dart-define` — and guard **registration, not rendering**: a disabled panel is never registered, so it is unreachable rather than invisible. Every flag states when it goes; a flag without a removal target is a finding.
+- **A new shared widget in `tom_ui` needs a row in `docs/design/components/controls.md`** — `test arch` fails without one, and a review checks that the row's numbers are the board's.
 - Third-party widgets (`re_editor`, the markdown renderer) sit behind our own wrapper widget exposing our API, so swapping the package stays in one file (Tier 2).
 - The preview is assembled **block by block**: the app owns the container around each block (diff decoration, navigation anchor); inline markdown inside a block is delegated. One opaque widget tree for the whole document is a finding — it makes the rendered diff impossible to express.
-- The watcher and git cooperate by protocol (Decision 10): pause before a mutating command, one `SpaceChanged` at the end, echo suppression for the app's own saves, debounce for external bursts, all through the space's queue. Reacting to file events one by one during a checkout is the race the protocol exists to prevent.
+- **Nothing watches the folder in the MVP** (Decision 10, revised): a change made outside the app is caught by `Reload` and, once built, at save, and every git reading is refreshed by whatever wrote to the repository. A diff that adds a file watcher, or reacts to file events, is reopening that decision and needs its revision first.
 
 **Everywhere: files are the truth.** No database and no state that is not rebuildable from the `.md` files on disk; the FTS5 index is a cache that is rebuilt, never repaired. Nothing is written into the user's repository (`.tom/` is reserved, empty, and stays empty until something genuinely has to be shared across a team). No data leaves the machine unless the user turned it on (Decision 11).
 

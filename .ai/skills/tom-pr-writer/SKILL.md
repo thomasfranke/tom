@@ -31,13 +31,13 @@ The title is **exactly the Conventional Commit that the squash merge will produc
 ```
 
 Types: `feat` · `fix` · `docs` · `refactor` · `test` · `chore` · `perf` · `ci` · `build`
-Scopes: `core` · `desktop` · `git` · `diff` · `editor` · `search` · `watcher` · `di` — or, for a documentation change, the docs area: `decisions` · `architecture` · `patterns`
+Scopes: the feature the change is about, never the package it landed in — `home` · `workspace` · `editor` · `search` · `diff` · `git`, or `design` · `docs` · `tool` for what is not a feature (the set is `CONTRIBUTING.md`'s, repeated in [`tom-git-workflow`](../tom-git-workflow/SKILL.md)).
 
 The scope is optional: omit it when a change genuinely spans the repository rather than picking one. Imperative mood, lowercase after the colon, no trailing period, under ~72 characters.
 
 ```
 feat(diff): classify modified blocks by similarity
-fix(watcher): suppress echo events from our own saves
+fix(editor): keep the selection after a formatting press
 ```
 
 If the branch does two unrelated things, say so and suggest splitting it rather than inventing a title that covers both.
@@ -73,11 +73,11 @@ follow-ups worth an issue. Omit the section if there is genuinely nothing.
 | Changed | Expected tests |
 |---|---|
 | A parser | Unit tests with fixtures of real git output |
-| `BlockDiffer` | Golden files: md pairs + expected classification |
+| `BlockDiffer` | Unit tests over versioned md pairs + expected classification |
 | A use case | Unit test with mocked repositories, covering failure propagation |
 | A repository implementation | Integration test against a real git repo in a temp dir |
 | A notifier | Unit test with a test `ProviderContainer` |
-| UI | Widget/golden test for the main states |
+| UI | An end-to-end scenario whose frames show it, an integration test under it, and a render test per state a board draws ([`tom-testing`](../tom-testing/SKILL.md)) |
 
 "No tests needed" is acceptable **only with a stated reason** — docs-only change, a pure refactor already covered, a spike behind a disabled flag. Never leave either section empty, and never substitute one for the other: manual steps are not coverage, and a green suite does not tell a reviewer how to see the change.
 
@@ -104,8 +104,10 @@ Rules the PR is checked against (from `CONTRIBUTING.md`):
 - New dependency → its license is stated, and it is not AGPL/GPL.
 - Behavior changed → documentation updated **in the same PR**.
 - Architectural change → a file added or revised in `docs/technical/decisions/`.
-- A layer package touched → still pure Dart, and `make test-arch` still green.
-- Riverpod appears only in `presentation/` or `bootstrap/di/`.
+- A layer package touched → still pure Dart, and `dart run tool/tom.dart test arch` still green.
+- Riverpod appears only in `tom_presentation` and the composition root (`src/apps/desktop/lib/bootstrap/`).
+- Interface changed → the board was changed and approved in Penpot before the code, and both themes are exported before the merge — the description says whether the export has run.
+- No attribution line in the description or the squash message.
 
 ## Size
 
