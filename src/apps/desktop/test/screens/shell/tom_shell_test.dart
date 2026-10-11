@@ -18,6 +18,7 @@ import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
 import 'package:tom_desktop/screens/search/search_field_widget.dart';
 import 'package:tom_desktop/screens/shell/tom_shell.dart';
+import 'package:tom_desktop/screens/shell/widgets/shell_slide_widget.dart';
 import 'package:tom_desktop/screens/workspace/workspace_bottom_grip_widget.dart';
 import 'package:tom_desktop/screens/workspace/workspace_design.dart';
 import 'package:tom_desktop/screens/workspace/workspace_grip_widget.dart';
@@ -261,6 +262,54 @@ void main() {
     });
   });
 
+  group('a drag on a closed column’s gutter opens it', () {
+    // `docs/product/workspace/columns/doc.md`.
+    Future<void> drag(WidgetTester tester, Finder grip, double dx) async {
+      final TestGesture gesture = await tester.startGesture(
+        tester.getCenter(grip),
+      );
+      await gesture.moveBy(Offset(dx, 0));
+      await gesture.up();
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the left one, dragged towards the document', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, modules: <TomModule>[const CoreModuleImpl()]);
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(WorkspaceGripWidget).first),
+      );
+      container.read(workspaceProvider.notifier).toggleExplorer();
+      await tester.pumpAndSettle();
+      expect(find.byType(FileTreePanel), findsNothing);
+
+      await drag(tester, find.byType(WorkspaceGripWidget).first, -30);
+      expect(find.byType(FileTreePanel), findsNothing, reason: 'wrong way');
+
+      await drag(tester, find.byType(WorkspaceGripWidget).first, 30);
+      expect(find.byType(FileTreePanel), findsOneWidget);
+    });
+
+    testWidgets('the right one, dragged towards the document', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, modules: <TomModule>[const CoreModuleImpl()]);
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(WorkspaceGripWidget).first),
+      );
+      container.read(workspaceProvider.notifier).toggleAside();
+      await tester.pumpAndSettle();
+      expect(container.read(workspaceProvider).showingAside, isFalse);
+
+      await drag(tester, find.byType(WorkspaceGripWidget).last, 30);
+      expect(container.read(workspaceProvider).showingAside, isFalse);
+
+      await drag(tester, find.byType(WorkspaceGripWidget).last, -30);
+      expect(container.read(workspaceProvider).showingAside, isTrue);
+    });
+  });
+
   group('the panel under the document', () {
     // `docs/product/workspace/commands/doc.md`.
     const TargetPlatformVariant platforms = TargetPlatformVariant(
@@ -295,6 +344,60 @@ void main() {
       await gesture.up();
       await tester.pumpAndSettle();
     }
+
+    testWidgets('opening it slides, and a drag of its gutter does not', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester, size: const Size(1440, 900));
+      expect(find.byType(CommandsPanel), findsNothing, reason: 'closed first');
+
+      container.read(workspaceProvider.notifier).toggleBottom();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      final double midway = tester
+          .getSize(find.byType(ShellSlideWidget).at(1))
+          .height;
+      expect(midway, greaterThan(0));
+      expect(
+        midway,
+        lessThan(TomMetrics.gutter + WorkspaceDesign.bottomHeight),
+      );
+
+      await tester.pump(ShellSlideWidget.duration);
+      expect(
+        tester.getSize(find.byType(ShellSlideWidget).at(1)).height,
+        TomMetrics.gutter + WorkspaceDesign.bottomHeight,
+      );
+
+      // A drag lands on the pointer in the frame it is made.
+      await dragBottom(tester, -50);
+      expect(
+        tester.getSize(find.byType(ShellSlideWidget).at(1)).height,
+        TomMetrics.gutter + WorkspaceDesign.bottomHeight + 50,
+      );
+    });
+
+    testWidgets('closing the explorer slides it away rather than cutting it', (
+      WidgetTester tester,
+    ) async {
+      await pumpShell(tester);
+      final double open = tester
+          .getSize(find.byType(ShellSlideWidget).first)
+          .width;
+      expect(open, TomMetrics.gutter + TomMetrics.explorer);
+
+      container.read(workspaceProvider.notifier).toggleExplorer();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      final double midway = tester
+          .getSize(find.byType(ShellSlideWidget).first)
+          .width;
+      expect(midway, greaterThan(0));
+      expect(midway, lessThan(open));
+
+      await tester.pump(ShellSlideWidget.duration);
+      expect(tester.getSize(find.byType(ShellSlideWidget).first).width, 0);
+    });
 
     testWidgets('dragging the gutter above it raises it, the document giving '
         'way', (WidgetTester tester) async {
@@ -381,6 +484,30 @@ void main() {
         lessThan(tester.getTopLeft(find.text('Terminal')).dx),
       );
       expect(find.text('0 this session'), findsOneWidget);
+    });
+
+    testWidgets('its head keeps the board\'s gaps: 15 between the tabs, the '
+        'count 34 after them, and a 14 × centred 18 from the edge', (
+      WidgetTester tester,
+    ) async {
+      container.read(workspaceProvider.notifier).toggleBottom();
+      await pumpShell(tester, size: const Size(1440, 900));
+
+      final Rect commands = tester.getRect(find.text('Commands'));
+      final Rect terminal = tester.getRect(find.text('Terminal'));
+      final Rect count = tester.getRect(find.text('0 this session'));
+      expect(terminal.left - commands.right, 15);
+      expect(count.left - terminal.right, 32);
+
+      final Rect panel = tester.getRect(islandOf(CommandsPanel));
+      final Rect cross = tester.getRect(
+        find.descendant(
+          of: find.byTooltip('Close the panel'),
+          matching: find.byType(TomGlyphWidget),
+        ),
+      );
+      expect(cross.size, const Size(14, 14));
+      expect(panel.right - cross.center.dx, 18);
     });
 
     testWidgets('its × puts it away', (WidgetTester tester) async {
@@ -598,9 +725,9 @@ void main() {
         find
             .ancestor(
               of: find.text('EXPLORER'),
-              matching: find.byType(SizedBox),
+              matching: find.byType(TomColumnBoxWidget),
             )
-            .last,
+            .first,
       );
       expect(region.width, TomMetrics.explorer);
     });

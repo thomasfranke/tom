@@ -9,11 +9,14 @@ import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/src/commands/command_action_enum.dart';
 import 'package:tom_presentation/src/commands/command_scope.dart';
+import 'package:tom_presentation/src/commands/git_asks_first.dart';
+import 'package:tom_presentation/src/commands/opening_plan_notifier.dart';
 import 'package:tom_presentation/src/editor/editor_notifier.dart';
 import 'package:tom_presentation/src/home/home_providers.dart';
 import 'package:tom_presentation/src/spaces/space_departure.dart';
 import 'package:tom_presentation/src/spaces/space_menu_state.dart';
 import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
+import 'package:tom_presentation/src/spaces/window_closer.dart';
 
 part 'space_menu_notifier.g.dart';
 
@@ -86,6 +89,11 @@ class SpaceMenuNotifier extends _$SpaceMenuNotifier {
   /// opens the surface for it.
   Future<void> close() => _leave(const SpaceDeparture.closing());
 
+  /// Closes the window, asking first for the same reason: the window's own
+  /// close and the system's quit both end here
+  /// (`docs/product/editor/tabs/doc.md`).
+  Future<void> quit() => _leave(const SpaceDeparture.quitting());
+
   /// Saves what is open, then goes where the question was about.
   Future<void> saveAndLeave() async {
     if (state.pending case final SpaceDeparture departure) {
@@ -123,13 +131,27 @@ class SpaceMenuNotifier extends _$SpaceMenuNotifier {
     await _depart(departure);
   }
 
-  /// Does what was decided, whichever of the two it is.
+  /// Does what was decided, whichever of the three it is.
   Future<void> _depart(SpaceDeparture departure) => switch (departure) {
     SpaceDepartureClosing() => _close(),
+    SpaceDepartureQuitting() => _quit(),
     SpaceDepartureSwitching(space: final RecentSpaceEntity space) => _open(
       space,
     ),
   };
+
+  /// Closes the space, then the window.
+  ///
+  /// The space first, so the buffers are gone by the time the system asks
+  /// the app whether it may exit — an edit somebody chose to discard must
+  /// not raise the question a second time.
+  Future<void> _quit() async {
+    final WindowCloser closeWindow = ref.read(windowCloserProvider);
+    if (ref.read(spaceSessionProvider) != null) {
+      await _close();
+    }
+    await closeWindow();
+  }
 
   /// Leaves the space, which puts Home back on the window.
   Future<void> _close() async {
@@ -144,9 +166,18 @@ class SpaceMenuNotifier extends _$SpaceMenuNotifier {
   /// does not move.
   Future<void> _open(RecentSpaceEntity space) async {
     state = state.copyWith(isBusy: true, pending: null, unopened: null);
-    final Result<SpaceEntity, AppFailure> opened = await CommandScope.run(
-      CommandActionEnum.openSpace,
-      () => openSpace.open(space.root),
+    final bool deferred = await gitAsksFirst(ref);
+    if (!ref.mounted) {
+      return;
+    }
+    // One plan with the first reading the space makes once it is open.
+    final CommandScope plan = CommandScope.start(
+      CommandActionEnum.readRepository,
+    );
+    final Result<SpaceEntity, AppFailure> opened = await plan.within(
+      () => deferred
+          ? openSpace.openFolder(space.root)
+          : openSpace.open(space.root),
     );
     if (!ref.mounted) {
       return;
@@ -154,7 +185,8 @@ class SpaceMenuNotifier extends _$SpaceMenuNotifier {
     switch (opened) {
       case Success<SpaceEntity, AppFailure>(value: final SpaceEntity it):
         state = state.copyWith(isBusy: false, isShowing: false);
-        ref.read(spaceSessionProvider.notifier).open(it);
+        ref.read(openingPlanProvider.notifier).handed = plan;
+        ref.read(spaceSessionProvider.notifier).open(it, locating: deferred);
       // Refused, the window stays where it is and the row says nothing.
       case Failure<SpaceEntity, AppFailure>(
         failure: AppFailure(isDenial: true),

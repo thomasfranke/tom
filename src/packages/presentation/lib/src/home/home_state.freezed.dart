@@ -125,12 +125,12 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<RecentSpaceEntity> recents,  HomeCloneState clone)?  ready,TResult Function( AppFailure failure,  List<RecentSpaceEntity> recents)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<RecentSpaceEntity> recents,  HomeCloneState clone,  String? notOpened)?  ready,TResult Function( AppFailure failure,  List<RecentSpaceEntity> recents)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case HomeInitial() when initial != null:
 return initial();case HomeLoading() when loading != null:
 return loading();case HomeReady() when ready != null:
-return ready(_that.recents,_that.clone);case HomeFailed() when failed != null:
+return ready(_that.recents,_that.clone,_that.notOpened);case HomeFailed() when failed != null:
 return failed(_that.failure,_that.recents);case _:
   return orElse();
 
@@ -149,12 +149,12 @@ return failed(_that.failure,_that.recents);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<RecentSpaceEntity> recents,  HomeCloneState clone)  ready,required TResult Function( AppFailure failure,  List<RecentSpaceEntity> recents)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<RecentSpaceEntity> recents,  HomeCloneState clone,  String? notOpened)  ready,required TResult Function( AppFailure failure,  List<RecentSpaceEntity> recents)  failed,}) {final _that = this;
 switch (_that) {
 case HomeInitial():
 return initial();case HomeLoading():
 return loading();case HomeReady():
-return ready(_that.recents,_that.clone);case HomeFailed():
+return ready(_that.recents,_that.clone,_that.notOpened);case HomeFailed():
 return failed(_that.failure,_that.recents);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -169,12 +169,12 @@ return failed(_that.failure,_that.recents);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<RecentSpaceEntity> recents,  HomeCloneState clone)?  ready,TResult? Function( AppFailure failure,  List<RecentSpaceEntity> recents)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<RecentSpaceEntity> recents,  HomeCloneState clone,  String? notOpened)?  ready,TResult? Function( AppFailure failure,  List<RecentSpaceEntity> recents)?  failed,}) {final _that = this;
 switch (_that) {
 case HomeInitial() when initial != null:
 return initial();case HomeLoading() when loading != null:
 return loading();case HomeReady() when ready != null:
-return ready(_that.recents,_that.clone);case HomeFailed() when failed != null:
+return ready(_that.recents,_that.clone,_that.notOpened);case HomeFailed() when failed != null:
 return failed(_that.failure,_that.recents);case _:
   return null;
 
@@ -251,7 +251,7 @@ String toString() {
 
 
 class HomeReady implements HomeState {
-  const HomeReady(final  List<RecentSpaceEntity> recents, {this.clone = const HomeCloneState.closed()}): _recents = recents;
+  const HomeReady(final  List<RecentSpaceEntity> recents, {this.clone = const HomeCloneState.closed(), this.notOpened}): _recents = recents;
   
 
  final  List<RecentSpaceEntity> _recents;
@@ -262,6 +262,7 @@ class HomeReady implements HomeState {
 }
 
 @JsonKey() final  HomeCloneState clone;
+ final  String? notOpened;
 
 /// Create a copy of HomeState
 /// with the given fields replaced by the non-null parameter values.
@@ -273,16 +274,16 @@ $HomeReadyCopyWith<HomeReady> get copyWith => _$HomeReadyCopyWithImpl<HomeReady>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is HomeReady&&const DeepCollectionEquality().equals(other._recents, _recents)&&(identical(other.clone, clone) || other.clone == clone));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is HomeReady&&const DeepCollectionEquality().equals(other._recents, _recents)&&(identical(other.clone, clone) || other.clone == clone)&&(identical(other.notOpened, notOpened) || other.notOpened == notOpened));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_recents),clone);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_recents),clone,notOpened);
 
 @override
 String toString() {
-  return 'HomeState.ready(recents: $recents, clone: $clone)';
+  return 'HomeState.ready(recents: $recents, clone: $clone, notOpened: $notOpened)';
 }
 
 
@@ -293,7 +294,7 @@ abstract mixin class $HomeReadyCopyWith<$Res> implements $HomeStateCopyWith<$Res
   factory $HomeReadyCopyWith(HomeReady value, $Res Function(HomeReady) _then) = _$HomeReadyCopyWithImpl;
 @useResult
 $Res call({
- List<RecentSpaceEntity> recents, HomeCloneState clone
+ List<RecentSpaceEntity> recents, HomeCloneState clone, String? notOpened
 });
 
 
@@ -310,11 +311,12 @@ class _$HomeReadyCopyWithImpl<$Res>
 
 /// Create a copy of HomeState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? recents = null,Object? clone = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? recents = null,Object? clone = null,Object? notOpened = freezed,}) {
   return _then(HomeReady(
 null == recents ? _self._recents : recents // ignore: cast_nullable_to_non_nullable
 as List<RecentSpaceEntity>,clone: null == clone ? _self.clone : clone // ignore: cast_nullable_to_non_nullable
-as HomeCloneState,
+as HomeCloneState,notOpened: freezed == notOpened ? _self.notOpened : notOpened // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

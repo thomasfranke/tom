@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_design.dart';
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_centred_widget.dart';
 import 'package:tom_desktop/widgets/file_state_mark_widget.dart';
+import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
@@ -61,8 +62,10 @@ class FileTreeRowWidget extends ConsumerWidget {
     final TomColors colors = TomColors.of(context);
     final double labelLeft =
         FileTreeDesign.labelLeft + row.depth * FileTreeDesign.indent;
-    final bool isOpenable = row.isFolder || row.entry.isDocument;
-    final Color color = switch ((isOpen, row.isFolder, isOpenable)) {
+    // Dimmer is about being a document; whether the row answers a press is
+    // another matter, since every file opens and only a link does not.
+    final bool isDocumentRow = row.isFolder || row.entry.isDocument;
+    final Color color = switch ((isOpen, row.isFolder, isDocumentRow)) {
       (true, _, _) => colors.textPrimary,
       (false, true, _) => colors.textPrimary,
       (false, false, true) => colors.textSecondary,
@@ -115,7 +118,7 @@ class FileTreeRowWidget extends ConsumerWidget {
                       : TomGlyphEnum.folder)
                 : TomGlyphEnum.file,
             color: row.isFolder
-                ? fileTreeFolderInk(Theme.of(context).brightness)
+                ? colors.accentMuted
                 : (isOpen ? colors.accent : colors.textMuted),
             size: FileTreeDesign.glyph,
           ),
@@ -192,7 +195,7 @@ class FileTreeRowWidget extends ConsumerWidget {
         ),
       ],
     );
-    if (!isOpenable) {
+    if (row.entry.type == SpaceEntryTypeEnum.link) {
       return content;
     }
     return InkWell(

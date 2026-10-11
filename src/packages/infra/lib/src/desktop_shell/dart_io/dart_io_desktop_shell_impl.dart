@@ -41,7 +41,7 @@ final class DartIoDesktopShellImpl implements DesktopShell {
     this.operatingSystem,
     this.run = _run,
     this.start = _start,
-    this.commandLog = const SilentCommandLog(),
+    this.commandLog = const SilentCommandLogImpl(),
   });
 
   /// Where every program is written down — one left running as soon as it

@@ -138,7 +138,9 @@ class _SegmentWidget extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.4,
-                    fontWeight: isChosen ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: isChosen
+                        ? TomFonts.segmentChosen
+                        : TomFonts.segmentRest,
                     color: isChosen
                         ? colors.textPrimary
                         : isAvailable

@@ -8,6 +8,9 @@
 /// is one nobody can fulfil.
 library;
 
+export 'src/app_updates/app_updates.dart';
+export 'src/app_updates/app_updates_failure.dart';
+export 'src/app_updates/http_client/dart_io_http_client_app_updates_impl.dart';
 export 'src/credentials/command_line/command_line_credentials_impl.dart';
 export 'src/credentials/credentials.dart';
 export 'src/credentials/credentials_command_key_enum.dart';
@@ -41,6 +44,7 @@ export 'src/pseudo_terminal/login_shell/login_shell_pseudo_terminal_impl.dart';
 export 'src/pseudo_terminal/pseudo_terminal.dart';
 export 'src/pseudo_terminal/pseudo_terminal_failure.dart';
 export 'src/pseudo_terminal/pseudo_terminal_process.dart';
+export 'src/pseudo_terminal/pty2/pty2_pseudo_terminal_process_impl.dart';
 export 'src/search_index/search_index.dart';
 export 'src/search_index/search_index_failure.dart';
 export 'src/search_index/sqlite3/sqlite3_search_index_impl.dart';

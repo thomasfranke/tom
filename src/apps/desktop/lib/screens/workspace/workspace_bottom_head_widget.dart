@@ -51,13 +51,21 @@ class WorkspaceBottomHeadWidget extends ConsumerWidget {
         children: <Widget>[
           for (final PanelDescriptor each in panels) ...<Widget>[
             _TabWidget(panel: each, isChosen: each.id == chosen.id),
-            const SizedBox(width: WorkspaceDesign.bottomTabsGap),
+            if (each != panels.last)
+              const SizedBox(width: WorkspaceDesign.bottomTabsGap),
           ],
-          // Flexible, so a long folder after the terminal's tab is cut short
-          // rather than pushing the `×` off the panel.
+          // Expanded, so a long folder after the terminal's tab is cut short
+          // rather than pushing the `×` off the panel, and left-aligned: what
+          // the panel says starts right after the tabs.
           if (chosen.summary case final WidgetBuilder summary)
-            Flexible(child: Center(child: summary(context))),
-          const Spacer(),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: summary(context),
+              ),
+            )
+          else
+            const Spacer(),
           Tooltip(
             message: context.l10n.workspaceClosePanel,
             child: InkWell(
@@ -71,8 +79,8 @@ class WorkspaceBottomHeadWidget extends ConsumerWidget {
                   alignment: Alignment.centerLeft,
                   child: TomGlyphWidget(
                     glyph: TomGlyphEnum.close,
+                    // The glyph's own 14: 10 by 10 of ink, as the board's.
                     color: colors.textSecondary,
-                    size: WorkspaceDesign.bottomCloseGlyph,
                   ),
                 ),
               ),
@@ -112,7 +120,7 @@ class _TabWidget extends ConsumerWidget {
               panel.title(context),
               maxLines: 1,
               style: TextStyle(
-                fontSize: WorkspaceDesign.tabsLabel,
+                fontSize: WorkspaceDesign.bottomTabsLabel,
                 height: 1.4,
                 fontWeight: FontWeight.w500,
                 color: isChosen ? colors.textPrimary : colors.textSecondary,

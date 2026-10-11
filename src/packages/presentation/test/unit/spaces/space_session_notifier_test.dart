@@ -225,7 +225,7 @@ void main() {
         ..show(a)
         ..openPreferencesFile(file);
 
-      expect(now().preferencesFile, file);
+      expect(now().appFiles, <SpaceRelativePathValueObject>[file]);
       expect(now().openDocument, isNull);
       expect(now().isShowingPreferencesFile, isTrue);
       // Never one of the space's tabs: what reads them takes each for a
@@ -263,7 +263,7 @@ void main() {
         ..openPreferencesFile(file)
         ..show(file);
 
-      expect(now().preferencesTab, isNot(now().onScreen));
+      expect(now().appTabs.single, isNot(now().onScreen));
       expect(now().tabs, <DocumentTab>[DocumentTab.inSpace(file)]);
     });
 
@@ -274,7 +274,7 @@ void main() {
         ..show(a);
 
       expect(now().isShowingPreferencesFile, isFalse);
-      expect(now().preferencesFile, file);
+      expect(now().appFiles, <SpaceRelativePathValueObject>[file]);
       expect(now().drawnMode, DocumentModeEnum.split);
     });
 
@@ -287,7 +287,8 @@ void main() {
         ..openPreferencesFile(file)
         ..closeTab(DocumentTab.preferences(file));
 
-      expect(now().preferencesFile, isNull);
+      expect(now().appFiles, isEmpty);
+      expect(now().appFile, isNull);
       expect(now().openDocument, b);
     });
 
@@ -298,7 +299,7 @@ void main() {
         ..show(a)
         ..closeTab(DocumentTab.preferences(file));
 
-      expect(now().preferencesFile, isNull);
+      expect(now().appFiles, isEmpty);
       expect(now().openDocument, a);
     });
 
@@ -322,7 +323,91 @@ void main() {
         ..openPreferencesFile(file)
         ..open(notes);
 
-      expect(now().preferencesFile, isNull);
+      expect(now().appFiles, isEmpty);
+    });
+
+    group('and git-approvals.json beside it', () {
+      final SpaceRelativePathValueObject list = SpaceRelativePathValueObject(
+        'git-approvals.json',
+      );
+
+      test('both are open at once, each a tab, the last on screen', () {
+        session()
+          ..open(docs)
+          ..openPreferencesFile(file)
+          ..openPreferencesFile(list);
+
+        expect(now().appFiles, <SpaceRelativePathValueObject>[file, list]);
+        expect(now().appFile, list);
+        expect(now().appTabs, <DocumentTab>[
+          DocumentTab.preferences(file),
+          DocumentTab.preferences(list),
+        ]);
+      });
+
+      test('opening one again chooses it and adds nothing', () {
+        session()
+          ..open(docs)
+          ..openPreferencesFile(file)
+          ..openPreferencesFile(list)
+          ..choose(DocumentTab.preferences(file));
+
+        expect(now().appFiles.length, 2);
+        expect(now().appFile, file);
+        expect(now().shownAppTab, DocumentTab.preferences(file));
+      });
+
+      test('closing the one on screen shows the one before it', () {
+        session()
+          ..open(docs)
+          ..openPreferencesFile(file)
+          ..openPreferencesFile(list)
+          ..closeTab(DocumentTab.preferences(list));
+
+        expect(now().appFiles, <SpaceRelativePathValueObject>[file]);
+        expect(now().appFile, file);
+        expect(now().isShowingPreferencesFile, isTrue);
+      });
+
+      test('closing the first, on screen, shows the last document', () {
+        session()
+          ..open(docs)
+          ..show(a)
+          ..openPreferencesFile(file)
+          ..openPreferencesFile(list)
+          ..choose(DocumentTab.preferences(file))
+          ..closeTab(DocumentTab.preferences(file));
+
+        expect(now().appFiles, <SpaceRelativePathValueObject>[list]);
+        expect(now().openDocument, a);
+        expect(now().isShowingPreferencesFile, isFalse);
+      });
+
+      test('closing one behind a document leaves the screen alone', () {
+        session()
+          ..open(docs)
+          ..openPreferencesFile(file)
+          ..openPreferencesFile(list)
+          ..show(a)
+          ..closeTab(DocumentTab.preferences(list));
+
+        expect(now().appFiles, <SpaceRelativePathValueObject>[file]);
+        expect(now().openDocument, a);
+        expect(now().appFile, file);
+      });
+
+      test('closing the last document shows the file that was chosen', () {
+        session()
+          ..open(docs)
+          ..show(a)
+          ..openPreferencesFile(file)
+          ..openPreferencesFile(list)
+          ..show(a)
+          ..closeTab(DocumentTab.inSpace(a));
+
+        expect(now().openDocument, isNull);
+        expect(now().shownAppTab, DocumentTab.preferences(list));
+      });
     });
   });
 

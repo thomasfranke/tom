@@ -23,7 +23,20 @@ class SpaceSessionNotifier extends _$SpaceSessionNotifier {
   ///
   /// A space already open is replaced whole: [SpaceSessionState.openDocument]
   /// names a file inside *a* space, and the new one may not hold it.
-  void open(SpaceEntity space) => state = SpaceSessionState(space: space);
+  ///
+  /// [locating] says git has not yet been asked where the repository is:
+  /// the files show now and [located] completes the space.
+  void open(SpaceEntity space, {bool locating = false}) =>
+      state = SpaceSessionState(space: space, locatingRepository: locating);
+
+  /// Completes the space opened with `locating`: [space] is the same folder
+  /// with the repository git found, or none.
+  void located(SpaceEntity space) {
+    if (state case final SpaceSessionState session
+        when session.locatingRepository && session.space.root == space.root) {
+      state = session.copyWith(space: space, locatingRepository: false);
+    }
+  }
 
   /// Leaves the space, which is what puts Home back on the window.
   ///
@@ -98,7 +111,12 @@ class SpaceSessionNotifier extends _$SpaceSessionNotifier {
   void openPreferencesFile(SpaceRelativePathValueObject file) {
     if (state case final SpaceSessionState session) {
       state = session.copyWith(
-        preferencesFile: file,
+        appFiles: session.appFiles.contains(file)
+            ? session.appFiles
+            : List<SpaceRelativePathValueObject>.unmodifiable(
+                <SpaceRelativePathValueObject>[...session.appFiles, file],
+              ),
+        appFile: file,
         openDocument: null,
         outsideDocument: null,
         readingVersion: null,
@@ -152,11 +170,34 @@ class SpaceSessionNotifier extends _$SpaceSessionNotifier {
   /// the same way, its left neighbour being the last document's.
   void closeTab(DocumentTab tab) {
     if (state case final SpaceSessionState session) {
-      if (tab == session.preferencesTab) {
-        final DocumentTab? last = session.isShowingPreferencesFile
-            ? session.tabs.lastOrNull
-            : session.onScreen;
-        state = _showing(session.copyWith(preferencesFile: null), last);
+      if (tab case PreferencesDocumentTab(
+        :final SpaceRelativePathValueObject path,
+      )) {
+        final int at = session.appFiles.indexOf(path);
+        if (at < 0) {
+          return;
+        }
+        final List<SpaceRelativePathValueObject> files =
+            session.appFiles.toList()..removeAt(at);
+        final bool wasShown =
+            session.isShowingPreferencesFile && session.appFile == path;
+        // Its left neighbour takes the area: the app file before it, or
+        // the last document.
+        final SpaceRelativePathValueObject? neighbour = at > 0
+            ? files[at - 1]
+            : files.firstOrNull;
+        final DocumentTab? last = !wasShown
+            ? session.onScreen
+            : at > 0
+            ? null
+            : session.tabs.lastOrNull;
+        state = _showing(
+          session.copyWith(
+            appFiles: List<SpaceRelativePathValueObject>.unmodifiable(files),
+            appFile: session.appFile == path ? neighbour : session.appFile,
+          ),
+          last,
+        );
         return;
       }
       final int at = session.tabs.indexOf(tab);
@@ -167,7 +208,7 @@ class SpaceSessionNotifier extends _$SpaceSessionNotifier {
       // The tab to the right is the preferences file's when this was the
       // last document's; it is on screen once no document is.
       final bool rightIsPreferences =
-          at == tabs.length && session.preferencesFile != null;
+          at == tabs.length && session.appFiles.isNotEmpty;
       final DocumentTab? next = session.onScreen != tab
           ? session.onScreen
           : tabs.isEmpty || rightIsPreferences

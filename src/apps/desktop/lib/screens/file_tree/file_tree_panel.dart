@@ -89,7 +89,12 @@ class FileTreePanel extends ConsumerWidget {
         // Three bodies, one column: the tree when nothing is asked, and one
         // answer per scope when something is.
         Expanded(
-          child: switch ((searching, scope)) {
+          // `This file` answers even with an empty box: its column says to
+          // type (`docs/product/search/in-the-document/doc.md`).
+          child: switch ((
+            searching || scope == SearchScopeEnum.thisFile,
+            scope,
+          )) {
             // The pull request sits at the top of the tree, never of the
             // results (`git-workflow/pull-request/the-control/doc.md`).
             (false, _) => Column(

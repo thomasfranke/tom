@@ -25,6 +25,12 @@ class WorkspaceNotifier extends _$WorkspaceNotifier {
   void toggleAside() =>
       state = state.copyWith(showingAside: !state.showingAside);
 
+  /// Brings the left column back — a drag on its closed gutter.
+  void openExplorer() => state = state.copyWith(showingExplorer: true);
+
+  /// Brings the right column back — a drag on its closed gutter.
+  void openAside() => state = state.copyWith(showingAside: true);
+
   /// Shows the right column's panel registered under [id].
   void showAsidePanel(String id) => state = state.copyWith(asidePanel: id);
 

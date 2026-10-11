@@ -12,7 +12,10 @@ import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// One row of the recent list: a space, and the way to forget it.
-class HomeRecentRowWidget extends ConsumerWidget {
+///
+/// The ✕ is drawn on the row under the pointer only — down every row it is a
+/// column of ways to lose one (`docs/product/home/recent-spaces/doc.md`).
+class HomeRecentRowWidget extends ConsumerStatefulWidget {
   /// Creates the row offering [recent].
   const HomeRecentRowWidget({required this.recent, super.key});
 
@@ -20,19 +23,29 @@ class HomeRecentRowWidget extends ConsumerWidget {
   final RecentSpaceEntity recent;
 
   @override
+  ConsumerState<HomeRecentRowWidget> createState() =>
+      _HomeRecentRowWidgetState();
+
+  @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<RecentSpaceEntity>('recent', recent));
   }
+}
+
+class _HomeRecentRowWidgetState extends ConsumerState<HomeRecentRowWidget> {
+  bool _isUnderThePointer = false;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final RecentSpaceEntity recent = widget.recent;
     final TomColors colors = TomColors.of(context);
     final BranchNameValueObject? branch = ref
         .watch(recentBranchProvider(recent))
         .value;
     return InkWell(
       onTap: () => ref.read(homeProvider.notifier).open(recent.root),
+      onHover: (bool isOver) => setState(() => _isUnderThePointer = isOver),
       child: SizedBox(
         height: HomeDesign.row,
         child: Row(
@@ -76,13 +89,21 @@ class HomeRecentRowWidget extends ConsumerWidget {
               const SizedBox(width: HomeDesign.rowPad),
               _BranchWidget(branch: branch),
             ],
-            IconButton(
-              tooltip: context.l10n.homeForgetSpace,
-              onPressed: () =>
-                  ref.read(homeProvider.notifier).forget(recent.root),
-              icon: TomGlyphWidget(
-                glyph: TomGlyphEnum.close,
-                color: colors.textMuted,
+            // Its room is kept while it is not drawn, so the branch beside it
+            // does not move when the pointer arrives.
+            Visibility(
+              visible: _isUnderThePointer,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: IconButton(
+                tooltip: context.l10n.homeForgetSpace,
+                onPressed: () =>
+                    ref.read(homeProvider.notifier).forget(recent.root),
+                icon: TomGlyphWidget(
+                  glyph: TomGlyphEnum.close,
+                  color: colors.textMuted,
+                ),
               ),
             ),
             const SizedBox(width: HomeDesign.rowPad - TomMetrics.padTight),

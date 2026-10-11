@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/screens/editor/editor_toolbar_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_mode_bar_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_mode_control_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -29,6 +30,7 @@ void main() {
     preferences = _Preferences();
     container = ProviderContainer(
       overrides: <Override>[
+        historyProvider.overrideWith(_NoHistory.new),
         readPreferencesProvider.overrideWithValue(
           ReadPreferencesUseCase(preferences: preferences),
         ),
@@ -90,6 +92,18 @@ void main() {
     WidgetTester tester, {
     SpaceRelativePathValueObject? document,
   }) => pump(tester, const ShellModeBarWidget(), document: document);
+
+  /// The round marks the row draws, whatever their colour.
+  Iterable<BoxDecoration> modifiedDots(WidgetTester tester) => tester
+      .widgetList<DecoratedBox>(
+        find.descendant(
+          of: find.byType(ShellModeBarWidget),
+          matching: find.byType(DecoratedBox),
+        ),
+      )
+      .map((DecoratedBox it) => it.decoration)
+      .whereType<BoxDecoration>()
+      .where((BoxDecoration it) => it.shape == BoxShape.circle);
 
   /// The modes, which the top bar carries
   /// (`docs/product/workspace/columns/doc.md`).
@@ -178,15 +192,19 @@ void main() {
       expect(find.text('Unsaved'), findsNothing);
     });
 
-    testWidgets('appears the moment something is typed', (
+    testWidgets('says nothing about an edit that is only unwritten', (
       WidgetTester tester,
     ) async {
+      // The tab's dot says it, closer to the document it is about.
       await pumpBar(tester, document: writing);
 
       container.read(editorProvider.notifier).edit('# changed\n');
       await tester.pumpAndSettle();
 
-      expect(find.text('Unsaved'), findsOneWidget);
+      expect(container.read(editorProvider).isDirty, isTrue);
+      expect(find.text('Unsaved'), findsNothing);
+      expect(find.text('Not saved'), findsNothing);
+      expect(modifiedDots(tester), isEmpty);
     });
 
     testWidgets('goes once the write lands', (WidgetTester tester) async {
@@ -219,6 +237,49 @@ void main() {
       expect(find.text('Unsaved'), findsNothing);
     });
   });
+
+  group('reading a past version', () {
+    final CommitEntity past = CommitEntity(
+      sha: CommitShaValueObject('abc1234' * 5 + 'def01'),
+      author: const AuthorValueObject(name: 'Ana', email: 'ana@example.com'),
+      date: CommitDateValueObject(
+        utc: DateTime.now().toUtc().subtract(const Duration(days: 3)),
+        offset: Duration.zero,
+      ),
+      subject: 'Reword the intro',
+      body: '',
+    );
+
+    testWidgets('the bar names the version and says the way back', (
+      WidgetTester tester,
+    ) async {
+      await pumpBar(tester, document: writing);
+      container.read(spaceSessionProvider.notifier).read(past);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Reading ${past.sha.short} · Ana · '),
+        findsOneWidget,
+      );
+      expect(find.text('Back to now'), findsOneWidget);
+      // It replaces the tools: there is no source for a commit.
+      expect(find.byType(EditorToolbarWidget), findsNothing);
+    });
+
+    testWidgets('Back to now leaves the version for the document', (
+      WidgetTester tester,
+    ) async {
+      await pumpBar(tester, document: writing);
+      container.read(spaceSessionProvider.notifier).read(past);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Back to now'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(spaceSessionProvider)?.readingVersion, isNull);
+      expect(find.text('Back to now'), findsNothing);
+    });
+  });
 }
 
 /// A repository answering with whatever content the test set.
@@ -242,6 +303,12 @@ final class _Documents implements DocumentRepository {
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
       refusal ?? const Success<void, DocumentFailure>(null);
+}
+
+/// No history read: the bar only asks it to leave a version.
+final class _NoHistory extends HistoryNotifier {
+  @override
+  HistoryState build() => const HistoryState.idle();
 }
 
 /// The no-op observability, which is also the shipping default.

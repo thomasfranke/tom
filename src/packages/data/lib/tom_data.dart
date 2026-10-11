@@ -62,3 +62,4 @@ export 'src/spaces/space_data_source.dart';
 export 'src/spaces/space_repository_impl.dart';
 export 'src/terminal/terminal_data_source.dart';
 export 'src/terminal/terminal_repository_impl.dart';
+export 'src/updates/updates_repository_impl.dart';

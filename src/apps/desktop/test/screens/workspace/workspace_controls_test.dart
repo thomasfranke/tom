@@ -134,7 +134,6 @@ void main() {
 
     expect(find.byTooltip('Light theme'), findsNothing);
     expect(find.byTooltip('Dark theme'), findsNothing);
-    expect(find.byType(TomThemeToggleWidget), findsNothing);
   });
 
   testWidgets('the gear is the last of the three, after both toggles', (

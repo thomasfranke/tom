@@ -21,6 +21,12 @@ abstract class SpaceSessionState with _$SpaceSessionState {
     /// The folder the user opened, and the repository that encloses it.
     required SpaceEntity space,
 
+    /// Whether git has not yet said which repository encloses [space] — the
+    /// folder is on screen and its files are shown while a command that
+    /// asks first waits in the Commands panel. [SpaceEntity.hasRepository]
+    /// is false meanwhile and means "not known yet", not "none".
+    @Default(false) bool locatingRepository,
+
     /// The document the editor and the preview are showing, or null when
     /// none has been chosen — the state a space opens in, not an error.
     ///
@@ -43,15 +49,19 @@ abstract class SpaceSessionState with _$SpaceSessionState {
     /// commit does not empty.
     @Default(<DocumentTab>[]) List<DocumentTab> tabs,
 
-    /// The app's own file open as a tab — `preferences.json`, or
-    /// `git-approvals.json` beside it, one at a time — by its path in the
-    /// app's folder, never the space's; or null.
+    /// The app's own files open as tabs — `preferences.json` and
+    /// `git-approvals.json` beside it, in the order they were opened — by
+    /// their paths in the app's folder, never the space's.
     ///
-    /// A tab after [tabs] rather than one of them, because what reads [tabs]
-    /// takes each for a file of the space or its repository; it is on screen
-    /// while [openDocument] is null ([isShowingPreferencesFile],
-    /// `docs/product/preferences/where-it-is-stored/doc.md`).
-    SpaceRelativePathValueObject? preferencesFile,
+    /// Tabs after [tabs] rather than among them, because what reads [tabs]
+    /// takes each for a file of the space or its repository
+    /// (`docs/product/preferences/where-it-is-stored/doc.md`).
+    @Default(<SpaceRelativePathValueObject>[])
+    List<SpaceRelativePathValueObject> appFiles,
+
+    /// The one of [appFiles] that has the document area while no document
+    /// does ([isShowingPreferencesFile]); null exactly when none is open.
+    SpaceRelativePathValueObject? appFile,
 
     /// The tab opened by a click and not yet kept — italic, and replaced by
     /// the next click rather than joined by it — or null when every tab is
@@ -136,7 +146,7 @@ abstract class SpaceSessionState with _$SpaceSessionState {
   /// Derived, so every reader of [openDocument] — the tree's open row, the
   /// diff, the index, the `Diff` chip — sees no document without being told.
   bool get isShowingPreferencesFile =>
-      preferencesFile != null &&
+      appFile != null &&
       openDocument == null &&
       outsideDocument == null &&
       pullRequest == null;
@@ -149,11 +159,16 @@ abstract class SpaceSessionState with _$SpaceSessionState {
     (null, null) => null,
   };
 
-  /// The preferences file's tab, or null while it is not open.
-  DocumentTab? get preferencesTab => switch (preferencesFile) {
-    final SpaceRelativePathValueObject file => DocumentTab.preferences(file),
-    null => null,
-  };
+  /// The tabs of the app's own files, in [appFiles]' order.
+  List<DocumentTab> get appTabs => <DocumentTab>[
+    for (final SpaceRelativePathValueObject file in appFiles)
+      DocumentTab.preferences(file),
+  ];
+
+  /// The tab of the app's file that has the area, or null while a document
+  /// has it or none is open.
+  DocumentTab? get shownAppTab =>
+      isShowingPreferencesFile ? DocumentTab.preferences(appFile!) : null;
 
   /// Whether the document area holds a file with no page to render — the
   /// preferences file, or any file that is not markdown — so `Split` and

@@ -11,6 +11,7 @@ import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/home/home_screen.dart';
 import 'package:tom_desktop/screens/shell/tom_shell.dart';
+import 'package:tom_desktop/widgets/window_close_guard_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -58,7 +59,7 @@ bool _windowPrepared = false;
 /// Skipped where there is no window, because `window_manager` throws with
 /// no platform channels, and skipped the second time ([_windowPrepared]).
 Future<void> _prepareWindow() async {
-  if (!_hasWindow || _windowPrepared) {
+  if (!hasDesktopWindow || _windowPrepared) {
     return;
   }
   _windowPrepared = true;
@@ -77,12 +78,6 @@ Future<void> _prepareWindow() async {
     },
   );
 }
-
-/// Whether this process has a real desktop window.
-bool get _hasWindow =>
-    !const bool.fromEnvironment('dart.library.js_util') &&
-    WidgetsBinding.instance.runtimeType.toString() !=
-        'AutomatedTestWidgetsFlutterBinding';
 
 /// The application widget, mountable by a test without a window.
 class TomApp extends ConsumerWidget {
@@ -114,7 +109,9 @@ class TomApp extends ConsumerWidget {
       ThemeChoiceEnum.light => ThemeMode.light,
       ThemeChoiceEnum.dark => ThemeMode.dark,
     },
-    home: const _WindowContents(),
+    // Around both screens, so the window asks before it closes whichever
+    // one it is showing.
+    home: const WindowCloseGuardWidget(child: _WindowContents()),
   );
 }
 

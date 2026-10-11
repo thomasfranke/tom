@@ -59,7 +59,7 @@ final class FileTreeNotifierProvider
   }
 }
 
-String _$fileTreeNotifierHash() => r'25e567ab0a15b8779f8a515ac826ec838d6f8695';
+String _$fileTreeNotifierHash() => r'56974d610e9bbe0fcbb90e0caea0b6839b98971f';
 
 /// Drives the explorer: list the space, open and close its folders, say
 /// which document the window should show. No business logic — a use case is

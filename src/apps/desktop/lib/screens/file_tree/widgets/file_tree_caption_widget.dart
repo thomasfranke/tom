@@ -94,6 +94,8 @@ class FileTreeCaptionWidget extends ConsumerWidget {
               child: TomMenuButtonWidget(
                 tooltip: context.l10n.fileTreeMenu,
                 width: FileTreeDesign.menuWidth,
+                overhang: FileTreeDesign.menuOverhang,
+                drop: FileTreeDesign.menuDrop,
                 groups: _menu(
                   context.l10n,
                   ref.read(fileTreeProvider.notifier),

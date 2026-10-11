@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
@@ -76,6 +77,62 @@ void main() {
         .dx;
     expect(name, lessThan(branch));
     expect(tester.getTopRight(find.text('main')).dx, lessThan(forget));
+  });
+
+  group('the way to forget a row', () {
+    /// Whether the ✕ is drawn.
+    bool isDrawn(WidgetTester tester) => tester
+        .widget<Visibility>(
+          find.ancestor(
+            of: find.byTooltip('Forget this space'),
+            matching: find.byType(Visibility),
+          ),
+        )
+        .visible;
+
+    /// A mouse over the row, taken away when the test ends.
+    Future<TestGesture> hover(WidgetTester tester) async {
+      final TestGesture mouse = await tester.createGesture(
+        kind: PointerDeviceKind.mouse,
+      );
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await mouse.moveTo(tester.getCenter(find.text('docs')));
+      await tester.pumpAndSettle();
+      return mouse;
+    }
+
+    testWidgets('is not drawn on a row the pointer is not over', (
+      WidgetTester tester,
+    ) async {
+      // A column of ✕ down the list is a column of ways to lose a row.
+      await pumpRow(tester, branches: const _Branches(null));
+
+      expect(isDrawn(tester), isFalse);
+    });
+
+    testWidgets('is drawn under the pointer, and goes when it leaves', (
+      WidgetTester tester,
+    ) async {
+      await pumpRow(tester, branches: const _Branches(null));
+
+      final TestGesture mouse = await hover(tester);
+      expect(isDrawn(tester), isTrue);
+
+      await mouse.moveTo(const Offset(700, 500));
+      await tester.pumpAndSettle();
+      expect(isDrawn(tester), isFalse);
+    });
+
+    testWidgets('keeps its room, so the branch does not move under the '
+        'pointer', (WidgetTester tester) async {
+      await pumpRow(tester, branches: _Branches(BranchNameValueObject('main')));
+      final double before = tester.getTopLeft(find.text('main')).dx;
+
+      await hover(tester);
+
+      expect(tester.getTopLeft(find.text('main')).dx, before);
+    });
   });
 
   testWidgets('a row on no branch draws none', (WidgetTester tester) async {

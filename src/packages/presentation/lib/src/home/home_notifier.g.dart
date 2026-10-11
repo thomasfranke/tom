@@ -56,7 +56,7 @@ final class HomeNotifierProvider
   }
 }
 
-String _$homeNotifierHash() => r'a062291a2e23ab58e561519088a277c91a8a80fa';
+String _$homeNotifierHash() => r'08cac03369b504aa7931862d0dbb87953eddf778';
 
 /// Drives the first screen: open a folder, clone one, go back to one,
 /// forget one.

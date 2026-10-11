@@ -209,27 +209,36 @@ String _$filesystemHash() => r'1a4248bf6a67aa5d464587e1e0c9e525093b0be0';
 
 /// How to get a git client for a folder.
 ///
-/// App lifetime, but what it builds is per folder: a client holds the
+/// App lifetime, and what it builds is per folder: a client holds the
 /// directory its commands run in and the queue that serializes them
 /// ([composition](../../../../../docs/technical/runtime/composition.md)).
+///
+/// **One client per folder, kept**: a client per call would be a queue per
+/// call, and two use cases writing together would meet at `index.lock`.
 
 @ProviderFor(gitClientFor)
 final gitClientForProvider = GitClientForProvider._();
 
 /// How to get a git client for a folder.
 ///
-/// App lifetime, but what it builds is per folder: a client holds the
+/// App lifetime, and what it builds is per folder: a client holds the
 /// directory its commands run in and the queue that serializes them
 /// ([composition](../../../../../docs/technical/runtime/composition.md)).
+///
+/// **One client per folder, kept**: a client per call would be a queue per
+/// call, and two use cases writing together would meet at `index.lock`.
 
 final class GitClientForProvider
     extends $FunctionalProvider<GitClientFor, GitClientFor, GitClientFor>
     with $Provider<GitClientFor> {
   /// How to get a git client for a folder.
   ///
-  /// App lifetime, but what it builds is per folder: a client holds the
+  /// App lifetime, and what it builds is per folder: a client holds the
   /// directory its commands run in and the queue that serializes them
   /// ([composition](../../../../../docs/technical/runtime/composition.md)).
+  ///
+  /// **One client per folder, kept**: a client per call would be a queue per
+  /// call, and two use cases writing together would meet at `index.lock`.
   GitClientForProvider._()
     : super(
         from: null,
@@ -263,7 +272,7 @@ final class GitClientForProvider
   }
 }
 
-String _$gitClientForHash() => r'e92f5fb0737757b510ea2fdab63c6e6b9b297ced';
+String _$gitClientForHash() => r'498b9e436f80fc5f2d3744db1c514c1d7a7b57f5';
 
 /// What this platform calls its folders.
 
@@ -531,7 +540,7 @@ final class ApprovalsRepositoryProvider
 }
 
 String _$approvalsRepositoryHash() =>
-    r'd68d44cc73be876ba1e0036da335ef534ea1567c';
+    r'2bb0f00d3974d92ae7d63eb5984e35f28609c05f';
 
 /// The platform's file manager and terminal.
 
@@ -585,7 +594,7 @@ final class DesktopRepositoryProvider
 
 String _$desktopRepositoryHash() => r'6da7708161a2637ba18b7a89ea35815759cee5ab';
 
-/// The person's own shell, in a pseudo-terminal the plugin opens ([Decision
+/// The person's own shell, in a pseudo-terminal `pty2` opens ([Decision
 /// 37](../../../../../docs/technical/decisions/037-the-terminal-is-the-persons-own-shell-in-a-pty.md)).
 ///
 /// No `CommandLog`: what somebody types into their shell is not what TOM ran.
@@ -593,7 +602,7 @@ String _$desktopRepositoryHash() => r'6da7708161a2637ba18b7a89ea35815759cee5ab';
 @ProviderFor(terminalRepository)
 final terminalRepositoryProvider = TerminalRepositoryProvider._();
 
-/// The person's own shell, in a pseudo-terminal the plugin opens ([Decision
+/// The person's own shell, in a pseudo-terminal `pty2` opens ([Decision
 /// 37](../../../../../docs/technical/decisions/037-the-terminal-is-the-persons-own-shell-in-a-pty.md)).
 ///
 /// No `CommandLog`: what somebody types into their shell is not what TOM ran.
@@ -606,7 +615,7 @@ final class TerminalRepositoryProvider
           TerminalRepository
         >
     with $Provider<TerminalRepository> {
-  /// The person's own shell, in a pseudo-terminal the plugin opens ([Decision
+  /// The person's own shell, in a pseudo-terminal `pty2` opens ([Decision
   /// 37](../../../../../docs/technical/decisions/037-the-terminal-is-the-persons-own-shell-in-a-pty.md)).
   ///
   /// No `CommandLog`: what somebody types into their shell is not what TOM ran.
@@ -645,7 +654,7 @@ final class TerminalRepositoryProvider
 }
 
 String _$terminalRepositoryHash() =>
-    r'6f9c679ae7d3f7c058202027a32b728c3f1a0393';
+    r'e57b267317626af7e9bff3b064e1ae8050b51630';
 
 /// The GitHub logins the machine's `gh`, git and `ssh` already hold.
 
@@ -913,8 +922,12 @@ final spaceRepositoryProvider = SpaceRepositoryProvider._();
 
 final class SpaceRepositoryProvider
     extends
-        $FunctionalProvider<SpaceRepository, SpaceRepository, SpaceRepository>
-    with $Provider<SpaceRepository> {
+        $FunctionalProvider<
+          SpaceRepositoryImpl,
+          SpaceRepositoryImpl,
+          SpaceRepositoryImpl
+        >
+    with $Provider<SpaceRepositoryImpl> {
   /// The folders spaces are made of.
   SpaceRepositoryProvider._()
     : super(
@@ -932,24 +945,25 @@ final class SpaceRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<SpaceRepository> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<SpaceRepositoryImpl> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  SpaceRepository create(Ref ref) {
+  SpaceRepositoryImpl create(Ref ref) {
     return spaceRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(SpaceRepository value) {
+  Override overrideWithValue(SpaceRepositoryImpl value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<SpaceRepository>(value),
+      providerOverride: $SyncValueProvider<SpaceRepositoryImpl>(value),
     );
   }
 }
 
-String _$spaceRepositoryHash() => r'6fd24995c6baf79245228f8b7c1bd58f7d20393c';
+String _$spaceRepositoryHash() => r'3174dc5c12d7034c7f009a1be45bdfa6f6117bac';
 
 /// The spaces Home offers to go back to.
 
@@ -1176,7 +1190,7 @@ final class PullRequestDraftsForProvider
 }
 
 String _$pullRequestDraftsForHash() =>
-    r'84523c497fcb046cde2b81e19bebb9a25a176f3c';
+    r'5f9ecfb1b02ebac22c08ff69b0fe6a8a40fa93dc';
 
 /// How to reach git for a space; per space for the same reason
 /// [documentRepositoryFor] is.
@@ -1462,3 +1476,62 @@ final class LineDifferProvider
 }
 
 String _$lineDifferHash() => r'697f4a7b48cf2d580ee8b125fb6b94bf087cf01a';
+
+/// What closes the window for good, once leaving was answered for.
+///
+/// `destroy`, not `close`: the close is what the guard holds back to ask.
+/// A provider of its own so an end-to-end run can replace it — a window
+/// really closed would take the run with it.
+
+@ProviderFor(desktopWindowCloser)
+final desktopWindowCloserProvider = DesktopWindowCloserProvider._();
+
+/// What closes the window for good, once leaving was answered for.
+///
+/// `destroy`, not `close`: the close is what the guard holds back to ask.
+/// A provider of its own so an end-to-end run can replace it — a window
+/// really closed would take the run with it.
+
+final class DesktopWindowCloserProvider
+    extends $FunctionalProvider<WindowCloser, WindowCloser, WindowCloser>
+    with $Provider<WindowCloser> {
+  /// What closes the window for good, once leaving was answered for.
+  ///
+  /// `destroy`, not `close`: the close is what the guard holds back to ask.
+  /// A provider of its own so an end-to-end run can replace it — a window
+  /// really closed would take the run with it.
+  DesktopWindowCloserProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'desktopWindowCloserProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$desktopWindowCloserHash();
+
+  @$internal
+  @override
+  $ProviderElement<WindowCloser> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  WindowCloser create(Ref ref) {
+    return desktopWindowCloser(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(WindowCloser value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<WindowCloser>(value),
+    );
+  }
+}
+
+String _$desktopWindowCloserHash() =>
+    r'f6d67e0e9652bf7a122e9a4992a4d1ddabbf9c76';

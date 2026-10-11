@@ -26,9 +26,13 @@ sealed class HomeState with _$HomeState {
   ///
   /// [clone] lives here because the field is drawn over the ready screen,
   /// recents and all, and a refusal or a reload never shows it.
+  ///
+  /// [notOpened] is the name of a folder the person refused to let git
+  /// answer about: nothing failed, but Home says the folder was not opened.
   const factory HomeState.ready(
     List<RecentSpaceEntity> recents, {
     @Default(HomeCloneState.closed()) HomeCloneState clone,
+    String? notOpened,
   }) = HomeReady;
 
   /// A folder was picked and could not be opened.

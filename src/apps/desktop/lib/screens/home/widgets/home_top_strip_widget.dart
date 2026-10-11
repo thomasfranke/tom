@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:tom_desktop/screens/account/account_control_widget.dart';
+import 'package:tom_desktop/screens/home/widgets/home_bottom_toggle_widget.dart';
 import 'package:tom_desktop/screens/preferences/preferences_control_widget.dart';
 import 'package:tom_desktop/screens/workspace/workspace_design.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -31,6 +32,10 @@ class HomeTopStripWidget extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
+            // The Commands panel is reachable here too: a command can wait
+            // before any space is open.
+            HomeBottomToggleWidget(),
+            SizedBox(width: WorkspaceDesign.themeGap),
             PreferencesControlWidget(),
             SizedBox(width: WorkspaceDesign.accountGap),
             // With no space open the popover is the machine's: who commits,

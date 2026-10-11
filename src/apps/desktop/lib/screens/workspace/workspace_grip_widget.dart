@@ -21,8 +21,12 @@ class WorkspaceGripWidget extends ConsumerWidget {
   const WorkspaceGripWidget({
     required this.width,
     this.edge = TomColumnEdgeEnum.left,
+    this.isOpen = true,
     super.key,
   });
+
+  /// Whether the column is on screen; a drag on a closed one opens it.
+  final bool isOpen;
 
   /// The column's width now; a drag moves from here.
   final double width;
@@ -39,6 +43,7 @@ class WorkspaceGripWidget extends ConsumerWidget {
     super.debugFillProperties(properties);
     properties
       ..add(DoubleProperty('width', width))
+      ..add(DiagnosticsProperty<bool>('isOpen', isOpen))
       ..add(EnumProperty<TomColumnEdgeEnum>('edge', edge));
   }
 
@@ -53,10 +58,20 @@ class WorkspaceGripWidget extends ConsumerWidget {
         // was recognised: the default swallows the touch slop, and a rule
         // that trails the pointer by eighteen points never catches up.
         dragStartBehavior: DragStartBehavior.down,
-        onHorizontalDragUpdate: (DragUpdateDetails drag) =>
-            edge == TomColumnEdgeEnum.right
-            ? workspace.widenAside(width - drag.delta.dx)
-            : workspace.widenExplorer(width + drag.delta.dx),
+        onHorizontalDragUpdate: (DragUpdateDetails drag) {
+          final bool right = edge == TomColumnEdgeEnum.right;
+          // A closed column's gutter opens it, and only a drag towards the
+          // room the column would take: the other way there is nothing to do.
+          if (!isOpen) {
+            if (right ? drag.delta.dx < 0 : drag.delta.dx > 0) {
+              right ? workspace.openAside() : workspace.openExplorer();
+            }
+            return;
+          }
+          right
+              ? workspace.widenAside(width - drag.delta.dx)
+              : workspace.widenExplorer(width + drag.delta.dx);
+        },
         child: const SizedBox(width: grip),
       ),
     );

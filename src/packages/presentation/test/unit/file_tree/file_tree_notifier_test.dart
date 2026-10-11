@@ -213,10 +213,14 @@ void main() {
       expect(container.read(fileTreeProvider), isA<FileTreeReady>());
     });
 
-    test('a file the editor cannot open does nothing', () {
+    test('a file that is not markdown opens too, as the changes list opens '
+        'it', () {
       notifier().activate(entry('logo.svg', SpaceEntryTypeEnum.file));
 
-      expect(container.read(spaceSessionProvider)?.openDocument, isNull);
+      expect(
+        container.read(spaceSessionProvider)?.openDocument,
+        SpaceRelativePathValueObject('logo.svg'),
+      );
     });
 
     test('a link does nothing, whatever it is named', () {

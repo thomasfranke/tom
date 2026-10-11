@@ -11,6 +11,7 @@ import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/src/file_tree/file_tree_providers.dart';
 import 'package:tom_presentation/src/file_tree/file_tree_state.dart';
+import 'package:tom_presentation/src/search/search_notifier.dart';
 import 'package:tom_presentation/src/spaces/document_mode_enum.dart';
 import 'package:tom_presentation/src/spaces/git_reading_notifier.dart';
 import 'package:tom_presentation/src/spaces/space_session.dart';
@@ -71,16 +72,18 @@ class FileTreeNotifier extends _$FileTreeNotifier {
 
   /// Opens or closes [entry] — whichever clicking its row means.
   ///
-  /// A folder toggles, a markdown file becomes the open document, anything
-  /// else does nothing
+  /// A folder toggles, a file becomes the open document — markdown as a
+  /// document, any other in a text tab, as the changes list opens it — and a
+  /// symbolic link does nothing, since the tree never follows one
   /// (`docs/product/navigation/file-tree/what-is-shown/doc.md`).
   void activate(SpaceEntryValueObject entry) {
-    if (entry.type == SpaceEntryTypeEnum.directory) {
-      _toggle(entry.path);
-      return;
-    }
-    if (entry.isDocument) {
-      ref.read(spaceSessionProvider.notifier).show(entry.path);
+    switch (entry.type) {
+      case SpaceEntryTypeEnum.directory:
+        _toggle(entry.path);
+      case SpaceEntryTypeEnum.file:
+        ref.read(spaceSessionProvider.notifier).show(entry.path);
+      case SpaceEntryTypeEnum.link:
+        break;
     }
   }
 
@@ -191,10 +194,18 @@ class FileTreeNotifier extends _$FileTreeNotifier {
   }
 
   /// The menu's `Reload`: the folder read again, and git with it, so a file
-  /// that arrived from outside carries its mark like any other.
+  /// that arrived from outside carries its mark like any other — and the
+  /// search index, so it can be found.
   Future<void> reload() async {
     final GitReadingNotifier git = ref.read(gitReadingProvider.notifier);
-    await Future.wait(<Future<void>>[refresh(), git.refresh()]);
+    await Future.wait(<Future<void>>[
+      refresh(),
+      git.refresh(),
+      // Only when the search exists: asking for it here would build an index
+      // nobody has looked at.
+      if (ref.exists(searchProvider))
+        ref.read(searchProvider.notifier).reindex(),
+    ]);
   }
 
   /// Closes every folder but the ones the open document is in, because a

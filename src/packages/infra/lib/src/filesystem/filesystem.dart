@@ -33,6 +33,10 @@ abstract interface class Filesystem {
   /// The replacement is atomic — the file is either what it was or what it
   /// was asked to become, whatever happens to the machine mid-write. An
   /// implementation that cannot promise that does not fulfil this contract.
+  ///
+  /// What is replaced is the text and nothing else: a symbolic link stays a
+  /// link and its target is written, and a file keeps the mode it had — so
+  /// one nobody may write to refuses with [FilesystemAccessDenied].
   Future<Result<void, FilesystemFailure>> writeFile(
     String path,
     String content,

@@ -20,6 +20,7 @@ import 'package:tom_desktop/screens/search/search_boxes.dart';
 import 'package:tom_desktop/screens/search/search_focus.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_mode_bar_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_region_widget.dart';
+import 'package:tom_desktop/screens/shell/widgets/shell_slide_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_status_bar_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_top_bar_widget.dart';
 import 'package:tom_desktop/screens/workspace/workspace_bottom_grip_widget.dart';
@@ -158,12 +159,11 @@ class _TomShellState extends ConsumerState<TomShell> {
           ),
         ) ??
         DocumentModeEnum.split;
-    // A version being read draws as preview, since nothing types into the
-    // past; the choice itself is untouched so coming back comes back to it
+    // The modes stay while a version is read: `Split` is that version's
+    // source beside its rendering, both read-only, and the mode that opened
+    // the screen is the one that closes it
     // (`docs/product/git-workflow/file-history/doc.md`).
-    final DocumentModeEnum mode = readingVersion
-        ? DocumentModeEnum.preview
-        : chosen;
+    final DocumentModeEnum mode = chosen;
     // A hidden column is a column, not a mode: the document area takes the
     // room and nothing else moves (`docs/product/workspace/columns/doc.md`).
     final bool showingExplorer = ref.watch(
@@ -192,7 +192,7 @@ class _TomShellState extends ConsumerState<TomShell> {
       spaceSessionProvider.select(
         (SpaceSessionState? session) =>
             (session?.tabs.isNotEmpty ?? false) ||
-            session?.preferencesFile != null,
+            (session?.appFiles.isNotEmpty ?? false),
       ),
     );
     // The pull request is a page of its own: the status row takes the tabs'
@@ -202,7 +202,11 @@ class _TomShellState extends ConsumerState<TomShell> {
       spaceSessionProvider.select(
         (SpaceSessionState? session) => switch (session) {
           SpaceSessionState(pullRequest: _?) => PanelPageEnum.pullRequest,
-          SpaceSessionState(space: SpaceEntity(hasRepository: false)) =>
+          // Not known yet is not none: the column waits for git's answer.
+          SpaceSessionState(
+            space: SpaceEntity(hasRepository: false),
+            locatingRepository: false,
+          ) =>
             PanelPageEnum.noRepository,
           _ => PanelPageEnum.workspace,
         },
@@ -234,9 +238,7 @@ class _TomShellState extends ConsumerState<TomShell> {
         return;
       }
       final SpaceSessionState? session = ref.read(spaceSessionProvider);
-      final DocumentTab? open = (session?.isShowingPreferencesFile ?? false)
-          ? session!.preferencesTab
-          : session?.onScreen;
+      final DocumentTab? open = session?.shownAppTab ?? session?.onScreen;
       if (open != null) {
         unawaited(EditorTabsWidget.close(context, ref, open));
       }
@@ -335,19 +337,33 @@ class _TomShellState extends ConsumerState<TomShell> {
                 children: <Widget>[
                   // A closed column leaves its gutter behind, which is where
                   // the way to open it again lives.
-                  if (openExplorer) ...<Widget>[
-                    const SizedBox(width: TomMetrics.gutter),
-                    SizedBox(
-                      width: explorerWidth,
-                      child: TomColumnBoxWidget(
-                        child: ShellRegionWidget(
-                          placement: PanelPlacementEnum.explorer,
-                          registry: registry,
+                  // Opening and closing slide (`ShellSlideWidget`); dragging
+                  // the width follows the pointer.
+                  ShellSlideWidget(
+                    isOpen: openExplorer,
+                    axis: Axis.horizontal,
+                    extent: TomMetrics.gutter + explorerWidth,
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        const SizedBox(width: TomMetrics.gutter),
+                        SizedBox(
+                          width: explorerWidth,
+                          child: TomColumnBoxWidget(
+                            child: ShellRegionWidget(
+                              placement: PanelPlacementEnum.explorer,
+                              registry: registry,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                  WorkspaceGripWidget(width: explorerWidth),
+                  ),
+                  WorkspaceGripWidget(
+                    width: explorerWidth,
+                    isOpen: openExplorer,
+                  ),
                   Expanded(
                     child: LayoutBuilder(
                       builder: (BuildContext context, BoxConstraints room) {
@@ -372,21 +388,30 @@ class _TomShellState extends ConsumerState<TomShell> {
                             // Under the document column only, a gutter below
                             // it: the columns keep their full height
                             // (`docs/product/workspace/commands/doc.md`).
-                            if (openBottom) ...<Widget>[
-                              WorkspaceBottomGripWidget(
-                                height: height,
-                                highest: highest,
-                              ),
-                              SizedBox(
-                                height: height,
-                                child: TomColumnBoxWidget(
-                                  child: ShellRegionWidget(
-                                    placement: PanelPlacementEnum.bottom,
-                                    registry: registry,
+                            ShellSlideWidget(
+                              isOpen: openBottom,
+                              axis: Axis.vertical,
+                              extent: TomMetrics.gutter + height,
+                              alignment: Alignment.topCenter,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: <Widget>[
+                                  WorkspaceBottomGripWidget(
+                                    height: height,
+                                    highest: highest,
                                   ),
-                                ),
+                                  SizedBox(
+                                    height: height,
+                                    child: TomColumnBoxWidget(
+                                      child: ShellRegionWidget(
+                                        placement: PanelPlacementEnum.bottom,
+                                        registry: registry,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ],
                         );
                       },
@@ -395,20 +420,30 @@ class _TomShellState extends ConsumerState<TomShell> {
                   WorkspaceGripWidget(
                     width: asideWidth,
                     edge: TomColumnEdgeEnum.right,
+                    isOpen: openAside,
                   ),
-                  if (openAside) ...<Widget>[
-                    SizedBox(
-                      width: asideWidth,
-                      child: TomColumnBoxWidget(
-                        child: ShellRegionWidget(
-                          placement: PanelPlacementEnum.aside,
-                          registry: registry,
-                          page: page,
+                  ShellSlideWidget(
+                    isOpen: openAside,
+                    axis: Axis.horizontal,
+                    extent: asideWidth + TomMetrics.gutter,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        SizedBox(
+                          width: asideWidth,
+                          child: TomColumnBoxWidget(
+                            child: ShellRegionWidget(
+                              placement: PanelPlacementEnum.aside,
+                              registry: registry,
+                              page: page,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: TomMetrics.gutter),
+                      ],
                     ),
-                    const SizedBox(width: TomMetrics.gutter),
-                  ],
+                  ),
                 ],
               ),
             ),

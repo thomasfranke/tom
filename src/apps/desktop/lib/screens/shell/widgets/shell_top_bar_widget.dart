@@ -28,10 +28,6 @@ class ShellTopBarWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final SpaceSessionState? session = ref.watch(spaceSessionProvider);
-    // A version being read draws as preview and offers no other mode, so the
-    // control steps out rather than showing a choice that is not one
-    // (`docs/product/git-workflow/file-history/doc.md`).
-    final bool readingVersion = session?.readingVersion != null;
     // The breadcrumb starts at 18 and the gear ends 14 short of the edge,
     // which is where every 1b board draws them.
     return TomBarWidget(
@@ -45,27 +41,25 @@ class ShellTopBarWidget extends ConsumerWidget {
             // A stack, not a row: the branch control is centred on the
             // window, so the breadcrumb beside it must not push it
             // ([BranchesDesign]).
-            : Stack(
+            : const Stack(
                 alignment: Alignment.center,
                 children: <Widget>[
                   // The home button and the breadcrumb: the way out of the
                   // space and the way across to another
                   // (`docs/product/workspace/leaving-a-space/doc.md`).
-                  const Align(
+                  Align(
                     alignment: Alignment.centerLeft,
                     child: SpaceMenuControlWidget(),
                   ),
-                  const BranchesControlWidget(),
+                  BranchesControlWidget(),
                   Align(
                     alignment: Alignment.centerRight,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        if (!readingVersion) ...<Widget>[
-                          const ShellModeControlWidget(),
-                          const SizedBox(width: modesGap),
-                        ],
-                        const WorkspaceControlsWidget(),
+                        ShellModeControlWidget(),
+                        SizedBox(width: modesGap),
+                        WorkspaceControlsWidget(),
                       ],
                     ),
                   ),

@@ -55,11 +55,12 @@ extension SpaceDeparturePatterns on SpaceDeparture {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( SpaceDepartureClosing value)?  closing,TResult Function( SpaceDepartureSwitching value)?  switching,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( SpaceDepartureClosing value)?  closing,TResult Function( SpaceDepartureQuitting value)?  quitting,TResult Function( SpaceDepartureSwitching value)?  switching,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case SpaceDepartureClosing() when closing != null:
-return closing(_that);case SpaceDepartureSwitching() when switching != null:
+return closing(_that);case SpaceDepartureQuitting() when quitting != null:
+return quitting(_that);case SpaceDepartureSwitching() when switching != null:
 return switching(_that);case _:
   return orElse();
 
@@ -78,11 +79,12 @@ return switching(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( SpaceDepartureClosing value)  closing,required TResult Function( SpaceDepartureSwitching value)  switching,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( SpaceDepartureClosing value)  closing,required TResult Function( SpaceDepartureQuitting value)  quitting,required TResult Function( SpaceDepartureSwitching value)  switching,}){
 final _that = this;
 switch (_that) {
 case SpaceDepartureClosing():
-return closing(_that);case SpaceDepartureSwitching():
+return closing(_that);case SpaceDepartureQuitting():
+return quitting(_that);case SpaceDepartureSwitching():
 return switching(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -97,11 +99,12 @@ return switching(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( SpaceDepartureClosing value)?  closing,TResult? Function( SpaceDepartureSwitching value)?  switching,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( SpaceDepartureClosing value)?  closing,TResult? Function( SpaceDepartureQuitting value)?  quitting,TResult? Function( SpaceDepartureSwitching value)?  switching,}){
 final _that = this;
 switch (_that) {
 case SpaceDepartureClosing() when closing != null:
-return closing(_that);case SpaceDepartureSwitching() when switching != null:
+return closing(_that);case SpaceDepartureQuitting() when quitting != null:
+return quitting(_that);case SpaceDepartureSwitching() when switching != null:
 return switching(_that);case _:
   return null;
 
@@ -119,10 +122,11 @@ return switching(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  closing,TResult Function( RecentSpaceEntity space)?  switching,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  closing,TResult Function()?  quitting,TResult Function( RecentSpaceEntity space)?  switching,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case SpaceDepartureClosing() when closing != null:
-return closing();case SpaceDepartureSwitching() when switching != null:
+return closing();case SpaceDepartureQuitting() when quitting != null:
+return quitting();case SpaceDepartureSwitching() when switching != null:
 return switching(_that.space);case _:
   return orElse();
 
@@ -141,10 +145,11 @@ return switching(_that.space);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  closing,required TResult Function( RecentSpaceEntity space)  switching,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  closing,required TResult Function()  quitting,required TResult Function( RecentSpaceEntity space)  switching,}) {final _that = this;
 switch (_that) {
 case SpaceDepartureClosing():
-return closing();case SpaceDepartureSwitching():
+return closing();case SpaceDepartureQuitting():
+return quitting();case SpaceDepartureSwitching():
 return switching(_that.space);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -159,10 +164,11 @@ return switching(_that.space);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  closing,TResult? Function( RecentSpaceEntity space)?  switching,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  closing,TResult? Function()?  quitting,TResult? Function( RecentSpaceEntity space)?  switching,}) {final _that = this;
 switch (_that) {
 case SpaceDepartureClosing() when closing != null:
-return closing();case SpaceDepartureSwitching() when switching != null:
+return closing();case SpaceDepartureQuitting() when quitting != null:
+return quitting();case SpaceDepartureSwitching() when switching != null:
 return switching(_that.space);case _:
   return null;
 
@@ -195,6 +201,38 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'SpaceDeparture.closing()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class SpaceDepartureQuitting implements SpaceDeparture {
+  const SpaceDepartureQuitting();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpaceDepartureQuitting);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'SpaceDeparture.quitting()';
 }
 
 

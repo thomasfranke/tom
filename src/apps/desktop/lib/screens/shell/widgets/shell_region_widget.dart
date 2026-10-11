@@ -259,9 +259,10 @@ class _RemoteProgressWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bool working = ref.watch(
-      remoteProvider.select((RemoteState state) => state.isBusy),
-    );
+    // Down while the command waits for a yes: nothing is on the network yet.
+    final bool working =
+        ref.watch(remoteProvider.select((RemoteState state) => state.isBusy)) &&
+        !ref.watch(remoteAwaitingApprovalProvider);
     return working ? const TomProgressBarWidget() : const SizedBox.shrink();
   }
 }

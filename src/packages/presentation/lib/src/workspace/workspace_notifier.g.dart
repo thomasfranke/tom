@@ -59,7 +59,7 @@ final class WorkspaceNotifierProvider
   }
 }
 
-String _$workspaceNotifierHash() => r'f2d4689886fb3515afa52cd7f84bd58b75e55a31';
+String _$workspaceNotifierHash() => r'a9c0bcfdb552b37d2c5e8654fda00390b8626b77';
 
 /// The three panel toggles at the right of the top bar, and the right
 /// column's switch (`docs/product/workspace/columns/doc.md`).

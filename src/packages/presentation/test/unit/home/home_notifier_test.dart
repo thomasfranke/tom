@@ -109,6 +109,50 @@ void main() {
       expect(container.read(homeProvider), isA<HomeLoading>());
     });
 
+    test('where git asks first the folder opens from the disk alone, and '
+        'the repository is left to be found behind the panel', () async {
+      final _Preferences preferences = _Preferences()
+        ..held = const PreferencesValueObject(
+          gitApprovals: GitApprovalModeEnum.manual,
+        );
+      final _Folders folders = _Folders();
+      final OpenSpaceUseCase openSpace = OpenSpaceUseCase(
+        spaces: spaces,
+        locator: folders,
+        recents: recents,
+        observability: const _Observability(),
+      );
+      final ProviderContainer asking = ProviderContainer(
+        overrides: <Override>[
+          openSpaceProvider.overrideWithValue(openSpace),
+          listRecentSpacesProvider.overrideWithValue(
+            ListRecentSpacesUseCase(
+              recents: recents,
+              observability: const _Observability(),
+            ),
+          ),
+          readPreferencesProvider.overrideWithValue(
+            ReadPreferencesUseCase(preferences: preferences),
+          ),
+        ],
+      );
+      addTearDown(asking.dispose);
+      asking
+        ..listen<HomeState>(homeProvider, (_, _) {})
+        ..listen<PreferencesValueObject>(preferencesProvider, (_, _) {});
+      await Future<void>.delayed(Duration.zero);
+
+      await asking.read(homeProvider.notifier).open('/code/app/docs');
+
+      final SpaceSessionState session = asking.read(spaceSessionProvider)!;
+      expect(session.locatingRepository, isTrue);
+      expect(session.space.repositoryRoot, isNull);
+      expect(session.space.root, '/code/app/docs');
+      expect(folders.located, 0, reason: 'git is asked by the reading');
+      expect(spaces.asked, 0, reason: 'the whole open is the other path');
+      expect(recents.remembered, <String>['/code/app/docs']);
+    });
+
     test('and no document is showing yet', () async {
       await settled();
       spaces.answer = Success<SpaceEntity, AppFailure>(opened);
@@ -169,11 +213,27 @@ void main() {
 
       await notifier().open('/code/app');
 
+      // Home is the list again, and says which folder was not opened.
       expect(
         container.read(homeProvider),
-        HomeState.ready(<RecentSpaceEntity>[remembered]),
+        HomeState.ready(<RecentSpaceEntity>[remembered], notOpened: 'app'),
       );
       expect(container.read(spaceSessionProvider), isNull);
+    });
+
+    test('the sentence goes when the next folder is chosen', () async {
+      await settled();
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
+        GitCommandDenied(),
+      );
+      await notifier().open('/code/app');
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
+        SpaceFolderMissing('/gone'),
+      );
+
+      await notifier().open('/gone');
+
+      expect(container.read(homeProvider), isA<HomeFailed>());
     });
   });
 
@@ -415,6 +475,9 @@ final class _Spaces implements SpaceRepository {
   Result<SpaceEntity, AppFailure> answer =
       const Failure<SpaceEntity, AppFailure>(GitNotARepository('/unset'));
 
+  /// How many times the whole opening was asked for.
+  int asked = 0;
+
   @override
   Future<Result<void, SpaceFailure>> createFolder(
     SpaceEntity space,
@@ -422,12 +485,48 @@ final class _Spaces implements SpaceRepository {
   ) async => throw UnimplementedError();
 
   @override
-  Future<Result<SpaceEntity, AppFailure>> open(String folder) async => answer;
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async {
+    asked++;
+    return answer;
+  }
 
   @override
   Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
     SpaceEntity space,
   ) async => throw UnimplementedError();
+}
+
+/// Opens a folder from the disk alone, counting the times git was asked.
+final class _Folders implements SpaceLocationRepository {
+  int located = 0;
+
+  @override
+  Future<Result<SpaceEntity, AppFailure>> openFolder(String folder) async =>
+      Success<SpaceEntity, AppFailure>(
+        SpaceEntity(root: folder, repositoryRoot: null, name: 'docs'),
+      );
+
+  @override
+  Future<Result<SpaceEntity, AppFailure>> locate(SpaceEntity space) async {
+    located++;
+    return Success<SpaceEntity, AppFailure>(space);
+  }
+}
+
+/// Preferences held in memory.
+final class _Preferences implements PreferencesRepository {
+  PreferencesValueObject held = PreferencesValueObject.defaults;
+
+  @override
+  Future<PreferencesValueObject> read() async => held;
+
+  @override
+  Future<Result<void, AppFailure>> write(
+    PreferencesValueObject preferences,
+  ) async {
+    held = preferences;
+    return const Success<void, AppFailure>(null);
+  }
 }
 
 /// A recent list held in memory.

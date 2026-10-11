@@ -9,6 +9,8 @@ import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/src/commands/command_action_enum.dart';
 import 'package:tom_presentation/src/commands/command_scope.dart';
+import 'package:tom_presentation/src/commands/git_asks_first.dart';
+import 'package:tom_presentation/src/commands/opening_plan_notifier.dart';
 import 'package:tom_presentation/src/home/clone_address.dart';
 import 'package:tom_presentation/src/home/home_clone_state.dart';
 import 'package:tom_presentation/src/home/home_providers.dart';
@@ -160,9 +162,18 @@ class HomeNotifier extends _$HomeNotifier {
   /// The recents are kept across a failure: the other rows still click.
   Future<void> open(String folder) async {
     state = const HomeState.loading();
-    final Result<SpaceEntity, AppFailure> opened = await CommandScope.run(
-      CommandActionEnum.openSpace,
-      () => openSpace.open(folder),
+    // Where git asks first the folder opens from the disk alone — its files
+    // show at once — and the repository is looked for behind the panel.
+    final bool deferred = await gitAsksFirst(ref);
+    if (!ref.mounted) {
+      return;
+    }
+    // One plan with the first reading the space makes once it is on screen.
+    final CommandScope plan = CommandScope.start(
+      CommandActionEnum.readRepository,
+    );
+    final Result<SpaceEntity, AppFailure> opened = await plan.within(
+      () => deferred ? openSpace.openFolder(folder) : openSpace.open(folder),
     );
     // The window can be gone by the time git answers, and a disposed
     // notifier has no `Ref` to write with.
@@ -174,7 +185,8 @@ class HomeNotifier extends _$HomeNotifier {
     )) {
       // Home stays on `loading`: re-reading the recents here would write to
       // a notifier the window has already disposed.
-      ref.read(spaceSessionProvider.notifier).open(space);
+      ref.read(openingPlanProvider.notifier).handed = plan;
+      ref.read(spaceSessionProvider.notifier).open(space, locating: deferred);
       return;
     }
     // Re-read rather than remembered, because opening may have changed it.
@@ -185,10 +197,18 @@ class HomeNotifier extends _$HomeNotifier {
     }
     final AppFailure failure =
         (opened as Failure<SpaceEntity, AppFailure>).failure;
-    // Refused, the folder was not opened and Home is the list again, with
-    // nothing to say about it.
+    // Refused, the folder was not opened and Home is the list again, saying
+    // which folder it did not open.
     state = failure.isDenial
-        ? HomeState.ready(_recentsOf(listed))
+        ? HomeState.ready(
+            _recentsOf(listed),
+            notOpened: folder
+                .split(RegExp(r'[\\/]'))
+                .lastWhere(
+                  (String part) => part.isNotEmpty,
+                  orElse: () => folder,
+                ),
+          )
         : HomeState.failed(failure: failure, recents: _recentsOf(listed));
   }
 

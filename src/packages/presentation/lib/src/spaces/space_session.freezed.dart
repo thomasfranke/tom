@@ -15,7 +15,11 @@ T _$identity<T>(T value) => value;
 mixin _$SpaceSessionState {
 
 /// The folder the user opened, and the repository that encloses it.
- SpaceEntity get space;/// The document the editor and the preview are showing, or null when
+ SpaceEntity get space;/// Whether git has not yet said which repository encloses [space] — the
+/// folder is on screen and its files are shown while a command that
+/// asks first waits in the Commands panel. [SpaceEntity.hasRepository]
+/// is false meanwhile and means "not known yet", not "none".
+ bool get locatingRepository;/// The document the editor and the preview are showing, or null when
 /// none has been chosen — the state a space opens in, not an error.
 ///
 /// Space-relative because that is what the app navigates in; git's
@@ -31,15 +35,16 @@ mixin _$SpaceSessionState {
 ///
 /// A session's, not a repository's: what somebody has been in, which a
 /// commit does not empty.
- List<DocumentTab> get tabs;/// The app's own file open as a tab — `preferences.json`, or
-/// `git-approvals.json` beside it, one at a time — by its path in the
-/// app's folder, never the space's; or null.
+ List<DocumentTab> get tabs;/// The app's own files open as tabs — `preferences.json` and
+/// `git-approvals.json` beside it, in the order they were opened — by
+/// their paths in the app's folder, never the space's.
 ///
-/// A tab after [tabs] rather than one of them, because what reads [tabs]
-/// takes each for a file of the space or its repository; it is on screen
-/// while [openDocument] is null ([isShowingPreferencesFile],
-/// `docs/product/preferences/where-it-is-stored/doc.md`).
- SpaceRelativePathValueObject? get preferencesFile;/// The tab opened by a click and not yet kept — italic, and replaced by
+/// Tabs after [tabs] rather than among them, because what reads [tabs]
+/// takes each for a file of the space or its repository
+/// (`docs/product/preferences/where-it-is-stored/doc.md`).
+ List<SpaceRelativePathValueObject> get appFiles;/// The one of [appFiles] that has the document area while no document
+/// does ([isShowingPreferencesFile]); null exactly when none is open.
+ SpaceRelativePathValueObject? get appFile;/// The tab opened by a click and not yet kept — italic, and replaced by
 /// the next click rather than joined by it — or null when every tab is
 /// kept.
  DocumentTab? get previewTab;/// How the document area is being looked at; split is where a space
@@ -106,16 +111,16 @@ $SpaceSessionStateCopyWith<SpaceSessionState> get copyWith => _$SpaceSessionStat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.outsideDocument, outsideDocument) || other.outsideDocument == outsideDocument)&&const DeepCollectionEquality().equals(other.tabs, tabs)&&(identical(other.preferencesFile, preferencesFile) || other.preferencesFile == preferencesFile)&&(identical(other.previewTab, previewTab) || other.previewTab == previewTab)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion)&&(identical(other.comparingAgainst, comparingAgainst) || other.comparingAgainst == comparingAgainst)&&(identical(other.showingDiff, showingDiff) || other.showingDiff == showingDiff)&&(identical(other.merge, merge) || other.merge == merge)&&(identical(other.pullRequest, pullRequest) || other.pullRequest == pullRequest)&&(identical(other.pullRequestBase, pullRequestBase) || other.pullRequestBase == pullRequestBase));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.locatingRepository, locatingRepository) || other.locatingRepository == locatingRepository)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.outsideDocument, outsideDocument) || other.outsideDocument == outsideDocument)&&const DeepCollectionEquality().equals(other.tabs, tabs)&&const DeepCollectionEquality().equals(other.appFiles, appFiles)&&(identical(other.appFile, appFile) || other.appFile == appFile)&&(identical(other.previewTab, previewTab) || other.previewTab == previewTab)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion)&&(identical(other.comparingAgainst, comparingAgainst) || other.comparingAgainst == comparingAgainst)&&(identical(other.showingDiff, showingDiff) || other.showingDiff == showingDiff)&&(identical(other.merge, merge) || other.merge == merge)&&(identical(other.pullRequest, pullRequest) || other.pullRequest == pullRequest)&&(identical(other.pullRequestBase, pullRequestBase) || other.pullRequestBase == pullRequestBase));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,space,openDocument,outsideDocument,const DeepCollectionEquality().hash(tabs),preferencesFile,previewTab,mode,git,readingVersion,comparingAgainst,showingDiff,merge,pullRequest,pullRequestBase);
+int get hashCode => Object.hash(runtimeType,space,locatingRepository,openDocument,outsideDocument,const DeepCollectionEquality().hash(tabs),const DeepCollectionEquality().hash(appFiles),appFile,previewTab,mode,git,readingVersion,comparingAgainst,showingDiff,merge,pullRequest,pullRequestBase);
 
 @override
 String toString() {
-  return 'SpaceSessionState(space: $space, openDocument: $openDocument, outsideDocument: $outsideDocument, tabs: $tabs, preferencesFile: $preferencesFile, previewTab: $previewTab, mode: $mode, git: $git, readingVersion: $readingVersion, comparingAgainst: $comparingAgainst, showingDiff: $showingDiff, merge: $merge, pullRequest: $pullRequest, pullRequestBase: $pullRequestBase)';
+  return 'SpaceSessionState(space: $space, locatingRepository: $locatingRepository, openDocument: $openDocument, outsideDocument: $outsideDocument, tabs: $tabs, appFiles: $appFiles, appFile: $appFile, previewTab: $previewTab, mode: $mode, git: $git, readingVersion: $readingVersion, comparingAgainst: $comparingAgainst, showingDiff: $showingDiff, merge: $merge, pullRequest: $pullRequest, pullRequestBase: $pullRequestBase)';
 }
 
 
@@ -126,7 +131,7 @@ abstract mixin class $SpaceSessionStateCopyWith<$Res>  {
   factory $SpaceSessionStateCopyWith(SpaceSessionState value, $Res Function(SpaceSessionState) _then) = _$SpaceSessionStateCopyWithImpl;
 @useResult
 $Res call({
- SpaceEntity space, SpaceRelativePathValueObject? openDocument, RepoRelativePathValueObject? outsideDocument, List<DocumentTab> tabs, SpaceRelativePathValueObject? preferencesFile, DocumentTab? previewTab, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion, DiffBaseValueObject? comparingAgainst, bool showingDiff, MergeStateValueObject? merge, BranchNameValueObject? pullRequest, BranchNameValueObject? pullRequestBase
+ SpaceEntity space, bool locatingRepository, SpaceRelativePathValueObject? openDocument, RepoRelativePathValueObject? outsideDocument, List<DocumentTab> tabs, List<SpaceRelativePathValueObject> appFiles, SpaceRelativePathValueObject? appFile, DocumentTab? previewTab, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion, DiffBaseValueObject? comparingAgainst, bool showingDiff, MergeStateValueObject? merge, BranchNameValueObject? pullRequest, BranchNameValueObject? pullRequestBase
 });
 
 
@@ -143,13 +148,15 @@ class _$SpaceSessionStateCopyWithImpl<$Res>
 
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? space = null,Object? openDocument = freezed,Object? outsideDocument = freezed,Object? tabs = null,Object? preferencesFile = freezed,Object? previewTab = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,Object? comparingAgainst = freezed,Object? showingDiff = null,Object? merge = freezed,Object? pullRequest = freezed,Object? pullRequestBase = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? space = null,Object? locatingRepository = null,Object? openDocument = freezed,Object? outsideDocument = freezed,Object? tabs = null,Object? appFiles = null,Object? appFile = freezed,Object? previewTab = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,Object? comparingAgainst = freezed,Object? showingDiff = null,Object? merge = freezed,Object? pullRequest = freezed,Object? pullRequestBase = freezed,}) {
   return _then(_self.copyWith(
 space: null == space ? _self.space : space // ignore: cast_nullable_to_non_nullable
-as SpaceEntity,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
+as SpaceEntity,locatingRepository: null == locatingRepository ? _self.locatingRepository : locatingRepository // ignore: cast_nullable_to_non_nullable
+as bool,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
 as SpaceRelativePathValueObject?,outsideDocument: freezed == outsideDocument ? _self.outsideDocument : outsideDocument // ignore: cast_nullable_to_non_nullable
 as RepoRelativePathValueObject?,tabs: null == tabs ? _self.tabs : tabs // ignore: cast_nullable_to_non_nullable
-as List<DocumentTab>,preferencesFile: freezed == preferencesFile ? _self.preferencesFile : preferencesFile // ignore: cast_nullable_to_non_nullable
+as List<DocumentTab>,appFiles: null == appFiles ? _self.appFiles : appFiles // ignore: cast_nullable_to_non_nullable
+as List<SpaceRelativePathValueObject>,appFile: freezed == appFile ? _self.appFile : appFile // ignore: cast_nullable_to_non_nullable
 as SpaceRelativePathValueObject?,previewTab: freezed == previewTab ? _self.previewTab : previewTab // ignore: cast_nullable_to_non_nullable
 as DocumentTab?,mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
 as DocumentModeEnum,git: freezed == git ? _self.git : git // ignore: cast_nullable_to_non_nullable
@@ -313,10 +320,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  RepoRelativePathValueObject? outsideDocument,  List<DocumentTab> tabs,  SpaceRelativePathValueObject? preferencesFile,  DocumentTab? previewTab,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  DiffBaseValueObject? comparingAgainst,  bool showingDiff,  MergeStateValueObject? merge,  BranchNameValueObject? pullRequest,  BranchNameValueObject? pullRequestBase)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SpaceEntity space,  bool locatingRepository,  SpaceRelativePathValueObject? openDocument,  RepoRelativePathValueObject? outsideDocument,  List<DocumentTab> tabs,  List<SpaceRelativePathValueObject> appFiles,  SpaceRelativePathValueObject? appFile,  DocumentTab? previewTab,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  DiffBaseValueObject? comparingAgainst,  bool showingDiff,  MergeStateValueObject? merge,  BranchNameValueObject? pullRequest,  BranchNameValueObject? pullRequestBase)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SpaceSessionState() when $default != null:
-return $default(_that.space,_that.openDocument,_that.outsideDocument,_that.tabs,_that.preferencesFile,_that.previewTab,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst,_that.showingDiff,_that.merge,_that.pullRequest,_that.pullRequestBase);case _:
+return $default(_that.space,_that.locatingRepository,_that.openDocument,_that.outsideDocument,_that.tabs,_that.appFiles,_that.appFile,_that.previewTab,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst,_that.showingDiff,_that.merge,_that.pullRequest,_that.pullRequestBase);case _:
   return orElse();
 
 }
@@ -334,10 +341,10 @@ return $default(_that.space,_that.openDocument,_that.outsideDocument,_that.tabs,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  RepoRelativePathValueObject? outsideDocument,  List<DocumentTab> tabs,  SpaceRelativePathValueObject? preferencesFile,  DocumentTab? previewTab,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  DiffBaseValueObject? comparingAgainst,  bool showingDiff,  MergeStateValueObject? merge,  BranchNameValueObject? pullRequest,  BranchNameValueObject? pullRequestBase)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SpaceEntity space,  bool locatingRepository,  SpaceRelativePathValueObject? openDocument,  RepoRelativePathValueObject? outsideDocument,  List<DocumentTab> tabs,  List<SpaceRelativePathValueObject> appFiles,  SpaceRelativePathValueObject? appFile,  DocumentTab? previewTab,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  DiffBaseValueObject? comparingAgainst,  bool showingDiff,  MergeStateValueObject? merge,  BranchNameValueObject? pullRequest,  BranchNameValueObject? pullRequestBase)  $default,) {final _that = this;
 switch (_that) {
 case _SpaceSessionState():
-return $default(_that.space,_that.openDocument,_that.outsideDocument,_that.tabs,_that.preferencesFile,_that.previewTab,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst,_that.showingDiff,_that.merge,_that.pullRequest,_that.pullRequestBase);case _:
+return $default(_that.space,_that.locatingRepository,_that.openDocument,_that.outsideDocument,_that.tabs,_that.appFiles,_that.appFile,_that.previewTab,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst,_that.showingDiff,_that.merge,_that.pullRequest,_that.pullRequestBase);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -354,10 +361,10 @@ return $default(_that.space,_that.openDocument,_that.outsideDocument,_that.tabs,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SpaceEntity space,  SpaceRelativePathValueObject? openDocument,  RepoRelativePathValueObject? outsideDocument,  List<DocumentTab> tabs,  SpaceRelativePathValueObject? preferencesFile,  DocumentTab? previewTab,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  DiffBaseValueObject? comparingAgainst,  bool showingDiff,  MergeStateValueObject? merge,  BranchNameValueObject? pullRequest,  BranchNameValueObject? pullRequestBase)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SpaceEntity space,  bool locatingRepository,  SpaceRelativePathValueObject? openDocument,  RepoRelativePathValueObject? outsideDocument,  List<DocumentTab> tabs,  List<SpaceRelativePathValueObject> appFiles,  SpaceRelativePathValueObject? appFile,  DocumentTab? previewTab,  DocumentModeEnum mode,  GitStatusValueObject? git,  CommitEntity? readingVersion,  DiffBaseValueObject? comparingAgainst,  bool showingDiff,  MergeStateValueObject? merge,  BranchNameValueObject? pullRequest,  BranchNameValueObject? pullRequestBase)?  $default,) {final _that = this;
 switch (_that) {
 case _SpaceSessionState() when $default != null:
-return $default(_that.space,_that.openDocument,_that.outsideDocument,_that.tabs,_that.preferencesFile,_that.previewTab,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst,_that.showingDiff,_that.merge,_that.pullRequest,_that.pullRequestBase);case _:
+return $default(_that.space,_that.locatingRepository,_that.openDocument,_that.outsideDocument,_that.tabs,_that.appFiles,_that.appFile,_that.previewTab,_that.mode,_that.git,_that.readingVersion,_that.comparingAgainst,_that.showingDiff,_that.merge,_that.pullRequest,_that.pullRequestBase);case _:
   return null;
 
 }
@@ -369,11 +376,16 @@ return $default(_that.space,_that.openDocument,_that.outsideDocument,_that.tabs,
 
 
 class _SpaceSessionState extends SpaceSessionState {
-  const _SpaceSessionState({required this.space, this.openDocument, this.outsideDocument, final  List<DocumentTab> tabs = const <DocumentTab>[], this.preferencesFile, this.previewTab, this.mode = DocumentModeEnum.split, this.git, this.readingVersion, this.comparingAgainst, this.showingDiff = true, this.merge, this.pullRequest, this.pullRequestBase}): _tabs = tabs,super._();
+  const _SpaceSessionState({required this.space, this.locatingRepository = false, this.openDocument, this.outsideDocument, final  List<DocumentTab> tabs = const <DocumentTab>[], final  List<SpaceRelativePathValueObject> appFiles = const <SpaceRelativePathValueObject>[], this.appFile, this.previewTab, this.mode = DocumentModeEnum.split, this.git, this.readingVersion, this.comparingAgainst, this.showingDiff = true, this.merge, this.pullRequest, this.pullRequestBase}): _tabs = tabs,_appFiles = appFiles,super._();
   
 
 /// The folder the user opened, and the repository that encloses it.
 @override final  SpaceEntity space;
+/// Whether git has not yet said which repository encloses [space] — the
+/// folder is on screen and its files are shown while a command that
+/// asks first waits in the Commands panel. [SpaceEntity.hasRepository]
+/// is false meanwhile and means "not known yet", not "none".
+@override@JsonKey() final  bool locatingRepository;
 /// The document the editor and the preview are showing, or null when
 /// none has been chosen — the state a space opens in, not an error.
 ///
@@ -404,15 +416,30 @@ class _SpaceSessionState extends SpaceSessionState {
   return EqualUnmodifiableListView(_tabs);
 }
 
-/// The app's own file open as a tab — `preferences.json`, or
-/// `git-approvals.json` beside it, one at a time — by its path in the
-/// app's folder, never the space's; or null.
+/// The app's own files open as tabs — `preferences.json` and
+/// `git-approvals.json` beside it, in the order they were opened — by
+/// their paths in the app's folder, never the space's.
 ///
-/// A tab after [tabs] rather than one of them, because what reads [tabs]
-/// takes each for a file of the space or its repository; it is on screen
-/// while [openDocument] is null ([isShowingPreferencesFile],
-/// `docs/product/preferences/where-it-is-stored/doc.md`).
-@override final  SpaceRelativePathValueObject? preferencesFile;
+/// Tabs after [tabs] rather than among them, because what reads [tabs]
+/// takes each for a file of the space or its repository
+/// (`docs/product/preferences/where-it-is-stored/doc.md`).
+ final  List<SpaceRelativePathValueObject> _appFiles;
+/// The app's own files open as tabs — `preferences.json` and
+/// `git-approvals.json` beside it, in the order they were opened — by
+/// their paths in the app's folder, never the space's.
+///
+/// Tabs after [tabs] rather than among them, because what reads [tabs]
+/// takes each for a file of the space or its repository
+/// (`docs/product/preferences/where-it-is-stored/doc.md`).
+@override@JsonKey() List<SpaceRelativePathValueObject> get appFiles {
+  if (_appFiles is EqualUnmodifiableListView) return _appFiles;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_appFiles);
+}
+
+/// The one of [appFiles] that has the document area while no document
+/// does ([isShowingPreferencesFile]); null exactly when none is open.
+@override final  SpaceRelativePathValueObject? appFile;
 /// The tab opened by a click and not yet kept — italic, and replaced by
 /// the next click rather than joined by it — or null when every tab is
 /// kept.
@@ -489,16 +516,16 @@ _$SpaceSessionStateCopyWith<_SpaceSessionState> get copyWith => __$SpaceSessionS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.outsideDocument, outsideDocument) || other.outsideDocument == outsideDocument)&&const DeepCollectionEquality().equals(other._tabs, _tabs)&&(identical(other.preferencesFile, preferencesFile) || other.preferencesFile == preferencesFile)&&(identical(other.previewTab, previewTab) || other.previewTab == previewTab)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion)&&(identical(other.comparingAgainst, comparingAgainst) || other.comparingAgainst == comparingAgainst)&&(identical(other.showingDiff, showingDiff) || other.showingDiff == showingDiff)&&(identical(other.merge, merge) || other.merge == merge)&&(identical(other.pullRequest, pullRequest) || other.pullRequest == pullRequest)&&(identical(other.pullRequestBase, pullRequestBase) || other.pullRequestBase == pullRequestBase));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SpaceSessionState&&(identical(other.space, space) || other.space == space)&&(identical(other.locatingRepository, locatingRepository) || other.locatingRepository == locatingRepository)&&(identical(other.openDocument, openDocument) || other.openDocument == openDocument)&&(identical(other.outsideDocument, outsideDocument) || other.outsideDocument == outsideDocument)&&const DeepCollectionEquality().equals(other._tabs, _tabs)&&const DeepCollectionEquality().equals(other._appFiles, _appFiles)&&(identical(other.appFile, appFile) || other.appFile == appFile)&&(identical(other.previewTab, previewTab) || other.previewTab == previewTab)&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.git, git) || other.git == git)&&(identical(other.readingVersion, readingVersion) || other.readingVersion == readingVersion)&&(identical(other.comparingAgainst, comparingAgainst) || other.comparingAgainst == comparingAgainst)&&(identical(other.showingDiff, showingDiff) || other.showingDiff == showingDiff)&&(identical(other.merge, merge) || other.merge == merge)&&(identical(other.pullRequest, pullRequest) || other.pullRequest == pullRequest)&&(identical(other.pullRequestBase, pullRequestBase) || other.pullRequestBase == pullRequestBase));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,space,openDocument,outsideDocument,const DeepCollectionEquality().hash(_tabs),preferencesFile,previewTab,mode,git,readingVersion,comparingAgainst,showingDiff,merge,pullRequest,pullRequestBase);
+int get hashCode => Object.hash(runtimeType,space,locatingRepository,openDocument,outsideDocument,const DeepCollectionEquality().hash(_tabs),const DeepCollectionEquality().hash(_appFiles),appFile,previewTab,mode,git,readingVersion,comparingAgainst,showingDiff,merge,pullRequest,pullRequestBase);
 
 @override
 String toString() {
-  return 'SpaceSessionState(space: $space, openDocument: $openDocument, outsideDocument: $outsideDocument, tabs: $tabs, preferencesFile: $preferencesFile, previewTab: $previewTab, mode: $mode, git: $git, readingVersion: $readingVersion, comparingAgainst: $comparingAgainst, showingDiff: $showingDiff, merge: $merge, pullRequest: $pullRequest, pullRequestBase: $pullRequestBase)';
+  return 'SpaceSessionState(space: $space, locatingRepository: $locatingRepository, openDocument: $openDocument, outsideDocument: $outsideDocument, tabs: $tabs, appFiles: $appFiles, appFile: $appFile, previewTab: $previewTab, mode: $mode, git: $git, readingVersion: $readingVersion, comparingAgainst: $comparingAgainst, showingDiff: $showingDiff, merge: $merge, pullRequest: $pullRequest, pullRequestBase: $pullRequestBase)';
 }
 
 
@@ -509,7 +536,7 @@ abstract mixin class _$SpaceSessionStateCopyWith<$Res> implements $SpaceSessionS
   factory _$SpaceSessionStateCopyWith(_SpaceSessionState value, $Res Function(_SpaceSessionState) _then) = __$SpaceSessionStateCopyWithImpl;
 @override @useResult
 $Res call({
- SpaceEntity space, SpaceRelativePathValueObject? openDocument, RepoRelativePathValueObject? outsideDocument, List<DocumentTab> tabs, SpaceRelativePathValueObject? preferencesFile, DocumentTab? previewTab, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion, DiffBaseValueObject? comparingAgainst, bool showingDiff, MergeStateValueObject? merge, BranchNameValueObject? pullRequest, BranchNameValueObject? pullRequestBase
+ SpaceEntity space, bool locatingRepository, SpaceRelativePathValueObject? openDocument, RepoRelativePathValueObject? outsideDocument, List<DocumentTab> tabs, List<SpaceRelativePathValueObject> appFiles, SpaceRelativePathValueObject? appFile, DocumentTab? previewTab, DocumentModeEnum mode, GitStatusValueObject? git, CommitEntity? readingVersion, DiffBaseValueObject? comparingAgainst, bool showingDiff, MergeStateValueObject? merge, BranchNameValueObject? pullRequest, BranchNameValueObject? pullRequestBase
 });
 
 
@@ -526,13 +553,15 @@ class __$SpaceSessionStateCopyWithImpl<$Res>
 
 /// Create a copy of SpaceSessionState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? space = null,Object? openDocument = freezed,Object? outsideDocument = freezed,Object? tabs = null,Object? preferencesFile = freezed,Object? previewTab = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,Object? comparingAgainst = freezed,Object? showingDiff = null,Object? merge = freezed,Object? pullRequest = freezed,Object? pullRequestBase = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? space = null,Object? locatingRepository = null,Object? openDocument = freezed,Object? outsideDocument = freezed,Object? tabs = null,Object? appFiles = null,Object? appFile = freezed,Object? previewTab = freezed,Object? mode = null,Object? git = freezed,Object? readingVersion = freezed,Object? comparingAgainst = freezed,Object? showingDiff = null,Object? merge = freezed,Object? pullRequest = freezed,Object? pullRequestBase = freezed,}) {
   return _then(_SpaceSessionState(
 space: null == space ? _self.space : space // ignore: cast_nullable_to_non_nullable
-as SpaceEntity,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
+as SpaceEntity,locatingRepository: null == locatingRepository ? _self.locatingRepository : locatingRepository // ignore: cast_nullable_to_non_nullable
+as bool,openDocument: freezed == openDocument ? _self.openDocument : openDocument // ignore: cast_nullable_to_non_nullable
 as SpaceRelativePathValueObject?,outsideDocument: freezed == outsideDocument ? _self.outsideDocument : outsideDocument // ignore: cast_nullable_to_non_nullable
 as RepoRelativePathValueObject?,tabs: null == tabs ? _self._tabs : tabs // ignore: cast_nullable_to_non_nullable
-as List<DocumentTab>,preferencesFile: freezed == preferencesFile ? _self.preferencesFile : preferencesFile // ignore: cast_nullable_to_non_nullable
+as List<DocumentTab>,appFiles: null == appFiles ? _self._appFiles : appFiles // ignore: cast_nullable_to_non_nullable
+as List<SpaceRelativePathValueObject>,appFile: freezed == appFile ? _self.appFile : appFile // ignore: cast_nullable_to_non_nullable
 as SpaceRelativePathValueObject?,previewTab: freezed == previewTab ? _self.previewTab : previewTab // ignore: cast_nullable_to_non_nullable
 as DocumentTab?,mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
 as DocumentModeEnum,git: freezed == git ? _self.git : git // ignore: cast_nullable_to_non_nullable

@@ -60,19 +60,57 @@ final class DartIoFilesystemImpl implements Filesystem {
     String path,
     Uint8List bytes,
   ) async {
-    final File temporary = File(_temporaryPathFor(path));
+    File? temporary;
     try {
-      await File(path).parent.create(recursive: true);
+      // A link is written *through*: renaming over it would leave a regular
+      // file where the link was and the old text where it pointed.
+      final File target = File(await _behindLinks(path));
+      await target.parent.create(recursive: true);
       // Written beside the target and renamed over it, because a rename is
       // the only write the operating system finishes or does not start — and
       // beside it, not in the system's temporary directory, because a rename
       // is atomic within one filesystem only.
+      temporary = File(_temporaryPathFor(target.path));
+      // Asynchronous for the reason [directoryExists] is: a network mount.
+      // ignore: avoid_slow_async_io
+      if (await target.exists()) {
+        // Started as a copy of what is there, which is the one way `dart:io`
+        // hands a new file an old one's mode: a script stays executable and
+        // a private note private.
+        await target.copy(temporary.path);
+      }
       await temporary.writeAsBytes(bytes, flush: true);
-      await temporary.rename(path);
+      await temporary.rename(target.path);
       return const Success<void, FilesystemFailure>(null);
     } on FileSystemException catch (exception) {
-      await _discard(temporary);
-      return Failure<void, FilesystemFailure>(_translate(path, exception));
+      if (temporary != null) {
+        await _discard(temporary);
+      }
+      return Failure<void, FilesystemFailure>(
+        _translate(path, exception, temporary: temporary?.path),
+      );
+    }
+  }
+
+  /// Where a write to [path] lands: [path] itself, or what it points at when
+  /// it is a symbolic link — even one whose target is not there yet.
+  static Future<String> _behindLinks(String path) async {
+    // Asynchronous for the reason [directoryExists] is: a network mount.
+    // ignore: avoid_slow_async_io
+    final FileSystemEntityType type = await FileSystemEntity.type(
+      path,
+      followLinks: false,
+    );
+    if (type != FileSystemEntityType.link) {
+      return path;
+    }
+    try {
+      return await File(path).resolveSymbolicLinks();
+    } on FileSystemException {
+      final String to = await Link(path).target();
+      return File(to).isAbsolute
+          ? to
+          : '${File(path).parent.path}${Platform.pathSeparator}$to';
     }
   }
 
@@ -284,12 +322,15 @@ final class DartIoFilesystemImpl implements Filesystem {
   /// share one namespace with different meanings (`5` is `EIO` on one and
   /// `ERROR_ACCESS_DENIED` on the other), and `dart:io` has already mapped
   /// them to [PathNotFoundException] and [PathAccessException]. The path is
-  /// [requested] unless the failure is about an entry inside it.
+  /// [requested] unless the failure is about an entry inside it — and a
+  /// write's [temporary] stands for [requested]: nobody asked about it.
   FilesystemFailure _translate(
     String requested,
-    FileSystemException exception,
-  ) {
-    final String path = _isAbout(requested, exception)
+    FileSystemException exception, {
+    String? temporary,
+  }) {
+    final String path =
+        _isAbout(requested, exception) || exception.path == temporary
         ? requested
         : exception.path!;
     return switch (exception) {

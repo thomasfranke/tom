@@ -20,8 +20,12 @@ class HomeWelcomeWidget extends ConsumerWidget {
   const HomeWelcomeWidget({
     required this.recents,
     this.clone = const HomeCloneState.closed(),
+    this.notOpened,
     super.key,
   });
+
+  /// The folder a denied command kept from opening, if that just happened.
+  final String? notOpened;
 
   /// What to offer going back to.
   final List<RecentSpaceEntity> recents;
@@ -34,7 +38,8 @@ class HomeWelcomeWidget extends ConsumerWidget {
     super.debugFillProperties(properties);
     properties
       ..add(IterableProperty<RecentSpaceEntity>('recents', recents))
-      ..add(DiagnosticsProperty<HomeCloneState>('clone', clone));
+      ..add(DiagnosticsProperty<HomeCloneState>('clone', clone))
+      ..add(StringProperty('notOpened', notOpened));
   }
 
   @override
@@ -71,6 +76,13 @@ class HomeWelcomeWidget extends ConsumerWidget {
           glyph: TomGlyphEnum.folder,
           onPressed: () => chooseFolder(ref),
         ),
+        if (notOpened case final String folder) ...<Widget>[
+          const SizedBox(height: 8),
+          Text(
+            context.l10n.homeNotOpenedDenied(folder),
+            style: TextStyle(fontSize: 12.5, color: colors.modified),
+          ),
+        ],
         const SizedBox(height: HomeDesign.chooseToClone),
         HomeCloneWidget(clone: clone, keepsGap: recents.isNotEmpty),
         if (recents.isNotEmpty) HomeRecentListWidget(recents: recents),

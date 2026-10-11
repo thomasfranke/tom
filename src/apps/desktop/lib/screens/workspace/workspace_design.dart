@@ -87,13 +87,14 @@ abstract final class WorkspaceDesign {
   /// Panel edge to the first tab.
   static const double bottomTabsInset = 14;
 
-  /// Between two tabs, and between the last one and what the panel says
-  /// after them.
-  static const double bottomTabsGap = 20;
+  /// The bottom tabs' label: 12, where the boards' `Commands` is 65 wide and
+  /// 12.5 makes it 67.
+  static const double bottomTabsLabel = 12;
+
+  /// Between two tabs: 14 between the inks on `The bottom panel — its
+  /// states`, which a label's own side bearing makes 15 of box.
+  static const double bottomTabsGap = 15;
 
   /// The `×`'s left edge, from the panel's right edge.
-  static const double bottomClose = 30;
-
-  /// The `×` itself.
-  static const double bottomCloseGlyph = 12;
+  static const double bottomClose = 25;
 }

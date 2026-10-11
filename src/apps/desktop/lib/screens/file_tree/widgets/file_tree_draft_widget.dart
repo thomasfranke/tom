@@ -94,13 +94,9 @@ class _FileTreeDraftState extends ConsumerState<FileTreeDraftWidget> {
         FileTreeDesign.labelLeft +
         widget.depth * FileTreeDesign.indent -
         FileTreeDesign.draftInset;
+    // As tall as its row, so nothing is left above or below it.
     return Padding(
-      padding: EdgeInsets.only(
-        left: left,
-        right: FileTreeDesign.draftRight,
-        top: (FileTreeDesign.rowHeight - FileTreeDesign.draftHeight) / 2,
-        bottom: (FileTreeDesign.rowHeight - FileTreeDesign.draftHeight) / 2,
-      ),
+      padding: EdgeInsets.only(left: left, right: FileTreeDesign.draftRight),
       child: TomFieldBoxWidget(
         height: FileTreeDesign.draftHeight,
         fill: colors.surfaceSunken,
@@ -121,7 +117,7 @@ class _FileTreeDraftState extends ConsumerState<FileTreeDraftWidget> {
                       ? TomGlyphEnum.folder
                       : TomGlyphEnum.file,
                   color: widget.isFolder
-                      ? fileTreeFolderInk(Theme.of(context).brightness)
+                      ? colors.accentMuted
                       : colors.textMuted,
                   size: FileTreeDesign.glyph,
                 ),

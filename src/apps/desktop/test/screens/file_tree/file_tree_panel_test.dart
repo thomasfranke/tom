@@ -234,6 +234,32 @@ void main() {
       expect(find.text('writing.md'), findsNothing);
     });
 
+    for (final Brightness brightness in Brightness.values) {
+      testWidgets('a folder’s glyph wears the palette’s accent_muted, in '
+          '${brightness.name}', (WidgetTester tester) async {
+        spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(
+          held,
+        );
+
+        await pumpPanel(tester, space: docs, brightness: brightness);
+
+        final TomColors colors = brightness == Brightness.dark
+            ? TomColors.dark
+            : TomColors.light;
+        final Iterable<TomGlyphWidget> folders = tester
+            .widgetList<TomGlyphWidget>(find.byType(TomGlyphWidget))
+            .where(
+              (TomGlyphWidget g) =>
+                  g.glyph == TomGlyphEnum.folder ||
+                  g.glyph == TomGlyphEnum.folderOpen,
+            );
+        expect(folders, isNotEmpty);
+        for (final TomGlyphWidget glyph in folders) {
+          expect(glyph.color, colors.accentMuted);
+        }
+      });
+    }
+
     testWidgets('a folder opens again on a second click', (
       WidgetTester tester,
     ) async {
@@ -359,11 +385,11 @@ void main() {
       expect(find.byType(FileStateMarkWidget), findsNothing);
     });
 
-    testWidgets('a file the editor cannot open is muted and does not react', (
+    testWidgets('a file that is not markdown is muted, and still opens', (
       WidgetTester tester,
     ) async {
-      // Muted and without a hover: a row that answers a click with nothing
-      // reads as the app being broken.
+      // Dimmer so the documents stand out, but every file answers a press
+      // (`docs/product/navigation/file-tree/what-is-shown/doc.md`).
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       await pumpPanel(tester, space: docs);
       final TomColors colors = TomColors.of(
@@ -376,7 +402,7 @@ void main() {
           of: find.text('logo.svg'),
           matching: find.byType(InkWell),
         ),
-        findsNothing,
+        findsOneWidget,
       );
       expect(
         find.ancestor(
@@ -491,6 +517,18 @@ void main() {
         tester.getCenter(find.byTooltip('New document')).dx,
         TomMetrics.explorer - FileTreeDesign.newCentreRight,
       );
+    });
+
+    testWidgets('the name field is 26 tall, its row\'s height, and ends 7 '
+        'short of the column', (WidgetTester tester) async {
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+
+      await pressPlus(tester);
+
+      final Rect box = tester.getRect(find.byType(TomFieldBoxWidget).last);
+      expect(box.height, 26);
+      expect(TomMetrics.explorer - box.right, 7);
     });
 
     testWidgets('the + asks for a name in the tree, untitled.md selected', (
@@ -635,16 +673,21 @@ void main() {
       expect(tester.getCenter(find.byTooltip('New document')).dx, menu - 26);
     });
 
-    testWidgets('it hangs from the ⋮, its right edge past the glyph', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('it hangs from the ⋮, its right edge past the glyph, straight '
+        'under the button', (WidgetTester tester) async {
       await pumpPanel(tester, space: docs);
 
       await openMenu(tester);
 
+      // 4.5 past the centre puts the edge at 251 on `explorer-menu`, and no
+      // drop puts its rules on whole pixels (110 and 179 there).
       expect(
         tester.getTopRight(find.byType(TomMenuWidget)).dx,
-        tester.getCenter(find.byTooltip('Explorer menu')).dx + 5,
+        tester.getCenter(find.byTooltip('Explorer menu')).dx + 4.5,
+      );
+      expect(
+        tester.getTopRight(find.byType(TomMenuWidget)).dy,
+        tester.getRect(find.byTooltip('Explorer menu')).bottom,
       );
       expect(
         tester.getSize(find.byType(TomMenuWidget)).width,

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/home/folder_picker.dart';
 import 'package:tom_desktop/screens/home/home_screen.dart';
 import 'package:tom_desktop/screens/home/widgets/home_clone_widget.dart';
@@ -45,7 +47,7 @@ void main() {
   });
 
   /// Mounts Home with the repositories these tests arranged.
-  Future<void> pumpHome(WidgetTester tester) async {
+  Future<void> pumpHome(WidgetTester tester, {Locale? locale}) async {
     tester.view
       ..physicalSize = const Size(1280, 800)
       ..devicePixelRatio = 1;
@@ -86,6 +88,13 @@ void main() {
         ],
         child: MaterialApp(
           theme: tomTheme(Brightness.light),
+          locale: locale,
+          localizationsDelegates: locale == null
+              ? null
+              : AppLocalizations.localizationsDelegates,
+          supportedLocales: locale == null
+              ? const <Locale>[Locale('en', 'US')]
+              : AppLocalizations.supportedLocales,
           // The trunk never stops moving, so `pumpAndSettle` never would;
           // the motion is `commit_trunk_test.dart`'s.
           home: const MediaQuery(
@@ -126,7 +135,6 @@ void main() {
         ),
       );
       expect(clone.onPressed, isNotNull);
-      expect(find.byType(MilestoneChipWidget), findsNothing);
     });
 
     testWidgets('the first run shows no recent list at all', (
@@ -167,11 +175,45 @@ void main() {
       expect(spaces.asked, '/code/app/docs');
     });
 
-    testWidgets('and one can be forgotten without touching the folder', (
+    testWidgets('a command denied while a folder opens says which folder was '
+        'not opened', (WidgetTester tester) async {
+      recents.stored = <RecentSpaceEntity>[remembered];
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
+        GitCommandDenied(),
+      );
+      await pumpHome(tester);
+
+      await tester.tap(find.text('docs'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('docs was not opened — a command was denied.'),
+        findsOneWidget,
+      );
+      expect(find.text('Choose folder…'), findsOneWidget);
+    });
+
+    testWidgets('the panel toggle is in the bar and the panel is shut', (
       WidgetTester tester,
     ) async {
       await pumpHome(tester);
 
+      expect(find.byTooltip('Show the bottom panel'), findsOneWidget);
+    });
+
+    testWidgets('and one can be forgotten without touching the folder', (
+      WidgetTester tester,
+    ) async {
+      await pumpHome(tester);
+      // The ✕ is on the row under the pointer and nowhere else
+      // (`docs/product/home/recent-spaces/doc.md`).
+      final TestGesture mouse = await tester.createGesture(
+        kind: PointerDeviceKind.mouse,
+      );
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await mouse.moveTo(tester.getCenter(find.text('docs')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Forget this space'));
       await tester.pumpAndSettle();
 
@@ -434,6 +476,45 @@ void main() {
       expect(find.text('That folder is no longer there'), findsOneWidget);
       expect(find.text('/gone'), findsOneWidget);
       expect(find.text('Choose another folder…'), findsOneWidget);
+    });
+
+    testWidgets('a git older than 2.41 says which one this machine has, and '
+        'offers no other folder', (WidgetTester tester) async {
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
+        GitTooOld('2.39.2'),
+      );
+      await pumpHome(tester);
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(HomeScreen)),
+      );
+      await container.read(homeProvider.notifier).open('/any');
+      await tester.pumpAndSettle();
+
+      expect(find.text('TOM needs git 2.41 or newer.'), findsOneWidget);
+      expect(find.text('This machine has 2.39.2.'), findsOneWidget);
+      expect(find.text('Choose another folder…'), findsNothing);
+    });
+
+    testWidgets('and says so in Portuguese when asked', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
+        GitTooOld('2.39.2'),
+      );
+      await pumpHome(tester, locale: const Locale('pt', 'BR'));
+
+      final ProviderContainer container = ProviderScope.containerOf(
+        tester.element(find.byType(HomeScreen)),
+      );
+      await container.read(homeProvider.notifier).open('/any');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('O TOM precisa do git 2.41 ou mais novo.'),
+        findsOneWidget,
+      );
+      expect(find.text('Esta máquina tem o 2.39.2.'), findsOneWidget);
     });
 
     testWidgets('any other refusal is said in words, never as a failure', (

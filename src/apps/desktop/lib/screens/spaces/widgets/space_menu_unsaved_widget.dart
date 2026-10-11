@@ -38,12 +38,16 @@ class SpaceMenuUnsavedWidget extends ConsumerWidget {
     final bool isMany = unsaved.length > 1;
     final DocumentTab? document = unsaved.length == 1 ? unsaved.single : open;
     final SpaceMenuNotifier notifier = ref.read(spaceMenuProvider.notifier);
-    final String going = switch (ref.watch(
+    final SpaceDeparture? pending = ref.watch(
       spaceMenuProvider.select((SpaceMenuState state) => state.pending),
-    )) {
+    );
+    final String going = switch (pending) {
       SpaceDepartureSwitching(space: final RecentSpaceEntity it) => it.name,
       _ => '',
     };
+    // The window closing is a closing too, so its answers are the same two
+    // words; only what is lost with it is said differently.
+    final bool isQuitting = pending is SpaceDepartureQuitting;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -76,6 +80,8 @@ class SpaceMenuUnsavedWidget extends ConsumerWidget {
         const SizedBox(height: 6),
         Text(
           switch ((going.isEmpty, isMany)) {
+            (true, false) when isQuitting => l10n.spacesUnsavedQuitting,
+            (true, true) when isQuitting => l10n.spacesUnsavedQuittingMany,
             (true, false) => l10n.spacesUnsavedClosing,
             (true, true) => l10n.spacesUnsavedClosingMany,
             (false, false) => l10n.spacesUnsavedOpening(going),

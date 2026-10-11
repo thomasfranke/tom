@@ -7,11 +7,14 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
-import 'package:tom_desktop/bootstrap/bundled_faces_pdf_exporter.dart';
-import 'package:tom_desktop/bootstrap/flutter_pty_pseudo_terminal_process_impl.dart';
+import 'package:tom_desktop/about/app_build.dart';
+import 'package:tom_desktop/bootstrap/bundled_faces_pdf_exporter_impl.dart';
+import 'package:tom_desktop/bootstrap/git_wiring.dart';
+import 'package:tom_desktop/bootstrap/updates_wiring.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_infra/tom_infra.dart';
 import 'package:tom_presentation/tom_presentation.dart';
+import 'package:window_manager/window_manager.dart';
 
 part 'providers.g.dart';
 
@@ -38,17 +41,28 @@ Filesystem filesystem(Ref ref) => const DartIoFilesystemImpl();
 
 /// How to get a git client for a folder.
 ///
-/// App lifetime, but what it builds is per folder: a client holds the
+/// App lifetime, and what it builds is per folder: a client holds the
 /// directory its commands run in and the queue that serializes them
 /// ([composition](../../../../../docs/technical/runtime/composition.md)).
+///
+/// **One client per folder, kept**: a client per call would be a queue per
+/// call, and two use cases writing together would meet at `index.lock`.
 @Riverpod(keepAlive: true)
 GitClientFor gitClientFor(Ref ref) {
   final CommandLog log = ref.watch(commandLogProvider);
   final CommandGate gate = ref.watch(commandGateProvider);
-  return (String folder) => DartIoGitClientImpl(
-    workingDirectory: folder,
-    commandLog: log,
-    commandGate: gate,
+  final String executable = ref.watch(gitExecutableProvider);
+  final Map<String, String> environment = ref.watch(gitEnvironmentProvider);
+  final Map<String, GitClient> kept = <String, GitClient>{};
+  return (String folder) => kept.putIfAbsent(
+    folder,
+    () => DartIoGitClientImpl(
+      workingDirectory: folder,
+      commandLog: log,
+      commandGate: gate,
+      executable: executable,
+      environment: environment,
+    ),
   );
 }
 
@@ -135,7 +149,7 @@ DesktopRepository desktopRepository(Ref ref) => DesktopRepositoryImpl(
   ),
 );
 
-/// The person's own shell, in a pseudo-terminal the plugin opens ([Decision
+/// The person's own shell, in a pseudo-terminal `pty2` opens ([Decision
 /// 37](../../../../../docs/technical/decisions/037-the-terminal-is-the-persons-own-shell-in-a-pty.md)).
 ///
 /// No `CommandLog`: what somebody types into their shell is not what TOM ran.
@@ -143,7 +157,7 @@ DesktopRepository desktopRepository(Ref ref) => DesktopRepositoryImpl(
 TerminalRepository terminalRepository(Ref ref) => TerminalRepositoryImpl(
   source: TerminalDataSource(
     terminal: LoginShellPseudoTerminalImpl(
-      spawn: FlutterPtyPseudoTerminalProcessImpl.spawn,
+      spawn: Pty2PseudoTerminalProcessImpl.spawn,
     ),
   ),
 );
@@ -222,12 +236,33 @@ String userHome(Ref ref) =>
 
 /// The folders spaces are made of.
 @Riverpod(keepAlive: true)
-SpaceRepository spaceRepository(Ref ref) => SpaceRepositoryImpl(
-  spaces: SpaceDataSource(
-    filesystem: ref.watch(filesystemProvider),
-    gitClientFor: ref.watch(gitClientForProvider),
-  ),
-);
+SpaceRepositoryImpl spaceRepository(Ref ref) {
+  final GitClientFor clients = ref.watch(gitClientForProvider);
+  // The machine's git does not change while TOM runs, so it is asked once:
+  // every opening of a space would otherwise write one more row in the
+  // Commands panel (and, under approvals, ask again). A failure is not kept.
+  String? said;
+  return SpaceRepositoryImpl(
+    spaces: SpaceDataSource(
+      filesystem: ref.watch(filesystemProvider),
+      gitClientFor: clients,
+      readGitVersion: (String folder) async {
+        if (said case final String version) {
+          return Success<String, GitClientFailure>(version);
+        }
+        final Result<String, GitClientFailure> asked = await clients(
+          folder,
+        ).version();
+        if (asked case Success<String, GitClientFailure>(
+          value: final String version,
+        )) {
+          said = version;
+        }
+        return asked;
+      },
+    ),
+  );
+}
 
 /// The spaces Home offers to go back to.
 @Riverpod(keepAlive: true)
@@ -266,8 +301,17 @@ DocumentRepositoryFor pullRequestDraftsFor(Ref ref) {
     filesystem: ref.watch(filesystemProvider),
   );
   final GitRepositoryFor gitFor = ref.watch(gitRepositoryForProvider);
-  return (SpaceEntity space) =>
-      PullRequestDraftRepositoryImpl(git: gitFor(space), documents: documents);
+  // One per repository, so the git directory is read once for the space and
+  // remembered: every save of a draft after the first asks git nothing.
+  final Map<String, PullRequestDraftRepositoryImpl> kept =
+      <String, PullRequestDraftRepositoryImpl>{};
+  return (SpaceEntity space) => kept.putIfAbsent(
+    space.repositoryRoot ?? space.root,
+    () => PullRequestDraftRepositoryImpl(
+      git: gitFor(space),
+      documents: documents,
+    ),
+  );
 }
 
 /// How to reach git for a space; per space for the same reason
@@ -333,14 +377,30 @@ LineDifferService lineDiffer(Ref ref) => const LineDifferService(
   ),
 );
 
+/// What closes the window for good, once leaving was answered for.
+///
+/// `destroy`, not `close`: the close is what the guard holds back to ask.
+/// A provider of its own so an end-to-end run can replace it — a window
+/// really closed would take the run with it.
+@Riverpod(keepAlive: true)
+WindowCloser desktopWindowCloser(Ref ref) => _destroyWindow;
+
+/// A function rather than the plugin's own tear-off, so the plugin is not
+/// reached until a window is really closing.
+Future<void> _destroyWindow() => windowManager.destroy();
+
 /// The overrides that turn the contracts above into the app's own wiring.
 ///
 /// `tom_presentation` declares the use cases it needs and cannot see what
 /// satisfies them; this is the one place that does.
 List<Override> appOverrides = <Override>[
+  windowCloserProvider.overrideWith(
+    (Ref ref) => ref.watch(desktopWindowCloserProvider),
+  ),
   openSpaceProvider.overrideWith(
     (Ref ref) => OpenSpaceUseCase(
       spaces: ref.watch(spaceRepositoryProvider),
+      locator: ref.watch(spaceRepositoryProvider),
       recents: ref.watch(recentSpacesRepositoryProvider),
       observability: ref.watch(observabilityProvider),
     ),
@@ -666,6 +726,19 @@ List<Override> appOverrides = <Override>[
       observability: ref.watch(observabilityProvider),
     ),
   ),
+  checkForUpdatesProvider.overrideWith(
+    (Ref ref) => CheckForUpdatesUseCase(
+      updates: UpdatesRepositoryImpl(updates: ref.watch(appUpdatesProvider)),
+      observability: ref.watch(observabilityProvider),
+    ),
+  ),
+  runningVersionProvider.overrideWithValue(
+    AppVersionValueObject.tryParse(AppBuild.version) ??
+        const AppVersionValueObject(major: 0, minor: 0),
+  ),
+  releasesPublishedProvider.overrideWith(
+    (Ref ref) => ref.watch(releasesAreOutProvider),
+  ),
   openUrlProvider.overrideWith(
     (Ref ref) => OpenUrlUseCase(
       desktop: ref.watch(desktopRepositoryProvider),
@@ -696,7 +769,7 @@ List<Override> appOverrides = <Override>[
       exports: ExportRepositoryImpl(
         source: ExportDataSource(
           exporters: <ExporterFormatEnum, DocumentExporter>{
-            ExporterFormatEnum.pdf: BundledFacesPdfExporter(),
+            ExporterFormatEnum.pdf: BundledFacesPdfExporterImpl(),
             ExporterFormatEnum.html: const MarkdownHtmlDocumentExporterImpl(),
           },
           filesystem: ref.watch(filesystemProvider),

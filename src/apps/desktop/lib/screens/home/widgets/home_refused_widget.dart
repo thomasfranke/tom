@@ -47,6 +47,11 @@ class HomeRefusedWidget extends ConsumerWidget {
             null,
             l10n.homeRefusedNoGitWhy,
           ),
+          GitTooOld(found: final String found) => (
+            l10n.homeRefusedGitTooOld,
+            null,
+            l10n.homeRefusedGitTooOldWhy(found),
+          ),
           _ => (l10n.homeRefusedUnopened, null, l10n.homeRefusedUnopenedWhy),
         };
     return Column(
@@ -103,12 +108,16 @@ class HomeRefusedWidget extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: HomeDesign.bodyToRetry),
-        HomePrimaryButtonWidget(
-          label: l10n.homeChooseAnotherFolder,
-          width: HomeDesign.retry,
-          onPressed: () => chooseFolder(ref),
-        ),
+        // No other folder would open either, so no way to choose one is
+        // offered (`docs/product/home/opening-a-space/doc.md`).
+        if (failure is! GitTooOld) ...<Widget>[
+          const SizedBox(height: HomeDesign.bodyToRetry),
+          HomePrimaryButtonWidget(
+            label: l10n.homeChooseAnotherFolder,
+            width: HomeDesign.retry,
+            onPressed: () => chooseFolder(ref),
+          ),
+        ],
       ],
     );
   }

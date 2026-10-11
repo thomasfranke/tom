@@ -101,18 +101,17 @@ class ShellModeBarWidget extends ConsumerWidget {
         builder: (BuildContext context, BoxConstraints row) => Row(
           children: <Widget>[
             // **Measured, not flexed.** The tools' shape must not answer to
-            // what shares the row with them: an `Unsaved` that appeared on
-            // the first keystroke was taking seventy points off the bar and
-            // collapsing a whole group with it
+            // what shares the row with them: a word that appeared beside
+            // them was taking seventy points off the bar and collapsing a
+            // whole group with it
             // (`docs/product/editor/formatting-shortcuts/doc.md`).
             SizedBox(
               width: _toolsRoom(row.maxWidth),
               child: const EditorToolbarWidget(),
             ),
             const SizedBox(width: _gap),
-            // Between the two ends rather than at the right: the boards put
-            // this on the tab, and there are no tabs yet — at the right it
-            // would take the chip off the pane's edge.
+            // Between the two ends rather than at the right, where it would
+            // take the chip off the pane's edge.
             //
             // **The slack lives here**, which is what keeps the right group
             // flush right, lets the word go when the row is short, and
@@ -218,29 +217,26 @@ class _VersionBarWidget extends ConsumerWidget {
   }
 }
 
-/// The gap between the buffer and the file, named where the editing happens.
+/// A save that was refused, named where the editing happens.
 ///
-/// Absent while the two agree, because a mark always there is never read.
+/// Nothing for an edit that is only unwritten: the tab's dot says that, and
+/// a refusal is the one thing a dot cannot say
+/// (`docs/product/editor/source-mode/doc.md`).
 class _UnsavedMarkWidget extends ConsumerWidget {
   const _UnsavedMarkWidget();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ({bool isDirty, bool refused}) mark = ref.watch(
+    final bool refused = ref.watch(
       editorProvider.select(
-        (EditorState state) => (
-          isDirty: state.isDirty,
-          refused: state is EditorReady && state.saveFailure != null,
-        ),
+        (EditorState state) =>
+            state is EditorReady && state.saveFailure != null,
       ),
     );
-    if (!mark.isDirty && !mark.refused) {
+    if (!refused) {
       return const SizedBox.shrink();
     }
-    final TomColors colors = TomColors.of(context);
-    // A refused save is different news from an unwritten edit: the first
-    // needs doing something about.
-    final Color colour = mark.refused ? colors.removed : colors.modified;
+    final Color colour = TomColors.of(context).removed;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -252,13 +248,10 @@ class _UnsavedMarkWidget extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 8),
-        // The word is what goes first when the row is short: the dot is the
-        // mark and the status bar already says it in full.
+        // The word is what goes first when the row is short.
         Flexible(
           child: Text(
-            mark.refused
-                ? context.l10n.shellNotSaved
-                : context.l10n.commonUnsaved,
+            context.l10n.shellNotSaved,
             maxLines: 1,
             overflow: TextOverflow.clip,
             softWrap: false,

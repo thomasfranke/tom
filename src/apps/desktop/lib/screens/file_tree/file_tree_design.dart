@@ -27,6 +27,14 @@ abstract final class FileTreeDesign {
   /// The explorer menu's width.
   static const double menuWidth = 200;
 
+  /// How far the menu's right edge runs past the `⋮`'s centre: 4.5, which
+  /// puts the edge at 251 on `explorer-menu`, whole pixels.
+  static const double menuOverhang = 4.5;
+
+  /// The `⋮` box's bottom to the menu's top: none, so the board's rules
+  /// (110 and 179) land on whole pixels.
+  static const double menuDrop = 0;
+
   /// The `+`'s hover box, centred on its glyph.
   static const double captionButton = 20;
 
@@ -43,10 +51,10 @@ abstract final class FileTreeDesign {
   static const double draftText = 24;
 
   /// The field's height, centred in its row.
-  static const double draftHeight = 24;
+  static const double draftHeight = 26;
 
   /// The field's right edge to the island's.
-  static const double draftRight = 8;
+  static const double draftRight = 7;
 
   /// Panel top to the search field.
   static const double searchTop = 38;
@@ -126,12 +134,6 @@ abstract final class FileTreeDesign {
   /// (`docs/product/navigation/file-tree/order-and-shape/doc.md`).
   static const double chevron = 10;
 }
-
-/// A folder's glyph: the accent's hue with most of its colour taken out,
-/// which is what every 1b board draws and no role carries.
-Color fileTreeFolderInk(Brightness brightness) => brightness == Brightness.dark
-    ? const Color(0xFF8FB8AE)
-    : const Color(0xFF5E9C8C);
 
 /// The row's type, centred on its own line.
 ///
