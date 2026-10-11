@@ -1,0 +1,24 @@
+{
+  "summary": "A docs folder whose remote refuses every push, as a protected branch does",
+  "description": "A branch off main with one commit, pushed and checked out, on a remote that answers any further push with GitHub's own protected-branch wording from a hook the bare really runs. origin answers get-url with a GitHub address, so the app can offer a pull request, which is the way into a protected branch. The hook is installed last, so building the history still pushes.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "uncommitted": {
+    "docs/index.md": "\nAn edit made here, not yet committed.\n"
+  },
+  "remote": {
+    "protected": true,
+    "proposing": {
+      "name": "feat/protected",
+      "commits": [
+        {
+          "message": "docs: start the release notes",
+          "write": {
+            "docs/release-notes.md": "# Release notes\n\nThe first section, written on a branch.\n"
+          }
+        }
+      ]
+    },
+    "address": "https://github.com/acme/docs.git"
+  }
+}

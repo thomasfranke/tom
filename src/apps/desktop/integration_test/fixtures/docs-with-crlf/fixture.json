@@ -1,0 +1,17 @@
+{
+  "summary": "A docs folder with a document written in Windows line endings",
+  "description": "What CRLF handling exists for. `docs/windows.md` is committed with \\r\\n and then has one more paragraph appended, also with \\r\\n, so the preview must read it as paragraphs and the diff must mark only the new one — not every line, which is what a carriage return read as content would do. The file is made by a commit, not by content/, because the fixture's content cannot hold the bytes.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "commits": [
+    {
+      "message": "docs: add the Windows note",
+      "write": {
+        "docs/windows.md": "# Windows\r\n\r\nA note saved by an editor on Windows.\r\nIt has two lines in this paragraph.\r\n\r\nSecond paragraph.\r\n"
+      }
+    }
+  ],
+  "uncommitted": {
+    "docs/windows.md": "\r\nThird paragraph, added after the commit.\r\n"
+  }
+}

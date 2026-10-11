@@ -34,8 +34,12 @@ final class Evidence {
   /// What is driving the app, and what holds the render tree.
   final WidgetTester tester;
 
-  /// How many frames have been written.
+  /// How many frames have been asked for.
   int taken = 0;
+
+  /// How many of them reached the disk — a run that wrote none is reported,
+  /// never failed: evidence is not what a scenario proves.
+  int written = 0;
 
   /// The step the next frames belong to, which is what names them.
   ///
@@ -96,6 +100,7 @@ final class Evidence {
     File(
       '${directory.path}/$stamp-shot-$number-${slugOf(step)}.png',
     ).writeAsBytesSync(png.buffer.asUint8List());
+    written++;
   }
 
   /// [text] as a path: lowercase, everything else folded to a dash, because

@@ -3,6 +3,19 @@
   "description": "A branch off main with two commits, both pushed, checked out — what a pull request is written for. origin answers get-url with a GitHub address, so the app recognises the host and offers the control, while pushes still reach the bare beside the tree and nothing fetches.",
   "space": "docs",
   "commit": "docs: the first pass",
+  "branches": [
+    {
+      "name": "release/next",
+      "commits": [
+        {
+          "message": "docs: prepare the release branch",
+          "write": {
+            "docs/release.md": "# Release\n\nA branch a pull request can be aimed at.\n"
+          }
+        }
+      ]
+    }
+  ],
   "remote": {
     "proposing": {
       "name": "feat/release-notes",

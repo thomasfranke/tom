@@ -51,6 +51,9 @@ void scenario(
   required String describe,
   required List<Step> steps,
   String group = 'Home',
+  // Read from the source by the CLI, which lists the scenario under it and
+  // checks the file sits in the folder of that menu.
+  String? submenu,
 }) {
   // A real event loop: under `flutter test` alone the clock is fake, and real
   // file I/O and `Process.run` never complete.
@@ -81,6 +84,21 @@ void scenario(
     final File opened = File(E2eModuleImpl.openedPath(settingsPath));
     if (opened.existsSync()) {
       opened.deleteSync();
+    }
+    // And the folders it "revealed" and the terminals it "started".
+    final File asked = File(E2eModuleImpl.desktopAskedPath(settingsPath));
+    if (asked.existsSync()) {
+      asked.deleteSync();
+    }
+    // And what the save dialog was told to answer.
+    final File answer = File(E2eModuleImpl.saveAnswerPath(settingsPath));
+    if (answer.existsSync()) {
+      answer.deleteSync();
+    }
+    // And the record of the window having been closed.
+    final File closed = File(E2eModuleImpl.closedPath(settingsPath));
+    if (closed.existsSync()) {
+      closed.deleteSync();
     }
     // And the pull request the run's `gh` opened last time.
     final Directory github = Directory(E2eModuleImpl.githubPath(settingsPath));
@@ -132,6 +150,7 @@ void scenario(
     _report(<String, Object?>{
       'event': 'finished',
       'steps': steps.length,
+      'frames': evidence.written,
       'elapsedMs': watch.elapsedMilliseconds,
     });
   });

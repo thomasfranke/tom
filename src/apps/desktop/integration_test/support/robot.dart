@@ -1,7 +1,7 @@
 /// Everything a scenario can do to the app, and everything it can see.
 library;
 
-import 'dart:io' show File, Platform;
+import 'dart:io' show Directory, File, Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -12,6 +12,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:tom_desktop/bootstrap/run_tom.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_desktop/screens/about/about_dialog_widget.dart';
+import 'package:tom_desktop/screens/account/account_control_widget.dart';
 import 'package:tom_desktop/screens/account/widgets/account_access_widget.dart';
 import 'package:tom_desktop/screens/account/widgets/account_popover_widget.dart';
 import 'package:tom_desktop/screens/account/widgets/account_select_widget.dart';
@@ -27,6 +29,7 @@ import 'package:tom_desktop/screens/compare/compare_control_widget.dart';
 import 'package:tom_desktop/screens/editor/editor_panel.dart';
 import 'package:tom_desktop/screens/editor/editor_tabs_widget.dart';
 import 'package:tom_desktop/screens/editor/widgets/editor_completion_widget.dart';
+import 'package:tom_desktop/screens/editor/widgets/editor_lens_widget.dart';
 import 'package:tom_desktop/screens/editor/widgets/editor_marks_widget.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_body_widget.dart';
@@ -34,6 +37,7 @@ import 'package:tom_desktop/screens/file_tree/widgets/file_tree_draft_widget.dar
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_row_widget.dart';
 import 'package:tom_desktop/screens/history/history_panel.dart';
 import 'package:tom_desktop/screens/home/widgets/home_clone_widget.dart';
+import 'package:tom_desktop/screens/preferences/preferences_control_widget.dart';
 import 'package:tom_desktop/screens/preferences/widgets/preferences_popover_widget.dart';
 import 'package:tom_desktop/screens/preview/preview_panel.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_footnotes_widget.dart';
@@ -41,14 +45,18 @@ import 'package:tom_desktop/screens/preview/widgets/preview_wikilink_widget.dart
 import 'package:tom_desktop/screens/pull_request/pull_request_panel.dart';
 import 'package:tom_desktop/screens/pull_request/pull_request_row_widget.dart';
 import 'package:tom_desktop/screens/pull_request/pull_request_status_row_widget.dart';
+import 'package:tom_desktop/screens/pull_request/widgets/pull_request_base_widget.dart';
 import 'package:tom_desktop/screens/search/search_boxes.dart';
+import 'package:tom_desktop/screens/search/search_design.dart';
 import 'package:tom_desktop/screens/search/search_field_widget.dart';
 import 'package:tom_desktop/screens/search/search_occurrences_panel.dart';
 import 'package:tom_desktop/screens/search/search_results_panel.dart';
+import 'package:tom_desktop/screens/shell/document_scroll_link.dart';
 import 'package:tom_desktop/screens/shell/status_panel.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_mode_control_widget.dart';
 import 'package:tom_desktop/screens/spaces/space_menu_control_widget.dart';
 import 'package:tom_desktop/screens/spaces/widgets/space_menu_popover_widget.dart';
+import 'package:tom_desktop/screens/spaces/widgets/space_menu_row_widget.dart';
 import 'package:tom_desktop/screens/workspace/workspace_bottom_head_widget.dart';
 import 'package:tom_desktop/screens/workspace/workspace_grip_widget.dart';
 import 'package:tom_desktop/widgets/file_state_mark_widget.dart';
@@ -72,7 +80,8 @@ final class TomRobot {
   /// The harness driving the widget tree.
   final WidgetTester tester;
 
-  /// What photographs the window after every action this performs.
+  /// What photographs the window: the scenario takes a frame between steps
+  /// (`scenario.dart`), never inside one.
   final Evidence evidence;
 
   /// How long to hold the screen on each thing just done; zero unless
@@ -99,7 +108,12 @@ final class TomRobot {
   /// Mounted rather than started, because a scenario relaunches to prove
   /// something survived a restart and `runApp` a second time does not
   /// replace a tree already there. The window's title and size are left out.
-  Future<void> launch({String? pickFolder, bool withGh = false}) async {
+  Future<void> launch({
+    String? pickFolder,
+    bool withGh = false,
+    Uri? releasesAt,
+    String? gitExecutable,
+  }) async {
     // Unmounted first: Flutter updates an element in place when the widget's
     // type matches, so a second `ProviderScope` would keep the first one's
     // container and every provider's state with it.
@@ -117,6 +131,15 @@ final class TomRobot {
       Locale('en', 'US'),
     ];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    // The theme a measurement asks for (`TOM_E2E_THEME`, light or dark);
+    // without it the app follows the machine, as before.
+    const String theme = String.fromEnvironment('TOM_E2E_THEME');
+    if (theme == 'light' || theme == 'dark') {
+      tester.platformDispatcher.platformBrightnessTestValue = theme == 'light'
+          ? Brightness.light
+          : Brightness.dark;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    }
     await tester.pumpWidget(
       tomApp(
         modules: <TomModule>[
@@ -124,6 +147,8 @@ final class TomRobot {
             folder: pickFolder,
             settingsPath: settingsPath,
             withGh: withGh,
+            releasesAt: releasesAt,
+            gitExecutable: gitExecutable,
           ),
         ],
       ),
@@ -154,12 +179,19 @@ final class TomRobot {
     String? pickFolder,
     Size size = const Size(1280, 840),
     bool withGh = false,
+    Uri? releasesAt,
+    String? gitExecutable,
   }) async {
     tester.view
       ..physicalSize = boardWindow ?? size
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await launch(pickFolder: pickFolder, withGh: withGh);
+    await launch(
+      pickFolder: pickFolder,
+      withGh: withGh,
+      releasesAt: releasesAt,
+      gitExecutable: gitExecutable,
+    );
     await _showTheWindow();
   }
 
@@ -232,17 +264,44 @@ final class TomRobot {
   /// Drops a space from the recent list, by the name of its row.
   ///
   /// By name and tooltip rather than position, so a list that reordered
-  /// cannot forget the wrong space and pass.
+  /// cannot forget the wrong space and pass. The pointer goes over the row
+  /// first: the ✕ is on the hovered row only.
   Future<void> forgetRecent(String name) async {
     final Finder row = find.ancestor(
       of: find.text(name),
       matching: find.byType(Row),
     );
-    await tester.tap(
-      find.descendant(of: row.last, matching: find.byTooltip(_forget)),
+    final Finder forget = find.descendant(
+      of: row.last,
+      matching: find.byTooltip(_forget),
     );
+    expect(
+      _isForgetDrawn(forget),
+      isFalse,
+      reason: 'the ✕ is drawn on a row the pointer is not over',
+    );
+    final TestGesture mouse = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+    );
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(tester.getCenter(find.text(name)));
+    await settle();
+    expect(
+      _isForgetDrawn(forget),
+      isTrue,
+      reason: 'the ✕ is not drawn under the pointer',
+    );
+    await tester.tap(forget);
+    await mouse.removePointer();
     await settle();
   }
+
+  /// Whether the ✕ [forget] finds is drawn rather than only keeping its room.
+  bool _isForgetDrawn(Finder forget) => tester
+      .widget<Visibility>(
+        find.ancestor(of: forget, matching: find.byType(Visibility)).first,
+      )
+      .visible;
 
   /// Taps whatever shows [label], and lets the app settle.
   Future<void> tapText(String label) async {
@@ -281,6 +340,26 @@ final class TomRobot {
         source;
     await settle();
   }
+
+  /// Drags the source pane up by [by] points, as a reader scrolls it.
+  Future<void> scrollsTheSourceBy(double by) async {
+    await tester.drag(find.byType(CodeEditor).first, Offset(0, -by));
+    await settle();
+  }
+
+  /// Drags the preview up by [by] points; negative drags it back down.
+  Future<void> scrollsThePreviewBy(double by) async {
+    await tester.drag(find.byType(PreviewPanel), Offset(0, -by));
+    await settle();
+  }
+
+  /// The zero-based line at the top of the source pane, which the link
+  /// between the two panes reports; -1 while nothing is laid out.
+  double theLineAtTheTopOfTheSource() =>
+      ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp).first),
+      ).read(documentScrollLinkProvider).sourceLine ??
+      -1;
 
   /// Presses the name on the changes row that shows [name], which opens the
   /// document with the diff on.
@@ -329,6 +408,32 @@ final class TomRobot {
       () => _showing(box()) && tester.widget<TomCheckWidget>(box()).isChecked,
     );
     await settle();
+  }
+
+  /// Ticks the changes row that shows [name] and waits for nothing: what a
+  /// refused staging needs, since its box never comes back ticked.
+  Future<void> triesToStage(String name) async {
+    await _waitUntil(() => _showing(_inTheChanges(name)));
+    await tester.tap(
+      find.descendant(
+        of: find.ancestor(
+          of: _inTheChanges(name),
+          matching: find.byType(ChangesRowWidget),
+        ),
+        matching: find.byType(TomCheckWidget),
+      ),
+    );
+    await settle();
+  }
+
+  /// Asserts the git column is saying [sentence] — why it refused.
+  Future<void> seesTheGitColumnSaying(String sentence) async {
+    final Finder said = find.descendant(
+      of: find.byType(ChangesPanel),
+      matching: find.text(sentence),
+    );
+    await _waitUntil(() => _showing(said));
+    expect(said, findsOneWidget, reason: 'the git column does not say it');
   }
 
   /// Presses *Fetch* and waits for the button to come back, which is git
@@ -671,6 +776,51 @@ final class TomRobot {
     }
   }
 
+  /// How many commands this run has written down whose line holds
+  /// [fragment], whether or not the panel is open.
+  int commandsRun(String fragment) =>
+      ProviderScope.containerOf(tester.element(find.byType(MaterialApp).first))
+          .read(commandsProvider)
+          .rows
+          .where((CommandRow row) => row.record.commandLine.contains(fragment))
+          .length;
+
+  /// Asserts that none of the git commands this run has written down
+  /// failed — the Commands panel draws no red git row.
+  ///
+  /// Git only; [seesNoFailedCommand] is every program.
+  void seesNoFailedGitCommand() {
+    final ProviderContainer container = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp).first),
+    );
+    final List<String> failed = container
+        .read(commandsProvider)
+        .rows
+        .where(
+          (CommandRow row) =>
+              row.record.failed && row.record.executable == 'git',
+        )
+        .map((CommandRow row) => row.record.commandLine)
+        .toList();
+    expect(failed, isEmpty, reason: 'these git commands drew a failed row');
+  }
+
+  /// Asserts that none of the commands this run has written down failed,
+  /// whichever program — the account probes of a machine with no GitHub
+  /// sign-in are answers, so the Commands panel draws no red row at all.
+  void seesNoFailedCommand() {
+    final ProviderContainer container = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp).first),
+    );
+    final List<String> failed = container
+        .read(commandsProvider)
+        .rows
+        .where((CommandRow row) => row.record.failed)
+        .map((CommandRow row) => row.record.commandLine)
+        .toList();
+    expect(failed, isEmpty, reason: 'these commands drew a failed row');
+  }
+
   /// Presses the last row whose command holds [fragment], which opens it
   /// onto what the command printed.
   Future<void> opensTheCommand(String fragment) async {
@@ -747,6 +897,11 @@ final class TomRobot {
       matching: find.textContaining(' · '),
     );
     await _waitUntil(() => _showing(place), limit: const Duration(seconds: 30));
+    expect(
+      find.textContaining('would not start'),
+      findsNothing,
+      reason: 'the first drawing is a refusal, not a prompt',
+    );
     expect(place, findsOneWidget, reason: 'no shell answered');
     final String said = tester.widget<Text>(place).data ?? '';
     expect(said, endsWith(folder), reason: 'the head says "$said"');
@@ -782,6 +937,23 @@ final class TomRobot {
     );
   }
 
+  /// Asserts no cell on the terminal's screen is underlined: what a program
+  /// negotiates with `CSI > 4 m` is not text decoration.
+  void seesNothingUnderlinedInTheTerminal() {
+    final Terminal terminal = tester
+        .widget<TerminalView>(find.byType(TerminalView))
+        .terminal;
+    int underlined = 0;
+    for (int row = 0; row < terminal.buffer.lines.length; row++) {
+      for (int col = 0; col < terminal.viewWidth; col++) {
+        if (terminal.buffer.lines[row].getAttributes(col) & 8 != 0) {
+          underlined++;
+        }
+      }
+    }
+    expect(underlined, 0, reason: 'cells underlined:\n${_terminalText()}');
+  }
+
   /// Asserts the commands panel lists no command reading exactly [line] —
   /// what is typed into the terminal is not what TOM ran.
   void seesNoCommandReading(String line) => expect(
@@ -789,6 +961,71 @@ final class TomRobot {
     findsNothing,
     reason: '"$line" was written into the commands',
   );
+
+  /// Presses the pill reading [label] on the band above the document —
+  /// `Keep mine` or `Reload` over a file that changed on disk.
+  ///
+  /// Scoped to the band, because the menus carry a `Reload` of their own.
+  Future<void> answersTheBand(String label) async {
+    final Finder pill = find.descendant(
+      of: find.byType(NoticeBandWidget),
+      matching: find.text(label),
+    );
+    await _waitUntil(() => _showing(pill));
+    await tester.tap(pill);
+    await settle();
+  }
+
+  /// Asserts no band is above the document.
+  Future<void> seesNoBand() async {
+    await _waitUntil(() => !_showing(find.byType(NoticeBandWidget)));
+    expect(find.byType(NoticeBandWidget), findsNothing);
+  }
+
+  /// Asserts the band above the document offers each of [labels].
+  Future<void> seesInTheBand(List<String> labels) async {
+    for (final String label in labels) {
+      final Finder pill = find.descendant(
+        of: find.byType(NoticeBandWidget),
+        matching: find.text(label),
+      );
+      await _waitUntil(() => _showing(pill));
+      expect(pill, findsOneWidget, reason: 'the band does not offer $label');
+    }
+  }
+
+  /// Asserts the band above the document does not offer [label].
+  Future<void> seesNotInTheBand(String label) async {
+    expect(
+      find.descendant(
+        of: find.byType(NoticeBandWidget),
+        matching: find.text(label),
+      ),
+      findsNothing,
+      reason: 'the band offers $label',
+    );
+  }
+
+  /// Whether the band above the document offers [label] right now.
+  bool bandOffers(String label) => _showing(
+    find.descendant(
+      of: find.byType(NoticeBandWidget),
+      matching: find.text(label),
+    ),
+  );
+
+  /// Presses the pill called [label] inside the band above the document, and
+  /// waits for whatever it ran to finish.
+  Future<void> pressesInTheBand(String label) async {
+    final Finder pill = find.descendant(
+      of: find.byType(NoticeBandWidget),
+      matching: find.text(label),
+    );
+    await _waitUntil(() => _showing(pill));
+    await tester.tap(pill);
+    await _waitUntil(() => !_showing(_working));
+    await settle();
+  }
 
   /// Presses `Show the command` on the band a failure raised.
   Future<void> showsTheCommandFromTheBand() async {
@@ -823,6 +1060,31 @@ final class TomRobot {
       }
       await tester.pump(const Duration(milliseconds: 250));
     }
+  }
+
+  /// Opens the base control of the pull request column and picks [name].
+  Future<void> choosesThePullRequestBase(String name) async {
+    final Finder control = find.byType(PullRequestBaseWidget);
+    await _waitUntil(() => _showing(control));
+    await tester.tap(control);
+    await settle();
+    final Finder entry = find.descendant(
+      of: find.byType(TomMenuWidget),
+      matching: find.text(name),
+    );
+    await _waitUntil(() => _showing(entry));
+    await tester.tap(entry);
+    await settle();
+  }
+
+  /// Asserts the pull request column proposes onto [name].
+  Future<void> seesThePullRequestBase(String name) async {
+    final Finder shown = find.descendant(
+      of: find.byType(PullRequestBaseWidget),
+      matching: find.text(name),
+    );
+    await _waitUntil(() => _showing(shown));
+    expect(shown, findsOneWidget, reason: 'the base is not $name');
   }
 
   /// Presses [label] at the foot of the pull request column — `Create pull
@@ -880,6 +1142,12 @@ final class TomRobot {
         text.data ?? '',
     ];
     expect(shown, labels, reason: 'the menu offers $shown');
+  }
+
+  /// Presses Escape wherever the keyboard is.
+  Future<void> pressesEscape() async {
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await settle();
   }
 
   /// Puts the open menu away with Escape.
@@ -1058,10 +1326,29 @@ final class TomRobot {
   Future<void> widensTheExplorer(double dx) async {
     // The first of the two gutters: the right column has one of its own, and
     // only the left one is the reader's to drag.
+    final Finder column = find.byType(FileTreePanel);
+    final double before = tester.getSize(column).width;
     final TestGesture gesture = await tester.startGesture(
       tester.getCenter(find.byType(WorkspaceGripWidget).first),
     );
     await gesture.moveBy(Offset(dx, 0));
+    await gesture.up();
+    await settle();
+    expect(
+      tester.getSize(column).width,
+      greaterThan(before),
+      reason: 'the left column is no wider after the drag',
+    );
+  }
+
+  /// Drags the gutter of a closed column towards the room it would take:
+  /// [left] for the explorer's, otherwise the git column's.
+  Future<void> dragsTheClosedGutterOpen({required bool left}) async {
+    final Finder grips = find.byType(WorkspaceGripWidget);
+    final TestGesture gesture = await tester.startGesture(
+      tester.getCenter(left ? grips.first : grips.last),
+    );
+    await gesture.moveBy(Offset(left ? 40 : -40, 0));
     await gesture.up();
     await settle();
   }
@@ -1095,6 +1382,36 @@ final class TomRobot {
     await settle();
   }
 
+  /// Asks the window to close, the way its own close button does.
+  ///
+  /// The real request, through the platform: the app holds it back to ask
+  /// about unsaved work, and what it does once that is answered is written
+  /// down by the run instead of ending it ([seesTheWindowClosed]).
+  Future<void> closesTheWindow() async {
+    await windowManager.close();
+    await settle();
+  }
+
+  /// How many times this scenario's app closed its window for good.
+  int get _windowsClosed {
+    final File closed = File(E2eModuleImpl.closedPath(settingsPath));
+    return closed.existsSync() ? closed.readAsLinesSync().length : 0;
+  }
+
+  /// Asserts the app has closed its window for good [times] times — once
+  /// per launch that ended that way.
+  Future<void> seesTheWindowClosed({int times = 1}) async {
+    await _waitUntil(() => _windowsClosed >= times);
+    expect(_windowsClosed, times, reason: 'the window was not closed');
+  }
+
+  /// Asserts the window was held open: still [times] closings, no more.
+  void seesTheWindowStillOpen({int times = 0}) => expect(
+    _windowsClosed,
+    times,
+    reason: 'the window closed over unsaved work',
+  );
+
   /// Goes straight to the space called [name], from that menu.
   ///
   /// By the row's name exactly, because the path under it holds the name
@@ -1103,6 +1420,27 @@ final class TomRobot {
     await _waitUntil(() => _showing(_saying(name)));
     await tester.tap(_saying(name));
     await settle();
+  }
+
+  /// Asserts the menu's row for the open space [name] carries the `✓`, and
+  /// that pressing it changes nothing: the row is where the person already
+  /// is, and the menu stays as it was.
+  Future<void> seesTheOpenSpaceTickedAndInert(String name) async {
+    final Finder row = find.byWidgetPredicate(
+      (Widget it) =>
+          it is SpaceMenuRowWidget && it.isOpen && it.space.name == name,
+    );
+    await _waitUntil(() => _showing(row));
+    expect(row, findsOneWidget, reason: '$name is not the open row');
+    expect(
+      find.descendant(of: row, matching: find.text('✓')),
+      findsOneWidget,
+      reason: 'the open row carries no ✓',
+    );
+    await tester.tap(row);
+    await settle();
+    expect(row, findsOneWidget, reason: 'pressing the open row moved on');
+    expect(find.byType(SpaceMenuPopoverWidget), findsOneWidget);
   }
 
   /// Answers the question the menu asks about an unsaved buffer.
@@ -1133,21 +1471,7 @@ final class TomRobot {
   /// Opens the second box, the one that says what the words become, with
   /// ⌥⌘F (Ctrl+H off macOS) — the field carries no control for it.
   Future<void> opensTheReplacement() async {
-    final List<LogicalKeyboardKey> held = Platform.isMacOS
-        ? <LogicalKeyboardKey>[
-            LogicalKeyboardKey.metaLeft,
-            LogicalKeyboardKey.altLeft,
-          ]
-        : <LogicalKeyboardKey>[LogicalKeyboardKey.controlLeft];
-    for (final LogicalKeyboardKey key in held) {
-      await tester.sendKeyDownEvent(key);
-    }
-    await tester.sendKeyEvent(
-      Platform.isMacOS ? LogicalKeyboardKey.keyF : LogicalKeyboardKey.keyH,
-    );
-    for (final LogicalKeyboardKey key in held.reversed) {
-      await tester.sendKeyUpEvent(key);
-    }
+    await _pressesTheReplaceKeys();
     // Two fields, not "a field": the search box alone would satisfy that.
     // Pumped, not settled: the box takes the keyboard, and a caret blinks.
     bool open() =>
@@ -1163,6 +1487,40 @@ final class TomRobot {
     expect(open(), isTrue, reason: '⌥⌘F did not open the replace box');
   }
 
+  /// Presses ⌥⌘F again while the second box is open, which puts it away.
+  Future<void> closesTheReplacementWithTheKeys() async {
+    await _pressesTheReplaceKeys();
+    bool shut() =>
+        find
+            .descendant(
+              of: find.byType(SearchBoxes),
+              matching: find.byType(TextField),
+            )
+            .evaluate()
+            .length ==
+        1;
+    await _waitUntil(shut);
+    expect(shut(), isTrue, reason: '⌥⌘F did not put the replace box away');
+  }
+
+  Future<void> _pressesTheReplaceKeys() async {
+    final List<LogicalKeyboardKey> held = Platform.isMacOS
+        ? <LogicalKeyboardKey>[
+            LogicalKeyboardKey.metaLeft,
+            LogicalKeyboardKey.altLeft,
+          ]
+        : <LogicalKeyboardKey>[LogicalKeyboardKey.controlLeft];
+    for (final LogicalKeyboardKey key in held) {
+      await tester.sendKeyDownEvent(key);
+    }
+    await tester.sendKeyEvent(
+      Platform.isMacOS ? LogicalKeyboardKey.keyF : LogicalKeyboardKey.keyH,
+    );
+    for (final LogicalKeyboardKey key in held.reversed) {
+      await tester.sendKeyUpEvent(key);
+    }
+  }
+
   /// Types [text] into that second box.
   Future<void> typesTheReplacement(String text) async {
     await tester.tap(_theReplacementField);
@@ -1173,8 +1531,42 @@ final class TomRobot {
 
   /// Replaces the occurrence the pointer is on.
   Future<void> replacesTheCurrentOne() async {
-    await tester.tap(find.byTooltip('Replace this one').first);
+    // One row carries the pair, the current one — not every occurrence.
+    expect(
+      find.byTooltip('Replace this one'),
+      findsOneWidget,
+      reason: 'the action is on more than the current occurrence',
+    );
+    await tester.tap(find.byTooltip('Replace this one'));
     await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Presses the occurrence that shows [text], which goes to it.
+  Future<void> clicksTheOccurrence(String text) async {
+    await _waitUntil(() => _showing(_inTheOccurrences(text)));
+    await tester.tap(_inTheOccurrences(text).first);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts the source pane has exactly [text] selected.
+  Future<void> seesTheSourceSelecting(String text) async {
+    await _waitUntil(
+      () =>
+          _showing(find.byType(CodeEditor)) &&
+          tester
+                  .widget<CodeEditor>(find.byType(CodeEditor))
+                  .controller!
+                  .selectedText ==
+              text,
+    );
+    expect(
+      tester
+          .widget<CodeEditor>(find.byType(CodeEditor))
+          .controller!
+          .selectedText,
+      text,
+      reason: 'the source pane does not have "$text" selected',
+    );
   }
 
   /// Replaces every occurrence at once.
@@ -1203,6 +1595,274 @@ final class TomRobot {
       findsNothing,
       reason: '$text should not be among the occurrences',
     );
+  }
+
+  /// Asserts the search column says [sentence] and nothing is listed — the
+  /// note that stands where the occurrences would be.
+  Future<void> seesTheSearchColumnSaying(String sentence) async {
+    final Finder note = find.descendant(
+      of: find.byType(SearchOccurrencesPanel),
+      matching: find.text(sentence),
+    );
+    await _waitUntil(() => _showing(note));
+    expect(note, findsOneWidget, reason: 'the column does not say: $sentence');
+  }
+
+  /// Asserts the scope control is on screen, both of its halves.
+  Future<void> seesTheScopeControl() async {
+    await _waitUntil(() => _showing(find.text('This file')));
+    expect(find.text('This file'), findsOneWidget);
+    expect(find.text('Whole space'), findsOneWidget);
+  }
+
+  /// Puts the question back to the whole space, by the control.
+  Future<void> searchesTheWholeSpace() async {
+    await tester.tap(find.text('Whole space'));
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Presses the `Clear the search` button of the box.
+  Future<void> clearsTheSearch() async {
+    await tester.tap(find.byTooltip('Clear the search'));
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts the results list [names] top to bottom, best first.
+  Future<void> seesTheResultsInOrder(List<String> names) async {
+    Finder named(String name) => find.descendant(
+      of: find.byType(SearchResultsPanel),
+      matching: find.text(name),
+    );
+    await _waitUntil(() => names.every((String name) => _showing(named(name))));
+    double? previous;
+    for (final String name in names) {
+      final double top = tester.getTopLeft(named(name).first).dy;
+      if (previous != null) {
+        expect(
+          top,
+          greaterThan(previous),
+          reason: '$name is not below the one before it',
+        );
+      }
+      previous = top;
+    }
+  }
+
+  /// Asserts the hits show [folder] under their names — one line for each
+  /// hit that sits in it.
+  Future<void> seesTheFolderOfTheHits(
+    String folder, {
+    required int hits,
+  }) async {
+    final Finder lines = find.descendant(
+      of: find.byType(SearchResultsPanel),
+      matching: find.text(folder),
+    );
+    await _waitUntil(() => _showing(lines));
+    expect(
+      lines.evaluate().length,
+      hits,
+      reason: '$hits hits should show $folder under their names',
+    );
+  }
+
+  /// The runs of the results' excerpts, marked ones only: a run the hit
+  /// widget coloured, which is how a typed word is shown inside the text.
+  List<String> _markedInTheResults() {
+    final List<String> marked = <String>[];
+    final Finder rich = find.descendant(
+      of: find.byType(SearchResultsPanel),
+      matching: find.byType(RichText),
+    );
+    for (final Element element in rich.evaluate()) {
+      (element.widget as RichText).text.visitChildren((InlineSpan span) {
+        if (span is TextSpan && span.style?.color != null) {
+          marked.add(span.text ?? '');
+        }
+        return true;
+      });
+    }
+    return marked;
+  }
+
+  /// Asserts [word] is marked inside a result's excerpt, in any case.
+  Future<void> seesMarkedInTheResults(String word) async {
+    bool marked() => _markedInTheResults().any(
+      (String run) => run.toLowerCase().contains(word.toLowerCase()),
+    );
+    await _waitUntil(marked);
+    expect(
+      _markedInTheResults(),
+      contains(
+        predicate<String>(
+          (String run) => run.toLowerCase().contains(word.toLowerCase()),
+        ),
+      ),
+      reason: '$word is not marked in any result',
+    );
+  }
+
+  /// The spans of the occurrences list, below the root of each row.
+  List<TextSpan> _occurrenceSpans() {
+    final List<TextSpan> spans = <TextSpan>[];
+    final Finder rich = find.descendant(
+      of: find.byType(SearchOccurrencesPanel),
+      matching: find.byType(RichText),
+    );
+    for (final Element element in rich.evaluate()) {
+      (element.widget as RichText).text.visitChildren((InlineSpan span) {
+        if (span is TextSpan) {
+          spans.add(span);
+        }
+        return true;
+      });
+    }
+    return spans;
+  }
+
+  /// Asserts an occurrence shows [old] struck through and [added] after it:
+  /// the change, drawn before it is made.
+  ///
+  /// With no [added], the replacement is empty and only the strike is read.
+  Future<void> seesTheChangeBeforeItIsMade(String old, [String? added]) async {
+    bool struck() => _occurrenceSpans().any(
+      (TextSpan span) =>
+          span.text == old &&
+          span.style?.decoration == TextDecoration.lineThrough,
+    );
+    await _waitUntil(struck);
+    expect(struck(), isTrue, reason: '$old is not struck through');
+    if (added != null) {
+      expect(
+        _occurrenceSpans().any((TextSpan span) => span.text == added),
+        isTrue,
+        reason: '$added does not follow the struck words',
+      );
+    }
+  }
+
+  /// Asserts no occurrence is struck through: nothing is being replaced.
+  void seesNoChangeDrawn() {
+    expect(
+      _occurrenceSpans().any(
+        (TextSpan span) => span.style?.decoration == TextDecoration.lineThrough,
+      ),
+      isFalse,
+      reason: 'an occurrence is struck through with no replacement open',
+    );
+  }
+
+  /// Presses `Skip this one` on the occurrence the actions are on.
+  Future<void> skipsTheCurrentOne() async {
+    expect(find.byTooltip('Skip this one'), findsOneWidget);
+    await tester.tap(find.byTooltip('Skip this one'));
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// The vertical stretch occurrence number [index] takes in the list: rows
+  /// are of one fixed extent, so the list's top and the index say where.
+  ({double top, double bottom, double left}) _occurrenceRow(int index) {
+    final Finder list = find.descendant(
+      of: find.byType(SearchOccurrencesPanel),
+      matching: find.byType(ListView),
+    );
+    final Offset origin = tester.getTopLeft(list);
+    const double extent = SearchDesign.rowHeight + SearchDesign.rowGap;
+    return (
+      top: origin.dy + index * extent,
+      bottom: origin.dy + (index + 1) * extent,
+      left: origin.dx,
+    );
+  }
+
+  /// Rests the mouse on occurrence number [index] (from 0): the row under
+  /// the pointer is the one that carries the actions.
+  ///
+  /// A pointer of its own, so it never collides with the one the machine's
+  /// real mouse owns in the live binding.
+  Future<void> pointsAtTheOccurrence(int index) async {
+    final ({double bottom, double left, double top}) row = _occurrenceRow(
+      index,
+    );
+    final Offset at = Offset(row.left + 60, (row.top + row.bottom) / 2);
+    final TestGesture mouse = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+      pointer: 7,
+    );
+    await mouse.addPointer(location: at);
+    await mouse.moveTo(at);
+    await tester.pump(const Duration(milliseconds: 300));
+    addTearDown(mouse.removePointer);
+  }
+
+  /// Asserts the pair `Replace this one` / `Skip this one` is on occurrence
+  /// number [index], and on that one alone.
+  Future<void> seesTheActionsOnOccurrence(int index) async {
+    await _waitUntil(() => _showing(find.byTooltip('Skip this one')));
+    for (final String tooltip in <String>[
+      'Replace this one',
+      'Skip this one',
+    ]) {
+      expect(find.byTooltip(tooltip), findsOneWidget, reason: tooltip);
+      final double at = tester.getCenter(find.byTooltip(tooltip)).dy;
+      final ({double bottom, double left, double top}) row = _occurrenceRow(
+        index,
+      );
+      expect(
+        at,
+        inInclusiveRange(row.top, row.bottom),
+        reason: '$tooltip is not on occurrence $index',
+      );
+    }
+  }
+
+  /// The replace toggle of the box, whichever of its two tooltips it wears.
+  Finder get _theReplaceToggle => find.byWidgetPredicate(
+    (Widget widget) =>
+        widget is Tooltip &&
+        (widget.message?.startsWith('Replace (') == true ||
+            widget.message?.startsWith('Hide replace (') == true),
+  );
+
+  /// Presses the glyph beside the clear, which opens or shuts the second box.
+  Future<void> pressesTheReplaceToggle() async {
+    await tester.tap(_theReplaceToggle);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts the toggle says the second box is [open].
+  Future<void> seesTheReplaceToggle({required bool open}) async {
+    bool says() => find
+        .byWidgetPredicate(
+          (Widget widget) =>
+              widget is Tooltip &&
+              widget.message?.startsWith(
+                    open ? 'Hide replace (' : 'Replace (',
+                  ) ==
+                  true,
+        )
+        .evaluate()
+        .isNotEmpty;
+    await _waitUntil(says);
+    expect(says(), isTrue, reason: 'the toggle does not say open: $open');
+  }
+
+  /// Asserts the replacement box is [open] or gone — two fields, or one.
+  void seesTheReplacementBox({required bool open}) {
+    final int fields = find
+        .descendant(
+          of: find.byType(SearchBoxes),
+          matching: find.byType(TextField),
+        )
+        .evaluate()
+        .length;
+    expect(fields, open ? 2 : 1, reason: 'the second box is not as expected');
+  }
+
+  /// Writes [text] to [path] without going through the app: a change made
+  /// outside, which nothing watches.
+  void writesFromOutside(String path, String text) {
+    File(path).writeAsStringSync(text);
   }
 
   /// Clicks the result that shows [name], scoped to the panel because the
@@ -1252,6 +1912,21 @@ final class TomRobot {
     }
   }
 
+  /// Asserts the tree lists [names] from top to bottom in this order.
+  Future<void> seesTheTreeInOrder(List<String> names) async {
+    await _waitUntil(() => _showing(_inTheTree(names.first)));
+    final List<double> ys = <double>[
+      for (final String name in names) tester.getTopLeft(_inTheTree(name)).dy,
+    ];
+    for (int i = 1; i < ys.length; i++) {
+      expect(
+        ys[i],
+        greaterThan(ys[i - 1]),
+        reason: '${names[i]} should come after ${names[i - 1]}',
+      );
+    }
+  }
+
   /// Asserts the tree does not show [name].
   void seesNotInTheTree(String name) {
     expect(
@@ -1290,10 +1965,17 @@ final class TomRobot {
     expect(find.text(said), findsOneWidget, reason: 'it found something');
   }
 
+  /// [text] inside the preview panel, as rich text — and nowhere else: a tab
+  /// name or a search excerpt on the same window says it too.
+  Finder _inThePreview(String text) => find.descendant(
+    of: find.byType(PreviewPanel),
+    matching: find.textContaining(text, findRichText: true),
+  );
+
   /// Asserts the preview is showing a document that says [text], as rich
   /// text because the preview renders markdown rather than writing it out.
   Future<void> seesInThePreview(String text) async {
-    final Finder shown = find.textContaining(text, findRichText: true);
+    final Finder shown = _inThePreview(text);
     await _waitUntil(() => _showing(shown));
     expect(shown, findsWidgets, reason: 'the preview is not showing "$text"');
   }
@@ -1318,9 +2000,92 @@ final class TomRobot {
     expect(atTheTop(), isTrue, reason: '"$words" is not at the preview top');
   }
 
+  /// Asserts the preview tints the block an occurrence led to, in the
+  /// accent's soft fill, and that the block says [text].
+  Future<void> seesTheRevealedBlock(String text) async {
+    final Finder tinted = find.descendant(
+      of: find.byType(PreviewPanel),
+      matching: find.byWidgetPredicate(
+        (Widget widget) =>
+            widget is DecoratedBox &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration as BoxDecoration).color ==
+                TomColors.of(
+                  tester.element(find.byType(PreviewPanel)),
+                ).accentSoft,
+      ),
+    );
+    final Finder block = find.descendant(
+      of: tinted,
+      matching: find.textContaining(text, findRichText: true),
+    );
+    await _waitUntil(() => _showing(block));
+    expect(block, findsWidgets, reason: 'no tinted block says "$text"');
+  }
+
+  /// Asserts the source pane no longer holds [text] anywhere.
+  Future<void> seesNotInTheSource(String text) async {
+    String held() =>
+        tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text;
+    await _waitUntil(
+      () => _showing(find.byType(CodeEditor)) && !held().contains(text),
+    );
+    expect(held(), isNot(contains(text)), reason: 'the source holds "$text"');
+  }
+
+  /// Presses the choice reading [label] under a conflict in the preview —
+  /// `Accept Current Change`, `Accept Incoming Change`, `Accept Both Changes`.
+  Future<void> acceptsInThePreview(String label) async {
+    // The first one: a document with two conflicts offers each choice twice,
+    // and the top region is the one resolved first.
+    final Finder choice = find
+        .descendant(of: find.byType(PreviewPanel), matching: find.text(label))
+        .first;
+    await _waitUntil(() => _showing(choice));
+    await tester.ensureVisible(choice);
+    await tester.tap(choice);
+    await settle();
+  }
+
+  /// Presses the choice reading [label] painted on the line of the
+  /// [conflict]th `<<<<<<<` (counting from zero) in the source pane.
+  ///
+  /// The words are painted, not mounted, so the painter says where the word
+  /// is ([EditorLensPainter.wordFor]) and the tap lands there.
+  Future<void> acceptsInTheSource(String label, {int conflict = 0}) async {
+    final Finder lens = find.descendant(
+      of: find.byType(EditorLensWidget),
+      matching: find.byType(CustomPaint),
+    );
+    await _waitUntil(() => _showing(lens));
+    final EditorLensPainter painter =
+        tester.widget<CustomPaint>(lens.first).painter! as EditorLensPainter;
+    final ConflictChoiceEnum choice = switch (label) {
+      'Accept Current Change' => ConflictChoiceEnum.current,
+      'Accept Incoming Change' => ConflictChoiceEnum.incoming,
+      'Accept Both Changes' => ConflictChoiceEnum.both,
+      _ => throw ArgumentError('No such choice: $label'),
+    };
+    final List<int> openings = <int>[
+      for (final (int index, String line)
+          in tester
+              .widget<CodeEditor>(find.byType(CodeEditor))
+              .controller!
+              .text
+              .split('\n')
+              .indexed)
+        if (line.startsWith('<<<<<<<')) index,
+    ];
+    expect(openings.length, greaterThan(conflict), reason: 'no such conflict');
+    final Rect? word = painter.wordFor(openings[conflict], choice);
+    expect(word, isNotNull, reason: '"$label" is not painted on screen');
+    await tester.tapAt(tester.getTopLeft(lens.first) + word!.center);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
   /// Asserts the preview is **not** showing [text].
   Future<void> seesNotInThePreview(String text) async {
-    final Finder shown = find.textContaining(text, findRichText: true);
+    final Finder shown = _inThePreview(text);
     await _waitUntil(() => !_showing(shown));
     expect(shown, findsNothing, reason: 'the preview is still showing "$text"');
   }
@@ -1438,6 +2203,17 @@ final class TomRobot {
       isTrue,
       reason: '$path is not the open document',
     );
+    // And the tab says so too, when a strip is up: the session and the tree
+    // can agree on a document the strip does not show as chosen.
+    if (_showing(find.byType(EditorTabsWidget)) &&
+        _showing(
+          find.descendant(
+            of: find.byType(EditorTabsWidget),
+            matching: find.byType(Text),
+          ),
+        )) {
+      await seesTheChosenTab(path.split('/').last);
+    }
   }
 
   /// Asserts the file at the absolute [path] holds [text], waiting for a save
@@ -1585,7 +2361,7 @@ final class TomRobot {
   Future<void> seesEveryBlockRemoved() async {
     bool allRemoved() =>
         _diffMarks().isNotEmpty &&
-        _diffMarks().every((String letter) => letter == 'R');
+        _diffMarks().every((String letter) => letter == 'D');
     await _waitUntil(allRemoved);
     expect(allRemoved(), isTrue, reason: 'the preview marks ${_diffMarks()}');
   }
@@ -1595,6 +2371,17 @@ final class TomRobot {
   void seesNoWayBackToNow() {
     expect(find.text('Back to now'), findsNothing);
     expect(find.textContaining('Reading '), findsNothing);
+  }
+
+  /// Presses the binary tab's `Reveal in Finder` (`Show in Files` off macOS).
+  Future<void> revealsTheFile() async {
+    await tester.tap(
+      find.ancestor(
+        of: find.text(Platform.isMacOS ? 'Reveal in Finder' : 'Show in Files'),
+        matching: find.byType(OutlinedButton),
+      ),
+    );
+    await settle();
   }
 
   /// Asserts the tab holds a binary file: its one sentence and the way to the
@@ -1642,9 +2429,111 @@ final class TomRobot {
     await settle();
   }
 
+  /// Presses `About TOM` at the foot of the open preferences popover and
+  /// waits for the dialog.
+  Future<void> opensTheAbout() async {
+    final Finder row = find.descendant(
+      of: find.byType(PreferencesPopoverWidget),
+      matching: find.text('About TOM'),
+    );
+    await _waitUntil(() => _showing(row));
+    await tester.tap(row);
+    await settle();
+    await _waitUntil(() => _showing(find.byType(AboutDialogWidget)));
+  }
+
+  /// Asserts the About dialog says each of [texts].
+  Future<void> seesInTheAbout(List<String> texts) async {
+    Finder inIt(String text) => find.descendant(
+      of: find.byType(AboutDialogWidget),
+      matching: find.textContaining(text),
+    );
+    await _waitUntil(() => _showing(inIt(texts.first)));
+    for (final String text in texts) {
+      expect(inIt(text), findsWidgets, reason: 'the dialog does not say $text');
+    }
+  }
+
+  /// Asserts the About dialog does not say [text].
+  void seesNotInTheAbout(String text) => expect(
+    find.descendant(
+      of: find.byType(AboutDialogWidget),
+      matching: find.textContaining(text),
+    ),
+    findsNothing,
+    reason: 'the dialog says $text',
+  );
+
+  /// Presses the button called [label] in the About dialog, and lets the
+  /// answer arrive.
+  Future<void> pressesInTheAbout(String label) async {
+    final Finder button = find.descendant(
+      of: find.byType(AboutDialogWidget),
+      matching: find.text(label),
+    );
+    await _waitUntil(() => _showing(button));
+    await tester.tap(button);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts the button called [label] in the About dialog can be pressed,
+  /// or cannot.
+  void seesTheAboutButton(String label, {required bool live}) {
+    final Finder button = find.ancestor(
+      of: find.descendant(
+        of: find.byType(AboutDialogWidget),
+        matching: find.text(label),
+      ),
+      matching: find.byWidgetPredicate((Widget w) => w is ButtonStyleButton),
+    );
+    expect(
+      tester.widget<ButtonStyleButton>(button).onPressed != null,
+      live,
+      reason: '$label should ${live ? 'be live' : 'be unavailable'}',
+    );
+  }
+
+  /// Presses `Close` and waits for the dialog to go.
+  Future<void> closesTheAbout() async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AboutDialogWidget),
+        matching: find.text('Close'),
+      ),
+    );
+    await settle();
+    expect(find.byType(AboutDialogWidget), findsNothing);
+  }
+
+  /// Asserts the gear wears the dot an update found at opening leaves.
+  Future<void> seesTheGearDot() async {
+    final Finder dot = find.byKey(const Key('updateDot'));
+    await _waitUntil(() => _showing(dot));
+    expect(dot, findsOneWidget, reason: 'the gear has no dot');
+  }
+
+  /// Asserts no dialog stands over the window.
+  void seesNoDialog() => expect(find.byType(AboutDialogWidget), findsNothing);
+
+  /// Ticks `Check for updates when TOM opens` in the open popover.
+  Future<void> ticksCheckingForUpdates() async {
+    await tester.tap(find.text('Check for updates when TOM opens'));
+    await settle();
+  }
+
   /// Presses the account button while its popover is open, which closes it.
   Future<void> closesTheAccount() async {
     await tester.tap(find.byTooltip('Account'));
+    await settle();
+  }
+
+  /// Presses the account button while nothing was read yet — the tooltip
+  /// says so — which is the ask where git asks first.
+  Future<void> opensTheUnreadAccount() async {
+    final Finder button = find.byTooltip('Account — not read yet');
+    await _waitUntil(() => _showing(button));
+    expect(button, findsOneWidget, reason: 'the account was already read');
+    await tester.tap(button);
     await settle();
   }
 
@@ -1699,6 +2588,91 @@ final class TomRobot {
     await settle();
   }
 
+  /// Asserts the row above the document says the disk refused the save.
+  Future<void> seesTheSaveRefused() async {
+    await _waitUntil(() => _showing(find.text('Not saved')));
+    expect(
+      find.text('Not saved'),
+      findsOneWidget,
+      reason: 'the refused save is not said on screen',
+    );
+  }
+
+  /// Asserts the commit's summary box already holds [text] — what a merge
+  /// in progress writes there.
+  Future<void> seesTheSummaryHolding(String text) async {
+    String held() => tester
+        .widget<TextField>(
+          find.descendant(of: find.byType(ChangesPanel), matching: _anyField),
+        )
+        .controller!
+        .text;
+    await _waitUntil(() => _showing(_anyField) && held().startsWith(text));
+    expect(held(), startsWith(text), reason: 'the summary box holds ${held()}');
+  }
+
+  /// Tells the save dialog what to answer from now on: `cancel` for a
+  /// dismissed dialog, otherwise the path the person chose.
+  void answersTheSaveDialogWith(String answer) {
+    File(E2eModuleImpl.saveAnswerPath(settingsPath))
+      ..parent.createSync(recursive: true)
+      ..writeAsStringSync(answer);
+  }
+
+  /// Asserts the open commands panel lists no command holding [fragment].
+  Future<void> seesNoCommandHolding(String fragment) async {
+    expect(
+      find.byType(CommandsPanel),
+      findsOneWidget,
+      reason: 'the commands panel is not open',
+    );
+    expect(
+      find.descendant(
+        of: find.byType(CommandsPanel),
+        matching: find.textContaining(fragment),
+      ),
+      findsNothing,
+      reason: 'a command holding "$fragment" was run',
+    );
+  }
+
+  /// Asserts no GitHub token is painted anywhere in the window — the
+  /// commands panel included, where `gh auth token` is listed.
+  void seesNoTokenOnScreen() {
+    expect(
+      find.textContaining('gho_', skipOffstage: false),
+      findsNothing,
+      reason: 'a token is on screen',
+    );
+  }
+
+  /// Asserts the run's `gh` was handed the draft: a `pr create` whose
+  /// `--title` is [title], a body on its standard input that says [body],
+  /// and a token in no argument, no body and nowhere on screen.
+  Future<void> seesGhHandedTheDraft({
+    required String title,
+    required String body,
+  }) async {
+    final Directory state = Directory(E2eModuleImpl.githubPath(settingsPath));
+    final File asked = File('${state.path}/asked.log');
+    final File stdin = File('${state.path}/body.md');
+    await _waitUntil(stdin.existsSync);
+    final List<String> calls = asked.readAsLinesSync();
+    final String create = calls.singleWhere(
+      (String line) => line.startsWith('pr create'),
+    );
+    expect(create, contains('--title $title'));
+    expect(stdin.readAsStringSync(), contains(body));
+    for (final String line in <String>[...calls, stdin.readAsStringSync()]) {
+      expect(line, isNot(contains('gho_')), reason: 'a token went to gh');
+    }
+    expect(
+      find.textContaining('gho_'),
+      findsNothing,
+      reason: 'the token is on screen',
+    );
+  }
+
   /// Asserts the app handed [address] to the browser — written down by the
   /// run's desktop instead of opening one.
   Future<void> seesTheBrowserAskedFor(String address) async {
@@ -1708,6 +2682,60 @@ final class TomRobot {
       opened.existsSync() ? opened.readAsLinesSync() : const <String>[],
       contains(address),
     );
+  }
+
+  /// Asserts the app handed the browser an address that holds every one of
+  /// [fragments] — the host and the branch, say, where the whole address is
+  /// the host's own business.
+  Future<void> seesTheBrowserAskedForAnAddressWith(
+    List<String> fragments,
+  ) async {
+    final File opened = File(E2eModuleImpl.openedPath(settingsPath));
+    bool asked() =>
+        opened.existsSync() &&
+        opened.readAsLinesSync().any(
+          (String line) => fragments.every(line.contains),
+        );
+    await _waitUntil(asked);
+    expect(
+      opened.existsSync() ? opened.readAsLinesSync() : const <String>[],
+      contains(
+        predicate<String>((String line) => fragments.every(line.contains)),
+      ),
+      reason: 'no address with $fragments was handed to the browser',
+    );
+  }
+
+  /// Presses the `Pull request` row once and says nothing: what a row that
+  /// cannot act is asked, where [opensThePullRequest] keeps trying.
+  Future<void> triesToOpenThePullRequest() async {
+    final Finder row = find.descendant(
+      of: find.byType(PullRequestRowWidget),
+      matching: find.text('Pull request'),
+    );
+    await _waitUntil(() => _showing(row));
+    await tester.tap(row);
+    await settle();
+  }
+
+  /// The lines the run's desktop wrote instead of opening Finder or a
+  /// terminal, in order: `reveal <folder>` and `terminal <folder>`.
+  List<String> _desktopAsked() {
+    final File asked = File(E2eModuleImpl.desktopAskedPath(settingsPath));
+    return asked.existsSync() ? asked.readAsLinesSync() : const <String>[];
+  }
+
+  /// Asserts the app asked the file manager to show [folder] — written down,
+  /// never opened on the machine the suite runs on.
+  Future<void> seesTheFileManagerAskedFor(String folder) async {
+    await _waitUntil(() => _desktopAsked().contains('reveal $folder'));
+    expect(_desktopAsked(), contains('reveal $folder'));
+  }
+
+  /// Asserts the app asked for a terminal in [folder].
+  Future<void> seesATerminalAskedFor(String folder) async {
+    await _waitUntil(() => _desktopAsked().contains('terminal $folder'));
+    expect(_desktopAsked(), contains('terminal $folder'));
   }
 
   /// Chooses [language] in the open popover's select, by the language's own
@@ -1740,6 +2768,124 @@ final class TomRobot {
     );
     await settle();
     await _waitUntil(() => _showing(find.byType(CodeEditor)));
+  }
+
+  /// Presses `Open git-approvals.json` in the open popover and waits for its
+  /// tab to show the file.
+  Future<void> opensTheApprovalsFile() async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(PreferencesPopoverWidget),
+        matching: find.text('Open git-approvals.json'),
+      ),
+    );
+    await settle();
+    await _waitUntil(() => _showing(find.byType(CodeEditor)));
+  }
+
+  /// Presses [mode] — `Automatic`, `Semi` or `Manual` — under `GIT COMMANDS`
+  /// in the open popover; it applies at once.
+  Future<void> choosesTheGitMode(String mode) async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(PreferencesPopoverWidget),
+        matching: find.text(mode),
+      ),
+    );
+    await settle();
+  }
+
+  /// Presses the verb at the foot of the git column and does **not** wait
+  /// for it to finish: with a command waiting for a yes it never would.
+  Future<void> startsThe(String verb) async {
+    final Finder button = find.descendant(
+      of: find.byType(ChangesRemoteWidget),
+      matching: find.textContaining(verb),
+    );
+    await _waitUntil(() => _showing(button));
+    await tester.tap(button.first);
+    await settle();
+  }
+
+  /// Presses [answer] — `Run`, `Always allow` or `Deny` — on the command the
+  /// panel is waiting on.
+  Future<void> answersTheWaitingCommand(String answer) async {
+    final Finder button = find.descendant(
+      of: find.byType(CommandsPanel),
+      matching: find.text(answer),
+    );
+    await _waitUntil(() => _showing(button));
+    await tester.tap(button.first);
+    await settle();
+  }
+
+  /// Says `Run` to every command that waits, until none does: the reads the
+  /// window makes after an action wait like the action did.
+  Future<void> runsEverythingThatWaits() async {
+    final Finder run = find.descendant(
+      of: find.byType(CommandsPanel),
+      matching: find.text('Run'),
+    );
+    for (int answered = 0; answered < 40; answered++) {
+      await _waitUntil(() => _showing(run), limit: const Duration(seconds: 2));
+      if (!_showing(run)) {
+        return;
+      }
+      await tester.tap(run.first);
+      await settle();
+    }
+  }
+
+  /// Asserts how many commands wait for somebody to say yes.
+  void seesCommandsWaiting(int count) => expect(
+    ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp).first),
+    ).read(commandsProvider).waiting,
+    count,
+    reason: 'commands waiting for approval',
+  );
+
+  /// Asserts `git-approvals.json` — the disk, since that is what a person
+  /// edits — holds every one of [lines].
+  void seesTheApprovalsFileSaying(List<String> lines) {
+    final File file = File(
+      '${File(settingsPath).parent.path}/git-approvals.json',
+    );
+    expect(
+      file.existsSync(),
+      isTrue,
+      reason: 'git-approvals.json is not there',
+    );
+    final String text = file.readAsStringSync();
+    for (final String line in lines) {
+      expect(text, contains(line), reason: 'the file reads:\n$text');
+    }
+  }
+
+  /// Has this scenario's preferences file say `GIT COMMANDS` is [mode] —
+  /// `manual` or `semi` — before the app starts, as a person who chose it
+  /// last time and relaunched would have it.
+  void seedsTheGitMode(String mode) {
+    File(settingsPath)
+      ..parent.createSync(recursive: true)
+      ..writeAsStringSync('{"app.preferences":{"gitApprovals":"$mode"}}');
+  }
+
+  /// Asserts Home is still up with a command waiting in its Commands panel,
+  /// and its working line says it waits for the person.
+  Future<void> seesHomeWaitingForApproval() async {
+    await _waitUntil(() => _showing(find.byType(CommandsPanel)));
+    expect(find.text('Choose folder…'), findsNothing, reason: 'not working');
+    expect(find.text('EXPLORER'), findsNothing, reason: 'a space is open');
+    expect(find.text('Waiting for your approval…'), findsOneWidget);
+    expect(find.byType(CommandsPanel), findsOneWidget);
+    expect(find.text('Run'), findsWidgets);
+  }
+
+  /// Asserts the account and preferences controls are live on Home.
+  void seesHomesControlsLive() {
+    expect(find.byType(PreferencesControlWidget), findsOneWidget);
+    expect(find.byType(AccountControlWidget), findsOneWidget);
   }
 
   /// Writes [to] over the first [from] in what the source pane holds, as
@@ -1814,6 +2960,33 @@ final class TomRobot {
         tester.widget<TomToolbarButtonWidget>(button.first).onPressed != null;
     await _waitUntil(() => _showing(button) && isLive() == live);
     expect(isLive(), live, reason: '$word is ${live ? 'dim' : 'live'}');
+    // What the frame shows: a button that cannot act is fainter than the
+    // muted role alone, so it is told from a live one at a glance.
+    final Color ink =
+        (tester
+                    .widget<CustomPaint>(
+                      find.descendant(
+                        of: button.first,
+                        matching: find.byWidgetPredicate(
+                          (Widget it) =>
+                              it is CustomPaint &&
+                              it.painter is TomOutlinePainter,
+                        ),
+                      ),
+                    )
+                    .painter!
+                as TomOutlinePainter)
+            .color;
+    final TomColors colors = TomColors.of(tester.element(button.first));
+    expect(
+      ink,
+      live
+          ? colors.textSecondary
+          : colors.textMuted.withValues(
+              alpha: TomToolbarButtonWidget.unavailableInk,
+            ),
+      reason: '$word is drawn in the wrong ink',
+    );
   }
 
   /// Asserts it is not — the whole set, not half of it.
@@ -1864,10 +3037,23 @@ final class TomRobot {
     await _waitUntil(() => _showing(marks));
     final EditorMarksPainter painter =
         tester.widget<CustomPaint>(marks).painter! as EditorMarksPainter;
+    // On the line the region opens on, not on some line: the letter beside
+    // anything else would mark a document that is not the conflict.
+    final List<String> lines = tester
+        .widget<CodeEditor>(find.byType(CodeEditor))
+        .controller!
+        .text
+        .split('\n');
+    final int opening = lines.indexWhere(
+      (String line) => line.startsWith('<<<<<<<'),
+    );
+    expect(opening, isNonNegative, reason: 'the source holds no marker');
     expect(
-      painter.marks.isEmpty,
-      isFalse,
-      reason: 'the source pane marks no line as conflicted',
+      painter.marks.at(opening),
+      EditorMarkEnum.conflicted,
+      reason:
+          'the gutter does not mark line ${opening + 1} (the opening '
+          'marker) as conflicted',
     );
   }
 
@@ -1992,9 +3178,14 @@ final class TomRobot {
   }
 
   /// Asserts nothing on screen is claiming a push was refused.
-  void seesNoRefusal() {
+  ///
+  /// [allowingBand] when the band is there for good news, which is the one
+  /// thing it may then be saying.
+  void seesNoRefusal({bool allowingBand = false}) {
     expect(find.textContaining('Someone pushed'), findsNothing);
-    expect(find.byType(NoticeBandWidget), findsNothing);
+    if (!allowingBand) {
+      expect(find.byType(NoticeBandWidget), findsNothing);
+    }
   }
 
   /// Asserts the status bar names [branch] as the one checked out.
@@ -2040,10 +3231,24 @@ final class TomRobot {
 
   /// Asserts the clone was refused with [sentence], the address still in
   /// the field and `Clone` live again.
-  Future<void> seesTheCloneRefused(String sentence) async {
-    await _waitUntil(() => _showing(find.text(sentence)));
-    expect(find.text(sentence), findsOneWidget, reason: 'no refusal shown');
+  ///
+  /// [sentence] may be a fragment (a refusal that names a folder), and
+  /// [address] the text the field must still hold.
+  Future<void> seesTheCloneRefused(String sentence, {String? address}) async {
+    await _waitUntil(() => _showing(find.textContaining(sentence)));
+    expect(
+      find.textContaining(sentence),
+      findsOneWidget,
+      reason: 'no refusal shown',
+    );
     expect(_theCloneField, findsOneWidget, reason: 'the field went away');
+    if (address != null) {
+      expect(
+        tester.widget<TextField>(_theCloneField).controller?.text,
+        address,
+        reason: 'the address was not kept in the field',
+      );
+    }
     final FilledButton clone = tester.widget<FilledButton>(
       find.ancestor(
         of: find.text('Clone'),
@@ -2093,11 +3298,11 @@ final class TomRobot {
     await _waitUntil(() => _showing(find.textContaining('Reading ')));
     expect(find.textContaining('Reading '), findsOneWidget);
     expect(find.text('Back to now'), findsOneWidget);
-    // Nothing types into the past, so the three modes give way entirely.
+    // The modes stay: `Split` is that version's source beside its rendering.
     expect(
       find.text('Split'),
-      findsNothing,
-      reason: 'the modes are still being offered over a past version',
+      findsWidgets,
+      reason: 'the modes were taken away over a past version',
     );
   }
 
@@ -2130,6 +3335,24 @@ final class TomRobot {
   Future<void> closesTheBranches() async {
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle();
+    expect(
+      find.text('Create branch…'),
+      findsNothing,
+      reason: 'the branch popover is still up after Escape',
+    );
+  }
+
+  /// Asserts git refused the switch and the popover says so, with the list
+  /// of branches still up under the sentence.
+  Future<void> seesTheSwitchRefused() async {
+    const String refused = 'Git refused that. Nothing has changed.';
+    await _waitUntil(() => _showing(find.text(refused)));
+    expect(find.text(refused), findsOneWidget, reason: 'no refusal shown');
+    expect(
+      find.text('Create branch…'),
+      findsOneWidget,
+      reason: 'the list went away with the refusal',
+    );
   }
 
   /// Opens the popover and clicks [branch], without waiting for the switch:
@@ -2147,6 +3370,76 @@ final class TomRobot {
     await tester.enterText(_theBranchField, name);
     await settle();
     await tapText('Create branch');
+  }
+
+  /// Opens the popover, names a branch and creates it with Enter in the
+  /// field instead of the button.
+  Future<void> startsABranchWithEnter(String name) async {
+    await opensTheBranches();
+    await tapText('Create branch…');
+    await tester.enterText(_theBranchField, name);
+    await settle();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await settle();
+  }
+
+  /// Presses the commit box so it has the keyboard, which an open editor
+  /// may otherwise be holding.
+  Future<void> focusesTheCommitMessage() async {
+    await tester.tap(_anyField);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Commits from the keyboard: ⌘Enter (Ctrl+Enter off macOS) in the box.
+  Future<void> commitsWithTheKeyboard() async {
+    expect(
+      tester.widget<TextField>(_anyField).controller!.text,
+      isNotEmpty,
+      reason: 'nothing is written in the message box',
+    );
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.ancestor(
+              of: find.textContaining('Commit'),
+              matching: find.byType(FilledButton),
+            ),
+          )
+          .onPressed,
+      isNotNull,
+      reason: 'Commit is unavailable — is it staged and described?',
+    );
+    final LogicalKeyboardKey modifier = Platform.isMacOS
+        ? LogicalKeyboardKey.metaLeft
+        : LogicalKeyboardKey.controlLeft;
+    await tester.sendKeyDownEvent(modifier);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.sendKeyUpEvent(modifier);
+    await _waitUntil(
+      () => tester.widget<TextField>(_anyField).controller!.text.isEmpty,
+    );
+    await settle();
+  }
+
+  /// Types [name] as a branch to start, asserts the popover refuses it in
+  /// words, presses `Create branch` anyway and closes the popover.
+  Future<void> triesToStartABranchNamed(String name) async {
+    await opensTheBranches();
+    await tapText('Create branch…');
+    await tester.enterText(_theBranchField, name);
+    await settle();
+    expect(
+      find.text('Not a name git accepts'),
+      findsOneWidget,
+      reason: '"$name" was not refused',
+    );
+    // The button is unavailable, so this press must reach nothing.
+    await tester.tap(find.text('Create branch'), warnIfMissed: false);
+    await settle();
+    // Pressing the button took the keyboard off the field, and Escape needs
+    // it there: a press outside the popover closes it either way.
+    await tester.tapAt(const Offset(2, 2));
+    await settle();
   }
 
   /// Answers the unsaved question by letting the edit go.
@@ -2189,6 +3482,9 @@ final class TomRobot {
   );
 
   /// Asserts the bar says the document is compared against [what].
+  ///
+  /// Read off the screen: the pointer rests on the chip until its tooltip is
+  /// drawn, and the words are looked for in what is painted.
   Future<void> seesTheComparison(String what) async {
     await _waitUntil(() => _showing(_comparing(what)));
     expect(
@@ -2196,6 +3492,32 @@ final class TomRobot {
       findsOneWidget,
       reason: 'the bar does not say the document is compared to $what',
     );
+    final int before = find.textContaining(what).evaluate().length;
+    await _hoversTheChip();
+    expect(
+      find.textContaining(what).evaluate().length,
+      greaterThan(before),
+      reason:
+          'the chip, hovered, does not draw a tooltip saying it compares '
+          'to $what',
+    );
+  }
+
+  /// Rests a mouse on the `Diff` chip long enough for its tooltip to open.
+  Future<void> _hoversTheChip() async {
+    final TestGesture mouse = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+    );
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(
+      tester.getCenter(
+        find.descendant(
+          of: find.byType(CompareControlWidget),
+          matching: find.text('Diff'),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 2));
   }
 
   /// Asserts the working tree is compared against `HEAD`: no branch is
@@ -2208,6 +3530,12 @@ final class TomRobot {
       find.textContaining('Compared to'),
       findsNothing,
       reason: 'a base is named beside the chip',
+    );
+    await _hoversTheChip();
+    expect(
+      find.textContaining(last),
+      findsOneWidget,
+      reason: 'the chip, hovered, does not draw "$last"',
     );
   }
 
@@ -2261,7 +3589,17 @@ final class TomRobot {
     expect(find.text('Discard and switch'), findsOneWidget);
   }
 
-  /// Asserts nothing is asking about unsaved work.
+  /// Asserts the switch is asking about unsaved work, whatever it names.
+  void seesAnUnsavedQuestion() {
+    expect(
+      find.textContaining('has unsaved changes.'),
+      findsOneWidget,
+      reason: 'no question about unsaved work was asked',
+    );
+    expect(find.text('Save and switch'), findsOneWidget);
+  }
+
+  /// Asserts no question about unsaved work is up.
   void seesNoQuestion() {
     expect(find.textContaining('has unsaved changes.'), findsNothing);
   }
@@ -2319,10 +3657,12 @@ final class TomRobot {
     );
     await _waitUntil(() => _showing(status));
     expect(status, findsOneWidget, reason: 'no mark on the status bar');
+    // The status bar's is the only word: the row above the document says
+    // nothing about an edit that is only unwritten.
     expect(
       find.text('Unsaved'),
-      findsNWidgets(2),
-      reason: 'no mark above the document',
+      findsOneWidget,
+      reason: 'the row above the document says Unsaved too',
     );
     await seesTheOpenDocument(path);
     // The explorer's dot is found by being round rather than by a key: the
@@ -2332,6 +3672,72 @@ final class TomRobot {
       hasLength(1),
       reason: 'the explorer does not mark the file as unsaved',
     );
+    // And the fourth place: the tab's dot, in the close's place.
+    expect(
+      _dotsInTheTabs(),
+      isNotEmpty,
+      reason: 'the tab does not carry the unsaved dot',
+    );
+  }
+
+  /// The round dots the tab strip draws — an unsaved tab's, which takes the
+  /// place of its close.
+  Iterable<BoxDecoration> _dotsInTheTabs() => tester
+      .widgetList<Container>(
+        find.descendant(
+          of: find.byType(EditorTabsWidget),
+          matching: find.byType(Container),
+        ),
+      )
+      .map((Container it) => it.decoration)
+      .whereType<BoxDecoration>()
+      .where((BoxDecoration it) => it.shape == BoxShape.circle);
+
+  /// Asserts [dirty] tabs carry the unsaved dot where their close would be,
+  /// and every other of the [tabs] still offers its `✕` — a tab with edits
+  /// cannot be closed by one stray click.
+  void seesTheDotInPlaceOfTheClose({required int dirty, required int tabs}) {
+    expect(_dotsInTheTabs(), hasLength(dirty), reason: 'unsaved dots');
+    expect(
+      find.descendant(
+        of: find.byType(EditorTabsWidget),
+        matching: find.byTooltip('Close'),
+      ),
+      findsNWidgets(tabs - dirty),
+      reason: 'the tabs without edits do not all offer a close',
+    );
+  }
+
+  /// Asserts no tab in the strip is called [name].
+  void seesNoTab(String name) {
+    expect(
+      find.descendant(
+        of: find.byType(EditorTabsWidget),
+        matching: find.text(name),
+      ),
+      findsNothing,
+      reason: 'there is still a tab called $name',
+    );
+  }
+
+  /// Asserts the strip draws the tab called [name] as the chosen one: in
+  /// the heavier weight, the others at rest.
+  Future<void> seesTheChosenTab(String name) async {
+    Iterable<String> chosen() => tester
+        .widgetList<Text>(
+          find.descendant(
+            of: find.byType(EditorTabsWidget),
+            matching: find.byType(Text),
+          ),
+        )
+        .where((Text it) => it.style?.fontWeight == FontWeight.w500)
+        .map(
+          (Text it) => (it.textSpan ?? TextSpan(text: it.data)).toPlainText(),
+        );
+    await _waitUntil(() => chosen().any((String it) => it.startsWith(name)));
+    expect(chosen().toList(), <Matcher>[
+      startsWith(name),
+    ], reason: 'the chosen tab is not $name');
   }
 
   /// The unsaved marks the file tree is drawing.
@@ -2373,6 +3779,11 @@ final class TomRobot {
       _marksInTheTree(),
       isEmpty,
       reason: 'the explorer still marks a file that was saved',
+    );
+    expect(
+      _dotsInTheTabs(),
+      isEmpty,
+      reason: 'a tab still carries the unsaved dot',
     );
   }
 
@@ -2683,6 +4094,61 @@ final class TomRobot {
           in tester.widget<EditorCompletionWidget>(offer).candidates)
         candidate.path.value.split('/').last,
     ], names);
+  }
+
+  /// Selects the first [word] in the source, the way a drag would: the
+  /// editor takes the keyboard first, then its controller holds the range.
+  Future<void> selectsInTheSource(String word) async {
+    await tester.tap(find.byType(CodeEditor));
+    await tester.pump(const Duration(milliseconds: 200));
+    final CodeLineEditingController editor = tester
+        .widget<CodeEditor>(find.byType(CodeEditor))
+        .controller!;
+    for (int line = 0; line < editor.lineCount; line++) {
+      final int column = editor.codeLines[line].text.indexOf(word);
+      if (column >= 0) {
+        editor.selection = CodeLineSelection(
+          baseIndex: line,
+          baseOffset: column,
+          extentIndex: line,
+          extentOffset: column + word.length,
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+        return;
+      }
+    }
+    fail('"$word" is not in the source');
+  }
+
+  /// Presses the platform's modifier with [letter] — and Shift, when asked —
+  /// where the keyboard already is: in the source pane.
+  Future<void> pressesTheFormattingKey(
+    LogicalKeyboardKey letter, {
+    bool shift = false,
+  }) async {
+    final LogicalKeyboardKey modifier = Platform.isMacOS
+        ? LogicalKeyboardKey.meta
+        : LogicalKeyboardKey.control;
+    await tester.sendKeyDownEvent(modifier);
+    if (shift) {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
+    }
+    await tester.sendKeyEvent(letter);
+    if (shift) {
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shift);
+    }
+    await tester.sendKeyUpEvent(modifier);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Asserts `[[` is offering nothing.
+  Future<void> seesNoLinkSuggestion() async {
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      find.byType(EditorCompletionWidget),
+      findsNothing,
+      reason: '`[[` offered something it should not',
+    );
   }
 
   /// Presses Enter while `[[` is offering, which writes the chosen row.
