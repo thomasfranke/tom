@@ -47,7 +47,9 @@ final class LineDifferService {
     if (text.isEmpty) {
       return const <String>[];
     }
-    final List<String> lines = text.split('\n');
+    // A carriage return is part of the break, not of the line: a file saved
+    // on Windows has the lines its LF twin has.
+    final List<String> lines = text.replaceAll('\r\n', '\n').split('\n');
     if (text.endsWith('\n')) {
       lines.removeLast();
     }

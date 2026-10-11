@@ -54,6 +54,31 @@ void main() {
     expect(aligner.before, isEmpty);
   });
 
+  test('a file the status calls new is not asked about at all', () async {
+    final Result<LineDiffValueObject, AppFailure> result = await diffing().diff(
+      space: docs,
+      after: buffer,
+      status: GitStatusValueObject(
+        branch: null,
+        upstream: null,
+        ahead: 0,
+        behind: 0,
+        isDetached: false,
+        entries: <StatusEntryValueObject>[
+          StatusEntryValueObject(
+            path: RepoRelativePathValueObject('docs/site.yaml'),
+            state: FileStateEnum.added,
+            isStaged: true,
+          ),
+        ],
+      ),
+    );
+
+    expect(result, isA<Success<LineDiffValueObject, AppFailure>>());
+    expect(git.path, isNull, reason: 'git was never asked');
+    expect(aligner.before, isEmpty);
+  });
+
   test('any other refusal from git is the diff failing', () async {
     const GitFailure broken = GitOperationFailed();
     git.answer = const Failure<String, GitFailure>(broken);

@@ -1,6 +1,7 @@
 /// What a file that is not markdown changed, line by line.
 library;
 
+import 'package:tom_application/src/diff/base_content_cache.dart';
 import 'package:tom_application/src/diff/diff_document_use_case.dart';
 import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
@@ -33,10 +34,17 @@ final class DiffLinesUseCase with UseCase {
     required SpaceEntity space,
     required DocumentEntity after,
     String revision = DiffDocumentUseCase.head,
+    BaseContentCache? cache,
+    GitStatusValueObject? status,
   }) => guard<LineDiffValueObject, AppFailure>(() async {
-    final Result<String, GitFailure> committed = await gitFor(
-      space,
-    ).contentAt(revision: revision, path: space.toRepoRelative(after.path));
+    final RepoRelativePathValueObject path = space.toRepoRelative(after.path);
+    final Result<String, GitFailure> committed = await BaseContentCache.baseOf(
+      revision: revision,
+      path: path,
+      ask: () => gitFor(space).contentAt(revision: revision, path: path),
+      cache: cache,
+      status: status,
+    );
     final String before;
     switch (committed) {
       case Success<String, GitFailure>(value: final String content):
