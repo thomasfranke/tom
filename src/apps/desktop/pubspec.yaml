@@ -37,11 +37,6 @@ dependencies:
   # needs (docs/technical/runtime/preview.md).
   flutter_markdown_plus: ^1.0.12
 
-  # The Terminal tab's pseudo-terminal: forkpty on macOS and Linux, ConPTY on
-  # Windows. MIT. A Flutter plugin with native code, so its implementation of
-  # the `pseudo_terminal` contract lives in the composition root (Decision 37).
-  flutter_pty: ^0.4.2
-
   # State, and one of only two packages above the pure Dart layers.
   # Riverpod lives in presentation and here, never below (Decision 7).
   # Pinned exactly because `riverpod_annotation` pins the runtime it

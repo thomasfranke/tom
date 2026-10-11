@@ -39,7 +39,12 @@ final class MarkdownBlockReaderImpl implements BlockReaderPort {
     DocumentEntity document,
     MarkdownOutlineDto outline,
   ) {
-    final List<String> lines = document.content.split('\n');
+    // Without the carriage returns: a block says what it says, and a
+    // document saved on Windows says the same as its LF twin
+    // (`docs/product/diff/rendered-diff/what-is-compared/doc.md`).
+    final List<String> lines = document.content
+        .replaceAll('\r\n', '\n')
+        .split('\n');
     return ParsedDocumentValueObject(
       document: document,
       blocks: List<BlockValueObject>.unmodifiable(<BlockValueObject>[

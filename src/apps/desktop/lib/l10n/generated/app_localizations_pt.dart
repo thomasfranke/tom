@@ -39,6 +39,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get commonAskingGit => 'Perguntando ao git…';
 
   @override
+  String get commonWaitingForApproval =>
+      'Aguardando sua aprovação para ler o repositório.';
+
+  @override
   String get commonNoSpaceOpen => 'Nenhum espaço aberto.';
 
   @override
@@ -74,7 +78,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get commonDetachedHead => 'HEAD desanexado';
+  String get commonNotOnABranch => 'Fora de uma branch';
 
   @override
   String get commonNoBranch => 'sem branch';
@@ -275,6 +279,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get homeOpening => 'Abrindo…';
 
   @override
+  String get homeWaitingForApproval => 'Aguardando a sua aprovação…';
+
+  @override
+  String homeNotOpenedDenied(String folder) {
+    return '$folder não foi aberta — um comando foi negado.';
+  }
+
+  @override
   String get homeCloneFromUrl => 'Clonar de uma URL';
 
   @override
@@ -356,6 +368,89 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get homeRefusedNoGitWhy =>
       'O TOM usa o git que você já tem. Instale-o, ou confira se ele está no seu PATH, e tente de novo.';
+
+  @override
+  String get aboutRow => 'Sobre o TOM';
+
+  @override
+  String get aboutUpdateAvailable => 'Atualização disponível';
+
+  @override
+  String get aboutTagline => 'Team-Oriented Markdown';
+
+  @override
+  String get aboutVersion => 'Versão';
+
+  @override
+  String get aboutPlatform => 'Plataforma';
+
+  @override
+  String get aboutLicense => 'Licença';
+
+  @override
+  String get aboutSource => 'Código no GitHub';
+
+  @override
+  String get aboutLicenses => 'Licenças';
+
+  @override
+  String get aboutReleaseNotes => 'Notas da versão';
+
+  @override
+  String get aboutClose => 'Fechar';
+
+  @override
+  String get aboutUpdates => 'ATUALIZAÇÕES';
+
+  @override
+  String get aboutCheck => 'Procurar atualizações';
+
+  @override
+  String get aboutNoRelease => 'Ainda não há versão publicada.';
+
+  @override
+  String get aboutAsking => 'Perguntando ao GitHub pela última versão…';
+
+  @override
+  String aboutUpToDate(String version) {
+    return 'O TOM $version é a versão mais recente.';
+  }
+
+  @override
+  String aboutChecked(String time) {
+    return 'Verificado às $time.';
+  }
+
+  @override
+  String aboutNewer(String version, String running) {
+    return 'O TOM $version está disponível. Você tem a $running.';
+  }
+
+  @override
+  String get aboutWhatsNew => 'O que há de novo';
+
+  @override
+  String get aboutFailed => 'O GitHub não respondeu.';
+
+  @override
+  String get aboutTryAgain => 'Tentar de novo';
+
+  @override
+  String get preferencesCheckForUpdates =>
+      'Procurar atualizações ao abrir o TOM';
+
+  @override
+  String shellUpdateAvailable(String version) {
+    return 'Atualização disponível: $version';
+  }
+
+  @override
+  String get homeRefusedGitTooOld => 'O TOM precisa do git 2.41 ou mais novo.';
+
+  @override
+  String homeRefusedGitTooOldWhy(String version) {
+    return 'Esta máquina tem o $version.';
+  }
 
   @override
   String get homeRefusedUnopened => 'Não foi possível abrir essa pasta';
@@ -508,6 +603,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String spacesUnsavedOpeningMany(String space) {
     return 'Abrir $space substitui o que está na tela, e as edições que não chegaram ao disco vão junto.';
   }
+
+  @override
+  String get spacesUnsavedQuitting =>
+      'Fechar a janela sai do TOM, e a edição que não chegou ao disco vai junto.';
+
+  @override
+  String get spacesUnsavedQuittingMany =>
+      'Fechar a janela sai do TOM, e as edições que não chegaram ao disco vão junto.';
 
   @override
   String get spacesSaveAllAndClose => 'Salvar todos e fechar';
@@ -893,6 +996,28 @@ class AppLocalizationsPt extends AppLocalizations {
   String get changesGitCouldNot => 'O git não conseguiu fazer isso.';
 
   @override
+  String get changesNotOnABranch =>
+      'Fora de uma branch — mude para uma para fazer commit.';
+
+  @override
+  String get changesNoCommitYet => 'Ainda não há commit para o qual voltar.';
+
+  @override
+  String changesAlreadyCommitted(String name) {
+    return '$name está no último commit, então não foi excluído. A lista foi lida de novo.';
+  }
+
+  @override
+  String changesStillHoldsMarker(String name) {
+    return '$name ainda tem um marcador de conflito — resolva-o e depois adicione ao stage.';
+  }
+
+  @override
+  String changesStillHoldMarkers(int count) {
+    return '$count documentos ainda têm um marcador de conflito — resolva-os e depois adicione ao stage.';
+  }
+
+  @override
   String get changesMenuTooltip => 'Menu do git';
 
   @override
@@ -1018,10 +1143,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get remoteAbortThePull => 'Abortar o pull';
 
   @override
-  String get remotePullingWhatTheRemoteHas =>
-      'Fazendo pull do que o remoto tem…';
-
-  @override
   String get remoteTryAgain => 'Tentar de novo';
 
   @override
@@ -1062,6 +1183,42 @@ class AppLocalizationsPt extends AppLocalizations {
       one: 'Ainda falta publicar 1 dos seus.',
     );
     return '$_temp0';
+  }
+
+  @override
+  String get remoteBranchProtected =>
+      'O remoto recusou esta branch. Nada foi publicado, e nenhum commit seu foi perdido.';
+
+  @override
+  String remoteCommitted(String message) {
+    return 'Commit feito: “$message”.';
+  }
+
+  @override
+  String remoteCommittedWaiting(String message, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count commits esperando push.',
+      one: '1 commit esperando push.',
+    );
+    return 'Commit feito: “$message”. $_temp0';
+  }
+
+  @override
+  String remotePublished(int count, String upstream) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count commits publicados',
+      one: '1 commit publicado',
+    );
+    return '$_temp0 em $upstream.';
+  }
+
+  @override
+  String remotePublishedBranch(String upstream) {
+    return 'Publicado em $upstream.';
   }
 
   @override
@@ -1473,6 +1630,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountTooltip => 'Conta';
 
   @override
+  String get accountTooltipUnread => 'Conta — ainda não lida';
+
+  @override
   String get accountCommitsAs => 'FAZ COMMIT COMO';
 
   @override
@@ -1632,4 +1792,173 @@ class AppLocalizationsPt extends AppLocalizations {
   String terminalExited(int code) {
     return 'O shell terminou com $code. Tecle algo para abrir outro.';
   }
+
+  @override
+  String get preferencesGitCommands => 'COMANDOS DO GIT';
+
+  @override
+  String get preferencesGitAutomatic => 'Automático';
+
+  @override
+  String get preferencesGitSemi => 'Semi';
+
+  @override
+  String get preferencesGitManual => 'Manual';
+
+  @override
+  String get preferencesGitAutomaticWhy =>
+      'Cada comando roda assim que é pedido; o painel de comandos só guarda o registro.';
+
+  @override
+  String get preferencesGitSemiWhy =>
+      'Um comando espera sua aprovação, a menos que o git-approvals.json o permita.';
+
+  @override
+  String get preferencesGitManualWhy =>
+      'Todo comando espera sua aprovação, inclusive as leituras.';
+
+  @override
+  String get preferencesOpenApprovals => 'Abrir git-approvals.json';
+
+  @override
+  String get gitModeAutomatic => 'Automático';
+
+  @override
+  String get gitModeSemi => 'Semiautomático';
+
+  @override
+  String get gitModeManual => 'Manual';
+
+  @override
+  String commandsWaitingCount(String mode, int count) {
+    return '$mode · $count aguardando';
+  }
+
+  @override
+  String get commandsApproveRun => 'Executar';
+
+  @override
+  String get commandsApproveAlways => 'Permitir sempre';
+
+  @override
+  String get commandsApproveDeny => 'Negar';
+
+  @override
+  String get commandsWaitsForAbove => 'espera o de cima';
+
+  @override
+  String get commandsAllowed => 'permitido';
+
+  @override
+  String get commandsDenied => 'negado';
+
+  @override
+  String get commandsCancelled => 'cancelado';
+
+  @override
+  String commandsPlanHead(String action, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comandos',
+      one: '1 comando',
+    );
+    return '$action · $_temp0';
+  }
+
+  @override
+  String commandsPlanStopped(String action, int ran, int total) {
+    return '$action · interrompido · $ran de $total rodaram';
+  }
+
+  @override
+  String get approvalsSwitchTitle => 'Mudar para Semiautomático?';
+
+  @override
+  String get approvalsSwitchBody =>
+      'Permitir sempre grava no git-approvals.json, e o modo Manual não lê esse arquivo. No Semiautomático só este comando fica permitido; todos os outros continuam false.';
+
+  @override
+  String get approvalsStayManual => 'Ficar no Manual';
+
+  @override
+  String get approvalsSwitch => 'Mudar para Semiautomático';
+
+  @override
+  String get changesWaitingForApproval => 'Aguardando aprovação';
+
+  @override
+  String get changesOutOfDate => 'Desatualizado: uma leitura foi negada.';
+
+  @override
+  String get changesOutOfDateReload => 'Recarregar';
+
+  @override
+  String get commandAction_openSpace => 'Abrindo o espaço';
+
+  @override
+  String get commandAction_cloneRepository => 'Clonando o repositório';
+
+  @override
+  String get commandAction_readRecentBranch => 'Lendo a branch';
+
+  @override
+  String get commandAction_readRepository => 'Lendo o repositório';
+
+  @override
+  String get commandAction_readBranches => 'Lendo as branches';
+
+  @override
+  String get commandAction_readDiffBase => 'Lendo contra o que o diff compara';
+
+  @override
+  String get commandAction_readHistory => 'Lendo o histórico';
+
+  @override
+  String get commandAction_readVersion => 'Lendo uma versão';
+
+  @override
+  String get commandAction_stage => 'Preparar (stage)';
+
+  @override
+  String get commandAction_unstage => 'Desfazer o stage';
+
+  @override
+  String get commandAction_commit => 'Commit';
+
+  @override
+  String get commandAction_discard => 'Descartar alterações';
+
+  @override
+  String get commandAction_discardAll => 'Descartar todas as alterações';
+
+  @override
+  String get commandAction_fetch => 'Fetch';
+
+  @override
+  String get commandAction_pull => 'Pull';
+
+  @override
+  String get commandAction_push => 'Push';
+
+  @override
+  String get commandAction_abortPull => 'Cancelar o pull';
+
+  @override
+  String get commandAction_switchBranch => 'Trocar de branch';
+
+  @override
+  String get commandAction_createBranch => 'Criar uma branch';
+
+  @override
+  String get commandAction_readPullRequest => 'Lendo o pull request';
+
+  @override
+  String get commandAction_createPullRequest => 'Abrir um pull request';
+
+  @override
+  String get commandAction_readAccount => 'Lendo a conta';
+
+  @override
+  String get commandAction_chooseAccount => 'Escolher a conta';
 }

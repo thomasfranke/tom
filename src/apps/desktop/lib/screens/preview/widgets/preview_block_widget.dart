@@ -103,7 +103,7 @@ class PreviewBlockWidget extends ConsumerWidget {
       imageBuilder: (Uri uri, String? title, String? alt) =>
           _image(uri, alt, at?.space, at?.path, colors),
       onTapLink: (String text, String? href, String? title) =>
-          _follow(href, origin, ref),
+          follow(href, origin, ref),
     );
   }
 
@@ -150,6 +150,7 @@ class PreviewBlockWidget extends ConsumerWidget {
   static Widget _missing(String label, TomColors colors) => Text(
     label,
     style: TextStyle(
+      fontFamily: TomFonts.reading,
       fontSize: PreviewDesign.body,
       height: PreviewDesign.bodyHeight,
       fontStyle: FontStyle.italic,
@@ -165,7 +166,7 @@ class PreviewBlockWidget extends ConsumerWidget {
   ///
   /// A relative link is resolved from [origin]'s folder, and one that climbs
   /// out of the space is refused; any other scheme does nothing.
-  static void _follow(
+  static void follow(
     String? href,
     SpaceRelativePathValueObject? origin,
     WidgetRef ref,
@@ -202,11 +203,10 @@ class PreviewBlockWidget extends ConsumerWidget {
     bool struckThrough,
   ) {
     final TextDecoration? gone = _gone(struckThrough);
-    // The prose is the serif and the headings are not: the document is the
-    // one place somebody reads rather than operates, and the headings belong
-    // to the interface's voice (`docs/design/foundations/README.md`).
+    // Prose and headings alike are the reading face: the document is the one
+    // place somebody reads rather than operates; code keeps the mono.
     final TextStyle prose = TextStyle(
-      fontFamily: TomFonts.serif,
+      fontFamily: TomFonts.reading,
       fontSize: body,
       height: PreviewDesign.bodyHeight,
       color: colors.textPrimary,
@@ -259,6 +259,7 @@ class PreviewBlockWidget extends ConsumerWidget {
     TomColors colors,
     TextDecoration? decoration,
   ) => TextStyle(
+    fontFamily: TomFonts.reading,
     fontSize: size,
     height: 1.3,
     fontWeight: FontWeight.w600,

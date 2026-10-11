@@ -158,6 +158,12 @@ abstract class AppLocalizations {
   /// **'Asking git…'**
   String get commonAskingGit;
 
+  /// The git column's note while the command that reads the repository waits for a yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your approval to read the repository.'**
+  String get commonWaitingForApproval;
+
   /// A panel's note when no folder is open as a space.
   ///
   /// In en, this message translates to:
@@ -224,11 +230,11 @@ abstract class AppLocalizations {
   /// **'{name} has unsaved changes.'**
   String commonHasUnsavedChanges(String name);
 
-  /// Where HEAD points when it is not on a branch; git's own term.
+  /// What the branch control and the status bar say when HEAD is on no branch. Never git's word, detached.
   ///
   /// In en, this message translates to:
-  /// **'detached HEAD'**
-  String get commonDetachedHead;
+  /// **'Not on a branch'**
+  String get commonNotOnABranch;
 
   /// No description provided for @commonNoBranch.
   ///
@@ -530,6 +536,18 @@ abstract class AppLocalizations {
   /// **'Opening…'**
   String get homeOpening;
 
+  /// No description provided for @homeWaitingForApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your approval…'**
+  String get homeWaitingForApproval;
+
+  /// Home's line after the person denied a command while a folder was opening; {folder} is the folder's name.
+  ///
+  /// In en, this message translates to:
+  /// **'{folder} was not opened — a command was denied.'**
+  String homeNotOpenedDenied(String folder);
+
   /// No description provided for @homeCloneFromUrl.
   ///
   /// In en, this message translates to:
@@ -667,6 +685,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'TOM drives the git you already have. Install it, or make sure it is on your PATH, and try again.'**
   String get homeRefusedNoGitWhy;
+
+  /// No description provided for @aboutRow.
+  ///
+  /// In en, this message translates to:
+  /// **'About TOM'**
+  String get aboutRow;
+
+  /// No description provided for @aboutUpdateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get aboutUpdateAvailable;
+
+  /// No description provided for @aboutTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Team-Oriented Markdown'**
+  String get aboutTagline;
+
+  /// No description provided for @aboutVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get aboutVersion;
+
+  /// No description provided for @aboutPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform'**
+  String get aboutPlatform;
+
+  /// No description provided for @aboutLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'License'**
+  String get aboutLicense;
+
+  /// No description provided for @aboutSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source on GitHub'**
+  String get aboutSource;
+
+  /// No description provided for @aboutLicenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Licenses'**
+  String get aboutLicenses;
+
+  /// No description provided for @aboutReleaseNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Release notes'**
+  String get aboutReleaseNotes;
+
+  /// No description provided for @aboutClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get aboutClose;
+
+  /// The caption over the update check, in capitals as every caption is.
+  ///
+  /// In en, this message translates to:
+  /// **'UPDATES'**
+  String get aboutUpdates;
+
+  /// No description provided for @aboutCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get aboutCheck;
+
+  /// No description provided for @aboutNoRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'No release yet.'**
+  String get aboutNoRelease;
+
+  /// No description provided for @aboutAsking.
+  ///
+  /// In en, this message translates to:
+  /// **'Asking GitHub for the latest release…'**
+  String get aboutAsking;
+
+  /// No description provided for @aboutUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'TOM {version} is the latest version.'**
+  String aboutUpToDate(String version);
+
+  /// No description provided for @aboutChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked at {time}.'**
+  String aboutChecked(String time);
+
+  /// No description provided for @aboutNewer.
+  ///
+  /// In en, this message translates to:
+  /// **'TOM {version} is available. You have {running}.'**
+  String aboutNewer(String version, String running);
+
+  /// No description provided for @aboutWhatsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s new'**
+  String get aboutWhatsNew;
+
+  /// No description provided for @aboutFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub did not answer.'**
+  String get aboutFailed;
+
+  /// No description provided for @aboutTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get aboutTryAgain;
+
+  /// No description provided for @preferencesCheckForUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates when TOM opens'**
+  String get preferencesCheckForUpdates;
+
+  /// No description provided for @shellUpdateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available: {version}'**
+  String shellUpdateAvailable(String version);
+
+  /// No description provided for @homeRefusedGitTooOld.
+  ///
+  /// In en, this message translates to:
+  /// **'TOM needs git 2.41 or newer.'**
+  String get homeRefusedGitTooOld;
+
+  /// Under Home's refusal over an older git; {version} is what git said, as 2.39.2.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine has {version}.'**
+  String homeRefusedGitTooOldWhy(String version);
 
   /// No description provided for @homeRefusedUnopened.
   ///
@@ -913,6 +1075,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Opening {space} replaces what is on screen, and the edits that have not reached the disk go with it.'**
   String spacesUnsavedOpeningMany(String space);
+
+  /// Under the unsaved question when the window itself was asked to close, one document unsaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing the window leaves TOM, and the edit that has not reached the disk goes with it.'**
+  String get spacesUnsavedQuitting;
+
+  /// No description provided for @spacesUnsavedQuittingMany.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing the window leaves TOM, and the edits that have not reached the disk go with it.'**
+  String get spacesUnsavedQuittingMany;
 
   /// No description provided for @spacesSaveAllAndClose.
   ///
@@ -1328,6 +1502,36 @@ abstract class AppLocalizations {
   /// **'Git could not do that.'**
   String get changesGitCouldNot;
 
+  /// Why the commit is unavailable while HEAD is on no branch, above the message box.
+  ///
+  /// In en, this message translates to:
+  /// **'Not on a branch — switch to one to commit.'**
+  String get changesNotOnABranch;
+
+  /// Why Discard all changes was refused on a branch with no commit.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no commit to go back to yet.'**
+  String get changesNoCommitYet;
+
+  /// Why discarding a row shown as new was refused: the file turned out to be committed, and deleting it was not what the row said it would do.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is in the last commit, so it was not deleted. The list has been read again.'**
+  String changesAlreadyCommitted(String name);
+
+  /// Why staging was refused: the document git calls conflicted still has a marker line in it.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} still holds a conflict marker — resolve it, then stage.'**
+  String changesStillHoldsMarker(String name);
+
+  /// The same refusal when more than one document holds a marker; never said of one.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} documents still hold a conflict marker — resolve them, then stage.'**
+  String changesStillHoldMarkers(int count);
+
   /// No description provided for @changesMenuTooltip.
   ///
   /// In en, this message translates to:
@@ -1526,12 +1730,6 @@ abstract class AppLocalizations {
   /// **'Abort the pull'**
   String get remoteAbortThePull;
 
-  /// No description provided for @remotePullingWhatTheRemoteHas.
-  ///
-  /// In en, this message translates to:
-  /// **'Pulling what the remote has…'**
-  String get remotePullingWhatTheRemoteHas;
-
   /// No description provided for @remoteTryAgain.
   ///
   /// In en, this message translates to:
@@ -1579,6 +1777,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 of yours is still to publish.} other{{count} of yours are still to publish.}}'**
   String remoteStillToPublish(int count);
+
+  /// A push the remote refused because it protects the branch; the way in is a pull request.
+  ///
+  /// In en, this message translates to:
+  /// **'The remote refused this branch. Nothing was published, and nothing you committed has been lost.'**
+  String get remoteBranchProtected;
+
+  /// The band after a commit that worked: it quotes the message, never the sha.
+  ///
+  /// In en, this message translates to:
+  /// **'Committed “{message}”.'**
+  String remoteCommitted(String message);
+
+  /// The same band once the branch has commits the remote lacks.
+  ///
+  /// In en, this message translates to:
+  /// **'Committed “{message}”. {count, plural, =1{1 commit waiting to push.} other{{count} commits waiting to push.}}'**
+  String remoteCommittedWaiting(String message, int count);
+
+  /// The band after a push that landed.
+  ///
+  /// In en, this message translates to:
+  /// **'Published {count, plural, =1{1 commit} other{{count} commits}} to {upstream}.'**
+  String remotePublished(int count, String upstream);
+
+  /// A push that landed when no count could be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Published to {upstream}.'**
+  String remotePublishedBranch(String upstream);
 
   /// No description provided for @remoteStopped.
   ///
@@ -2240,6 +2468,12 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get accountTooltip;
 
+  /// No description provided for @accountTooltipUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Account — not read yet'**
+  String get accountTooltipUnread;
+
   /// Caption over git's user.name and user.email; capitals, as every caption.
   ///
   /// In en, this message translates to:
@@ -2509,6 +2743,312 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The shell ended with {code}. Press any key for another.'**
   String terminalExited(int code);
+
+  /// A caption: who says yes before git and gh run.
+  ///
+  /// In en, this message translates to:
+  /// **'GIT COMMANDS'**
+  String get preferencesGitCommands;
+
+  /// No description provided for @preferencesGitAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get preferencesGitAutomatic;
+
+  /// No description provided for @preferencesGitSemi.
+  ///
+  /// In en, this message translates to:
+  /// **'Semi'**
+  String get preferencesGitSemi;
+
+  /// The three segments of the git commands control; Semi is short for Semi-automatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get preferencesGitManual;
+
+  /// No description provided for @preferencesGitAutomaticWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Every command runs as soon as it is asked for; the Commands panel only keeps the record.'**
+  String get preferencesGitAutomaticWhy;
+
+  /// No description provided for @preferencesGitSemiWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'A command waits for your approval unless git-approvals.json allows it.'**
+  String get preferencesGitSemiWhy;
+
+  /// No description provided for @preferencesGitManualWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Every command waits for your approval, reads included.'**
+  String get preferencesGitManualWhy;
+
+  /// git-approvals.json is a file name and stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Open git-approvals.json'**
+  String get preferencesOpenApprovals;
+
+  /// No description provided for @gitModeAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get gitModeAutomatic;
+
+  /// No description provided for @gitModeSemi.
+  ///
+  /// In en, this message translates to:
+  /// **'Semi-automatic'**
+  String get gitModeSemi;
+
+  /// No description provided for @gitModeManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get gitModeManual;
+
+  /// The commands panel's head while commands wait: the mode, then how many.
+  ///
+  /// In en, this message translates to:
+  /// **'{mode} · {count} waiting'**
+  String commandsWaitingCount(String mode, int count);
+
+  /// No description provided for @commandsApproveRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run'**
+  String get commandsApproveRun;
+
+  /// No description provided for @commandsApproveAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'Always allow'**
+  String get commandsApproveAlways;
+
+  /// No description provided for @commandsApproveDeny.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny'**
+  String get commandsApproveDeny;
+
+  /// No description provided for @commandsWaitsForAbove.
+  ///
+  /// In en, this message translates to:
+  /// **'waits for the one above'**
+  String get commandsWaitsForAbove;
+
+  /// No description provided for @commandsAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'allowed'**
+  String get commandsAllowed;
+
+  /// No description provided for @commandsDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'denied'**
+  String get commandsDenied;
+
+  /// No description provided for @commandsCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'cancelled'**
+  String get commandsCancelled;
+
+  /// The head of a plan: the action, then how many commands it holds.
+  ///
+  /// In en, this message translates to:
+  /// **'{action} · {count, plural, =1{1 command} other{{count} commands}}'**
+  String commandsPlanHead(String action, int count);
+
+  /// The head of a plan somebody denied.
+  ///
+  /// In en, this message translates to:
+  /// **'{action} · stopped · {ran} of {total} ran'**
+  String commandsPlanStopped(String action, int ran, int total);
+
+  /// No description provided for @approvalsSwitchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to Semi-automatic?'**
+  String get approvalsSwitchTitle;
+
+  /// No description provided for @approvalsSwitchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Always allow is written into git-approvals.json, and Manual does not read that file. In Semi-automatic only this command is allowed; every other stays false.'**
+  String get approvalsSwitchBody;
+
+  /// No description provided for @approvalsStayManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay in Manual'**
+  String get approvalsStayManual;
+
+  /// No description provided for @approvalsSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to Semi-automatic'**
+  String get approvalsSwitch;
+
+  /// The remote button that was pressed while its command waits for a yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for approval'**
+  String get changesWaitingForApproval;
+
+  /// No description provided for @changesOutOfDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of date: a read was denied.'**
+  String get changesOutOfDate;
+
+  /// No description provided for @changesOutOfDateReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get changesOutOfDateReload;
+
+  /// No description provided for @commandAction_openSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the space'**
+  String get commandAction_openSpace;
+
+  /// No description provided for @commandAction_cloneRepository.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloning the repository'**
+  String get commandAction_cloneRepository;
+
+  /// No description provided for @commandAction_readRecentBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the branch'**
+  String get commandAction_readRecentBranch;
+
+  /// No description provided for @commandAction_readRepository.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the repository'**
+  String get commandAction_readRepository;
+
+  /// No description provided for @commandAction_readBranches.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the branches'**
+  String get commandAction_readBranches;
+
+  /// No description provided for @commandAction_readDiffBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading what the diff is against'**
+  String get commandAction_readDiffBase;
+
+  /// No description provided for @commandAction_readHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the history'**
+  String get commandAction_readHistory;
+
+  /// No description provided for @commandAction_readVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading a version'**
+  String get commandAction_readVersion;
+
+  /// No description provided for @commandAction_stage.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage'**
+  String get commandAction_stage;
+
+  /// No description provided for @commandAction_unstage.
+  ///
+  /// In en, this message translates to:
+  /// **'Unstage'**
+  String get commandAction_unstage;
+
+  /// No description provided for @commandAction_commit.
+  ///
+  /// In en, this message translates to:
+  /// **'Commit'**
+  String get commandAction_commit;
+
+  /// No description provided for @commandAction_discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes'**
+  String get commandAction_discard;
+
+  /// No description provided for @commandAction_discardAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard all changes'**
+  String get commandAction_discardAll;
+
+  /// No description provided for @commandAction_fetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch'**
+  String get commandAction_fetch;
+
+  /// No description provided for @commandAction_pull.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull'**
+  String get commandAction_pull;
+
+  /// No description provided for @commandAction_push.
+  ///
+  /// In en, this message translates to:
+  /// **'Push'**
+  String get commandAction_push;
+
+  /// No description provided for @commandAction_abortPull.
+  ///
+  /// In en, this message translates to:
+  /// **'Abort the pull'**
+  String get commandAction_abortPull;
+
+  /// No description provided for @commandAction_switchBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch branch'**
+  String get commandAction_switchBranch;
+
+  /// No description provided for @commandAction_createBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a branch'**
+  String get commandAction_createBranch;
+
+  /// No description provided for @commandAction_readPullRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the pull request'**
+  String get commandAction_readPullRequest;
+
+  /// No description provided for @commandAction_createPullRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a pull request'**
+  String get commandAction_createPullRequest;
+
+  /// No description provided for @commandAction_readAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the account'**
+  String get commandAction_readAccount;
+
+  /// No description provided for @commandAction_chooseAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the account'**
+  String get commandAction_chooseAccount;
 }
 
 class _AppLocalizationsDelegate
