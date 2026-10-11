@@ -7,7 +7,6 @@ docs/design/
 ├── brand/
 │   ├── README.md              ← the index
 │   ├── brand.svg              ← generated: the sheet
-│   ├── brand.pdf              ← the card, as every page has one
 │   ├── tom-icon.svg           ← cream tile — the app icon
 │   ├── tom-icon-sage.svg         sage tile
 │   ├── tom-icon-dark.svg         dark tile — the dark-mode icon
@@ -29,7 +28,7 @@ runner needs to build:
 | macOS | `src/apps/desktop/macos/Runner/AppIcon.icon/` | **Written by `brand.py` on every run**: an Icon Composer bundle with the tile, the page and the cut-outs as layers, cream in light and dark in dark (2026-10-08). An asset catalog's appearance variants are ignored for the mac idiom, which is why the dark icon needs this |
 | macOS (before 26) | `src/apps/desktop/macos/Runner/Assets.xcassets/AppIcon.appiconset/` | Cream PNGs at 16–1024, from `--rasters`; `actool` also derives an `.icns` from the `.icon` |
 | Windows | `src/apps/desktop/windows/runner/resources/app_icon.ico` | `tom-icon.ico` |
-| Linux | — | No icon of its own; GTK takes it from the desktop entry the packaging step writes (M3) |
+| Linux | `src/apps/desktop/linux/icons/hicolor/<n>x<n>/apps/tom.png`, `src/apps/desktop/linux/tom.desktop` | **Draft, for the maintainer's gate.** Cream PNGs at 16–512 in the freedesktop layout, written by `brand.py --linux` alone; the runner loads the 256 px one for the window and the AppImage takes the rest |
 
 Changing the shape means running `--rasters` into a scratch folder and copying
 those files over again.

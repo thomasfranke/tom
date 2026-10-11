@@ -24,6 +24,7 @@ LIGHT = {
     "text_muted":       "#7E7A72",
     "accent":           "#178F71",  # teal. the brand's green, pushed toward the screen
     "accent_soft":      "#D4EDE2",
+    "accent_muted":     "#389E84",  # the accent over surface_raised at 85%: a folder's glyph, 3:1
     "added":            "#558F27",
     "added_soft":       "#E5EED5",
     "removed":          "#CF222E",
@@ -44,6 +45,7 @@ DARK = {
     "text_muted":       "#6E737C",
     "accent":           "#4FD1B0",
     "accent_soft":      "#15302A",
+    "accent_muted":     "#3E937E",  # the accent over surface_raised at 65%
     "added":            "#9BCB5E",
     "added_soft":       "#1E2A17",
     "removed":          "#EF7B76",
@@ -78,6 +80,7 @@ PAIRS = [
     ("text_secondary", "surface", 4.5),
     ("text_muted", "surface", 3.0),        # captions and placeholders only
     ("accent", "surface", 3.0),            # marks and borders, not body text
+    ("accent_muted", "surface_raised", 3.0),  # a folder's glyph on the island
     ("added", "added_soft", 3.0),
     ("removed", "removed_soft", 3.0),
     ("modified", "modified_soft", 3.0),

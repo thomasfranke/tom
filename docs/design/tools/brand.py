@@ -2,6 +2,7 @@
 
     python3 docs/design/tools/brand.py                 # -> ../brand/*.svg, the masters and the sheet
     python3 docs/design/tools/brand.py --rasters DIR   # + PNG 16–1024, .icns, .ico
+    python3 docs/design/tools/brand.py --linux         # only the Linux hicolor set, from the committed masters
 
 Same contract as palette.py: the repository holds the decision, and a file is
 regenerated rather than edited. Every colour is a role from palette.py, and the
@@ -257,6 +258,23 @@ def write_rasters(out):
             _png(src, os.path.join(out, f"tom-{kind}-{mode}@2x.png"), w1 * 2)
 
 
+# ── The Linux icon: the freedesktop hicolor layout ───────────────────────
+# The cream colourway at the sizes a launcher and a window ask for, as
+# `hicolor/<n>x<n>/apps/tom.png` — what an AppImage and a .desktop file expect.
+LINUX_ICONS = os.path.join(DESIGN, "..", "..", "src", "apps", "desktop", "linux", "icons")
+LINUX_SIZES = (16, 24, 32, 48, 64, 128, 256, 512)
+
+
+def write_linux_icons(out=LINUX_ICONS):
+    if not shutil.which("rsvg-convert"):
+        sys.exit("the Linux icons need rsvg-convert (brew install librsvg)")
+    src = os.path.join(BRAND_DIR, "tom-icon.svg")
+    for px in LINUX_SIZES:
+        folder = os.path.join(out, "hicolor", f"{px}x{px}", "apps")
+        os.makedirs(folder, exist_ok=True)
+        _png(src, os.path.join(folder, "tom.png"), px)
+
+
 # ── The macOS icon: an Icon Composer bundle ──────────────────────────────
 # macOS 26 draws an app icon in light, dark and tinted from one `.icon`; an
 # asset catalog's appearance variants are ignored for the mac idiom. Icon
@@ -280,35 +298,46 @@ def icon_composer():
     bottom_start = n["cy"] + outer - 4
     svg = lambda body: (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {TILE} {TILE}" '
                         f'width="1024" height="1024">{body}</svg>\n')
-    ink = LIGHT["surface_raised"]
-    page = svg(f'<path d="{PAGE}" fill="{LIGHT["accent"]}"/>')
-    marks = svg(
-        # The crease: 20 wide on 304 down to 148, then along 148 to 398.
-        f'<rect x="294" y="54" width="20" height="104" fill="{ink}"/>'
-        f'<rect x="294" y="138" width="104" height="20" fill="{ink}"/>'
-        # The trunk, round-capped, above and below the ring.
-        f'<rect x="{n["cx"] - reach}" y="{64 - reach}" width="{ICON_TRUNK_W}" '
-        f'height="{top_end - 64 + 2 * reach}" rx="{reach}" fill="{ink}"/>'
-        f'<rect x="{n["cx"] - reach}" y="{bottom_start - reach}" width="{ICON_TRUNK_W}" '
-        f'height="{448 - bottom_start + 2 * reach}" rx="{reach}" fill="{ink}"/>'
-        # The ring, as an annulus.
-        f'<path fill="{ink}" fill-rule="evenodd" d="M {n["cx"]} {n["cy"] - outer} '
-        f'A {outer} {outer} 0 1 1 {n["cx"] - 0.01} {n["cy"] - outer} Z '
-        f'M {n["cx"]} {n["cy"] - inner} A {inner} {inner} 0 1 0 {n["cx"] + 0.01} {n["cy"] - inner} Z"/>'
-    )
+    def drawing(role):
+        ink, accent = role["surface_raised"], role["accent"]
+        page = svg(f'<path d="{PAGE}" fill="{accent}"/>')
+        marks = svg(
+            # The crease: 20 wide on 304 down to 148, then along 148 to 398.
+            f'<rect x="294" y="54" width="20" height="104" fill="{ink}"/>'
+            f'<rect x="294" y="138" width="104" height="20" fill="{ink}"/>'
+            # The trunk, round-capped, above and below the ring.
+            f'<rect x="{n["cx"] - reach}" y="{64 - reach}" width="{ICON_TRUNK_W}" '
+            f'height="{top_end - 64 + 2 * reach}" rx="{reach}" fill="{ink}"/>'
+            f'<rect x="{n["cx"] - reach}" y="{bottom_start - reach}" width="{ICON_TRUNK_W}" '
+            f'height="{448 - bottom_start + 2 * reach}" rx="{reach}" fill="{ink}"/>'
+            # The ring, as an annulus.
+            f'<path fill="{ink}" fill-rule="evenodd" d="M {n["cx"]} {n["cy"] - outer} '
+            f'A {outer} {outer} 0 1 1 {n["cx"] - 0.01} {n["cy"] - outer} Z '
+            f'M {n["cx"]} {n["cy"] - inner} A {inner} {inner} 0 1 0 {n["cx"] + 0.01} {n["cy"] - inner} Z"/>'
+        )
+        return page, marks
+
+    page, marks = drawing(LIGHT)
+    page_dark, marks_dark = drawing(DARK)
 
     def fill(light, dark):
         return [{"value": {"solid": _srgb(light)}},
                 {"appearance": "dark", "value": {"solid": _srgb(dark)}}]
+
+    def layer(name, dark):
+        # `image-name-specializations` is read by Icon Composer but dropped by `actool`, which
+        # then compiles one drawing for every appearance; hiding a layer per appearance survives.
+        file = f"{name}-dark" if dark else name
+        return {"image-name": f"{file}.svg", "name": file,
+                "hidden-specializations": [{"value": dark}, {"appearance": "dark", "value": not dark}]}
 
     tile = (LIGHT["surface_raised"], DARK["surface_raised"])
     spec = {
         "fill-specializations": fill(*tile),
         "groups": [{
             "layers": [
-                {"fill-specializations": fill(*tile), "image-name": "marks.svg", "name": "marks"},
-                {"fill-specializations": fill(LIGHT["accent"], DARK["accent"]),
-                 "image-name": "page.svg", "name": "page"},
+                layer("marks", False), layer("marks", True),
+                layer("page", False), layer("page", True),
             ],
             "shadow": {"kind": "none", "opacity": 0},
             "translucency": {"enabled": False, "value": 0},
@@ -317,7 +346,8 @@ def icon_composer():
     }
     import json
     return {"icon.json": json.dumps(spec, indent=2) + "\n",
-            "Assets/page.svg": page, "Assets/marks.svg": marks}
+            "Assets/page.svg": page, "Assets/marks.svg": marks,
+            "Assets/page-dark.svg": page_dark, "Assets/marks-dark.svg": marks_dark}
 
 
 def write_icon_composer(out=RUNNER_ICON):
@@ -331,7 +361,13 @@ def write_icon_composer(out=RUNNER_ICON):
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--rasters", metavar="DIR", help="also write PNG sets, .icns and .ico into DIR")
+    ap.add_argument("--linux", action="store_true",
+                    help="write only the Linux hicolor PNG set into src/apps/desktop/linux/icons, nothing else")
     args = ap.parse_args(argv)
+    if args.linux:
+        write_linux_icons()
+        print(f"Linux icons -> {os.path.relpath(LINUX_ICONS)}")
+        return
     write_masters()
     print(f"{len(masters())} masters -> {os.path.relpath(BRAND_DIR)}  ·  sheet -> {os.path.relpath(os.path.join(BRAND_DIR, 'brand.svg'))}")
     write_icon_composer()

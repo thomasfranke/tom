@@ -9,7 +9,7 @@ dartdoc of the code that implements it ([AGENTS.md](../../../AGENTS.md)).
 
 | | |
 |---|---|
-| [`library.md`](library.md) | The three Penpot pages, and the rules every master is held to |
+| [`library.md`](library.md) | The library's Penpot pages, and the rules every master is held to |
 | [`penpot-traps.md`](penpot-traps.md) | What the plugin API does about all that, and the traps in it |
 | [`controls.md`](controls.md) | One row per master: widget, size, radius, states |
 | [`unused.md`](unused.md) | The masters no screen asks for, and why they exist |

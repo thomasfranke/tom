@@ -16,7 +16,9 @@ nothing redrawn; the tile is `surface_raised` since the warm palette took
 - The page is **solid**, because an outlined page is a box at small sizes.
 - The fold is the corner cut on the diagonal plus an L-shaped crease in the tile colour, so it degrades to a plain document at 16px rather than to a broken corner.
 - Everything drawn on the page is cut out in the tile colour, so the icon is two colours wherever it goes.
-- ~~**The icon does not change with the app's theme**~~ — revised 2026-10-08: the icon follows the **system's** appearance, cream in light and dark in dark, the way macOS 26 asks an icon to; it still never follows the app's own theme switch. A *mark* placed on a surface inside the app uses whichever colourway contrasts with that surface.
+- **The icon follows the system's appearance, never the app's own theme switch** — cream in light and dark in dark, the way macOS 26 asks an icon to. A *mark* placed on a surface inside the app uses whichever colourway contrasts with that surface.
+
+- **Linux** (draft, for the maintainer's gate): the cream colourway at 16, 24, 32, 48, 64, 128, 256 and 512, as `hicolor/<n>x<n>/apps/tom.png` under `src/apps/desktop/linux/icons/` — [files.md](files.md) has the path.
 
 ---
 

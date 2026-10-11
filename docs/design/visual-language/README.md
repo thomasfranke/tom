@@ -1,6 +1,6 @@
 # Visual language
 
-The colour system for the app: seventeen roles, each with a light and a dark
+The colour system for the app: eighteen roles, each with a light and a dark
 value.
 
 ![Both modes](palette.svg)
@@ -36,6 +36,7 @@ number does not, and renaming it later means touching every widget that used it.
 | `text_muted` | `#7E7A72` | `#6E737C` | Captions, placeholders |
 | `accent` | `#178F71` | `#4FD1B0` | Selection, active state, links |
 | `accent_soft` | `#D4EDE2` | `#15302A` | The fill behind an active row |
+| `accent_muted` | `#389E84` | `#3E937E` | The accent turned down: a folder's glyph in the tree |
 | `added` / `added_soft` | `#558F27` / `#E5EED5` | `#9BCB5E` / `#1E2A17` | Diff: a block that appeared |
 | `removed` / `removed_soft` | `#CF222E` / `#F8E3DE` | `#EF7B76` / `#301C1C` | Diff: a block that went |
 | `modified` / `modified_soft` | `#9A6700` / `#F7EECC` | `#E2B45C` / `#2C2516` | Diff: a block that changed |

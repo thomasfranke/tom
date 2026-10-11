@@ -5,16 +5,11 @@ Drawn so the set is complete, and waiting for the feature that needs them.
 | Master | What it is waiting for |
 |---|---|
 | `Fab` · `Slider` | Nothing yet; drawn so nobody invents a second kind later |
-| `Switch` | Settings, in M3 |
+| `Switch` | An on/off setting; preferences shipped with a `Checkbox` instead |
 | `Radio` | A choice that is not a `Segmented`; none has come up |
-| `Menu` · `Dialog` | Drawn, and used on screens that build them by hand rather than instancing |
 | `Snackbar` | The confirmation that is not a band; the band won so far |
 | `Search bar` | Superseded in practice by `Column field`, which the search actually uses |
-| `Tabs` | Panels that stack views; the aside chose a `Segmented · 2` instead |
-| `Segmented · 3` | The mode bar draws its own; the master is what it should instance |
 | `Badge` | The unsaved mark, which the editor draws as a dot of its own |
-| `Panel toggle`, bottom variants | The bottom strip, when it comes |
-| `Theme toggle` | Nothing — the theme moved into the [preferences](../../product/preferences/the-popover/doc.md) popover and the bar's control went with it. Kept, because the choice it draws did not go away |
 
 They exist so nobody invents a fourth kind of toggle later. They are **not** a
 commitment that the product will use them, and a master here is not a reason to
