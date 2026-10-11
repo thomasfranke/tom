@@ -226,6 +226,49 @@ void main() {
       expect(git.shown.where((String it) => it.endsWith('logo.png')), isEmpty);
     });
 
+    BranchProposalValueObject proposalOf(String path, FileStateEnum state) =>
+        BranchProposalValueObject(
+          commits: <CommitEntity>[commit('One')],
+          changes: <BranchChangeValueObject>[
+            BranchChangeValueObject(
+              path: RepoRelativePathValueObject(path),
+              state: state,
+              added: 1,
+              removed: 0,
+            ),
+          ],
+        );
+
+    test('a file the branch added is not asked for at the fork', () async {
+      final _Git git = _Git()
+        ..fork = CommitShaValueObject('b' * 40)
+        ..content = <String, String>{'HEAD': 'two new'};
+
+      final BranchOverviewValueObject read = valueOf(
+        await overviewOf(
+          git,
+        ).read(docs, main, proposalOf('a.md', FileStateEnum.added)),
+      );
+
+      expect(read.wordsAdded, 2);
+      expect(git.shown, <String>['HEAD:a.md']);
+    });
+
+    test('a file the branch deleted is not asked for at HEAD', () async {
+      final _Git git = _Git()
+        ..fork = CommitShaValueObject('b' * 40)
+        ..content = <String, String>{'b' * 40: 'old text'};
+
+      final BranchOverviewValueObject read = valueOf(
+        await overviewOf(
+          git,
+        ).read(docs, main, proposalOf('a.md', FileStateEnum.deleted)),
+      );
+
+      expect(read.wordsRemoved, 2);
+      expect(git.shown, <String>['${'b' * 40}:a.md']);
+    });
+
     test('no shared history reads every word of HEAD as added', () async {
       final _Git git = _Git()..content = <String, String>{'HEAD': 'all of it'};
 

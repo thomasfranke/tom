@@ -548,6 +548,117 @@ void main() {
     expect(overview?.wordsRemoved, 1);
   });
 
+  group('when something beside the page goes wrong', () {
+    Future<void> openThePage() async {
+      await openSpace();
+      container.read(pullRequestProvider.notifier).open();
+      await settle();
+    }
+
+    test(
+      'a remote git cannot read is said in the row, with no target',
+      () async {
+        git.addressFailure = const GitFailure.operationFailed();
+
+        await openSpace();
+
+        expect(page().target, isNull);
+        expect(page().targetFailure, isA<GitOperationFailed>());
+      },
+    );
+
+    test('a remote the person refused to have read is not said', () async {
+      git.addressFailure = const GitFailure.commandDenied();
+
+      await openSpace();
+
+      expect(page().target, isNull);
+      expect(page().targetFailure, isNull);
+    });
+
+    test('reloading reads the target again, from the repository', () async {
+      git.address = null;
+      await openSpace();
+      expect(
+        page().availability(session().git),
+        PullRequestAvailabilityEnum.noRemote,
+      );
+
+      git.address = 'git@github.com:acme/docs.git';
+      await container.read(pullRequestProvider.notifier).reload();
+
+      expect(
+        page().availability(session().git),
+        PullRequestAvailabilityEnum.available,
+      );
+    });
+
+    test('reloading with no space open asks nothing', () async {
+      container.listen<PullRequestState>(pullRequestProvider, (_, _) {});
+
+      await container.read(pullRequestProvider.notifier).reload();
+
+      expect(page().target, isNull);
+    });
+
+    test('branches git cannot list leave the base alone on offer', () async {
+      git.branchesFail = true;
+
+      await openThePage();
+
+      expect(page().bases, <BranchNameValueObject>[main]);
+    });
+
+    test('a browser that cannot open the host is said', () async {
+      await openThePage();
+      desktop.refusal = const UnexpectedFailure('no browser');
+
+      await container.read(pullRequestProvider.notifier).openOnHost();
+
+      expect(page().failure, isA<UnexpectedFailure>());
+    });
+
+    test(
+      'the overview asked for before the proposal has nothing to read',
+      () async {
+        await openSpace();
+        final PullRequestNotifier notifier = container.read(
+          pullRequestProvider.notifier,
+        )..open();
+
+        await notifier.show(PullRequestSegmentEnum.overview);
+        await settle();
+
+        expect(page().failure, isNull);
+        expect(page().segment, PullRequestSegmentEnum.overview);
+      },
+    );
+
+    test('an overview git cannot read is said', () async {
+      git.forkFailure = const GitFailure.operationFailed();
+      await openThePage();
+
+      await container
+          .read(pullRequestProvider.notifier)
+          .show(PullRequestSegmentEnum.overview);
+
+      expect(page().overview, isNull);
+      expect(page().failure, isA<GitOperationFailed>());
+    });
+
+    test('an overview the person refused to have read is not said', () async {
+      git.forkFailure = const GitFailure.commandDenied();
+      await openThePage();
+
+      await container
+          .read(pullRequestProvider.notifier)
+          .show(PullRequestSegmentEnum.overview);
+
+      expect(page().overview, isNull);
+      expect(page().failure, isNull);
+    });
+  });
+
   group('through gh', () {
     const GithubAccountValueObject ada = GithubAccountValueObject(
       login: 'ada',
@@ -696,6 +807,27 @@ void main() {
       expect(desktop.opened.single, numbered.address);
     });
 
+    test('viewing one that is not open does nothing', () async {
+      accounts.held = <GithubAccountValueObject>[ada];
+      await openThePage();
+
+      await container.read(pullRequestProvider.notifier).viewOnHost();
+
+      expect(desktop.opened, isEmpty);
+      expect(page().failure, isNull);
+    });
+
+    test('a browser that cannot show the one open is said', () async {
+      accounts.held = <GithubAccountValueObject>[ada];
+      host.open = numbered;
+      await openThePage();
+      desktop.refusal = const UnexpectedFailure('no browser');
+
+      await container.read(pullRequestProvider.notifier).viewOnHost();
+
+      expect(page().failure, isA<UnexpectedFailure>());
+    });
+
     test('leaving and coming back asks the host again', () async {
       accounts.held = <GithubAccountValueObject>[ada];
       await openThePage();
@@ -821,9 +953,22 @@ final class _Git implements GitRepository {
     body: '',
   );
 
+  /// What the remote's address is answered with instead of [address].
+  GitFailure? addressFailure;
+
+  /// Whether listing the branches fails.
+  bool branchesFail = false;
+
+  /// What the fork point is answered with, when it fails.
+  GitFailure? forkFailure;
+
   @override
-  Future<Result<String?, GitFailure>> remoteAddress() async =>
-      Success<String?, GitFailure>(address);
+  Future<Result<String?, GitFailure>> remoteAddress() async {
+    final GitFailure? failure = addressFailure;
+    return failure == null
+        ? Success<String?, GitFailure>(address)
+        : Failure<String?, GitFailure>(failure);
+  }
 
   @override
   Future<Result<String?, GitFailure>> chosenAccount() async =>
@@ -896,18 +1041,30 @@ final class _Git implements GitRepository {
 
   @override
   Future<Result<List<BranchEntity>, GitFailure>> branches() async =>
-      Success<List<BranchEntity>, GitFailure>(<BranchEntity>[
-        BranchEntity(name: BranchNameValueObject('main'), isCurrent: false),
-        BranchEntity(name: BranchNameValueObject('feat/x'), isCurrent: true),
-        BranchEntity(name: BranchNameValueObject('release'), isCurrent: false),
-      ]);
+      branchesFail
+      ? const Failure<List<BranchEntity>, GitFailure>(
+          GitFailure.operationFailed(),
+        )
+      : Success<List<BranchEntity>, GitFailure>(<BranchEntity>[
+          BranchEntity(name: BranchNameValueObject('main'), isCurrent: false),
+          BranchEntity(name: BranchNameValueObject('feat/x'), isCurrent: true),
+          BranchEntity(
+            name: BranchNameValueObject('release'),
+            isCurrent: false,
+          ),
+        ]);
 
   @override
   Future<Result<CommitShaValueObject?, GitFailure>> forkPoint(
     BranchNameValueObject base,
-  ) async => Success<CommitShaValueObject?, GitFailure>(
-    CommitShaValueObject('b' * 40),
-  );
+  ) async {
+    final GitFailure? failure = forkFailure;
+    return failure == null
+        ? Success<CommitShaValueObject?, GitFailure>(
+            CommitShaValueObject('b' * 40),
+          )
+        : Failure<CommitShaValueObject?, GitFailure>(failure);
+  }
 
   @override
   Future<Result<String, GitFailure>> contentAt({
@@ -965,10 +1122,16 @@ final class _Folder implements DocumentRepository {
 final class _Desktop implements DesktopRepository {
   final List<Uri> opened = <Uri>[];
 
+  /// What every request is refused with, or null to succeed.
+  AppFailure? refusal;
+
   @override
   Future<Result<void, AppFailure>> openUrl(Uri address) async {
     opened.add(address);
-    return const Success<void, AppFailure>(null);
+    final AppFailure? refused = refusal;
+    return refused == null
+        ? const Success<void, AppFailure>(null)
+        : Failure<void, AppFailure>(refused);
   }
 
   @override

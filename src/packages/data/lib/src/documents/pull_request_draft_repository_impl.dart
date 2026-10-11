@@ -27,15 +27,28 @@ final class PullRequestDraftRepositoryImpl implements DocumentRepository {
   Future<Result<DocumentRepository, GitFailure>>? _drafts;
 
   /// The repository over the drafts folder, built on the first call.
-  Future<Result<DocumentRepository, GitFailure>> _resolve() =>
-      _drafts ??= git.gitDirectory().then(
-        (Result<String, GitFailure> found) => found.map(
-          (String directory) => DocumentRepositoryImpl(
-            documents: documents,
-            root: '$directory/tom/pull-request',
+  /// Asked once and kept: what is kept is the answer, so saving a draft
+  /// asks git nothing. **An answer that is a failure is not kept** — a
+  /// refusal at the gate must not stop every later save.
+  Future<Result<DocumentRepository, GitFailure>> _resolve() {
+    final Future<Result<DocumentRepository, GitFailure>> asked = _drafts ??= git
+        .gitDirectory()
+        .then(
+          (Result<String, GitFailure> found) => found.map(
+            (String directory) => DocumentRepositoryImpl(
+              documents: documents,
+              root: '$directory/tom/pull-request',
+            ),
           ),
-        ),
-      );
+        );
+    return asked.then((Result<DocumentRepository, GitFailure> result) {
+      if (result is Failure<DocumentRepository, GitFailure> &&
+          identical(_drafts, asked)) {
+        _drafts = null;
+      }
+      return result;
+    });
+  }
 
   /// [action] over the drafts folder, or git's refusal said about [path].
   Future<Result<T, DocumentFailure>> _through<T>(

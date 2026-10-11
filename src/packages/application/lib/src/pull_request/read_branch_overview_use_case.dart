@@ -64,6 +64,7 @@ final class ReadBranchOverviewUseCase with UseCase {
         git,
         change.path,
         since,
+        change.state,
       );
       if (diff != null) {
         diffs.add(diff);
@@ -84,11 +85,17 @@ final class ReadBranchOverviewUseCase with UseCase {
     GitRepository git,
     RepoRelativePathValueObject path,
     CommitShaValueObject? since,
+    FileStateEnum state,
   ) async {
-    final String? before = since == null
+    // The change list already says which side holds nothing: an added file
+    // has no text at the fork point and a deleted one none at `HEAD`, so
+    // git is not asked for what it would refuse.
+    final String? before = since == null || state == FileStateEnum.added
         ? ''
         : await _contentAt(git, since.value, path);
-    final String? after = await _contentAt(git, 'HEAD', path);
+    final String? after = state == FileStateEnum.deleted
+        ? ''
+        : await _contentAt(git, 'HEAD', path);
     if (before == null || after == null) {
       return null;
     }

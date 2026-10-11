@@ -327,6 +327,45 @@ void main() {
       expect(find.text('3 days ago'), findsNWidgets(2));
     });
 
+    testWidgets('the base is picked from the branches it can move to', (
+      WidgetTester tester,
+    ) async {
+      arrange(
+        state: read.copyWith(
+          bases: <BranchNameValueObject>[
+            main,
+            BranchNameValueObject('release'),
+          ],
+        ),
+        proposing: true,
+      );
+      await mount(tester, const PullRequestPanel());
+
+      await tester.tap(find.text('main'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('release'));
+      await tester.pumpAndSettle();
+
+      expect(page.chosen, <BranchNameValueObject>[
+        BranchNameValueObject('release'),
+      ]);
+    });
+
+    testWidgets('with only one base on offer the control opens nothing', (
+      WidgetTester tester,
+    ) async {
+      arrange(
+        state: read.copyWith(bases: <BranchNameValueObject>[main]),
+        proposing: true,
+      );
+      await mount(tester, const PullRequestPanel());
+
+      await tester.tap(find.text('main'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TomMenuWidget), findsNothing);
+    });
+
     testWidgets('its one action names the host and hands over the draft', (
       WidgetTester tester,
     ) async {
@@ -684,6 +723,12 @@ final class _Page extends PullRequestNotifier {
 
   @override
   void open() => opened++;
+
+  /// The bases the page was told to move to.
+  final List<BranchNameValueObject> chosen = <BranchNameValueObject>[];
+
+  @override
+  void chooseBase(BranchNameValueObject base) => chosen.add(base);
 
   @override
   Future<void> openOnHost() async => hosted++;

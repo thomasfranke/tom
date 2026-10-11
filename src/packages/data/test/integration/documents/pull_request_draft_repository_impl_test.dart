@@ -60,6 +60,35 @@ void main() {
     content: '# Close it\n',
   );
 
+  test('the git directory is asked once, then every save asks nothing, and '
+      'a refused question is not remembered', () async {
+    final GitRepository real = GitRepositoryImpl(
+      git: GitDataSource(
+        client: DartIoGitClientImpl(workingDirectory: '$base/repo'),
+      ),
+    );
+    final _Counting counting = _Counting(real)..refuseFirst = true;
+    final PullRequestDraftRepositoryImpl drafts =
+        PullRequestDraftRepositoryImpl(
+          git: counting,
+          documents: const DocumentDataSource(
+            filesystem: DartIoFilesystemImpl(),
+          ),
+        );
+
+    final Result<void, DocumentFailure> refused = await drafts.write(draft);
+    expect(refused, isA<Failure<void, DocumentFailure>>());
+    expect(
+      await drafts.write(draft),
+      isA<Success<void, DocumentFailure>>(),
+      reason: 'a refusal was kept for ever',
+    );
+    await drafts.write(draft);
+    await drafts.write(draft);
+
+    expect(counting.asked, 2, reason: 'refused once, then answered once');
+  });
+
   test(
     'a draft is written under .git/tom, where status never sees it',
     () async {
@@ -110,4 +139,29 @@ void main() {
     expect(written, isA<Failure<void, DocumentFailure>>());
     expect(Directory('$base/plain/.git').existsSync(), isFalse);
   });
+}
+
+/// Counts how often the git directory is asked, and can refuse the first
+/// time as a person at the gate would.
+final class _Counting implements GitRepository {
+  _Counting(this._real);
+
+  final GitRepository _real;
+  bool refuseFirst = false;
+  int asked = 0;
+
+  @override
+  Future<Result<String, GitFailure>> gitDirectory() {
+    asked++;
+    if (refuseFirst) {
+      refuseFirst = false;
+      return Future<Result<String, GitFailure>>.value(
+        const Failure<String, GitFailure>(GitCommandDenied()),
+      );
+    }
+    return _real.gitDirectory();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
