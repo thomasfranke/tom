@@ -91,6 +91,13 @@ final class LoginShellPseudoTerminalImpl implements PseudoTerminal {
       return Failure<PseudoTerminalProcess, PseudoTerminalFailure>(
         PseudoTerminalStartFailed('$error'),
       );
+      // A native library or symbol that cannot be found reaches here as an
+      // `ArgumentError` or `UnsupportedError`; swallowing it into a sentence
+      // with no cause is how a broken build looks like a broken machine.
+    } on Error catch (error) {
+      return Failure<PseudoTerminalProcess, PseudoTerminalFailure>(
+        PseudoTerminalStartFailed('${error.runtimeType}: $error'),
+      );
     }
   }
 

@@ -199,6 +199,21 @@ void main() {
     });
   });
 
+  test('any other error from opening the pty is a failure that says what it '
+      'was, not a throw', () async {
+    refusal = ArgumentError("Couldn't resolve native function 'openpty'");
+
+    final Result<PseudoTerminalProcess, PseudoTerminalFailure> result =
+        await started(on('macos', present: <String>{'/bin/zsh'}));
+
+    expect(
+      ((result as Failure<PseudoTerminalProcess, PseudoTerminalFailure>).failure
+              as PseudoTerminalStartFailed)
+          .description,
+      contains("Couldn't resolve native function 'openpty'"),
+    );
+  });
+
   test('a pty the platform refuses is a failure, not a throw', () async {
     refusal = StateError('Failed to create PTY: out of ptys');
 

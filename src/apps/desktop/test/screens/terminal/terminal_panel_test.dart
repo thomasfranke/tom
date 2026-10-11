@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,7 @@ import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/commands/commands_panel.dart';
 import 'package:tom_desktop/screens/terminal/terminal_design.dart';
+import 'package:tom_desktop/screens/terminal/terminal_look.dart';
 import 'package:tom_desktop/screens/terminal/terminal_panel.dart';
 import 'package:tom_desktop/screens/workspace/workspace_bottom_head_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -182,6 +184,7 @@ void main() {
       final TomColors colors = brightness == Brightness.dark
           ? TomColors.dark
           : TomColors.light;
+      final TargetPlatform platform = defaultTargetPlatform;
 
       expect(terminals.started.single.folder, '/Users/ana/work/app');
       expect(find.byType(CommandsPanel), findsNothing);
@@ -202,20 +205,46 @@ void main() {
       final TerminalView view = tester.widget<TerminalView>(
         find.byType(TerminalView),
       );
-      expect(view.theme.background, colors.surfaceRaised);
-      expect(view.theme.foreground, colors.textPrimary);
-      expect(view.theme.green, colors.added);
-      expect(view.theme.red, colors.removed);
-      expect(view.theme.yellow, colors.modified);
-      expect(view.theme.blue, colors.accent);
-      expect(view.theme.brightBlack, colors.textMuted);
-      expect(view.cursorType, TerminalCursorType.block);
-      expect(view.textStyle.fontFamily, TomFonts.mono);
-      expect(view.textStyle.fontSize, 12);
-      expect(view.textStyle.fontSize * view.textStyle.height, 19);
-      expect(view.padding, const EdgeInsets.all(TerminalDesign.inset));
+      // An ordinary terminal: none of the app's roles, its face or its
+      // caret; only the board's air around the text.
+      expect(view.theme, same(terminalThemeOf(brightness)));
+      expect(view.theme.background, isNot(colors.surfaceRaised));
+      expect(view.theme.foreground, isNot(colors.textPrimary));
+      expect(view.theme.red, isNot(colors.removed));
+      expect(view.theme.blue, isNot(colors.accent));
+      expect(view.textStyle.fontFamily, terminalStyleOf(platform).fontFamily);
+      expect(view.textStyle.fontFamily, isNot(startsWith('packages/')));
+      expect(view.textStyle.fontSize, 13);
+      expect(view.padding, TerminalDesign.padding);
     });
   }
+
+  testWidgets('the text sits 14 in and 11 under the head, as the board draws '
+      'it, and the shell is told the padded size', (WidgetTester tester) async {
+    await pumpRegion(tester);
+    await chooseTheTerminal(tester);
+
+    final Rect view = tester.getRect(find.byType(TerminalView));
+    // The scrollable is the area the cells are laid out in: the view less
+    // the padding, so the first cell sits at its top left.
+    final Rect cells = tester.getRect(
+      find.descendant(
+        of: find.byType(TerminalView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(cells.left - view.left, 14);
+    expect(cells.top - view.top, 11);
+    expect(view.right - cells.right, 14);
+    expect(view.bottom - cells.bottom, 6);
+    // The shell was started at the padded area's size, which holds fewer
+    // cells than the view would.
+    final TerminalSizeValueObject size = terminals.started.single.size;
+    expect(size.columns, emulator(tester).viewWidth);
+    expect(size.rows, emulator(tester).viewHeight);
+    // 12 pt at a line of 1.0 is at least 12 high: a row more would not fit.
+    expect(size.rows * 12, lessThanOrEqualTo(cells.height));
+  });
 
   testWidgets('it starts at the size it is drawn at', (
     WidgetTester tester,
@@ -354,6 +383,8 @@ void main() {
     await chooseTheTerminal(tester);
 
     expect(find.text('The shell would not start.'), findsOneWidget);
+    // And why, so a broken build is not mistaken for a broken machine.
+    expect(find.textContaining('no pty'), findsOneWidget);
     expect(find.byType(TerminalView), findsNothing);
   });
 }

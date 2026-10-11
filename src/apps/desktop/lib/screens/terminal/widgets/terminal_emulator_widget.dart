@@ -8,9 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/terminal/terminal_design.dart';
+import 'package:tom_desktop/screens/terminal/terminal_look.dart';
+import 'package:tom_desktop/screens/terminal/terminal_sequence_filter.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
-import 'package:tom_ui/tom_ui.dart';
 // The emulator's own `TerminalState` is its parser's, not the tab's.
 import 'package:xterm/xterm.dart' hide TerminalState;
 
@@ -37,6 +38,8 @@ class _TerminalEmulatorWidgetState
     platform: _platformOf(defaultTargetPlatform),
     inputHandler: const _LeavesTheAppItsKeys(),
   );
+  // What `xterm` reads wrongly is rewritten before it sees it.
+  final TerminalSequenceFilter _filter = TerminalSequenceFilter();
   final FocusNode _focus = FocusNode(debugLabel: 'terminal');
   StreamSubscription<String>? _output;
 
@@ -45,8 +48,10 @@ class _TerminalEmulatorWidgetState
     super.initState();
     // Replayed before anything listens to what the emulator answers: a
     // question the shell asked long ago must not be answered into it again.
-    _terminal.write(_notifier.transcript);
-    _output = _notifier.output.listen(_terminal.write);
+    _terminal.write(_filter.filter(_notifier.transcript));
+    _output = _notifier.output.listen(
+      (String text) => _terminal.write(_filter.filter(text)),
+    );
     _terminal
       ..onOutput = _notifier.write
       ..onResize = _resized;
@@ -92,60 +97,12 @@ class _TerminalEmulatorWidgetState
     return TerminalView(
       _terminal,
       focusNode: _focus,
-      theme: _themeOf(TomColors.of(context)),
-      textStyle: _style,
-      padding: const EdgeInsets.all(TerminalDesign.inset),
+      padding: TerminalDesign.padding,
+      theme: terminalThemeOf(Theme.of(context).brightness),
+      textStyle: terminalStyleOf(defaultTargetPlatform),
     );
   }
 }
-
-/// IBM Plex Mono, with the platform's monospaced faces behind it for a
-/// glyph Plex does not carry.
-const TerminalStyle _style = TerminalStyle(
-  fontSize: TerminalDesign.fontSize,
-  height: TerminalDesign.lineHeight / TerminalDesign.fontSize,
-  fontFamily: TomFonts.mono,
-  fontFamilyFallback: <String>[
-    'Menlo',
-    'Consolas',
-    'Liberation Mono',
-    'Noto Sans Mono',
-    'monospace',
-  ],
-);
-
-/// The ANSI palette on the theme's roles, so a prompt reads as the app does
-/// in either mode.
-///
-/// One hue per role, so blue, magenta and cyan share the accent; black is
-/// `text_secondary`, which a dark island would not swallow, and its bright
-/// half the dim grey zsh suggests in. The selection is painted over the
-/// text, so it lets the text through.
-TerminalTheme _themeOf(TomColors colors) => TerminalTheme(
-  cursor: colors.textPrimary,
-  selection: colors.accent.withValues(alpha: 0.3),
-  foreground: colors.textPrimary,
-  background: colors.surfaceRaised,
-  black: colors.textSecondary,
-  red: colors.removed,
-  green: colors.added,
-  yellow: colors.modified,
-  blue: colors.accent,
-  magenta: colors.accent,
-  cyan: colors.accent,
-  white: colors.textPrimary,
-  brightBlack: colors.textMuted,
-  brightRed: colors.removed,
-  brightGreen: colors.added,
-  brightYellow: colors.modified,
-  brightBlue: colors.accent,
-  brightMagenta: colors.accent,
-  brightCyan: colors.accent,
-  brightWhite: colors.textPrimary,
-  searchHitBackground: colors.modified.withValues(alpha: 0.3),
-  searchHitBackgroundCurrent: colors.accent.withValues(alpha: 0.4),
-  searchHitForeground: colors.textPrimary,
-);
 
 TerminalTargetPlatform _platformOf(TargetPlatform platform) =>
     switch (platform) {

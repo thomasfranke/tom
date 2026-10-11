@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/terminal/widgets/terminal_emulator_widget.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -27,17 +28,30 @@ class TerminalPanel extends ConsumerWidget {
         (SpaceSessionState? session) => session?.space.root,
       ),
     );
-    final bool failed = ref.watch(
-      terminalProvider.select((TerminalState it) => it is TerminalFailed),
+    final AppFailure? failure = ref.watch(
+      terminalProvider.select(
+        (TerminalState it) => it is TerminalFailed ? it.failure : null,
+      ),
     );
-    if (failed) {
+    if (failure != null) {
+      final TextStyle muted = TextStyle(
+        fontSize: 12.5,
+        color: TomColors.of(context).textMuted,
+      );
+      // The cause is shown under the sentence: without it a build that
+      // cannot load its native library reads like a machine without a shell.
       return Center(
-        child: Text(
-          context.l10n.terminalFailed,
-          style: TextStyle(
-            fontSize: 12.5,
-            color: TomColors.of(context).textMuted,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(context.l10n.terminalFailed, style: muted),
+            const SizedBox(height: 6),
+            SelectableText(
+              '$failure',
+              textAlign: TextAlign.center,
+              style: muted.copyWith(fontFamily: TomFonts.mono, fontSize: 11),
+            ),
+          ],
         ),
       );
     }

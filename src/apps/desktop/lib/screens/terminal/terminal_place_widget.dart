@@ -28,17 +28,20 @@ class TerminalPlaceWidget extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final (String shell, String folder) = place;
-    return Text(
-      context.l10n.terminalPlace(
-        shell,
-        terminalPlaceOf(folder, ref.watch(homeFolderProvider)),
-      ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        fontSize: TerminalDesign.place,
-        height: 1.3,
-        color: TomColors.of(context).textMuted,
+    return Padding(
+      padding: const EdgeInsets.only(left: TerminalDesign.placeLead),
+      child: Text(
+        context.l10n.terminalPlace(
+          shell,
+          terminalPlaceOf(folder, ref.watch(homeFolderProvider)),
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: TerminalDesign.place,
+          height: 1.3,
+          color: TomColors.of(context).textMuted,
+        ),
       ),
     );
   }
