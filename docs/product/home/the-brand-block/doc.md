@@ -13,7 +13,7 @@ The one place in the app where the identity is the content.
 
 ## Mocks
 
-- **empty state** — [light](../../../design/screens/desktop/home/empty-state-light.svg) · [dark](../../../design/screens/desktop/home/empty-state-dark.svg).
+- **empty state** — [light](../../../design/screens/desktop/home/home-empty-state-light.svg) · [dark](../../../design/screens/desktop/home/home-empty-state-dark.svg).
 
 ---
 

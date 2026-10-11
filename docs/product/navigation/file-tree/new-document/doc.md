@@ -14,7 +14,8 @@ What the `+` at the head of the explorer does.
 
 ## Mocks
 
-- **new document** — the field row inside `tasks`, the name selected. [light](../../../../design/screens/desktop/workspace-tree/new-document-light.svg) · [dark](../../../../design/screens/desktop/workspace-tree/new-document-dark.svg).
+- **new document** — the field row inside `tasks`, the name selected. [light](../../../../design/screens/desktop/workspace-tree/naming-a-new-entry-states-light.svg) · [dark](../../../../design/screens/desktop/workspace-tree/naming-a-new-entry-states-dark.svg).
+- **naming a new entry, a name already taken** — its third state, a name already in that folder, the field outlined `removed`; the same board as above. [light](../../../../design/screens/desktop/workspace-tree/naming-a-new-entry-states-light.svg) · [dark](../../../../design/screens/desktop/workspace-tree/naming-a-new-entry-states-dark.svg).
 
 ---
 

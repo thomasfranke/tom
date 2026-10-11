@@ -14,10 +14,6 @@ its own tools.
 | [`explorer-menu/`](explorer-menu/doc.md) | The `⋮`: new folder, collapse, reload, reveal |
 | [`documents-on-mobile/`](documents-on-mobile/doc.md) | The mobile counterpart |
 
-## Mocks
-
-- Shown as part of **shell**, which carries the letters and the folder dots; the tree has no screen of its own. [light](../../../design/screens/desktop/workspace-shell/shell-light.svg) · [dark](../../../design/screens/desktop/workspace-shell/shell-dark.svg).
-
 ---
 
 *See also: [product/](../../README.md) · [regions](../../workspace/regions/doc.md) · [Decision 8](../../../technical/decisions/008-monorepo-with-pure-dart-core.md)*

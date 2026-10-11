@@ -13,16 +13,7 @@ product's core differentiator.**
 | [`turning-it-off/`](turning-it-off/doc.md) | The `Diff` chip, and what the document looks like without marks |
 | [`review-on-mobile/`](review-on-mobile/doc.md) | The mobile counterpart |
 
-Comparing against another branch or commit instead is
-[branch-diff](../branch-diff/doc.md); every rule here holds either way.
-
-## Mocks
-
-Both are drawn in split view with the left column closed, so the marks are
-visible in the source and in the preview at once.
-
-- **comparing** — an added, a modified and a struck-through removed block in the preview, the same three in the source with the removed one as a seam. [light](../../../design/screens/desktop/git-diff/comparing-light.svg) · [dark](../../../design/screens/desktop/git-diff/comparing-dark.svg).
-- **diff off** — no board. Every screen that is not about the diff already draws the chip off ([turning it off](turning-it-off/doc.md)).
+What the document is compared against is [branch-diff](../branch-diff/doc.md)'s.
 
 ---
 

@@ -3,7 +3,7 @@
 Writing and opening the pull request for the branch that was just pushed,
 without leaving the tool.
 
-**Status:** Shipped · Milestone M3 — created through `gh` on GitHub; without `gh`, and on any other host, it opens the host's compare page
+**Status:** Shipped · Milestone M3
 
 | | |
 |---|---|
@@ -19,20 +19,6 @@ without leaving the tool.
 Reading, reviewing and merging. Comments, approvals and checks are the host's
 model, none of it is markdown in the repository, and a tool that renders a
 review thread has become a second product.
-
-## Mocks
-
-- **writing a pull request** — the page with the whole editor, the status row where the tabs were, and the branch's own column. [light](../../../design/screens/desktop/git-pull-request/writing-a-pull-request-light.svg) · [dark](../../../design/screens/desktop/git-pull-request/writing-a-pull-request-dark.svg).
-- **cannot open yet** — uncommitted work, the row in `removed`, and both actions unavailable. [light](../../../design/screens/desktop/git-pull-request/cannot-open-yet-light.svg) · [dark](../../../design/screens/desktop/git-pull-request/cannot-open-yet-dark.svg).
-- **branch overview** — the same column with the second segment chosen. [light](../../../design/screens/desktop/git-pull-request/branch-overview-light.svg) · [dark](../../../design/screens/desktop/git-pull-request/branch-overview-dark.svg).
-- **not pushed yet** — the row in `modified`, carrying `Push`; opening waits for it. [light](../../../design/screens/desktop/git-pull-request/not-pushed-yet-light.svg) · [dark](../../../design/screens/desktop/git-pull-request/not-pushed-yet-dark.svg).
-- **no title yet** — a draft whose first line is not a `#` heading. [light](../../../design/screens/desktop/git-pull-request/no-title-yet-light.svg) · [dark](../../../design/screens/desktop/git-pull-request/no-title-yet-dark.svg).
-
-**Two screens were drawn and deleted**, and why is worth keeping: a band offering
-the pull request after a push, which was a second place to open one; and a band
-on the default branch explaining that there is nothing to propose, which is a
-control drawn as a sentence. Neither needs a screen — the first is the button
-that is always there, the second is the button that is not.
 
 ---
 

@@ -2,13 +2,13 @@
 
 **Who the person is, here and on GitHub — read from what the computer already holds, never signed into.**
 
-**Status:** Draft · built on `fix/match-the-boards`, boards on `21 · Screens: Account` not yet exported
+**Status:** Shipped · Milestone M3
 
 ## The button
 
 - The account button is the **last control at the right of the top bar**, after the preferences gear — on Home too.
 - It shows the initials of git's `user.name`, else the first letter of the GitHub login, else the outline of a person.
-- It opens a popover hanging from its right edge, and wears an `accent` ring while the popover is open; pressing it again, clicking outside or `Esc` closes it.
+- It opens a popover hanging from its right edge; pressing it again, clicking outside or `Esc` closes it. The button wears no mark of its own while the popover is open — the popover under it says so.
 
 ## While it is read
 
@@ -31,19 +31,22 @@
 ## This repository
 
 - Drawn only when the space's `origin` is on GitHub, and never on Home; otherwise nothing is said about permissions.
+- **GitHub is the one host it knows.** An `origin` on GitLab or Bitbucket draws no section here, and its pull request is the host's own page ([opening it](../../git-workflow/pull-request/opening-it/doc.md)).
 - The repository's name opens its page in the browser.
 - Five columns say what the account may do there — `READ · PR · PUSH · MERGE · ADMIN`, a tick or a dash each. Opening a pull request and merging one follow push; the role's name is not shown.
 - **Nothing known is drawn as nothing known**: without a login, or without `gh` to ask GitHub, all five are dashes and a line under them says so — SSH has its own line, because it says who somebody is and not what they may do.
 
 ## Mocks
 
-Not yet exported; on the Penpot page `21 · Screens: Account`, to land in [`desktop/account/`](../../../design/screens/desktop/account/):
-
-- **account-no-credentials** — nothing on this computer: no git name, no account, five dashes.
-- **account-through-gh** — an account from `gh`, the caption saying the login is the computer's, and the five columns.
-- **choosing-an-account** — the select open on the computer's accounts, one of them through SSH.
-- **account-through-ssh** — a login from the SSH key alone: who, never what — five dashes.
-- **account-reading** — the first reading out: git's name, `Asking git and gh who you are…`, five dashes pending.
+- **account — no credentials** — the whole window: nothing on this computer, no git name, no account, five dashes. [light](../../../design/screens/desktop/account/account-no-credentials-light.svg) · [dark](../../../design/screens/desktop/account/account-no-credentials-dark.svg).
+- **the account popover — its states** — [light](../../../design/screens/desktop/account/the-account-popover-states-light.svg) · [dark](../../../design/screens/desktop/account/the-account-popover-states-dark.svg):
+  - *no credentials* — the popover alone.
+  - *through gh* — an account from `gh`, the caption saying the login is the computer's, and the five columns.
+  - *through SSH* — a login from the SSH key alone: who, never what — five dashes.
+  - *reading* — the first reading out: git's name, `Asking git and gh who you are…`, five dashes pending.
+  - *choosing an account* — the select open on the computer's accounts, one through `gh` and one through git.
+- **the account button — its three faces** — initials, the first letter of the login, the outline of a person. [light](../../../design/screens/desktop/account/the-account-button-its-three-faces-states-light.svg) · [dark](../../../design/screens/desktop/account/the-account-button-its-three-faces-states-dark.svg).
+- **the account on Home** — the popover with no repository section. [light](../../../design/screens/desktop/home/the-account-on-home-states-light.svg) · [dark](../../../design/screens/desktop/home/the-account-on-home-states-dark.svg).
 
 ---
 

@@ -2,7 +2,7 @@
 
 What the app does with a folder git knows nothing about.
 
-**Status:** Shipped · Milestone M3 — the breadcrumb names the folder alone, where the board still draws `tom / docs`
+**Status:** Shipped · Milestone M3
 
 ## Rules
 
@@ -12,8 +12,7 @@ What the app does with a folder git knows nothing about.
 - **A control that cannot work is not drawn.** No `Git · History` switch, no changes list, no message box, no commit, fetch or push, and no branch in the breadcrumb — an unavailable control says *later*, and this is *never, in this folder*.
 - **The `Diff` chip goes with them**, and the tree carries no change marks, for the same reason: both are answers git would have to give.
 - **The `Pull request` row is the one exception, and it is drawn unavailable.** It belongs to the explorer rather than to the git column, and a shortcut that vanishes is a shortcut somebody hunts for — dim says *not from this folder* without moving anything.
-- **The breadcrumb and the status bar drop what git answered for, and only that** — the branch, the counts, the branch menu's chevron. The folder, the open document and the cursor's position stay, because none of the three is git's to answer.
-- **This revokes the earlier rule that opening such a folder is a named failure.** Refusing the folder was the app deciding that a space without history is not worth opening, which is the opposite of *a space is a folder, not a repository* ([rule 12](../../../../AGENTS.md)).
+- **The breadcrumb and the status bar drop what git answered for, and only that** — the branch, the drift, the count of changes, the branch menu's chevron. The breadcrumb names the folder alone, and the [status bar](../status-bar/doc.md) keeps its right half — the caret, the encoding, the file's kind, saved or not — because none of it is git's to answer.
 
 ## Mocks
 

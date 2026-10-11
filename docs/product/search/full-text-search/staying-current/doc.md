@@ -7,7 +7,7 @@ When a document becomes searchable.
 ## Rules
 
 - **A document saved in TOM is searchable immediately.**
-- One changed outside TOM is picked up when it is saved here, or when the space is opened again.
+- One changed outside TOM is picked up when it is saved here, when the [explorer menu](../../../navigation/file-tree/explorer-menu/doc.md)'s `Reload` reads the folder again, or when the space is opened again.
 
 Nothing watches the folder. The index does not outlive the session, so it
 cannot go stale — which is what makes the absence of a watcher a decision

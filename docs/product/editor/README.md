@@ -10,10 +10,10 @@ The editor is deliberately simple — source plus preview, never WYSIWYG
 
 | | |
 |---|---|
-| [`source-mode/`](source-mode/doc.md) | The buffer, saving, and what the mode bar says |
+| [`source-mode/`](source-mode/doc.md) | The buffer, saving, and where unsaved is said |
 | [`markdown-preview/`](markdown-preview/doc.md) | What the rendered view draws, and what it will not |
 | [`tabs/`](tabs/doc.md) | The documents that are open, preview mode, and closing one with edits |
-| [`formatting-shortcuts/`](formatting-shortcuts/doc.md) | The seventeen buttons, the row they share with the view |
+| [`formatting-shortcuts/`](formatting-shortcuts/doc.md) | The seventeen buttons, what each writes, and the row above the document |
 | [`conflicted-document/`](conflicted-document/doc.md) | Both sides of a merge, in source and in preview |
 
 ---

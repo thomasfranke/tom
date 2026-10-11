@@ -3,26 +3,17 @@
 Keep the local space in sync with the remote, with the state of that sync always
 visible.
 
-**Status:** Shipped · Milestones M1–M3 — except [when it works](when-it-works/doc.md), Planned · Milestone M3
+**Status:** Shipped · Milestones M1–M3
 
 | | |
 |---|---|
 | [`the-controls/`](the-controls/doc.md) | The three buttons, the counts inside them, and what the status bar says instead |
 | [`what-each-does/`](what-each-does/doc.md) | Fetch against pull, and why a pull merges |
-| [`when-it-works/`](when-it-works/doc.md) | What a pull says when the commits arrived |
+| [`when-it-works/`](when-it-works/doc.md) | What a pull says when the commits arrived, and a push when they went |
 | [`when-it-fails/`](when-it-fails/doc.md) | The rejection, the unreachable remote, and where both are said |
 | [`when-a-pull-conflicts/`](when-a-pull-conflicts/doc.md) | A pull that stopped in the middle, and how the merge ends |
 | [`while-a-request-runs/`](while-a-request-runs/doc.md) | The bar across the top of the column, and what it takes away while it runs |
 | [`when-the-link-is-broken/`](when-the-link-is-broken/doc.md) | The line at the foot of the column: no network, credentials, no remote, no answer |
-
-## Mocks
-
-- **nothing to push** — the three buttons naming only their action, `Push` dim, and the status bar saying the space is level with the remote. [light](../../../design/screens/desktop/git-push/nothing-to-push-light.svg) · [dark](../../../design/screens/desktop/git-push/nothing-to-push-dark.svg).
-- **pushing** — `Pushing…` on the button that was pressed, the other two unavailable, the bar across the column's head. [light](../../../design/screens/desktop/git-push/pushing-light.svg) · [dark](../../../design/screens/desktop/git-push/pushing-dark.svg).
-- **pulling** — the same three states with `Pulling…`, and **no band**: while a request runs the column reports it, not the band ([while a request runs](while-a-request-runs/doc.md)). [light](../../../design/screens/desktop/git-pull/pulling-light.svg) · [dark](../../../design/screens/desktop/git-pull/pulling-dark.svg).
-- **push rejected** — the remote moved first, said in the band with `Pull` as its one action. [light](../../../design/screens/desktop/git-push/push-rejected-light.svg) · [dark](../../../design/screens/desktop/git-push/push-rejected-dark.svg).
-- **push failed** — the remote could not be reached: the same band, `Try again`, nothing published. [light](../../../design/screens/desktop/git-push/push-failed-light.svg) · [dark](../../../design/screens/desktop/git-push/push-failed-dark.svg).
-- **pull conflicted** — the pull stopped mid-merge: the band with `Abort the pull`, `C` in the tree and the list, and the merge message already in the box. [light](../../../design/screens/desktop/git-pull/pull-conflicted-light.svg) · [dark](../../../design/screens/desktop/git-pull/pull-conflicted-dark.svg).
 
 ---
 

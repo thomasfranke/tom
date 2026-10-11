@@ -8,18 +8,20 @@ See the commits that touched the document currently open, without leaving it.
 
 - The history panel lists only the commits that changed the current file, most recent first.
 - Each entry shows who committed it, when, and the commit message.
-- Opening a history entry shows that version of the document rendered, not raw diff text. While one is open the editor is not offered at all — a past version is read, never typed into — and there is always a way back to the working copy.
-- **A version being read says so in a band above the document**, naming the commit and carrying the way back. It sits where every other piece of news from git sits, so there is one place to look for what the app is doing.
-- A past version can be read beside the working copy in split view, both panes showing the whole document. Neither side is an excerpt: a version half-shown is a version somebody has to scroll to trust.
-- **`Split` is that view, and it stays selected inside it.** The mode that opened the screen is the one that closes it — pressing it again returns to the single version. ~~The switch drops `Split` because the window is already split~~ left the screen with no way back to one pane, which is a door that locks behind you.
-- With no document open the panel says so, rather than showing the repository's log instead.
-- The panel is one of the two the right column switches between, and the commits it lists are what [branch-diff](../../diff/branch-diff/doc.md) offers as a base. One reading of the log, two surfaces.
+- Opening a history entry shows that version of the document rendered, not raw diff text. A past version is read, never typed into — its source pane is read-only — and there is always a way back to the working copy.
+- **A version being read says so in the row above the document**, where the tools were: the commit, whose it is and how old, and `Back to now` ([formatting shortcuts](../../editor/formatting-shortcuts/doc.md)).
+- **The history follows the document through a rename**: a file that was moved or renamed keeps the commits made under its earlier name.
+- A past version can be read in split view: that version's source beside that version's rendering, both read-only and both whole. The working copy is not on screen — it is one press away, at `Back to now`, and comes back as it was left: buffer, caret and undo history. No pane is captioned; the row above the document names the commit.
+- **`Split` is that view, and the modes stay while a version is read.** The mode that opened the screen is the one that closes it — pressing it again returns to the single version; a switch that dropped `Split` would be a door that locks behind you.
+- With no document open the panel says so — `Open a document to see what changed it.` — rather than showing the repository's log instead.
+- The panel is one of the two the right column switches between ([columns](../../workspace/columns/doc.md)).
 
 ## Mocks
 
-- **file history** — the commits that touched this document, under the `Changes · History` switch. [light](../../../design/screens/desktop/git-history/file-history-light.svg) · [dark](../../../design/screens/desktop/git-history/file-history-dark.svg).
-- **reading a version** — a past version rendered, the band naming it, no editor offered. [light](../../../design/screens/desktop/git-history/reading-a-version-light.svg) · [dark](../../../design/screens/desktop/git-history/reading-a-version-dark.svg).
-- **reading a version, side by side** — the past and the working copy in full, both panes complete. [light](../../../design/screens/desktop/git-history/reading-a-version-side-by-side-light.svg) · [dark](../../../design/screens/desktop/git-history/reading-a-version-side-by-side-dark.svg).
+- **file history** — the commits that touched this document, under the `Git · History` switch. [light](../../../design/screens/desktop/git-history/file-history-light.svg) · [dark](../../../design/screens/desktop/git-history/file-history-dark.svg).
+- **reading a version** — a past version rendered, the row above it naming the commit, no editor offered. [light](../../../design/screens/desktop/git-history/reading-a-version-light.svg) · [dark](../../../design/screens/desktop/git-history/reading-a-version-dark.svg).
+- **reading a version, side by side** — a past version's source beside its rendering, both panes complete. [light](../../../design/screens/desktop/git-history/reading-a-version-side-by-side-light.svg) · [dark](../../../design/screens/desktop/git-history/reading-a-version-side-by-side-dark.svg).
+- **history with no document open** — the column saying so. [light](../../../design/screens/desktop/git-history/history-with-no-document-open-states-light.svg) · [dark](../../../design/screens/desktop/git-history/history-with-no-document-open-states-dark.svg).
 
 ---
 

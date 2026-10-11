@@ -2,12 +2,12 @@
 
 **The person's own shell, at the repository's root, in the panel under the document — the second tab beside [Commands](../commands/doc.md).**
 
-**Status:** Draft · built on `fix/match-the-boards`, board `Terminal` on `22 · Screens: Commands & Terminal` not yet exported
+**Status:** Shipped · Milestone M3
 
 ## The shell
 
 - It is **the shell the person uses in their own terminal**, with their own configuration: `$SHELL` on macOS and Linux (a login shell on macOS, as Terminal.app starts one), PowerShell on Windows, else `cmd`.
-- It opens **at the root of the space's repository**, not at the folder the space is — `git` answers for the whole repository from there.
+- It opens **at the root of the space's repository**, not at the folder the space is — `git` answers for the whole repository from there. A space with no repository opens it at its own folder ([without a repository](../without-a-repository/doc.md)).
 - It starts **the first time the Terminal tab is shown** in a space, never before; a space nobody opens the tab in runs no shell.
 - **One terminal per space.** Opening another space, or closing this one, ends its shell; so does quitting the app.
 - Switching to `Commands`, or closing the panel, leaves the shell running and what it drew in place — the tab comes back to it.
@@ -22,8 +22,9 @@
 
 ## The body
 
-- IBM Plex Mono at 12 on a 19 line, 14 in from the panel's edges, on the island's `surface_raised`, in `text_primary`, with a block caret.
-- The prompt and the colours are the shell's own, its ANSI palette drawn in the theme's roles — `removed` red, `added` green, `modified` yellow, `accent` for blue, cyan and magenta, `text_secondary` and `text_muted` for the two greys — in both themes.
+- An ordinary terminal: the platform's own monospace (Menlo 12 on macOS, Consolas 14 on Windows, 13 on Linux), in the standard terminal colours, with a block caret — nothing about it follows TOM's palette. It follows the system's appearance as the platform's own terminal does: dark `#1E1E1E` with `#CCCCCC` text on a dark system, white with black text on a light one.
+- The text keeps **14 in from the sides, 11 under the head and a few at the foot**, inside the body's colour, so it never touches the panel's edge.
+- The prompt and the colours are the shell's own, its ANSI palette the standard one.
 - A shell that cannot start leaves the body saying `The shell would not start.`
 
 ## The keyboard
@@ -35,9 +36,7 @@
 
 ## Mocks
 
-Drawn on `22 · Screens: Commands & Terminal`, approved, and **not yet exported**:
-
-- **terminal** — the Terminal tab chosen, a prompt and `git status` under it. `docs/design/screens/desktop/commands-and-terminal/terminal-{light,dark}.svg`.
+- **the bottom panel — its states** — the Terminal tab chosen, a prompt and `git status` under it · the shell ended · the shell would not start. [light](../../../design/screens/desktop/commands-terminal/the-bottom-panel-states-light.svg) · [dark](../../../design/screens/desktop/commands-terminal/the-bottom-panel-states-dark.svg).
 
 ---
 

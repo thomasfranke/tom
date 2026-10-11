@@ -1,8 +1,8 @@
 # Commands
 
-**Every command TOM runs, as it ran it — read-only, in a panel under the document.**
+**Every command TOM runs, as it ran it, in a panel under the document.**
 
-**Status:** Draft · built on `fix/match-the-boards`, boards on `22 · Screens: Commands & Terminal` not yet exported
+**Status:** Shipped · Milestone M3
 
 ## What it lists
 
@@ -11,6 +11,7 @@
 - A failure is tinted `removed_soft` and says how it ended before its duration: `exit 1 · 1.8 s`, `did not finish` for one killed for its time, `did not run` for one that could not start.
 - **Only what the app treated as an error is red.** An exit the app expected as an answer — `git config --get` of a key nobody set, `rev-parse --verify --quiet MERGE_HEAD` with no merge — is **neutral**: no check, no cross, no tint, `exit 1 · 23 ms` in `text_muted`. The capability that runs a command declares which exits are answers; the panel never guesses from the command text.
 - The list keeps the last 500 commands of the session; the count after the tabs — `N this session` — counts every one.
+- Before the first command the list says `No command has run yet.`
 - **Nothing is written to disk.** The list is the session's and goes with the window.
 
 ## No secret, ever
@@ -22,29 +23,29 @@
 
 ## What it does
 
-- A press on a row opens it onto what the command printed, in a box under it; another press closes it.
+- A press on a row opens it onto what the command printed, in a box under it; another press closes it. A command that wrote nothing says `Printed nothing.`
 - Under the pointer a row offers a copy glyph that puts its command line on the clipboard, quoted so a terminal runs the same command.
-- **Read-only**: nothing in it runs a command again, and it takes no input.
+- **Read-only**: nothing in it runs a command again, and it takes no input — except while a command waits for approval, when the waiting row carries its answers ([approvals](../../git-workflow/approvals/doc.md)).
 - The list stays at its newest row as commands arrive.
 
 ## Opening it
 
-- **It never opens by itself.** The toggle between the two column toggles in the top bar opens and closes it, and so does `⌘J` (`Ctrl+J` off macOS); the `×` at the right of its head closes it.
+- **It never opens by itself**, except for a command that waits for approval. The toggle between the two column toggles in the top bar opens and closes it, and so does `⌘J` (`Ctrl+J` off macOS); the `×` at the right of its head closes it.
+- **On Home it is the only tab**, drawn over the foot of Home at its usual height so Home does not move, and the toggle in Home's top bar and `⌘J` open it there too. It opens by itself when opening or cloning waits for approval, and closing it never cancels what waits.
 - Whether it is open is window state, like the columns.
 - When a git action fails, its band carries a second action, **`Show the command`**, which opens the panel on the last command that failed, already open onto what git said.
 
 ## Where it sits
 
-- **Under the document column only**, ~~260 tall~~ opening at 260 and **dragged from the gutter above it**, as the columns are dragged from theirs (revised 2026-10-09): never lower than 120, never so high that the document keeps less than 200. The explorer and the git column keep their full height. The height is the window's, like the columns' widths, and does not outlive it.
+- **Under the document column only**, opening at 260 and **dragged from the gutter above it**, as the columns are dragged from theirs: never lower than 120, never so high that the document keeps less than 200. The explorer and the git column keep their full height. The height is the window's, like the columns' widths, and does not outlive it.
 - Its head is a tab strip — `Commands`, then [`Terminal`](../terminal/doc.md) — the chosen tab underlined in `accent`; what is typed in the terminal is never listed here.
 
 ## Mocks
 
-Drawn on `22 · Screens: Commands & Terminal`, approved, and **not yet exported**:
-
-- **command-log** — the panel open under the document. `docs/design/screens/desktop/commands-and-terminal/command-log-{light,dark}.svg`.
-- **command-log-output** — a row opened onto what it printed. `…/command-log-output-{light,dark}.svg`.
-- **command-log-a-failure** — a failed fetch, tinted, open, reached from its band. `…/command-log-a-failure-{light,dark}.svg`.
+- **command log** — the panel open under the document, a neutral row among the ticked ones. [light](../../../design/screens/desktop/commands-terminal/command-log-light.svg) · [dark](../../../design/screens/desktop/commands-terminal/command-log-dark.svg).
+- **command log — output** — a row opened onto what it printed. [light](../../../design/screens/desktop/commands-terminal/command-log-output-light.svg) · [dark](../../../design/screens/desktop/commands-terminal/command-log-output-dark.svg).
+- **command log — a failure** — a failed fetch, tinted, open, reached from its band. [light](../../../design/screens/desktop/commands-terminal/command-log-a-failure-light.svg) · [dark](../../../design/screens/desktop/commands-terminal/command-log-a-failure-dark.svg).
+- **the bottom panel — its states** — a command that did not run · one that did not finish · a secret masked. [light](../../../design/screens/desktop/commands-terminal/the-bottom-panel-states-light.svg) · [dark](../../../design/screens/desktop/commands-terminal/the-bottom-panel-states-dark.svg).
 
 ---
 
