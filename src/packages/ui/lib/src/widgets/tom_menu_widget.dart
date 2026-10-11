@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tom_ui/src/theme/tom_colors.dart';
 import 'package:tom_ui/src/widgets/tom_glyph_widget.dart';
+import 'package:tom_ui/src/widgets/tom_rule_painter.dart';
 
 /// One row of a [TomMenuWidget].
 @immutable
@@ -134,10 +135,12 @@ class TomMenuWidget extends StatelessWidget {
               color: colors.surfaceRaised,
               borderRadius: BorderRadius.circular(radius),
               border: Border.all(color: colors.border),
-              // The boards' own shadow, deeper in the dark.
+              // The boards' own shadow, deeper in the dark; the light one
+              // is authored at 18 % and renders as 36 % under the menu
+              // (`#BBBAB7` against the app's `#CDCCC9` at 25 %).
               boxShadow: <BoxShadow>[
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.18),
+                  color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.36),
                   offset: const Offset(0, 8),
                   blurRadius: 24,
                 ),
@@ -154,9 +157,7 @@ class TomMenuWidget extends StatelessWidget {
                       SizedBox(
                         height: ruleBand,
                         // Centred, a point tall: four above and four below.
-                        child: Center(
-                          child: Container(height: 1, color: colors.border),
-                        ),
+                        child: Center(child: TomRulePainter.of(colors.border)),
                       ),
                     for (final TomMenuEntry entry in groups[g])
                       _RowWidget(entry: entry, onDismissed: onDismissed),

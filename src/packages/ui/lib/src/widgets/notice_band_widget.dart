@@ -7,16 +7,13 @@ import 'package:tom_ui/src/theme/tom_metrics.dart';
 
 /// The notice band of
 /// [components](../../../../../../docs/design/components/controls.md): a
-/// sentence at the left, one action at the right, on a tinted strip the width
-/// of the document area.
+/// sentence, then one action, on a tinted strip as wide as the document.
 ///
-/// A colour and a sentence rather than a meaning, the way the diff mark takes
-/// its letter, so a refusal, a failure and a confirmation are one component
-/// instead of three. **One action**: a band with two is a dialog that forgot
-/// to be one (`docs/product/workspace/feedback/doc.md`) — bar the two places
-/// the maintainer asked for a pair: a file changed under unsaved edits, where
-/// [alternative] keeps things as they are, and a git failure, where it shows
-/// the command that failed.
+/// A colour and a sentence rather than a meaning, so a refusal, a failure
+/// and a confirmation are one component. **One action**: two is a dialog
+/// that forgot to be one (`docs/product/workspace/feedback/doc.md`) — bar a
+/// file changed under unsaved edits, where [alternative] keeps things as
+/// they are, and a git failure, where it shows the command that failed.
 ///
 /// Drawn to `git-pull/pull-worked`: the fill, a bar of [ink] at the left
 /// edge and no outline; the action is an outline in [ink] on the band itself.
@@ -116,9 +113,7 @@ class NoticeBandWidget extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: _sentenceTop,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: _sentenceTop),
                     child: Text(
                       sentence,
                       style: TextStyle(

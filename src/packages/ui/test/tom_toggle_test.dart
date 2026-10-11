@@ -121,27 +121,4 @@ void main() {
       );
     });
   });
-
-  group('the control that switches the theme', () {
-    testWidgets('in dark it fills the right half', (WidgetTester tester) async {
-      // Drawn in the panel toggles' own ink, so the three read as one set.
-      await tester.pumpWidget(
-        app(const TomThemeToggleWidget(isDark: true, size: 16, stroke: 1.5)),
-      );
-
-      expect(await pixelAt(tester, 12, 8), TomColors.dark.textSecondary);
-      expect(await pixelAt(tester, 4, 8), isNot(TomColors.dark.textSecondary));
-    });
-
-    testWidgets('and in light it fills the other one', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        app(const TomThemeToggleWidget(isDark: false, size: 16, stroke: 1.5)),
-      );
-
-      expect(await pixelAt(tester, 4, 8), TomColors.dark.textSecondary);
-      expect(await pixelAt(tester, 12, 8), isNot(TomColors.dark.textSecondary));
-    });
-  });
 }

@@ -46,13 +46,15 @@ flutter:
           weight: 400
         - asset: fonts/IBMPlexMono-SemiBold.ttf
           weight: 600
-    - family: IBMPlexSerif
+    - family: PublicSans
       fonts:
-        - asset: fonts/IBMPlexSerif-Regular.ttf
+        - asset: fonts/PublicSans-Regular.ttf
           weight: 400
-        - asset: fonts/IBMPlexSerif-SemiBold.ttf
+        - asset: fonts/PublicSans-SemiBold.ttf
           weight: 600
-        - asset: fonts/IBMPlexSerif-Italic.ttf
+        - asset: fonts/PublicSans-Bold.ttf
+          weight: 700
+        - asset: fonts/PublicSans-Italic.ttf
           weight: 400
           style: italic
     - family: FontAwesomeSolid

@@ -18,6 +18,7 @@ class TomMenuButtonWidget extends StatefulWidget {
     required this.groups,
     required this.width,
     this.overhang = 5,
+    this.drop = defaultDrop,
     super.key,
   });
 
@@ -39,8 +40,13 @@ class TomMenuButtonWidget extends StatefulWidget {
   /// The glyph; its ink is the boards' ten points.
   static const double glyph = 12;
 
-  /// The button's bottom to the menu's top.
-  static const double drop = 1.5;
+  /// How far the menu hangs below the button when a column says nothing:
+  /// the git column's board.
+  static const double defaultDrop = 1.5;
+
+  /// The button's bottom to the menu's top; the explorer's board hangs it
+  /// straight from the button, so its rules land on whole pixels.
+  final double drop;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -49,7 +55,8 @@ class TomMenuButtonWidget extends StatefulWidget {
       ..add(StringProperty('tooltip', tooltip))
       ..add(IterableProperty<List<TomMenuEntry>>('groups', groups))
       ..add(DoubleProperty('width', width))
-      ..add(DoubleProperty('overhang', overhang));
+      ..add(DoubleProperty('overhang', overhang))
+      ..add(DoubleProperty('drop', drop));
   }
 
   @override
@@ -87,7 +94,7 @@ class _TomMenuButtonWidgetState extends State<TomMenuButtonWidget> {
             followerAnchor: Alignment.topRight,
             offset: Offset(
               widget.overhang - TomMenuButtonWidget.box / 2,
-              TomMenuButtonWidget.drop,
+              widget.drop,
             ),
             child: Align(
               alignment: Alignment.topRight,

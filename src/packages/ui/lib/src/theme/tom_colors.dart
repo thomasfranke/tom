@@ -24,6 +24,7 @@ class TomColors extends ThemeExtension<TomColors> {
     required this.textMuted,
     required this.accent,
     required this.accentSoft,
+    required this.accentMuted,
     required this.added,
     required this.addedSoft,
     required this.removed,
@@ -76,6 +77,13 @@ class TomColors extends ThemeExtension<TomColors> {
   /// The fill behind an active row.
   final Color accentSoft;
 
+  /// The accent turned down: the ink of a glyph that is part of the
+  /// furniture rather than the current thing, such as a folder in the tree.
+  ///
+  /// The accent mixed over [surfaceRaised] — 65 % in dark, 85 % in light,
+  /// where less would fall under the 3:1 a glyph needs.
+  final Color accentMuted;
+
   /// Diff: a block that appeared.
   final Color added;
 
@@ -107,6 +115,7 @@ class TomColors extends ThemeExtension<TomColors> {
     textMuted: Color(0xFF7E7A72),
     accent: Color(0xFF178F71),
     accentSoft: Color(0xFFD4EDE2),
+    accentMuted: Color(0xFF389E84),
     added: Color(0xFF558F27),
     addedSoft: Color(0xFFE5EED5),
     removed: Color(0xFFCF222E),
@@ -131,6 +140,7 @@ class TomColors extends ThemeExtension<TomColors> {
     textMuted: Color(0xFF6E737C),
     accent: Color(0xFF4FD1B0),
     accentSoft: Color(0xFF15302A),
+    accentMuted: Color(0xFF3E937E),
     added: Color(0xFF9BCB5E),
     addedSoft: Color(0xFF1E2A17),
     removed: Color(0xFFEF7B76),
@@ -162,6 +172,7 @@ class TomColors extends ThemeExtension<TomColors> {
     Color? textMuted,
     Color? accent,
     Color? accentSoft,
+    Color? accentMuted,
     Color? added,
     Color? addedSoft,
     Color? removed,
@@ -180,6 +191,7 @@ class TomColors extends ThemeExtension<TomColors> {
     textMuted: textMuted ?? this.textMuted,
     accent: accent ?? this.accent,
     accentSoft: accentSoft ?? this.accentSoft,
+    accentMuted: accentMuted ?? this.accentMuted,
     added: added ?? this.added,
     addedSoft: addedSoft ?? this.addedSoft,
     removed: removed ?? this.removed,
@@ -205,6 +217,7 @@ class TomColors extends ThemeExtension<TomColors> {
       textMuted: Color.lerp(textMuted, other.textMuted, t)!,
       accent: Color.lerp(accent, other.accent, t)!,
       accentSoft: Color.lerp(accentSoft, other.accentSoft, t)!,
+      accentMuted: Color.lerp(accentMuted, other.accentMuted, t)!,
       added: Color.lerp(added, other.added, t)!,
       addedSoft: Color.lerp(addedSoft, other.addedSoft, t)!,
       removed: Color.lerp(removed, other.removed, t)!,
