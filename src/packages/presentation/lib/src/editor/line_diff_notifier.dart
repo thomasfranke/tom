@@ -40,6 +40,9 @@ class LineDiffNotifier extends _$LineDiffNotifier {
 
   Timer? _scheduled;
 
+  /// The base's text as git gave it, so typing asks git once.
+  final BaseContentCache _baseContent = BaseContentCache();
+
   /// Which comparison is the current one, so a slow one cannot land after a
   /// newer one has already answered.
   int _generation = 0;
@@ -53,7 +56,10 @@ class LineDiffNotifier extends _$LineDiffNotifier {
           (SpaceSessionState? session) =>
               (base: session?.comparingAgainst, git: session?.git),
         ),
-        (_Measure? _, _Measure _) => _compareNow(),
+        (_Measure? _, _Measure _) {
+          _baseContent.clear();
+          _compareNow();
+        },
       )
       ..listen<EditorState>(editorProvider, _follow);
     if (_comparable(ref.read(editorProvider)) case final EditorReady ready) {
@@ -135,6 +141,9 @@ class LineDiffNotifier extends _$LineDiffNotifier {
             revision:
                 session.comparingAgainst?.forkPoint.value ??
                 DiffDocumentUseCase.head,
+            cache: _baseContent,
+            // What git said is new is not asked about (it has no `HEAD` text).
+            status: session.git,
           ),
         );
     if (!ref.mounted || generation != _generation) {

@@ -143,7 +143,8 @@ void main() {
     // (`docs/product/diff/rendered-diff/how-it-is-drawn/doc.md`).
     expect(EditorMarksPainter.letterOf(EditorMarkEnum.conflicted), 'C');
     expect(EditorMarksPainter.letterOf(EditorMarkEnum.added), 'A');
-    expect(EditorMarksPainter.letterOf(EditorMarkEnum.removed), 'R');
+    // `D`, as a deleted file is: `R` is a rename, which only a file can be.
+    expect(EditorMarksPainter.letterOf(EditorMarkEnum.removed), 'D');
     expect(EditorMarksPainter.letterOf(EditorMarkEnum.modified), 'M');
     expect(painter(tester)!.colors, TomColors.light);
   });

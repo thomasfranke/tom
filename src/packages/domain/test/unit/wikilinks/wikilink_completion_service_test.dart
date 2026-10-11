@@ -157,6 +157,77 @@ void main() {
       expect(targetsOf('[[wikilinks/do‸'), <String>['product/wikilinks/doc']);
     });
 
+    test('a root document sharing its name with one in a folder is offered '
+        'from the root, so it resolves to itself', () {
+      // Its path has no slash to say it is a path, so it is given one.
+      final List<SpaceEntryValueObject> twice = <SpaceEntryValueObject>[
+        file('readme.md'),
+        file('archive/readme.md'),
+      ];
+      final List<WikilinkCandidateValueObject> offered = complete(
+        '[[read‸',
+        twice,
+      )!.candidates;
+
+      expect(
+        <String>[
+          for (final WikilinkCandidateValueObject it in offered) it.target,
+        ],
+        <String>['archive/readme', '/readme'],
+      );
+      const WikilinkResolverService resolver = WikilinkResolverService();
+      for (final WikilinkCandidateValueObject candidate in offered) {
+        expect(
+          resolver
+              .resolve(WikilinkValueObject(target: candidate.target), twice)
+              .destination,
+          candidate.path,
+          reason: candidate.target,
+        );
+      }
+    });
+
+    test('a document whose name the link syntax would cut is not offered', () {
+      // `#` starts an anchor and `|` a label: written into a link, neither
+      // name would resolve. An ordinary markdown link still reaches them.
+      final List<SpaceEntryValueObject> odd = <SpaceEntryValueObject>[
+        file('languages/c# notes.md'),
+        file('either|or.md'),
+        file('c#/intro.md'),
+        file('plain.md'),
+      ];
+
+      expect(
+        <String>[
+          for (final WikilinkCandidateValueObject it in complete(
+            '[[‸',
+            odd,
+          )!.candidates)
+            it.target,
+        ],
+        // `intro` is offered by its name, which holds neither character.
+        unorderedEquals(<String>['plain', 'intro']),
+      );
+    });
+
+    test('nor is one that could only be written as a path holding one', () {
+      final List<SpaceEntryValueObject> odd = <SpaceEntryValueObject>[
+        file('c#/intro.md'),
+        file('java/intro.md'),
+      ];
+
+      expect(
+        <String>[
+          for (final WikilinkCandidateValueObject it in complete(
+            '[[intro‸',
+            odd,
+          )!.candidates)
+            it.target,
+        ],
+        <String>['java/intro'],
+      );
+    });
+
     test('every candidate written resolves to its own document', () {
       const WikilinkResolverService resolver = WikilinkResolverService();
       for (final WikilinkCandidateValueObject candidate in complete(

@@ -102,23 +102,45 @@ final class WikilinkCompletionService {
 
     return <WikilinkCandidateValueObject>[
       for (final (int, SpaceEntryValueObject) hit in ranked)
-        WikilinkCandidateValueObject(
-          path: hit.$2.path,
-          // Somebody typing a path is given the path, even for a name the
-          // space holds once.
-          target:
-              !wanted.contains('/') &&
-                  named[_stem(hit.$2.name).toLowerCase()] == 1
-              ? _stem(hit.$2.name)
-              : _stem(hit.$2.path.value),
-        ),
+        if (_targetOf(
+              hit.$2,
+              // Somebody typing a path is given the path, even for a name
+              // the space holds once.
+              byName:
+                  !wanted.contains('/') &&
+                  named[_stem(hit.$2.name).toLowerCase()] == 1,
+            )
+            case final String target)
+          WikilinkCandidateValueObject(path: hit.$2.path, target: target),
     ];
+  }
+
+  /// What is written to link to [document], or null when nothing written
+  /// would reach it.
+  ///
+  /// A path with no folder gets a leading `/`, or it would read as a name
+  /// and stay ambiguous. A target holding `#` or `|` is not offered: the
+  /// link's own syntax would cut it there
+  /// (`docs/product/wikilinks/doc.md`).
+  static String? _targetOf(
+    SpaceEntryValueObject document, {
+    required bool byName,
+  }) {
+    final String path = _stem(document.path.value);
+    final String target = byName
+        ? _stem(document.name)
+        : (path.contains('/') ? path : '/$path');
+    return target.contains(RegExp('[#|]')) ? null : target;
   }
 
   /// How well [document] matches [wanted], lower is better, or null when it
   /// does not match at all.
   static int? _tierOf(String wanted, SpaceEntryValueObject document) {
     final String path = _stem(document.path.value).toLowerCase();
+    if (wanted.startsWith('/')) {
+      // From the root, so only what starts there.
+      return '/$path'.startsWith(wanted) ? 0 : null;
+    }
     if (wanted.contains('/')) {
       return path.startsWith(wanted)
           ? 0

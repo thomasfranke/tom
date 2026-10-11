@@ -153,6 +153,7 @@ class PreviewConflictWidget extends StatelessWidget {
   Widget _side(TomColors colors, String text) => Text(
     text,
     style: TextStyle(
+      fontFamily: TomFonts.reading,
       fontSize: body,
       height: PreviewDesign.bodyHeight,
       color: colors.textPrimary,

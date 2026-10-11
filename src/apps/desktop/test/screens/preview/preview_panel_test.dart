@@ -219,6 +219,99 @@ void main() {
     expect(find.textContaining('Prose.', findRichText: true), findsOneWidget);
   });
 
+  group('the reading face', () {
+    const String everything =
+        '# Title\n\n## Second\n\nProse with *emphasis*, **strong** and '
+        '`inline`.[^n]\n\n- one\n- two\n\n> a quote\n\n'
+        '| a | b |\n|---|---|\n| c | d |\n\n'
+        '```\nlet fenced = 1;\n```\n\n[^n]: The note.\n';
+
+    /// Every run of text on screen with the family it resolves to, a style
+    /// that names none inheriting its parent's.
+    List<(String, String?)> runs(WidgetTester tester) {
+      final List<(String, String?)> found = <(String, String?)>[];
+      void walk(InlineSpan span, String? inherited) {
+        final String? family = span.style?.fontFamily ?? inherited;
+        if (span case TextSpan(:final String text) when text.isNotEmpty) {
+          found.add((text, family));
+        }
+        span.visitDirectChildren((InlineSpan child) {
+          walk(child, family);
+          return true;
+        });
+      }
+
+      for (final SelectableText it in tester.widgetList<SelectableText>(
+        find.byType(SelectableText),
+      )) {
+        walk(it.textSpan!, null);
+      }
+      return found;
+    }
+
+    for (final Brightness brightness in Brightness.values) {
+      testWidgets('prose, headings, lists, quotes, tables and notes are '
+          'Public Sans, code is Plex Mono, ${brightness.name}', (
+        WidgetTester tester,
+      ) async {
+        documents.content = everything;
+        tester.view
+          ..physicalSize = const Size(1440, 900)
+          ..devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        container.read(spaceSessionProvider.notifier)
+          ..open(docs)
+          ..show(writing);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: tomTheme(brightness),
+              home: const Scaffold(body: PreviewPanel()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        final List<(String, String?)> all = runs(tester);
+        const Set<String> code = <String>{'inline', 'let fenced'};
+        for (final (String text, String? family) in all) {
+          final bool isCode = code.any(text.contains);
+          expect(
+            family,
+            isCode ? TomFonts.mono : TomFonts.reading,
+            reason: '"$text" resolved to $family',
+          );
+        }
+        for (final String word in <String>[
+          'Title',
+          'Second',
+          'emphasis',
+          'strong',
+          'one',
+          'a quote',
+          'c',
+        ]) {
+          expect(
+            all.any(((String, String?) it) => it.$1.contains(word)),
+            isTrue,
+            reason: 'no run holds "$word"',
+          );
+        }
+        // The note is drawn beside its number, in the same face.
+        expect(
+          tester.widget<Text>(find.text('1.')).style?.fontFamily,
+          TomFonts.reading,
+        );
+      });
+    }
+
+    test('the family carries its package, or a style falls back silently', () {
+      expect(TomFonts.reading, 'packages/tom_ui/PublicSans');
+    });
+  });
+
   group('the rendered diff', () {
     /// The letters of every diff mark on screen, in order.
     List<String> marks(WidgetTester tester) => tester
@@ -273,7 +366,7 @@ void main() {
 
       await pumpPreview(tester, document: writing);
 
-      expect(marks(tester), <String>['R']);
+      expect(marks(tester), <String>['D']);
       expect(
         find.textContaining('The paragraph that went.', findRichText: true),
         findsOneWidget,
@@ -290,7 +383,7 @@ void main() {
 
       await pumpPreview(tester, document: writing);
 
-      expect(marks(tester), <String>['R']);
+      expect(marks(tester), <String>['D']);
       expect(
         _decorationsOf(tester, 'final int gone'),
         contains(TextDecoration.lineThrough),
@@ -316,7 +409,7 @@ void main() {
 
       await pumpPreview(tester, document: writing);
 
-      expect(marks(tester), <String>['R', 'A']);
+      expect(marks(tester), <String>['D', 'A']);
     });
 
     testWidgets('a document git has never seen is every block added', (
@@ -511,6 +604,19 @@ void main() {
       expect(shown(), writing);
     });
 
+    testWidgets('inside a footnote opens like any other', (
+      WidgetTester tester,
+    ) async {
+      documents.content =
+          'A claim.[^a]\n\n[^a]: See [the guide](https://example.com/g).\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('the guide', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(desktop.opened, <Uri>[Uri.parse('https://example.com/g')]);
+    });
+
     testWidgets('to an address opens the mail client', (
       WidgetTester tester,
     ) async {
@@ -547,6 +653,43 @@ void main() {
 
       expect(desktop.opened, isEmpty);
     });
+  });
+
+  testWidgets('a click on an occurrence scrolls the preview to it and marks '
+      'the block, when only the preview is on screen', (
+    WidgetTester tester,
+  ) async {
+    // `docs/product/search/in-the-document/doc.md`, D35.
+    documents.content = <String>[
+      for (int n = 0; n < 60; n++) 'Paragraph number $n of the document.',
+    ].join('\n\n');
+    await pumpPreview(tester, document: writing);
+    container
+        .read(spaceSessionProvider.notifier)
+        .look(DocumentModeEnum.preview);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('number 55 ', findRichText: true), findsNothing);
+
+    final String source = documents.content;
+    final int at = source.indexOf('number 55 ');
+    container.read(editorProvider.notifier).goTo(at, at + 6);
+    await tester.pumpAndSettle();
+
+    final Finder block = find.textContaining('number 55 ', findRichText: true);
+    expect(block, findsOneWidget);
+    expect(tester.getTopLeft(block).dy, lessThan(800));
+    final TomColors colors = TomColors.of(tester.element(block));
+    expect(
+      find.ancestor(
+        of: block,
+        matching: find.byWidgetPredicate(
+          (Widget it) =>
+              it is DecoratedBox &&
+              (it.decoration as BoxDecoration).color == colors.accentSoft,
+        ),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('an image is looked for beside the document', (

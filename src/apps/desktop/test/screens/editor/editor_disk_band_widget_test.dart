@@ -77,6 +77,69 @@ void main() {
     expect(find.text('Reload'), findsOneWidget);
   });
 
+  testWidgets('a document of the space is named the same way', (
+    WidgetTester tester,
+  ) async {
+    await pumpBand(tester);
+    editor.state = EditorState.ready(
+      saved: DocumentEntity(
+        path: SpaceRelativePathValueObject('guides/writing.md'),
+        content: '# As it was read\n',
+      ),
+      source: '# Mine\n',
+      changedOnDisk: true,
+    );
+    await tester.pump();
+
+    expect(
+      find.text('writing.md changed on disk while you were editing it.'),
+      findsOneWidget,
+    );
+    expect(find.text('Keep mine'), findsOneWidget);
+    expect(find.text('Reload'), findsOneWidget);
+  });
+
+  testWidgets('it is drawn to the board: modified, 36 tall, pills 8 apart', (
+    WidgetTester tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(1164, 200)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpBand(tester);
+    holds(changed: true);
+    await tester.pump();
+
+    final TomColors colors = TomColors.of(
+      tester.element(find.byType(NoticeBandWidget)),
+    );
+    final Rect band = tester.getRect(find.byType(NoticeBandWidget));
+    expect(band.size, const Size(1164, 36));
+    final Rect keep = tester.getRect(
+      find.widgetWithText(OutlinedButton, 'Keep mine'),
+    );
+    final Rect reload = tester.getRect(
+      find.widgetWithText(OutlinedButton, 'Reload'),
+    );
+    expect(reload.right, 1164 - 13);
+    expect(reload.left - keep.right, 8);
+    expect(keep.top, 6);
+    expect(keep.height, 24);
+    final Text sentence = tester.widget<Text>(
+      find.text('preferences.json changed on disk while you were editing it.'),
+    );
+    expect(sentence.style?.color, colors.modified);
+    final ColoredBox fill = tester.widget<ColoredBox>(
+      find
+          .descendant(
+            of: find.byType(NoticeBandWidget),
+            matching: find.byType(ColoredBox),
+          )
+          .first,
+    );
+    expect(fill.color, colors.modifiedSoft);
+  });
+
   testWidgets('each answer reaches the editor', (WidgetTester tester) async {
     await pumpBand(tester);
     holds(changed: true);

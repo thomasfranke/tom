@@ -104,6 +104,29 @@ void main() {
     expect(styleOf(tester, 'roadmap.md').color, TomColors.dark.textMuted);
   });
 
+  testWidgets('the tab on screen has its marker on top and no rule at its '
+      'right', (WidgetTester tester) async {
+    await pumpStrip(tester);
+
+    // Its fill and its marker already tell it apart; the dividers are for
+    // tabs that look alike.
+    final Iterable<Border> borders = tester
+        .widgetList<Container>(
+          find.ancestor(
+            of: find.text('about.md'),
+            matching: find.byType(Container),
+          ),
+        )
+        .map((Container it) => it.decoration)
+        .whereType<BoxDecoration>()
+        .map((BoxDecoration it) => it.border)
+        .whereType<Border>()
+        // The strip around the tabs has a rule of its own, under them.
+        .where((Border it) => it.top.color == TomColors.dark.accent);
+    expect(borders, hasLength(1));
+    expect(borders.single.right, BorderSide.none);
+  });
+
   testWidgets('a tab opened by a click is italic until it is kept', (
     WidgetTester tester,
   ) async {
@@ -357,6 +380,67 @@ void main() {
       DocumentTab.inSpace(about),
     ]);
   });
+
+  group('closing a tab that holds edits', () {
+    /// Changes the tab on screen and asks to close it from its menu.
+    Future<void> askToClose(WidgetTester tester) async {
+      await pumpStrip(tester);
+      editor.state = EditorState.ready(
+        saved: DocumentEntity(path: about, content: '# About\n'),
+        source: '# About, changed\n',
+      );
+      await tester.pump();
+      await tester.tapAt(
+        tester.getCenter(find.text('about.md')),
+        buttons: kSecondaryButton,
+      );
+      await tester.pump();
+      await tester.tap(find.text('Close tab'));
+      await tester.pumpAndSettle();
+    }
+
+    List<DocumentTab>? tabs() => container.read(spaceSessionProvider)?.tabs;
+
+    testWidgets('asks first, naming the document', (WidgetTester tester) async {
+      await askToClose(tester);
+
+      expect(find.text('about.md has unsaved changes.'), findsOneWidget);
+      expect(tabs(), hasLength(2));
+    });
+
+    testWidgets('Keep the tab open leaves everything as it was', (
+      WidgetTester tester,
+    ) async {
+      await askToClose(tester);
+      await tester.tap(find.text('Keep the tab open'));
+      await tester.pumpAndSettle();
+
+      expect(tabs(), hasLength(2));
+      expect(editor.saves, 0);
+    });
+
+    testWidgets('Discard and close drops the edits with the tab', (
+      WidgetTester tester,
+    ) async {
+      await askToClose(tester);
+      await tester.tap(find.text('Discard and close'));
+      await tester.pumpAndSettle();
+
+      expect(tabs(), <DocumentTab>[DocumentTab.inSpace(roadmap)]);
+      expect(editor.saves, 0);
+    });
+
+    testWidgets('Save and close saves, and only then closes', (
+      WidgetTester tester,
+    ) async {
+      await askToClose(tester);
+      await tester.tap(find.text('Save and close'));
+      await tester.pumpAndSettle();
+
+      expect(editor.saves, 1);
+      expect(tabs(), <DocumentTab>[DocumentTab.inSpace(roadmap)]);
+    });
+  });
 }
 
 /// An export that records what it was asked for.
@@ -374,8 +458,22 @@ final class _Exports extends ExportNotifier {
   ) async => exported.add((path, format, destination));
 }
 
-/// An editor that holds whatever the test puts in it.
+/// An editor that holds whatever the test puts in it, and saves by calling
+/// what it holds the disk's.
 final class _Editor extends EditorNotifier {
   @override
   EditorState build() => const EditorState.empty();
+
+  int saves = 0;
+
+  @override
+  Future<void> save() async {
+    saves++;
+    if (state case final EditorReady ready) {
+      state = EditorState.ready(
+        saved: DocumentEntity(path: ready.saved.path, content: ready.source),
+        source: ready.source,
+      );
+    }
+  }
 }

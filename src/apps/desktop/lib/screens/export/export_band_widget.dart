@@ -29,8 +29,9 @@ class ExportBandWidget extends ConsumerWidget {
       ExportIdle() => const SizedBox.shrink(),
       ExportWorking(:final String destination) => NoticeBandWidget(
         sentence: l10n.exportExporting(_name(destination)),
-        ink: colors.modified,
-        fill: colors.modifiedSoft,
+        // Still in flight: neither a refusal nor a result.
+        ink: colors.accent,
+        fill: colors.accentSoft,
       ),
       ExportExported(:final String destination) => NoticeBandWidget(
         sentence: l10n.exportExported(

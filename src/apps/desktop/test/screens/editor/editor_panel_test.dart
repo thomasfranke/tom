@@ -274,17 +274,41 @@ void main() {
     WidgetTester tester,
   ) async {
     // A buffer that differs from the disk is the user's; nothing re-seeds
-    // the controller under their cursor.
+    // the controller under their cursor. Typed through the pane's own
+    // controller, which is what a keystroke is.
     documents.content = '# On main\n';
     await pumpEditor(tester, document: writing);
 
-    container.read(editorProvider.notifier).edit('half a sentence');
+    tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text =
+        'half a sentence';
     await settleTyping(tester);
 
     expect(
       tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
-      '# On main\n',
+      'half a sentence',
       reason: 'the pane re-seeded itself while the buffer was dirty',
+    );
+    expect(
+      (container.read(editorProvider) as EditorReady).source,
+      'half a sentence',
+    );
+  });
+
+  testWidgets('a write from elsewhere reaches a pane nobody has typed in', (
+    WidgetTester tester,
+  ) async {
+    // A conflict choice pressed in the preview, a replacement: the buffer
+    // changes before this pane sent anything. Taken for the pane's own echo,
+    // the pane kept the old text and the next keystroke put it back.
+    documents.content = '# As it was read\n';
+    await pumpEditor(tester, document: writing);
+
+    container.read(editorProvider.notifier).edit('# Written by the preview\n');
+    await settleTyping(tester);
+
+    expect(
+      tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
+      '# Written by the preview\n',
     );
   });
 }

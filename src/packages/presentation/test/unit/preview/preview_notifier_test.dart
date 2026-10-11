@@ -131,6 +131,34 @@ void main() {
     expect(documents.asked, <SpaceRelativePathValueObject>[writing]);
   });
 
+  test('a document the status calls new is diffed with git unasked', () async {
+    start();
+    show(docs, writing);
+    container
+        .read(spaceSessionProvider.notifier)
+        .observe(
+          GitStatusValueObject(
+            branch: null,
+            upstream: null,
+            ahead: 0,
+            behind: 0,
+            isDetached: false,
+            entries: <StatusEntryValueObject>[
+              StatusEntryValueObject(
+                path: RepoRelativePathValueObject('docs/guides/writing.md'),
+                state: FileStateEnum.untracked,
+                isStaged: false,
+              ),
+            ],
+          ),
+        );
+    await settle();
+    await settle();
+
+    expect(container.read(previewProvider), isA<PreviewReady>());
+    expect(git.revisionsAsked, isEmpty);
+  });
+
   test('the preferences file is neither rendered nor diffed', () async {
     // JSON in no repository: a diff would mark every line added
     // (`docs/product/preferences/where-it-is-stored/doc.md`).
@@ -679,6 +707,31 @@ void main() {
       final DocumentDiffValueObject diff = diffOf()!;
       expect(diff.before.document.content, '# Committed\n');
       expect(diff.after.document.content, '# Typed\n');
+    });
+
+    test('typing does not ask git for the base again', () async {
+      // In Manual and Semi-automatic every `git show` is a row waiting for
+      // an answer (Decision 38): the base is read once and kept.
+      git.content = '# Committed\n';
+      start();
+      show(docs, writing);
+      await settle();
+      await settle();
+      expect(git.revisionsAsked, hasLength(1));
+
+      container.read(editorProvider.notifier).edit('# a\n');
+      await settleTyping();
+      await settle();
+      container.read(editorProvider.notifier).edit('# ab\n');
+      await settleTyping();
+      await settle();
+
+      expect(diffOf()?.after.document.content, '# ab\n');
+      expect(
+        git.revisionsAsked,
+        hasLength(1),
+        reason: 'git asked while typing',
+      );
     });
 
     test('a comparison git refused leaves the document on screen', () async {

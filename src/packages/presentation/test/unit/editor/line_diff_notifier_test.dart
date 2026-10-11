@@ -65,6 +65,35 @@ void main() {
     ]);
   });
 
+  test('a file the status calls new is compared, unasked', () async {
+    container
+        .read(spaceSessionProvider.notifier)
+        .observe(
+          GitStatusValueObject(
+            branch: null,
+            upstream: null,
+            ahead: 0,
+            behind: 0,
+            isDetached: false,
+            entries: <StatusEntryValueObject>[
+              StatusEntryValueObject(
+                path: RepoRelativePathValueObject('docs/site.yaml'),
+                state: FileStateEnum.untracked,
+                isStaged: false,
+              ),
+            ],
+          ),
+        );
+    buffer.held = textOf('a: 1\nb: 2\n');
+    start();
+    await settle();
+
+    expect(git.revisions, isEmpty);
+    expect(diff()?.runs, <LineRunValueObject>[
+      const LineRunValueObject.added(from: 0, to: 1),
+    ]);
+  });
+
   test('against the fork point when the branch came from another', () async {
     container
         .read(spaceSessionProvider.notifier)
@@ -88,12 +117,12 @@ void main() {
 
     buffer.held = textOf('a: 1\nb: 2\nc: 3\n');
     await settle();
-    expect(git.revisions, hasLength(1), reason: 'the keystroke waits');
 
     await Future<void>.delayed(
       LineDiffNotifier.settle + const Duration(milliseconds: 20),
     );
-    expect(git.revisions, hasLength(2));
+    // Compared again, but the base was read once: git is not asked per key.
+    expect(git.revisions, hasLength(1));
     expect(diff()?.runs.single, const LineRunValueObject.added(from: 0, to: 2));
   });
 

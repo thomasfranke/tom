@@ -56,6 +56,23 @@ void main() {
     ]);
   });
 
+  group('a block indented by four spaces', () {
+    table(<(String, bool, String)>[
+      ('Prose.\n\n    |code', true, 'after a blank line'),
+      ('    |code', true, 'at the top of the document'),
+      ('Prose.\n\n\t|code', true, 'indented by a tab'),
+      ('Prose.\n\n    one\n    |two', true, 'on its second line'),
+      ('Prose.\n\n    one\n\n    |two', true, 'across a blank line inside it'),
+      ('Prose.\n    |still prose', false, 'it cannot interrupt a paragraph'),
+      ('Prose.\n\n   |three', false, 'three spaces are prose'),
+      ('Prose.\n\n    code\n|after', false, 'after it ends'),
+      ('- item\n\n    |more of the item', false, 'that is a list item\'s text'),
+      ('1. item\n\n    |more of the item', false, 'an ordered item\'s too'),
+      ('- item\n\nProse.\n\n    |code', true, 'after the list has ended'),
+      ('> quote\n\n    |code', true, 'after a quote'),
+    ]);
+  });
+
   test('an offset outside the buffer is not code', () {
     expect(service.isInsideCode('`a`', 9), isFalse);
     expect(service.isInsideCode('`a`', -1), isFalse);

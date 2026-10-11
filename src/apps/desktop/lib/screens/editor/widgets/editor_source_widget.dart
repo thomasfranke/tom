@@ -3,7 +3,9 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:tom_desktop/screens/editor/editor_design.dart';
@@ -13,6 +15,8 @@ import 'package:tom_desktop/screens/editor/widgets/editor_bands_widget.dart';
 import 'package:tom_desktop/screens/editor/widgets/editor_completion_widget.dart';
 import 'package:tom_desktop/screens/editor/widgets/editor_lens_widget.dart';
 import 'package:tom_desktop/screens/editor/widgets/editor_marks_widget.dart';
+import 'package:tom_desktop/screens/editor/widgets/editor_scroll_port.dart';
+import 'package:tom_desktop/screens/shell/document_scroll_link.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -25,7 +29,25 @@ import 'package:tom_ui/tom_ui.dart';
 /// that does is the same document read off the disk again (see `build`).
 class EditorSourceWidget extends ConsumerStatefulWidget {
   /// Creates the editor over whatever buffer is open.
-  const EditorSourceWidget({super.key});
+  const EditorSourceWidget({this.link, super.key});
+
+  /// The link to the preview beside this pane, or null while it has the
+  /// area to itself.
+  final DocumentScrollLink? link;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<DocumentScrollLink?>('link', link));
+  }
+
+  /// The keys that apply a formatting command, for the platform [isMac]
+  /// names.
+  @visibleForTesting
+  static Map<ShortcutActivator, VoidCallback> formattingKeys(
+    void Function(FormatCommandEnum command) apply, {
+    required bool isMac,
+  }) => _EditorSourceWidgetState.formattingKeys(apply, isMac: isMac);
 
   @override
   ConsumerState<EditorSourceWidget> createState() => _EditorSourceWidgetState();
@@ -36,12 +58,36 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
       CodeLineEditingController.fromText(_opened);
   final CodeScrollController _scroll = CodeScrollController();
 
+  /// This pane's end of the link to the preview.
+  late final EditorScrollPort _port = EditorScrollPort(
+    scroll: _scroll,
+    lineCount: () => _controller.lineCount,
+  );
+
   /// The text this pane last sent to the buffer.
   ///
   /// What comes back equal to it is this pane's own keystroke echoing; what
   /// differs was written by somebody else — a replacement, a branch switch,
   /// a discarded edit — and belongs on screen.
-  late String _pushed = _opened;
+  ///
+  /// Set when the pane is made, never on first use: read late, it would
+  /// already be the text somebody else had just written — a conflict choice
+  /// pressed in the preview before a key was typed here — and the pane
+  /// would take that write for its own and keep showing the old text.
+  late String _pushed;
+
+  @override
+  void initState() {
+    super.initState();
+    _pushed = _opened;
+    _port.link = widget.link;
+  }
+
+  @override
+  void didUpdateWidget(EditorSourceWidget old) {
+    super.didUpdateWidget(old);
+    _port.link = widget.link;
+  }
 
   /// The editor's own layout, kept from the one place it is handed over.
   ///
@@ -101,6 +147,7 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
       (_) => history?.withdraw(mine),
     );
     _tree?.close();
+    _port.dispose();
     _controller.dispose();
     _scroll.dispose();
     super.dispose();
@@ -128,6 +175,7 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
     }
     _inside = inside;
     _lines = lines;
+    _port.takeLines(lines);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -149,6 +197,17 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
       EditorState next,
     ) {
       if (next case final EditorReady ready) {
+        // Asked to go somewhere: the selection is the place, and the pane
+        // scrolls to it. A text that arrived with it is applied just below.
+        final bool isAsked =
+            previous is EditorReady && previous.reveals != ready.reveals;
+        if (isAsked && ready.source == _controller.text) {
+          _controller.selection = _unflatten(
+            ready.selectionStart,
+            ready.selectionEnd,
+          );
+          _controller.makeCursorCenterIfInvisible();
+        }
         if (ready.source != _pushed && _controller.text != ready.source) {
           _pushed = ready.source;
           _controller.text = ready.source;
@@ -204,11 +263,46 @@ class _EditorSourceWidgetState extends ConsumerState<EditorSourceWidget> {
       ),
     );
     // In the overlay, so the offer is not clipped by the pane near its foot.
-    return OverlayPortal(
-      controller: _offerPortal,
-      overlayChildBuilder: _offerView,
-      child: CompositedTransformTarget(link: _pane, child: pane),
+    return CallbackShortcuts(
+      bindings: formattingKeys(
+        (FormatCommandEnum command) =>
+            ref.read(editorProvider.notifier).format(command),
+        isMac: defaultTargetPlatform == TargetPlatform.macOS,
+      ),
+      child: OverlayPortal(
+        controller: _offerPortal,
+        overlayChildBuilder: _offerView,
+        child: CompositedTransformTarget(link: _pane, child: pane),
+      ),
     );
+  }
+
+  /// GitHub's keys for the buttons it gives one, `Ctrl` in place of `⌘` off
+  /// macOS; a link is `⌘⇧K` because `⌘K` is the search's
+  /// (`docs/product/editor/formatting-shortcuts/doc.md`).
+  static Map<ShortcutActivator, VoidCallback> formattingKeys(
+    void Function(FormatCommandEnum command) apply, {
+    required bool isMac,
+  }) {
+    SingleActivator key(LogicalKeyboardKey letter, {bool shift = false}) =>
+        SingleActivator(letter, meta: isMac, control: !isMac, shift: shift);
+    return <ShortcutActivator, VoidCallback>{
+      key(LogicalKeyboardKey.keyB): () => apply(FormatCommandEnum.bold),
+      key(LogicalKeyboardKey.keyI): () => apply(FormatCommandEnum.italic),
+      key(LogicalKeyboardKey.keyX, shift: true): () =>
+          apply(FormatCommandEnum.strikethrough),
+      key(LogicalKeyboardKey.digit8, shift: true): () =>
+          apply(FormatCommandEnum.list),
+      key(LogicalKeyboardKey.digit7, shift: true): () =>
+          apply(FormatCommandEnum.orderedList),
+      key(LogicalKeyboardKey.keyL, shift: true): () =>
+          apply(FormatCommandEnum.taskList),
+      key(LogicalKeyboardKey.period, shift: true): () =>
+          apply(FormatCommandEnum.quote),
+      key(LogicalKeyboardKey.keyE): () => apply(FormatCommandEnum.code),
+      key(LogicalKeyboardKey.keyK, shift: true): () =>
+          apply(FormatCommandEnum.link),
+    };
   }
 
   /// The offer, hung under the `[[` it completes.

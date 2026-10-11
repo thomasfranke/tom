@@ -243,6 +243,134 @@ void main() {
       expect(ready().source, '# second\n');
       expect(container.read(editorProvider).isDirty, isTrue);
     });
+
+    test('a second save finds the first one on disk, and writes', () async {
+      start();
+      show(docs, writing);
+      await settle();
+      container.read(editorProvider.notifier).edit('# first\n');
+      await container.read(editorProvider.notifier).save();
+      container.read(editorProvider.notifier).edit('# second\n');
+
+      await container.read(editorProvider.notifier).save();
+
+      expect(documents.written.last.content, '# second\n');
+      expect(ready().changedOnDisk, isFalse);
+    });
+  });
+
+  group('a file changed on disk under an edit', () {
+    /// Somebody else writes [text] into the open document's file.
+    void diskSays(String text) =>
+        documents.answer = Success<DocumentEntity, DocumentFailure>(
+          DocumentEntity(path: writing, content: text),
+        );
+
+    Future<void> editThenChangeTheDisk() async {
+      start();
+      show(docs, writing);
+      await settle();
+      container.read(editorProvider.notifier).edit('# mine\n');
+      diskSays('# theirs\n');
+    }
+
+    test('the save writes nothing, keeps the work and asks', () async {
+      await editThenChangeTheDisk();
+
+      await container.read(editorProvider.notifier).save();
+
+      expect(documents.written, isEmpty);
+      expect(ready().source, '# mine\n');
+      expect(ready().changedOnDisk, isTrue);
+      expect(ready().isSaving, isFalse);
+      // A question, not a refusal by the machine.
+      expect(ready().saveFailure, isNull);
+      expect(container.read(editorProvider.notifier).hasUnsaved, isTrue);
+    });
+
+    test('saving again while it asks still writes nothing', () async {
+      await editThenChangeTheDisk();
+      await container.read(editorProvider.notifier).save();
+
+      await container.read(editorProvider.notifier).save();
+
+      expect(documents.written, isEmpty);
+      expect(ready().changedOnDisk, isTrue);
+    });
+
+    test('Keep mine, and the next save writes over what is there', () async {
+      await editThenChangeTheDisk();
+      await container.read(editorProvider.notifier).save();
+
+      container.read(editorProvider.notifier).keepMine();
+      expect(ready().changedOnDisk, isFalse);
+      await container.read(editorProvider.notifier).save();
+
+      expect(documents.written.single.content, '# mine\n');
+      expect(container.read(editorProvider).isDirty, isFalse);
+      expect(ready().overwritesDisk, isFalse);
+    });
+
+    test('Keep mine answers once: a later change asks again', () async {
+      await editThenChangeTheDisk();
+      await container.read(editorProvider.notifier).save();
+      container.read(editorProvider.notifier).keepMine();
+      await container.read(editorProvider.notifier).save();
+      container.read(editorProvider.notifier).edit('# mine again\n');
+      diskSays('# theirs again\n');
+
+      await container.read(editorProvider.notifier).save();
+
+      expect(documents.written, hasLength(1));
+      expect(ready().changedOnDisk, isTrue);
+    });
+
+    test('Reload takes what is on disk, and the edit goes', () async {
+      await editThenChangeTheDisk();
+      await container.read(editorProvider.notifier).save();
+
+      await container.read(editorProvider.notifier).reload();
+
+      expect(ready().source, '# theirs\n');
+      expect(ready().changedOnDisk, isFalse);
+      expect(container.read(editorProvider).isDirty, isFalse);
+      expect(documents.written, isEmpty);
+    });
+
+    test('a file that is gone is written again, with nothing asked', () async {
+      start();
+      show(docs, writing);
+      await settle();
+      container.read(editorProvider.notifier).edit('# mine\n');
+      documents.answer = Failure<DocumentEntity, DocumentFailure>(
+        DocumentNotFound(writing.value),
+      );
+
+      await container.read(editorProvider.notifier).save();
+
+      expect(documents.written.single.content, '# mine\n');
+      expect(ready().changedOnDisk, isFalse);
+    });
+
+    test('saving everything leaves a held tab unsaved, and it asks when '
+        'it comes back', () async {
+      start();
+      show(docs, writing);
+      await settle();
+      container.read(editorProvider.notifier).edit('# mine\n');
+      container.read(spaceSessionProvider.notifier).show(index);
+      await settle();
+      documents.changed[writing] = '# theirs\n';
+
+      await container.read(editorProvider.notifier).saveAll();
+
+      expect(documents.written, isEmpty);
+      expect(container.read(editorProvider.notifier).hasUnsaved, isTrue);
+      container.read(spaceSessionProvider.notifier).show(writing);
+      await settle();
+      expect(ready().source, '# mine\n');
+      expect(ready().changedOnDisk, isTrue);
+    });
   });
 
   group('the selection and the formatting bar', () {
@@ -256,6 +384,22 @@ void main() {
       expect(ready().selectionStart, 2);
       expect(ready().selectionEnd, 12);
       expect(container.read(editorProvider).isDirty, isFalse);
+    });
+
+    test('going to a place selects it, and asking again asks again', () async {
+      start();
+      show(docs, writing);
+      await settle();
+
+      container.read(editorProvider.notifier).goTo(2, 12);
+      expect(ready().selectionStart, 2);
+      expect(ready().selectionEnd, 12);
+      expect(ready().reveals, 1);
+      expect(container.read(editorProvider).isDirty, isFalse);
+
+      // The same place, because the pane may have been scrolled away.
+      container.read(editorProvider.notifier).goTo(2, 12);
+      expect(ready().reveals, 2);
     });
 
     test('the same selection again changes nothing', () async {
@@ -410,6 +554,7 @@ void main() {
               observability: const _Silent(),
             ),
           ),
+          preferencesFileProvider.overrideWithValue(file),
           readPreferencesFileProvider.overrideWithValue(
             ReadDocumentUseCase(
               documentsFor: (SpaceEntity space) => appFolder,
@@ -533,6 +678,41 @@ void main() {
       expect(appFolder.written.single.path, list);
       expect(documents.written, isEmpty, reason: 'never the space');
       expect(await verdict, isA<CommandRun>());
+    });
+
+    test('both files open at once keep an edit each, and saving one '
+        'writes only that one', () async {
+      final SpaceRelativePathValueObject list = SpaceRelativePathValueObject(
+        'git-approvals.json',
+      );
+      await openFile();
+      container.read(editorProvider.notifier).edit('{"theme": "dark"}');
+
+      container.read(spaceSessionProvider.notifier).openPreferencesFile(list);
+      await settle();
+      // The preferences' edit waits behind the list's tab.
+      expect(
+        container.read(unsavedDocumentsProvider),
+        contains(DocumentTab.preferences(file)),
+      );
+      expect(ready().saved.path, list);
+      container.read(editorProvider.notifier).edit('{"git push": true}');
+
+      container.read(spaceSessionProvider.notifier).openPreferencesFile(file);
+      await settle();
+      expect(ready().source, '{"theme": "dark"}');
+      expect(
+        container.read(unsavedDocumentsProvider),
+        contains(DocumentTab.preferences(list)),
+      );
+
+      await container.read(editorProvider.notifier).save();
+      await settle();
+
+      expect(
+        appFolder.written.map((DocumentEntity d) => d.path).toList(),
+        <SpaceRelativePathValueObject>[file],
+      );
     });
 
     test('leaving it for a document holds its edits, and coming back '
@@ -945,6 +1125,11 @@ final class _Documents implements DocumentRepository {
   /// What actually reached the disk, in order.
   final List<DocumentEntity> written = <DocumentEntity>[];
 
+  /// What a file holds once it was written — by a save here, or by a test
+  /// standing in for somebody else.
+  final Map<SpaceRelativePathValueObject, String> changed =
+      <SpaceRelativePathValueObject, String>{};
+
   @override
   Future<Result<DocumentEntity, DocumentFailure>> read(
     SpaceRelativePathValueObject path,
@@ -952,7 +1137,10 @@ final class _Documents implements DocumentRepository {
     asked.add(path);
     return answer ??
         Success<DocumentEntity, DocumentFailure>(
-          DocumentEntity(path: path, content: '# ${path.name}\n'),
+          DocumentEntity(
+            path: path,
+            content: changed[path] ?? '# ${path.name}\n',
+          ),
         );
   }
 
@@ -971,6 +1159,13 @@ final class _Documents implements DocumentRepository {
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async {
     written.add(document);
+    if (refusal == null) {
+      changed[document.path] = document.content;
+      // A fixed answer was the disk before this write, not after it.
+      if (answer is Success<DocumentEntity, DocumentFailure>) {
+        answer = Success<DocumentEntity, DocumentFailure>(document);
+      }
+    }
     return refusal ?? const Success<void, DocumentFailure>(null);
   }
 }

@@ -4,8 +4,11 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
+import 'package:tom_desktop/screens/preview/widgets/preview_block_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// Every footnote of the document, numbered, under a rule.
@@ -19,7 +22,7 @@ import 'package:tom_ui/tom_ui.dart';
 /// It carries no link back to the citation: every block is a widget of its
 /// own, so there is nowhere for an anchor to jump to, and a link that did
 /// nothing would be worse than none.
-class PreviewFootnotesWidget extends StatelessWidget {
+class PreviewFootnotesWidget extends ConsumerWidget {
   /// Creates the foot for [footnotes].
   const PreviewFootnotesWidget({
     required this.footnotes,
@@ -54,7 +57,7 @@ class PreviewFootnotesWidget extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (footnotes.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -75,7 +78,7 @@ class PreviewFootnotesWidget extends StatelessWidget {
 }
 
 /// One note: its number, and what it says.
-class _NoteWidget extends StatelessWidget {
+class _NoteWidget extends ConsumerWidget {
   const _NoteWidget({required this.note, required this.body});
 
   final FootnoteValueObject note;
@@ -90,8 +93,14 @@ class _NoteWidget extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
+    // A link opens in the space, as the prose's own do.
+    final SpaceRelativePathValueObject? origin = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) => session?.openDocument,
+      ),
+    );
     // Smaller than the prose it was taken out of, which is what a note is:
     // the same words would not be a note if they read as loudly.
     final double size = body - 1;
@@ -103,6 +112,7 @@ class _NoteWidget extends StatelessWidget {
           child: Text(
             '${note.number}.',
             style: TextStyle(
+              fontFamily: TomFonts.reading,
               fontSize: size,
               height: PreviewDesign.bodyHeight,
               color: colors.textMuted,
@@ -115,14 +125,20 @@ class _NoteWidget extends StatelessWidget {
             // and drawing it as plain text would be a second renderer.
             data: note.text,
             selectable: true,
+            onTapLink: (String text, String? href, String? title) =>
+                PreviewBlockWidget.follow(href, origin, ref),
             styleSheet: MarkdownStyleSheet(
               p: TextStyle(
                 fontSize: size,
                 height: PreviewDesign.bodyHeight,
-                fontFamily: TomFonts.serif,
+                fontFamily: TomFonts.reading,
                 color: colors.textSecondary,
               ),
-              a: TextStyle(fontSize: size, color: colors.accent),
+              a: TextStyle(
+                fontFamily: TomFonts.reading,
+                fontSize: size,
+                color: colors.accent,
+              ),
               blockSpacing: PreviewFootnotesWidget.noteGap,
             ),
           ),

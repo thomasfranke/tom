@@ -93,7 +93,7 @@ class EditorNotifier extends _$EditorNotifier {
       spaceSessionProvider.select(
         (SpaceSessionState? session) =>
             (session?.isShowingPreferencesFile ?? false)
-            ? session!.preferencesFile
+            ? session!.appFile
             : null,
       ),
     );
@@ -174,7 +174,7 @@ class EditorNotifier extends _$EditorNotifier {
         when buffer.isDirty && !buffer.isDraft && buffer.tab != leaving) {
       final SpaceSessionState? session = ref.read(spaceSessionProvider);
       final bool open = buffer.isPreferences
-          ? session?.preferencesTab == buffer.tab
+          ? session?.appTabs.contains(buffer.tab) ?? false
           : session?.tabs.contains(buffer.tab) ?? false;
       if (open) {
         ref.read(heldBuffersProvider.notifier).hold(buffer);
@@ -278,6 +278,10 @@ class EditorNotifier extends _$EditorNotifier {
       if (saved is Success<void, AppFailure>) {
         held.drop(buffer.tab!);
         _applied(buffer);
+      } else if (_isDiskChange(saved)) {
+        // Asked when its tab comes back; until then it stays unsaved, which
+        // is what keeps whoever asked for this from leaving.
+        held.hold(buffer.copyWith(changedOnDisk: true));
       }
     }
   }
@@ -286,7 +290,10 @@ class EditorNotifier extends _$EditorNotifier {
   /// app's own, or the space.
   ///
   /// A draft's folder is asked of git, so that write is the pull request's
-  /// action in the commands panel; the other two run no command at all.
+  /// action in the commands panel; the other two run no command at all —
+  /// and **ask the disk first**, unless `Keep mine` already answered. A
+  /// draft never asks: nothing else writes it, and it is saved on the way
+  /// out with nobody there to answer.
   Future<Result<void, AppFailure>> _write(
     SpaceEntity space,
     EditorReady buffer,
@@ -299,7 +306,13 @@ class EditorNotifier extends _$EditorNotifier {
       : (buffer.isPreferences ? savePreferences : saveDocument).save(
           _frameOf(space, buffer),
           written,
+          replacing: buffer.overwritesDisk ? null : buffer.saved.content,
         );
+
+  /// Whether [saved] was refused because the file changed under the buffer.
+  static bool _isDiskChange(Result<void, AppFailure> saved) =>
+      saved is Failure<void, AppFailure> &&
+      saved.failure is DocumentExternalChangeConflict;
 
   /// The space [buffer] is written in: the repository seen as a folder for a
   /// file outside [space], [space] for everything else.
@@ -316,27 +329,31 @@ class EditorNotifier extends _$EditorNotifier {
   /// none of its own.
   void _applied(EditorReady written) {
     if (written.isPreferences) {
-      unawaited(ref.read(preferencesProvider.notifier).reload());
-      // The same tab holds `git-approvals.json`: what waits is judged again
-      // by the list as it was just saved.
-      if (ref.exists(commandsProvider)) {
-        unawaited(ref.read(commandsProvider.notifier).reconsider());
+      if (written.saved.path == PreferencesNotifier.approvalsFile) {
+        // What waits is judged again by the list as it was just saved.
+        if (ref.exists(commandsProvider)) {
+          unawaited(ref.read(commandsProvider.notifier).reconsider());
+        }
+      } else {
+        unawaited(ref.read(preferencesProvider.notifier).reload());
       }
     } else if (!written.isDraft && ref.exists(gitReadingProvider)) {
       unawaited(ref.read(gitReadingProvider.notifier).refresh());
     }
   }
 
-  /// Follows the preferences file after something else wrote it — a choice
-  /// in the popover: a tab with no unsaved edit reads it again, and one with
-  /// edits is told, and asks (`preferences/where-it-is-stored/doc.md`).
-  Future<void> preferencesFileChanged() async {
+  /// Follows [file], one of the app's own, after something else wrote it — a
+  /// choice in the popover, an `Always allow`: a tab with no unsaved edit
+  /// reads it again, and one with edits is told, and asks
+  /// (`preferences/where-it-is-stored/doc.md`). Nothing while its tab is
+  /// not open.
+  Future<void> appFileChanged(SpaceRelativePathValueObject file) async {
     final SpaceSessionState? session = ref.read(spaceSessionProvider);
-    final SpaceRelativePathValueObject? file = session?.preferencesFile;
-    if (session == null || file == null) {
+    if (session == null || !session.appFiles.contains(file)) {
       return;
     }
-    if (state case final EditorReady open when open.isPreferences) {
+    if (state case final EditorReady open
+        when open.isPreferences && open.saved.path == file) {
       if (open.isDirty || open.isSaving) {
         state = open.copyWith(changedOnDisk: true);
       } else {
@@ -358,7 +375,7 @@ class EditorNotifier extends _$EditorNotifier {
   /// writes it over what is there.
   void keepMine() {
     if (state case final EditorReady open when open.changedOnDisk) {
-      state = open.copyWith(changedOnDisk: false);
+      state = open.copyWith(changedOnDisk: false, overwritesDisk: true);
     }
   }
 
@@ -396,6 +413,19 @@ class EditorNotifier extends _$EditorNotifier {
         return;
       }
       state = ready.copyWith(selectionStart: start, selectionEnd: end);
+    }
+  }
+
+  /// Selects [start] to [end] and asks the pane to scroll there — a click on
+  /// an occurrence in the search column
+  /// (`docs/product/search/in-the-document/doc.md`).
+  void goTo(int start, int end) {
+    if (state case final EditorReady ready) {
+      state = ready.copyWith(
+        selectionStart: start,
+        selectionEnd: end,
+        reveals: ready.reveals + 1,
+      );
     }
   }
 
@@ -472,7 +502,7 @@ class EditorNotifier extends _$EditorNotifier {
     }
     if (session case SpaceSessionState(
       isShowingPreferencesFile: true,
-      preferencesFile: final SpaceRelativePathValueObject file,
+      appFile: final SpaceRelativePathValueObject file,
     )) {
       await _loadPreferences(session.space, file);
       return;
@@ -502,7 +532,12 @@ class EditorNotifier extends _$EditorNotifier {
           saved: written,
           isSaving: false,
           changedOnDisk: false,
+          overwritesDisk: false,
         ),
+        // A question for the band, not a failed save: nothing was refused
+        // by the machine, and the answer is the person's.
+        Failure<void, AppFailure>(failure: DocumentExternalChangeConflict()) =>
+          now.copyWith(isSaving: false, changedOnDisk: true),
         Failure<void, AppFailure>(failure: final AppFailure failure) =>
           now.copyWith(isSaving: false, saveFailure: failure),
       };

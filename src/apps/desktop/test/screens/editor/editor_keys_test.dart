@@ -7,6 +7,7 @@ import 'package:re_editor/re_editor.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/editor/editor_panel.dart';
+import 'package:tom_desktop/screens/editor/widgets/editor_source_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -110,6 +111,138 @@ void main() {
 
     expect(pressed, 1);
   }, variant: _mac);
+
+  group('the formatting keys', () {
+    // GitHub's, `⌘` here and `Ctrl` elsewhere
+    // (`docs/product/editor/formatting-shortcuts/doc.md`).
+    Future<void> mountWithTheWordSelected(WidgetTester tester) async {
+      tester.view
+        ..physicalSize = const Size(1280, 800)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      container.read(spaceSessionProvider.notifier)
+        ..open(
+          SpaceEntity(
+            root: '/code/app/docs',
+            repositoryRoot: '/code/app',
+            name: 'docs',
+          ),
+        )
+        ..show(SpaceRelativePathValueObject('index.md'));
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: tomTheme(Brightness.light),
+            home: const Scaffold(body: EditorPanel()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(CodeEditor));
+      await tester.pump(const Duration(milliseconds: 200));
+      // `palette` in `A palette here.`, which begins at 9 in the file.
+      const int start = 11;
+      container.read(editorProvider.notifier).goTo(start, start + 7);
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+
+    Future<void> press(
+      WidgetTester tester,
+      LogicalKeyboardKey key, {
+      bool shift = false,
+    }) async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      if (shift) {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      }
+      await tester.sendKeyEvent(key);
+      if (shift) {
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      }
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+      await tester.pump(PreviewNotifier.settle * 2);
+    }
+
+    String source() => (container.read(editorProvider) as EditorReady).source;
+
+    testWidgets('⌘B bolds the selection', (WidgetTester tester) async {
+      await mountWithTheWordSelected(tester);
+
+      await press(tester, LogicalKeyboardKey.keyB);
+
+      expect(source(), contains('A **palette** here.'));
+    }, variant: _mac);
+
+    testWidgets('⌘I makes it italic, ⌘⇧X strikes it through', (
+      WidgetTester tester,
+    ) async {
+      await mountWithTheWordSelected(tester);
+
+      await press(tester, LogicalKeyboardKey.keyI);
+      expect(source(), contains('A *palette* here.'));
+
+      await press(tester, LogicalKeyboardKey.keyI);
+      await press(tester, LogicalKeyboardKey.keyX, shift: true);
+      expect(source(), contains('A ~~palette~~ here.'));
+    }, variant: _mac);
+
+    testWidgets('⌘E is code, and ⌘⇧K a link', (WidgetTester tester) async {
+      await mountWithTheWordSelected(tester);
+
+      await press(tester, LogicalKeyboardKey.keyE);
+      expect(source(), contains('A `palette` here.'));
+
+      await press(tester, LogicalKeyboardKey.keyE);
+      await press(tester, LogicalKeyboardKey.keyK, shift: true);
+      expect(source(), contains('[palette]('));
+    }, variant: _mac);
+
+    testWidgets('the line keys: ⌘⇧8 list, ⌘⇧7 ordered, ⌘⇧L tasks, ⌘⇧. quote', (
+      WidgetTester tester,
+    ) async {
+      await mountWithTheWordSelected(tester);
+
+      await press(tester, LogicalKeyboardKey.digit8, shift: true);
+      expect(source(), contains('- A palette here.'));
+
+      await press(tester, LogicalKeyboardKey.digit8, shift: true);
+      await press(tester, LogicalKeyboardKey.digit7, shift: true);
+      expect(source(), contains('1. A palette here.'));
+
+      await press(tester, LogicalKeyboardKey.digit7, shift: true);
+      await press(tester, LogicalKeyboardKey.keyL, shift: true);
+      expect(source(), contains('- [ ] A palette here.'));
+
+      await press(tester, LogicalKeyboardKey.keyL, shift: true);
+      await press(tester, LogicalKeyboardKey.period, shift: true);
+      expect(source(), contains('> A palette here.'));
+    }, variant: _mac);
+
+    testWidgets('⌘K is not taken: the search keeps it', (
+      WidgetTester tester,
+    ) async {
+      await mountWithTheWordSelected(tester);
+      final String before = source();
+
+      await press(tester, LogicalKeyboardKey.keyK);
+
+      expect(source(), before);
+    }, variant: _mac);
+
+    test('off macOS the same keys are Ctrl, and the buttons without a key '
+        'have none', () {
+      final Map<ShortcutActivator, VoidCallback> keys =
+          EditorSourceWidget.formattingKeys((_) {}, isMac: false);
+
+      expect(keys, hasLength(9));
+      for (final ShortcutActivator key in keys.keys) {
+        final SingleActivator activator = key as SingleActivator;
+        expect(activator.control, isTrue);
+        expect(activator.meta, isFalse);
+      }
+    });
+  });
 }
 
 /// A tree with nothing in it; the pane's offer of names is not the subject.

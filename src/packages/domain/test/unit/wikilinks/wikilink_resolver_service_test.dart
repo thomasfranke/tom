@@ -144,6 +144,35 @@ void main() {
     });
   });
 
+  group('a path written from the root, with a leading slash', () {
+    final List<SpaceEntryValueObject> space = <SpaceEntryValueObject>[
+      file('readme.md'),
+      file('archive/readme.md'),
+    ];
+
+    test('is the document at the root, not every document by that name', () {
+      expect(
+        resolve('/readme', space),
+        WikilinkTargetValueObject.resolved(
+          SpaceRelativePathValueObject('readme.md'),
+        ),
+      );
+      // The bare name is still the question it always was.
+      expect(resolve('readme', space), isA<WikilinkAmbiguous>());
+    });
+
+    test('reaches a folder too, and is missing where nothing is', () {
+      expect(
+        resolve('/archive/readme', space).destination?.value,
+        'archive/readme.md',
+      );
+      expect(
+        resolve('/nowhere', space),
+        const WikilinkTargetValueObject.missing(),
+      );
+    });
+  });
+
   test('an empty listing answers missing rather than throwing', () {
     expect(
       resolve('anything', const <SpaceEntryValueObject>[]),

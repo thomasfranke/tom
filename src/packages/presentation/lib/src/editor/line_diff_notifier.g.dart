@@ -62,7 +62,7 @@ final class LineDiffNotifierProvider
   }
 }
 
-String _$lineDiffNotifierHash() => r'cac446a46054b91bb7bf252ab823433ab2b7d95b';
+String _$lineDiffNotifierHash() => r'f3ebac13425319548716ba2d2b7e4fcb2b95fc04';
 
 /// What the text buffer on screen changed against the documents' base, or
 /// null when there is nothing to mark

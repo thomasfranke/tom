@@ -2,7 +2,7 @@
 library;
 
 /// Whether an offset in a markdown buffer sits inside code: a fenced block,
-/// or an inline span on the offset's own line.
+/// an indented one, or an inline span on the offset's own line.
 ///
 /// Read from the text alone, because it is asked on every keystroke and the
 /// parsed document lags the buffer; what offers prose help asks it first, so
@@ -26,7 +26,7 @@ final class MarkdownCodeService {
     final int lineStart = offset == 0
         ? 0
         : buffer.lastIndexOf('\n', offset - 1) + 1;
-    if (_insideFence(buffer, lineStart)) {
+    if (_insideFence(buffer, lineStart) || _isIndented(buffer, lineStart)) {
       return true;
     }
     final int newline = buffer.indexOf('\n', lineStart);
@@ -73,6 +73,45 @@ final class MarkdownCodeService {
       start = newline + 1;
     }
     return false;
+  }
+
+  /// A line indented far enough to be code: four spaces, or a tab.
+  static final RegExp _indent = RegExp(r'^(?: {4}|\t| {1,3}\t)');
+
+  /// A line that starts a list item.
+  static final RegExp _item = RegExp(r'^ {0,3}(?:[-*+]|\d{1,9}[.)])(?: |\t|$)');
+
+  /// Whether the line starting at [target] belongs to an indented code block.
+  ///
+  /// Walked upwards: indented lines and blank ones may be the block's own,
+  /// and the first line that is neither decides — after a paragraph with no
+  /// blank line between, the indent is a continuation; under a list item it
+  /// is the item's text. Code nested inside an item is not recognised.
+  static bool _isIndented(String buffer, int target) {
+    String lineAt(int start) {
+      final int newline = buffer.indexOf('\n', start);
+      return buffer.substring(start, newline < 0 ? buffer.length : newline);
+    }
+
+    if (!_indent.hasMatch(lineAt(target)) || lineAt(target).trim().isEmpty) {
+      return false;
+    }
+    bool blankBetween = false;
+    int start = target;
+    while (start > 0) {
+      start = start < 2 ? 0 : buffer.lastIndexOf('\n', start - 2) + 1;
+      final String line = lineAt(start);
+      if (line.trim().isEmpty) {
+        blankBetween = true;
+        continue;
+      }
+      if (_indent.hasMatch(line)) {
+        blankBetween = false;
+        continue;
+      }
+      return blankBetween && !_item.hasMatch(line);
+    }
+    return true;
   }
 
   /// Whether [at] in [line] falls inside an inline code span.

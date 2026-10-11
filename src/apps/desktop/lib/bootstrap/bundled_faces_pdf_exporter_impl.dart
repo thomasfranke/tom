@@ -1,4 +1,5 @@
-/// The PDF exporter, given the IBM Plex faces this app already ships.
+/// The PDF exporter, given the Public Sans and IBM Plex Mono faces this app
+/// already ships.
 library;
 
 import 'package:flutter/services.dart';
@@ -12,9 +13,9 @@ import 'package:tom_infra/tom_infra.dart';
 /// Here because only Flutter can read the bundle and `tom_infra` cannot see
 /// Flutter; without the faces a PDF falls back to Latin-1 Times. Wiring,
 /// not logic: it loads five files and hands them over.
-final class BundledFacesPdfExporter implements DocumentExporter {
+final class BundledFacesPdfExporterImpl implements DocumentExporter {
   /// Creates the exporter over [bundle].
-  BundledFacesPdfExporter({AssetBundle? bundle})
+  BundledFacesPdfExporterImpl({AssetBundle? bundle})
     : _bundle = bundle ?? rootBundle;
 
   final AssetBundle _bundle;
@@ -26,10 +27,10 @@ final class BundledFacesPdfExporter implements DocumentExporter {
     ExporterFormatEnum format, {
     ExporterImageReader? readImage,
   }) async => (_loaded ??= PdfWidgetsDocumentExporterImpl(
-    serif: await _face('IBMPlexSerif-Regular'),
-    serifItalic: await _face('IBMPlexSerif-Italic'),
-    serifSemiBold: await _face('IBMPlexSerif-SemiBold'),
-    sansSemiBold: await _face('IBMPlexSans-SemiBold'),
+    reading: await _face('PublicSans-Regular'),
+    readingItalic: await _face('PublicSans-Italic'),
+    readingSemiBold: await _face('PublicSans-SemiBold'),
+    sansSemiBold: await _face('PublicSans-SemiBold'),
     mono: await _face('IBMPlexMono-Regular'),
   )).export(document, format, readImage: readImage);
 

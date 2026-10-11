@@ -4,6 +4,7 @@ library;
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/src/capabilities/filesystem/filesystem_entry_dto.dart';
 import 'package:tom_data/src/capabilities/filesystem/filesystem_entry_type_enum.dart';
+import 'package:tom_data/src/spaces/name_collation.dart';
 import 'package:tom_infra/tom_infra.dart';
 
 /// Where a space's entries come from: a folder walked one level at a time,
@@ -11,10 +12,22 @@ import 'package:tom_infra/tom_infra.dart';
 final class SpaceDataSource {
   /// Creates a source over [filesystem], making git clients with
   /// [gitClientFor].
-  const SpaceDataSource({required this.filesystem, required this.gitClientFor});
+  ///
+  /// [readGitVersion] answers [gitVersionOf] when given — the composition
+  /// root hands in one that asks the machine once.
+  const SpaceDataSource({
+    required this.filesystem,
+    required this.gitClientFor,
+    this.readGitVersion,
+  });
 
   /// What lists the disk.
   final Filesystem filesystem;
+
+  /// How the machine's git version is asked for, in place of a client of the
+  /// folder; null asks the folder's client every time.
+  final Future<Result<String, GitClientFailure>> Function(String folder)?
+  readGitVersion;
 
   /// How to get a git client for a folder the user just picked.
   final GitClientFor gitClientFor;
@@ -36,6 +49,10 @@ final class SpaceDataSource {
   /// Makes an empty folder at [folder], refusing a name already taken.
   Future<Result<void, FilesystemFailure>> createFolder(String folder) =>
       filesystem.createDirectory(folder);
+
+  /// What the machine's git says its version is, asked from [folder].
+  Future<Result<String, GitClientFailure>> gitVersionOf(String folder) =>
+      readGitVersion?.call(folder) ?? gitClientFor(folder).version();
 
   /// The root of the repository [folder] sits in, usually a folder above it
   /// (rule 12).
@@ -97,7 +114,7 @@ final class SpaceDataSource {
     return _walked;
   }
 
-  /// Folders before files, then by name.
+  /// Folders before files, then by name, ignoring case and accents.
   ///
   /// The capability sorts by path alone, which interleaves the two — this is
   /// the tree's own order, and it belongs to the layer that already carries
@@ -109,9 +126,7 @@ final class SpaceDataSource {
     if (aIsFolder != bIsFolder) {
       return aIsFolder ? -1 : 1;
     }
-    return _lastSegmentOf(
-      a.path,
-    ).toLowerCase().compareTo(_lastSegmentOf(b.path).toLowerCase());
+    return compareNames(_lastSegmentOf(a.path), _lastSegmentOf(b.path));
   }
 
   /// The only success a walk has.

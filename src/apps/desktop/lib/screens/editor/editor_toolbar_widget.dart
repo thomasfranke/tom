@@ -34,17 +34,24 @@ class EditorToolbarWidget extends ConsumerWidget {
   const EditorToolbarWidget({super.key});
 
   /// Row edge to the first button.
-  static const double inset = 10;
+  ///
+  /// The cell is 28 and the pitch the boards draw is 28, so the centres sit
+  /// where they always did: the insets below are the old ones less the two
+  /// points a cell grew on each side.
+  static const double inset = 8;
 
-  /// Between two buttons of one group.
+  /// Between two buttons of one group: none, the cells touch.
+  static const double between = 0;
+
+  /// The overflow strip's offset under its button, and its inner padding.
   static const double gap = 4;
 
   /// The last button of a group to the rule.
-  static const double beforeRule = 8;
+  static const double beforeRule = 6;
 
   /// The rule to the first button of the next group; the boards draw it
   /// nearer the group it closes than the one it opens.
-  static const double afterRule = 5;
+  static const double afterRule = 3;
 
   /// The rule itself, a hairline as tall as a letter.
   static const double ruleWidth = 1;
@@ -54,7 +61,7 @@ class EditorToolbarWidget extends ConsumerWidget {
 
   /// One group's width: its buttons and the gaps between them.
   static double widthOfGroup(List<ToolbarEntry> group) =>
-      group.length * TomToolbarButtonWidget.size + (group.length - 1) * gap;
+      group.length * TomToolbarButtonWidget.size + (group.length - 1) * between;
 
   /// What separates one group from the next.
   static const double betweenGroups = beforeRule + ruleWidth + afterRule;
@@ -250,7 +257,7 @@ class EditorToolbarWidget extends ConsumerWidget {
     mainAxisSize: MainAxisSize.min,
     children: <Widget>[
       for (final (int at, ToolbarEntry entry) in group.indexed) ...<Widget>[
-        if (at > 0) const SizedBox(width: gap),
+        if (at > 0) const SizedBox(width: between),
         TomToolbarButtonWidget(
           glyph: entry.glyph,
           tooltip: wordOf(l10n, entry),
@@ -365,7 +372,7 @@ class _OverflowWidgetState extends ConsumerState<_OverflowWidget> {
                     // Lit while it is open: the way to close it must be
                     // visible, the same reading as the preferences gear.
                     color: _isOpen ? colors.accent : colors.textSecondary,
-                    size: TomToolbarButtonWidget.glyphSize,
+                    size: TomToolbarButtonWidget.moreSize,
                   ),
                 ),
               ),

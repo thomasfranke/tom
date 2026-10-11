@@ -1,6 +1,7 @@
 /// What a document changed against a version of itself.
 library;
 
+import 'package:tom_application/src/diff/base_content_cache.dart';
 import 'package:tom_application/src/use_case.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -43,12 +44,20 @@ final class DiffDocumentUseCase with UseCase {
     required SpaceEntity space,
     required ParsedDocumentValueObject after,
     String revision = head,
+    BaseContentCache? cache,
+    GitStatusValueObject? status,
     // Spelled out because the body answers in two vocabularies and inference
     // lands on `Object?` between them.
   }) => guard<DocumentDiffValueObject, AppFailure>(() async {
-    final Result<String, GitFailure> committed = await gitFor(space).contentAt(
+    final RepoRelativePathValueObject path = space.toRepoRelative(
+      after.document.path,
+    );
+    final Result<String, GitFailure> committed = await BaseContentCache.baseOf(
       revision: revision,
-      path: space.toRepoRelative(after.document.path),
+      path: path,
+      ask: () => gitFor(space).contentAt(revision: revision, path: path),
+      cache: cache,
+      status: status,
     );
     final String source;
     switch (committed) {

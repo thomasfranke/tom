@@ -39,6 +39,11 @@ sealed class EditorState with _$EditorState {
     /// Where it ends, exclusive; equal to the start for a caret.
     @Default(0) int selectionEnd,
 
+    /// How many times somebody asked the pane to go to the selection — a
+    /// click on a search occurrence. A count and not a flag, so asking for
+    /// the same place twice still moves a pane that was scrolled away.
+    @Default(0) int reveals,
+
     /// Whether a write is in flight.
     @Default(false) bool isSaving,
 
@@ -77,9 +82,14 @@ sealed class EditorState with _$EditorState {
     @Default(false) bool isBinary,
 
     /// Whether the file changed on disk under this buffer's unsaved edits —
-    /// a choice in the popover, for the preferences file — so the tab asks
-    /// `Reload` or `Keep mine` rather than choosing for the person.
+    /// found by a save that asked first, or a choice in the popover for the
+    /// preferences file — so the tab asks `Reload` or `Keep mine` rather
+    /// than choosing for the person.
     @Default(false) bool changedOnDisk,
+
+    /// Whether `Keep mine` was the answer: the next save writes over what
+    /// the disk holds without asking again, and takes this back.
+    @Default(false) bool overwritesDisk,
   }) = EditorReady;
 
   /// The document could not be read.

@@ -29,10 +29,10 @@ void main() {
 
   final PdfWidgetsDocumentExporterImpl exporter =
       PdfWidgetsDocumentExporterImpl(
-        serif: face('IBMPlexSerif-Regular.ttf'),
-        serifItalic: face('IBMPlexSerif-Italic.ttf'),
-        serifSemiBold: face('IBMPlexSerif-SemiBold.ttf'),
-        sansSemiBold: face('IBMPlexSans-SemiBold.ttf'),
+        reading: face('PublicSans-Regular.ttf'),
+        readingItalic: face('PublicSans-Italic.ttf'),
+        readingSemiBold: face('PublicSans-SemiBold.ttf'),
+        sansSemiBold: face('PublicSans-SemiBold.ttf'),
         mono: face('IBMPlexMono-Regular.ttf'),
       );
 
@@ -58,8 +58,9 @@ void main() {
       (result as Success<Uint8List, DocumentExporterFailure>).value,
     );
 
-    expect(pdf, contains('IBMPlexSerif'));
-    expect(pdf, contains('IBMPlexSans'));
+    expect(pdf, contains('PublicSans'));
+    expect(pdf, isNot(contains('IBMPlexSerif')));
+    expect(pdf, isNot(contains('IBMPlexSans')));
     expect(pdf, contains('IBMPlexMono'));
     expect(pdf, isNot(contains('/Times-Roman')));
   });

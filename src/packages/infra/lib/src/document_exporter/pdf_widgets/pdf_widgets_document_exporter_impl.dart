@@ -21,26 +21,25 @@ import 'package:tom_infra/src/document_exporter/document_exporter_failure.dart';
 /// ones `tom_ui` vendors; a face not handed in falls back to the PDF's own
 /// Times, Helvetica or Courier, which draw nothing outside Latin-1.
 final class PdfWidgetsDocumentExporterImpl implements DocumentExporter {
-  /// Creates the exporter over whichever IBM Plex files the caller has.
+  /// Creates the exporter over whichever font files the caller has.
   const PdfWidgetsDocumentExporterImpl({
-    this.serif,
-    this.serifItalic,
-    this.serifSemiBold,
+    this.reading,
+    this.readingItalic,
+    this.readingSemiBold,
     this.sansSemiBold,
     this.mono,
   });
 
-  /// IBM Plex Serif 400, the prose.
-  final ByteData? serif;
+  /// Public Sans 400, the prose.
+  final ByteData? reading;
 
-  /// IBM Plex Serif 400 italic, emphasis.
-  final ByteData? serifItalic;
+  /// Public Sans 400 italic, emphasis.
+  final ByteData? readingItalic;
 
-  /// IBM Plex Serif 600, strong emphasis.
-  final ByteData? serifSemiBold;
+  /// Public Sans 600, strong emphasis.
+  final ByteData? readingSemiBold;
 
-  /// IBM Plex Sans 600, the headings — the interface's voice, as in the
-  /// preview.
+  /// Public Sans 600, the headings — the preview's face for them too.
   final ByteData? sansSemiBold;
 
   /// IBM Plex Mono 400, code.
@@ -71,6 +70,9 @@ final class PdfWidgetsDocumentExporterImpl implements DocumentExporter {
         pw.MultiPage(
           pageFormat: _page,
           margin: const pw.EdgeInsets.all(_margin),
+          // The engine's default of twenty pages *per block* guards against a
+          // widget that never fits; a long fence is one block and legitimate.
+          maxPages: 2000,
           theme: writer.theme,
           build: writer.widgets,
         ),
@@ -108,22 +110,22 @@ final class PdfWidgetsDocumentExporterImpl implements DocumentExporter {
 
 /// The three families, each IBM Plex where its file was handed in.
 final class _Faces {
-  const _Faces({required this.serif, required this.sans, required this.mono});
+  const _Faces({required this.reading, required this.sans, required this.mono});
 
   factory _Faces.of(PdfWidgetsDocumentExporterImpl files) {
     pw.Font face(ByteData? file, pw.Font Function() builtIn) =>
         file == null ? builtIn() : pw.Font.ttf(file);
     final pw.Font sans = face(files.sansSemiBold, pw.Font.helveticaBold);
     final pw.Font mono = face(files.mono, pw.Font.courier);
-    // Plex Serif carries no semibold italic, so strong emphasis inside
-    // emphasis keeps the italic, which is the cut that says more.
-    final pw.Font italic = face(files.serifItalic, pw.Font.timesItalic);
+    // Public Sans is vendored with no semibold italic, so strong emphasis
+    // inside emphasis keeps the italic, which is the cut that says more.
+    final pw.Font italic = face(files.readingItalic, pw.Font.timesItalic);
     return _Faces(
-      serif: pw.TextStyle(
-        fontNormal: face(files.serif, pw.Font.times),
-        fontBold: face(files.serifSemiBold, pw.Font.timesBold),
+      reading: pw.TextStyle(
+        fontNormal: face(files.reading, pw.Font.times),
+        fontBold: face(files.readingSemiBold, pw.Font.timesBold),
         fontItalic: italic,
-        fontBoldItalic: files.serifItalic == null
+        fontBoldItalic: files.readingItalic == null
             ? pw.Font.timesBoldItalic()
             : italic,
       ),
@@ -142,7 +144,7 @@ final class _Faces {
     );
   }
 
-  final pw.TextStyle serif;
+  final pw.TextStyle reading;
   final pw.TextStyle sans;
   final pw.TextStyle mono;
 }
@@ -221,10 +223,10 @@ final class _Writer {
 
   pw.ThemeData get theme =>
       pw.ThemeData.withFont(
-        base: faces.serif.fontNormal,
-        bold: faces.serif.fontBold,
-        italic: faces.serif.fontItalic,
-        boldItalic: faces.serif.fontBoldItalic,
+        base: faces.reading.fontNormal,
+        bold: faces.reading.fontBold,
+        italic: faces.reading.fontItalic,
+        boldItalic: faces.reading.fontBoldItalic,
       ).copyWith(
         defaultTextStyle: const pw.TextStyle(
           fontSize: _body,
@@ -626,8 +628,8 @@ final class _Writer {
       'input' => _checkbox(node.attributes.containsKey('checked')),
       _FootnoteMarker.tag => pw.TextSpan(
         text: node.textContent,
-        // Raised and shrunk by hand, as the preview does: the serif carries
-        // no superior figures.
+        // Raised and shrunk by hand, as the preview does: the reading face
+        // has no `sups` feature.
         style: const pw.TextStyle(fontSize: _body * 0.7),
         baseline: _body * 0.35,
       ),

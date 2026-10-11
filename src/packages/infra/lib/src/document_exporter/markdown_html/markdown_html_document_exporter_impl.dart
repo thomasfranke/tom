@@ -53,6 +53,7 @@ final class MarkdownHtmlDocumentExporterImpl implements DocumentExporter {
         ...blocks,
         for (final (int, List<md.Node>) note in notes) note.$2,
       ], readImage);
+      _anchor(blocks);
       final StringBuffer body = StringBuffer();
       for (final List<md.Node> block in blocks) {
         body.write('${md.renderToHtml(block)}\n');
@@ -78,6 +79,40 @@ final class MarkdownHtmlDocumentExporterImpl implements DocumentExporter {
     extensionSet: md.ExtensionSet.gitHubWeb,
     inlineSyntaxes: <md.InlineSyntax>[_FootnoteMarker(numbers)],
   ).parse(linkDefinitions.isEmpty ? source : '$source\n\n$linkDefinitions');
+
+  static final RegExp _dropped = RegExp(
+    r'[^\p{L}\p{M}\p{N}\p{Pc} -]',
+    unicode: true,
+  );
+
+  /// Gives every heading the `id` the app's anchor names: GitHub's rule —
+  /// the words lowercased, punctuation dropped, each space a `-`, a repeat
+  /// suffixed `-1`, `-2` — across the whole document, where the package
+  /// would number only within one block it renders.
+  static void _anchor(List<List<md.Node>> blocks) {
+    final Map<String, int> seen = <String, int>{};
+    for (final List<md.Node> nodes in blocks) {
+      for (final md.Node node in nodes) {
+        if (node is! md.Element || !RegExp(r'^h[1-6]$').hasMatch(node.tag)) {
+          continue;
+        }
+        // The package keeps `&`, `<`, `>` and `"` escaped in its text nodes;
+        // the words are what the anchor is made of.
+        final String slug = node.textContent
+            .replaceAll('&lt;', '<')
+            .replaceAll('&gt;', '>')
+            .replaceAll('&quot;', '"')
+            .replaceAll('&amp;', '&')
+            .trim()
+            .toLowerCase()
+            .replaceAll(_dropped, '')
+            .replaceAll(' ', '-');
+        final int repeats = seen[slug] ?? 0;
+        seen[slug] = repeats + 1;
+        node.generatedId = repeats == 0 ? slug : '$slug-$repeats';
+      }
+    }
+  }
 
   /// Points every image [readImage] can answer at its own bytes; one it
   /// cannot keeps its `src`, and a browser shows its alt text.
@@ -169,8 +204,8 @@ final class MarkdownHtmlDocumentExporterImpl implements DocumentExporter {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${const HtmlEscape().convert(title)}</title>
 <style>
-body { max-width: 46em; margin: 3em auto; padding: 0 1.5em; font: 17px/1.7 "IBM Plex Serif", Georgia, serif; color: #1f1f1f; }
-h1, h2, h3, h4, h5, h6 { font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; font-weight: 600; line-height: 1.3; }
+body { max-width: 46em; margin: 3em auto; padding: 0 1.5em; font: 17px/1.7 "Public Sans", "Helvetica Neue", Arial, sans-serif; color: #1f1f1f; }
+h1, h2, h3, h4, h5, h6 { font-family: "Public Sans", "Helvetica Neue", Arial, sans-serif; font-weight: 600; line-height: 1.3; }
 code, pre { font-family: "IBM Plex Mono", Menlo, Consolas, monospace; font-size: 0.85em; }
 pre { padding: 0.8em 1em; background: #f2f1ed; border-radius: 6px; overflow-x: auto; }
 blockquote, .markdown-alert { margin-left: 0; padding-left: 1em; border-left: 3px solid #d6d3cc; color: #555; }

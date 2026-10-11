@@ -125,8 +125,8 @@ class EditorTabsWidget extends ConsumerWidget {
       List<DocumentTab> tabs,
       DocumentTab? open,
       DocumentTab? preview,
-      SpaceRelativePathValueObject? preferencesFile,
-      DocumentTab? preferences,
+      List<SpaceRelativePathValueObject> appFiles,
+      SpaceRelativePathValueObject? shownAppFile,
       bool showingPreferences,
     })
     strip = ref.watch(
@@ -135,8 +135,8 @@ class EditorTabsWidget extends ConsumerWidget {
           tabs: session?.tabs ?? const <DocumentTab>[],
           open: session?.onScreen,
           preview: session?.previewTab,
-          preferencesFile: session?.preferencesFile,
-          preferences: session?.preferencesTab,
+          appFiles: session?.appFiles ?? const <SpaceRelativePathValueObject>[],
+          shownAppFile: session?.appFile,
           showingPreferences: session?.isShowingPreferencesFile ?? false,
         ),
       ),
@@ -171,15 +171,13 @@ class EditorTabsWidget extends ConsumerWidget {
             // A file from outside the tree, after the space's own: no
             // preview, no export, the way out of any tab
             // (`docs/product/preferences/where-it-is-stored/doc.md`).
-            if ((strip.preferencesFile, strip.preferences) case (
-              final SpaceRelativePathValueObject file,
-              final DocumentTab tab,
-            ))
+            for (final SpaceRelativePathValueObject file in strip.appFiles)
               _TabWidget(
-                path: tab,
-                isChosen: strip.showingPreferences,
+                path: DocumentTab.preferences(file),
+                isChosen:
+                    strip.showingPreferences && strip.shownAppFile == file,
                 isPreview: false,
-                isUnsaved: unsaved.contains(tab),
+                isUnsaved: unsaved.contains(DocumentTab.preferences(file)),
                 onChoose: () => session.openPreferencesFile(file),
               ),
           ],
@@ -351,7 +349,6 @@ class _TabWidget extends ConsumerWidget {
                     color: colors.accent,
                     width: EditorTabsDesign.marker,
                   ),
-                  right: BorderSide(color: colors.border),
                 )
               : null,
         ),

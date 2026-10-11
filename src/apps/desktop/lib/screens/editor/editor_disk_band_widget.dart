@@ -10,9 +10,9 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// Above the tab on screen while its file changed under its edits — a
-/// choice in the popover rewriting the preferences file — offering
-/// `Reload` and `Keep mine` (`docs/product/preferences/where-it-is-stored/doc.md`).
+/// Above the tab on screen while its file changed under its edits — found
+/// by a save that asked the disk first, for any document — offering
+/// `Reload` and `Keep mine` (`docs/product/editor/source-mode/doc.md`).
 ///
 /// At the screen's top level because the shell mounts it, beside the other
 /// bands; in `modified`, the role the unsaved buffer already wears.

@@ -96,7 +96,7 @@ class EditorMarksPainter extends CustomPainter {
   /// the file tree use.
   static String letterOf(EditorMarkEnum mark) => switch (mark) {
     EditorMarkEnum.added => 'A',
-    EditorMarkEnum.removed => 'R',
+    EditorMarkEnum.removed => 'D',
     EditorMarkEnum.modified => 'M',
     EditorMarkEnum.conflicted => 'C',
   };

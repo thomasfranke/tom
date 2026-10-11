@@ -21,8 +21,12 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
     String markdown,
   ) async {
     try {
-      final List<String> lines = markdown.split('\n');
-      final _Parsed parsed = _parseWithPositions(markdown);
+      // A line holding only a carriage return is not blank to the package, so
+      // a Windows document would lose the cuts at its blank lines. Lines are
+      // counted the same either way, so the spans still address the original.
+      final String text = markdown.replaceAll('\r\n', '\n');
+      final List<String> lines = text.split('\n');
+      final _Parsed parsed = _parseWithPositions(text);
       return Success<MarkdownOutlineDto, MarkdownParserFailure>(
         MarkdownOutlineDto(
           spans: List<MarkdownSpanDto>.unmodifiable(<MarkdownSpanDto>[
@@ -211,7 +215,7 @@ _Parsed _parseWithPositions(String markdown) {
     withDefaultBlockSyntaxes: false,
     // Ahead of the package's own, which is where it puts a caller's: at a
     // `[[` this one is asked before the link syntax claims the bracket.
-    inlineSyntaxes: <md.InlineSyntax>[_Wikilink()],
+    inlineSyntaxes: <md.InlineSyntax>[_Wikilink(), _LongRun()],
   );
   final List<md.Node> nodes = document.parseLines(markdown.split('\n'));
   // Read after the parse, because that is when the definitions have been
@@ -267,6 +271,27 @@ class _Wikilink extends md.InlineSyntax {
   @override
   bool onMatch(md.InlineParser parser, Match match) {
     parser.addNode(md.Element.text(tag, match[1]!));
+    return true;
+  }
+}
+
+/// A long run of letters and digits, taken in chunks.
+///
+/// The package's own text syntax backtracks over the whole run from every
+/// position of it, so a run with no space in it costs the square of its
+/// length — 40,000 characters took 44 seconds. Chunks of a fixed size are
+/// matched in constant time, and what is left is short enough for the
+/// package to finish. A run this long is no address and no emoji, so no
+/// other syntax loses a start it needed.
+class _LongRun extends md.InlineSyntax {
+  _LongRun() : super('[A-Za-z0-9]{$chunk}');
+
+  /// How many characters one match takes.
+  static const int chunk = 200;
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(md.Text(match[0]!));
     return true;
   }
 }

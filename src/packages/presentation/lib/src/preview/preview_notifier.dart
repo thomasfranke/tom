@@ -54,6 +54,10 @@ class PreviewNotifier extends _$PreviewNotifier {
 
   Timer? _scheduled;
 
+  /// The base's text as git gave it, so typing asks git once rather than on
+  /// every settled keystroke (a row each, where git asks first).
+  final BaseContentCache _baseContent = BaseContentCache();
+
   /// Which render is the current one, so a slow parse cannot land after a
   /// newer one has already answered.
   int _generation = 0;
@@ -92,7 +96,11 @@ class PreviewNotifier extends _$PreviewNotifier {
           showing: session?.showingDiff ?? true,
         ),
       ),
-      (_Measure? _, _Measure _) => unawaited(_recompare()),
+      (_Measure? _, _Measure _) {
+        // Another base or a moved `HEAD`: what was read is not the base.
+        _baseContent.clear();
+        unawaited(_recompare());
+      },
     );
     final SpaceSessionState? session = ref.read(spaceSessionProvider);
     if (version != null && session != null) {
@@ -406,6 +414,9 @@ class PreviewNotifier extends _$PreviewNotifier {
                 : session.space,
             after: parsed,
             revision: base?.forkPoint.value ?? DiffDocumentUseCase.head,
+            cache: _baseContent,
+            // What git said is new is not asked about (it has no `HEAD` text).
+            status: session.git,
           ),
         );
     if (!ref.mounted || generation != _generation) {

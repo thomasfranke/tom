@@ -125,12 +125,12 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  empty,TResult Function()?  loading,TResult Function( DocumentEntity saved,  String source,  int selectionStart,  int selectionEnd,  bool isSaving,  AppFailure? saveFailure,  bool isDraft,  bool isPreferences,  bool isOutside,  bool isDeleted,  bool isBinary,  bool changedOnDisk)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  empty,TResult Function()?  loading,TResult Function( DocumentEntity saved,  String source,  int selectionStart,  int selectionEnd,  int reveals,  bool isSaving,  AppFailure? saveFailure,  bool isDraft,  bool isPreferences,  bool isOutside,  bool isDeleted,  bool isBinary,  bool changedOnDisk,  bool overwritesDisk)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case EditorEmpty() when empty != null:
 return empty();case EditorLoading() when loading != null:
 return loading();case EditorReady() when ready != null:
-return ready(_that.saved,_that.source,_that.selectionStart,_that.selectionEnd,_that.isSaving,_that.saveFailure,_that.isDraft,_that.isPreferences,_that.isOutside,_that.isDeleted,_that.isBinary,_that.changedOnDisk);case EditorFailed() when failed != null:
+return ready(_that.saved,_that.source,_that.selectionStart,_that.selectionEnd,_that.reveals,_that.isSaving,_that.saveFailure,_that.isDraft,_that.isPreferences,_that.isOutside,_that.isDeleted,_that.isBinary,_that.changedOnDisk,_that.overwritesDisk);case EditorFailed() when failed != null:
 return failed(_that.failure);case _:
   return orElse();
 
@@ -149,12 +149,12 @@ return failed(_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  empty,required TResult Function()  loading,required TResult Function( DocumentEntity saved,  String source,  int selectionStart,  int selectionEnd,  bool isSaving,  AppFailure? saveFailure,  bool isDraft,  bool isPreferences,  bool isOutside,  bool isDeleted,  bool isBinary,  bool changedOnDisk)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  empty,required TResult Function()  loading,required TResult Function( DocumentEntity saved,  String source,  int selectionStart,  int selectionEnd,  int reveals,  bool isSaving,  AppFailure? saveFailure,  bool isDraft,  bool isPreferences,  bool isOutside,  bool isDeleted,  bool isBinary,  bool changedOnDisk,  bool overwritesDisk)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
 switch (_that) {
 case EditorEmpty():
 return empty();case EditorLoading():
 return loading();case EditorReady():
-return ready(_that.saved,_that.source,_that.selectionStart,_that.selectionEnd,_that.isSaving,_that.saveFailure,_that.isDraft,_that.isPreferences,_that.isOutside,_that.isDeleted,_that.isBinary,_that.changedOnDisk);case EditorFailed():
+return ready(_that.saved,_that.source,_that.selectionStart,_that.selectionEnd,_that.reveals,_that.isSaving,_that.saveFailure,_that.isDraft,_that.isPreferences,_that.isOutside,_that.isDeleted,_that.isBinary,_that.changedOnDisk,_that.overwritesDisk);case EditorFailed():
 return failed(_that.failure);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -169,12 +169,12 @@ return failed(_that.failure);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  empty,TResult? Function()?  loading,TResult? Function( DocumentEntity saved,  String source,  int selectionStart,  int selectionEnd,  bool isSaving,  AppFailure? saveFailure,  bool isDraft,  bool isPreferences,  bool isOutside,  bool isDeleted,  bool isBinary,  bool changedOnDisk)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  empty,TResult? Function()?  loading,TResult? Function( DocumentEntity saved,  String source,  int selectionStart,  int selectionEnd,  int reveals,  bool isSaving,  AppFailure? saveFailure,  bool isDraft,  bool isPreferences,  bool isOutside,  bool isDeleted,  bool isBinary,  bool changedOnDisk,  bool overwritesDisk)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
 switch (_that) {
 case EditorEmpty() when empty != null:
 return empty();case EditorLoading() when loading != null:
 return loading();case EditorReady() when ready != null:
-return ready(_that.saved,_that.source,_that.selectionStart,_that.selectionEnd,_that.isSaving,_that.saveFailure,_that.isDraft,_that.isPreferences,_that.isOutside,_that.isDeleted,_that.isBinary,_that.changedOnDisk);case EditorFailed() when failed != null:
+return ready(_that.saved,_that.source,_that.selectionStart,_that.selectionEnd,_that.reveals,_that.isSaving,_that.saveFailure,_that.isDraft,_that.isPreferences,_that.isOutside,_that.isDeleted,_that.isBinary,_that.changedOnDisk,_that.overwritesDisk);case EditorFailed() when failed != null:
 return failed(_that.failure);case _:
   return null;
 
@@ -251,7 +251,7 @@ String toString() {
 
 
 class EditorReady extends EditorState {
-  const EditorReady({required this.saved, required this.source, this.selectionStart = 0, this.selectionEnd = 0, this.isSaving = false, this.saveFailure, this.isDraft = false, this.isPreferences = false, this.isOutside = false, this.isDeleted = false, this.isBinary = false, this.changedOnDisk = false}): super._();
+  const EditorReady({required this.saved, required this.source, this.selectionStart = 0, this.selectionEnd = 0, this.reveals = 0, this.isSaving = false, this.saveFailure, this.isDraft = false, this.isPreferences = false, this.isOutside = false, this.isDeleted = false, this.isBinary = false, this.changedOnDisk = false, this.overwritesDisk = false}): super._();
   
 
 /// The document as the disk last agreed it was — what the buffer is
@@ -268,6 +268,10 @@ class EditorReady extends EditorState {
 @JsonKey() final  int selectionStart;
 /// Where it ends, exclusive; equal to the start for a caret.
 @JsonKey() final  int selectionEnd;
+/// How many times somebody asked the pane to go to the selection — a
+/// click on a search occurrence. A count and not a flag, so asking for
+/// the same place twice still moves a pane that was scrolled away.
+@JsonKey() final  int reveals;
 /// Whether a write is in flight.
 @JsonKey() final  bool isSaving;
 /// Why the last save did not land, or null when it did.
@@ -299,9 +303,13 @@ class EditorReady extends EditorState {
 /// UTF-8 — so nothing of it was loaded and the tab says so instead.
 @JsonKey() final  bool isBinary;
 /// Whether the file changed on disk under this buffer's unsaved edits —
-/// a choice in the popover, for the preferences file — so the tab asks
-/// `Reload` or `Keep mine` rather than choosing for the person.
+/// found by a save that asked first, or a choice in the popover for the
+/// preferences file — so the tab asks `Reload` or `Keep mine` rather
+/// than choosing for the person.
 @JsonKey() final  bool changedOnDisk;
+/// Whether `Keep mine` was the answer: the next save writes over what
+/// the disk holds without asking again, and takes this back.
+@JsonKey() final  bool overwritesDisk;
 
 /// Create a copy of EditorState
 /// with the given fields replaced by the non-null parameter values.
@@ -313,16 +321,16 @@ $EditorReadyCopyWith<EditorReady> get copyWith => _$EditorReadyCopyWithImpl<Edit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EditorReady&&(identical(other.saved, saved) || other.saved == saved)&&(identical(other.source, source) || other.source == source)&&(identical(other.selectionStart, selectionStart) || other.selectionStart == selectionStart)&&(identical(other.selectionEnd, selectionEnd) || other.selectionEnd == selectionEnd)&&(identical(other.isSaving, isSaving) || other.isSaving == isSaving)&&(identical(other.saveFailure, saveFailure) || other.saveFailure == saveFailure)&&(identical(other.isDraft, isDraft) || other.isDraft == isDraft)&&(identical(other.isPreferences, isPreferences) || other.isPreferences == isPreferences)&&(identical(other.isOutside, isOutside) || other.isOutside == isOutside)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.isBinary, isBinary) || other.isBinary == isBinary)&&(identical(other.changedOnDisk, changedOnDisk) || other.changedOnDisk == changedOnDisk));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EditorReady&&(identical(other.saved, saved) || other.saved == saved)&&(identical(other.source, source) || other.source == source)&&(identical(other.selectionStart, selectionStart) || other.selectionStart == selectionStart)&&(identical(other.selectionEnd, selectionEnd) || other.selectionEnd == selectionEnd)&&(identical(other.reveals, reveals) || other.reveals == reveals)&&(identical(other.isSaving, isSaving) || other.isSaving == isSaving)&&(identical(other.saveFailure, saveFailure) || other.saveFailure == saveFailure)&&(identical(other.isDraft, isDraft) || other.isDraft == isDraft)&&(identical(other.isPreferences, isPreferences) || other.isPreferences == isPreferences)&&(identical(other.isOutside, isOutside) || other.isOutside == isOutside)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.isBinary, isBinary) || other.isBinary == isBinary)&&(identical(other.changedOnDisk, changedOnDisk) || other.changedOnDisk == changedOnDisk)&&(identical(other.overwritesDisk, overwritesDisk) || other.overwritesDisk == overwritesDisk));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,saved,source,selectionStart,selectionEnd,isSaving,saveFailure,isDraft,isPreferences,isOutside,isDeleted,isBinary,changedOnDisk);
+int get hashCode => Object.hash(runtimeType,saved,source,selectionStart,selectionEnd,reveals,isSaving,saveFailure,isDraft,isPreferences,isOutside,isDeleted,isBinary,changedOnDisk,overwritesDisk);
 
 @override
 String toString() {
-  return 'EditorState.ready(saved: $saved, source: $source, selectionStart: $selectionStart, selectionEnd: $selectionEnd, isSaving: $isSaving, saveFailure: $saveFailure, isDraft: $isDraft, isPreferences: $isPreferences, isOutside: $isOutside, isDeleted: $isDeleted, isBinary: $isBinary, changedOnDisk: $changedOnDisk)';
+  return 'EditorState.ready(saved: $saved, source: $source, selectionStart: $selectionStart, selectionEnd: $selectionEnd, reveals: $reveals, isSaving: $isSaving, saveFailure: $saveFailure, isDraft: $isDraft, isPreferences: $isPreferences, isOutside: $isOutside, isDeleted: $isDeleted, isBinary: $isBinary, changedOnDisk: $changedOnDisk, overwritesDisk: $overwritesDisk)';
 }
 
 
@@ -333,7 +341,7 @@ abstract mixin class $EditorReadyCopyWith<$Res> implements $EditorStateCopyWith<
   factory $EditorReadyCopyWith(EditorReady value, $Res Function(EditorReady) _then) = _$EditorReadyCopyWithImpl;
 @useResult
 $Res call({
- DocumentEntity saved, String source, int selectionStart, int selectionEnd, bool isSaving, AppFailure? saveFailure, bool isDraft, bool isPreferences, bool isOutside, bool isDeleted, bool isBinary, bool changedOnDisk
+ DocumentEntity saved, String source, int selectionStart, int selectionEnd, int reveals, bool isSaving, AppFailure? saveFailure, bool isDraft, bool isPreferences, bool isOutside, bool isDeleted, bool isBinary, bool changedOnDisk, bool overwritesDisk
 });
 
 
@@ -350,12 +358,13 @@ class _$EditorReadyCopyWithImpl<$Res>
 
 /// Create a copy of EditorState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? saved = null,Object? source = null,Object? selectionStart = null,Object? selectionEnd = null,Object? isSaving = null,Object? saveFailure = freezed,Object? isDraft = null,Object? isPreferences = null,Object? isOutside = null,Object? isDeleted = null,Object? isBinary = null,Object? changedOnDisk = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? saved = null,Object? source = null,Object? selectionStart = null,Object? selectionEnd = null,Object? reveals = null,Object? isSaving = null,Object? saveFailure = freezed,Object? isDraft = null,Object? isPreferences = null,Object? isOutside = null,Object? isDeleted = null,Object? isBinary = null,Object? changedOnDisk = null,Object? overwritesDisk = null,}) {
   return _then(EditorReady(
 saved: null == saved ? _self.saved : saved // ignore: cast_nullable_to_non_nullable
 as DocumentEntity,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as String,selectionStart: null == selectionStart ? _self.selectionStart : selectionStart // ignore: cast_nullable_to_non_nullable
 as int,selectionEnd: null == selectionEnd ? _self.selectionEnd : selectionEnd // ignore: cast_nullable_to_non_nullable
+as int,reveals: null == reveals ? _self.reveals : reveals // ignore: cast_nullable_to_non_nullable
 as int,isSaving: null == isSaving ? _self.isSaving : isSaving // ignore: cast_nullable_to_non_nullable
 as bool,saveFailure: freezed == saveFailure ? _self.saveFailure : saveFailure // ignore: cast_nullable_to_non_nullable
 as AppFailure?,isDraft: null == isDraft ? _self.isDraft : isDraft // ignore: cast_nullable_to_non_nullable
@@ -364,6 +373,7 @@ as bool,isOutside: null == isOutside ? _self.isOutside : isOutside // ignore: ca
 as bool,isDeleted: null == isDeleted ? _self.isDeleted : isDeleted // ignore: cast_nullable_to_non_nullable
 as bool,isBinary: null == isBinary ? _self.isBinary : isBinary // ignore: cast_nullable_to_non_nullable
 as bool,changedOnDisk: null == changedOnDisk ? _self.changedOnDisk : changedOnDisk // ignore: cast_nullable_to_non_nullable
+as bool,overwritesDisk: null == overwritesDisk ? _self.overwritesDisk : overwritesDisk // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

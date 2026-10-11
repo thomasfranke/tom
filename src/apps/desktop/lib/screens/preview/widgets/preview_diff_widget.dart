@@ -106,7 +106,7 @@ class PreviewDiffWidget extends StatelessWidget {
     DiffBlockRemoved() => (
       colors.removed,
       colors.removedSoft,
-      'R',
+      'D',
       l10n.previewRemoved,
     ),
     DiffBlockModified() => (

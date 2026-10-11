@@ -9,6 +9,8 @@ import 'package:tom_desktop/screens/editor/editor_design.dart';
 import 'package:tom_desktop/screens/editor/widgets/editor_binary_widget.dart';
 import 'package:tom_desktop/screens/editor/widgets/editor_note_widget.dart';
 import 'package:tom_desktop/screens/editor/widgets/editor_source_widget.dart';
+import 'package:tom_desktop/screens/editor/widgets/editor_version_widget.dart';
+import 'package:tom_desktop/screens/shell/document_scroll_link.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 
@@ -37,21 +39,71 @@ class EditorPanel extends ConsumerWidget {
     if (stage.isBinary) {
       return const EditorBinaryWidget();
     }
+    final bool isReadingVersion = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) => session?.readingVersion != null,
+      ),
+    );
+    // Beside the preview, scrolling either scrolls the other; alone, nothing
+    // is linked — a kept pane under the preview is not beside it.
+    final DocumentScrollLink? link =
+        ref.watch(
+              spaceSessionProvider.select(
+                (SpaceSessionState? session) => session?.mode,
+              ),
+            ) ==
+            DocumentModeEnum.split
+        ? ref.watch(documentScrollLinkProvider)
+        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         const SizedBox(height: EditorDesign.bodyTop),
-        Expanded(child: _body(context.l10n, stage)),
+        Expanded(
+          child: _body(
+            context.l10n,
+            stage,
+            isReadingVersion: isReadingVersion,
+            link: link,
+          ),
+        ),
       ],
     );
   }
 
   /// What the pane holds.
-  static Widget _body(AppLocalizations l10n, EditorStage stage) {
+  static Widget _body(
+    AppLocalizations l10n,
+    EditorStage stage, {
+    required bool isReadingVersion,
+    required DocumentScrollLink? link,
+  }) {
     if (stage.open case final SpaceRelativePathValueObject open) {
       // Keyed by the document's path: another file is another controller,
       // and one carried across would carry its undo history too.
-      return EditorSourceWidget(key: ValueKey<String>(open.value));
+      //
+      // While a version is read the working copy stays mounted and unseen
+      // under it, in the same slot whether or not one is read, so coming back
+      // finds the buffer, the caret and the history as they were left.
+      return Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: Visibility(
+              visible: !isReadingVersion,
+              maintainState: true,
+              child: EditorSourceWidget(
+                key: ValueKey<String>(open.value),
+                link: link,
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: isReadingVersion
+                ? EditorVersionWidget(link: link)
+                : const SizedBox.shrink(),
+          ),
+        ],
+      );
     }
     if (stage.failure case final AppFailure failure) {
       return EditorNoteWidget(_explain(l10n, failure));

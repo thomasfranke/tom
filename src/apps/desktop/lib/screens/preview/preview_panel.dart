@@ -8,6 +8,7 @@ import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_document_widget.dart';
 import 'package:tom_desktop/screens/preview/widgets/preview_note_widget.dart';
+import 'package:tom_desktop/screens/shell/document_scroll_link.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 
@@ -24,16 +25,39 @@ class PreviewPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final PreviewState state = ref.watch(previewProvider);
     // Preview-only is the mode the wider measure belongs to.
-    final bool isReading =
-        ref.watch(
-          spaceSessionProvider.select(
-            (SpaceSessionState? session) => session?.mode,
-          ),
-        ) ==
-        DocumentModeEnum.preview;
+    final DocumentModeEnum? mode = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) => session?.mode,
+      ),
+    );
+    final bool isReading = mode == DocumentModeEnum.preview;
+    // Beside the source, scrolling either scrolls the other; alone, nothing
+    // is linked.
+    final DocumentScrollLink? link = mode == DocumentModeEnum.split
+        ? ref.watch(documentScrollLinkProvider)
+        : null;
     // Watched here, above the document, so a followed `#anchor` outlives
     // the moment between one document and the next.
     final PreviewAnchor? anchor = ref.watch(previewAnchorProvider);
+    // A click on a search occurrence asks the editor to go to a place; with
+    // only the preview on screen it is the preview that goes there.
+    final ({int count, int line}) asked = ref.watch(
+      editorProvider.select(
+        (EditorState editor) => editor is EditorReady
+            ? (
+                count: editor.reveals,
+                line: '\n'
+                    .allMatches(
+                      editor.source.substring(
+                        0,
+                        editor.selectionStart.clamp(0, editor.source.length),
+                      ),
+                    )
+                    .length,
+              )
+            : (count: 0, line: 0),
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -56,9 +80,12 @@ class PreviewPanel extends ConsumerWidget {
               PreviewDocumentWidget(
                 document: document,
                 isReading: isReading,
+                link: link,
                 diff: diff,
                 segments: segments,
                 anchor: anchor,
+                reveals: asked.count,
+                revealLine: asked.line,
                 onAnchor: () =>
                     ref.read(previewAnchorProvider.notifier).take(document),
                 onChoose:

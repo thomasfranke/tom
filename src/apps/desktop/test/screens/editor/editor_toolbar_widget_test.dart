@@ -13,6 +13,23 @@ import 'package:tom_ui/tom_ui.dart';
 // What happens under the bar in preview — the source pane kept unseen, undo
 // through it — is `test/screens/shell/shell_region_widget_test.dart`'s.
 void main() {
+  test(
+    'the cell is the board’s 28 with its ink, on the same pitch as ever',
+    () {
+      // The cells touch, so the centres sit where the 24-cell, 4-gap bar put
+      // them: the x every board draws the buttons at.
+      expect(TomToolbarButtonWidget.size, 28);
+      expect(TomToolbarButtonWidget.glyphBox, 22);
+      expect(EditorToolbarWidget.between, 0);
+      final List<ToolbarEntry> first = EditorToolbarWidget.groups.first;
+      expect(EditorToolbarWidget.widthOfGroup(first), first.length * 28);
+      // First centre: inset 8 + 14 = 22, as 10 + 12 was.
+      expect(EditorToolbarWidget.inset + TomToolbarButtonWidget.size / 2, 22);
+      // Every group boundary moved by nothing: 6 + 1 + 3 = 10 = 8 + 1 + 5 - 4.
+      expect(EditorToolbarWidget.betweenGroups, 10);
+    },
+  );
+
   late _Documents documents;
   late _Preferences preferences;
   late ProviderContainer container;
@@ -408,15 +425,17 @@ void main() {
   });
 
   testWidgets(
-    'bold and italic are glyphs of the same set as their neighbours',
+    'bold and italic are outlines of the same set as their neighbours',
     (WidgetTester tester) async {
       documents.content = 'a\n';
 
       await pumpBar(tester);
 
       final Iterable<TomGlyphEnum> drawn = tester
-          .widgetList<TomGlyphWidget>(find.byType(TomGlyphWidget))
-          .map((TomGlyphWidget it) => it.glyph);
+          .widgetList<TomToolbarButtonWidget>(
+            find.byType(TomToolbarButtonWidget),
+          )
+          .map((TomToolbarButtonWidget it) => it.glyph);
       expect(
         drawn,
         containsAll(<TomGlyphEnum>[TomGlyphEnum.bold, TomGlyphEnum.italic]),

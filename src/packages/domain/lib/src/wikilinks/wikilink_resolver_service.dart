@@ -48,12 +48,15 @@ final class WikilinkResolverService {
   /// Entries whose path is the one written, the `.md` optional.
   ///
   /// Case-sensitive, because a path is what the filesystem said rather than
-  /// what somebody remembered.
+  /// what somebody remembered. A leading `/` is the space's root, which is
+  /// how a document there is told from others of its name.
   List<SpaceRelativePathValueObject> _byPath(
     WikilinkValueObject link,
     Iterable<SpaceEntryValueObject> documents,
   ) {
-    final String wanted = '${link.targetWithoutExtension}.md';
+    final String written = link.targetWithoutExtension;
+    final String wanted =
+        '${written.startsWith('/') ? written.substring(1) : written}.md';
     return documents
         .where((SpaceEntryValueObject entry) => entry.path.value == wanted)
         .map((SpaceEntryValueObject entry) => entry.path)

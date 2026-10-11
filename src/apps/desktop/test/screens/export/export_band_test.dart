@@ -53,6 +53,14 @@ void main() {
 
     expect(find.text('Exporting roadmap.pdf…'), findsOneWidget);
     expect(find.text('Reveal'), findsNothing);
+    // Still in flight is neither a refusal nor a result, so it wears the
+    // accent (`docs/product/workspace/feedback/doc.md`).
+    final NoticeBandWidget band = tester.widget(find.byType(NoticeBandWidget));
+    final TomColors colors = TomColors.of(
+      tester.element(find.byType(NoticeBandWidget)),
+    );
+    expect(band.ink, colors.accent);
+    expect(band.fill, colors.accentSoft);
   });
 
   testWidgets('a written file is named with its folder, and can be revealed', (

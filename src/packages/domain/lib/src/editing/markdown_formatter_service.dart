@@ -37,8 +37,16 @@ final class MarkdownFormatterService {
         FormatCommandEnum.list: '- ',
         FormatCommandEnum.taskList: '- [ ] ',
         FormatCommandEnum.quote: '> ',
-        FormatCommandEnum.alert: '> [!NOTE] ',
       };
+
+  /// The line that makes a quote an alert, alone on its line.
+  static const String _alertMarker = '> [!NOTE]';
+
+  /// An alert's first line, whichever of the five kinds it names.
+  static final RegExp _anyAlertMarker = RegExp(
+    r'^> ?\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*$',
+    caseSensitive: false,
+  );
 
   /// [command] applied to [text] over the selection from [start] to [end].
   ///
@@ -77,6 +85,7 @@ final class MarkdownFormatterService {
       FormatCommandEnum.link => _around(text, '[', '](url)', from, to),
       FormatCommandEnum.image => _around(text, '![', '](url)', from, to),
       FormatCommandEnum.footnote => _footnote(text, from, to),
+      FormatCommandEnum.alert => _alert(text, from, to),
       _ => FormattedSourceValueObject(text: text, start: from, end: to),
     };
   }
@@ -151,6 +160,79 @@ final class MarkdownFormatterService {
       start: first,
       end: last + moved,
     );
+  }
+
+  /// The lines the selection touches as a note: the marker on a line of its
+  /// own, then each of them quoted — or, inside an alert, all of that off.
+  ///
+  /// The marker shares no line with the text because an alert is read only
+  /// then; beside the words it is a quote that says `[!NOTE]`. A caret stays
+  /// a caret, in the words it was in.
+  FormattedSourceValueObject _alert(String text, int from, int to) {
+    final int first = _lineStart(text, from);
+    final int last = _lineEnd(text, to);
+    if (_alertAround(text, first, last) case (final int top, final int end)) {
+      final List<String> body = text
+          .substring(top, end)
+          .split('\n')
+          .skip(1)
+          .map((String line) => line.replaceFirst(RegExp('^> ?'), ''))
+          .toList();
+      final String plain = body.join('\n');
+      return FormattedSourceValueObject(
+        text: text.replaceRange(top, end, plain),
+        start: top,
+        end: top + plain.length,
+      );
+    }
+    final String quoted = text
+        .substring(first, last)
+        .split('\n')
+        .map((String line) => '> $line')
+        .join('\n');
+    final int bodyAt = first + _alertMarker.length + 1;
+    final String written = text.replaceRange(
+      first,
+      last,
+      '$_alertMarker\n$quoted',
+    );
+    if (from == to) {
+      // The marker's line and the `> ` in front of the caret's own.
+      final int caret = from + _alertMarker.length + 1 + 2;
+      return FormattedSourceValueObject(
+        text: written,
+        start: caret,
+        end: caret,
+      );
+    }
+    return FormattedSourceValueObject(
+      text: written,
+      start: bodyAt,
+      end: bodyAt + quoted.length,
+    );
+  }
+
+  /// The alert the lines from [first] to [last] sit in, marker to last
+  /// quoted line, or null when they are not inside one.
+  (int, int)? _alertAround(String text, int first, int last) {
+    bool isQuoted(int lineStart) => text.startsWith('>', lineStart);
+    int top = first;
+    while (top > 0 && isQuoted(top)) {
+      final int above = _lineStart(text, top - 1);
+      if (!isQuoted(above)) {
+        break;
+      }
+      top = above;
+    }
+    if (!_anyAlertMarker.hasMatch(text.substring(top, _lineEnd(text, top)))) {
+      return null;
+    }
+    int end = _lineEnd(text, top);
+    while (end < text.length && isQuoted(end + 1)) {
+      end = _lineEnd(text, end + 1);
+    }
+    // A selection running past the alert is making something new of it.
+    return last <= end ? (top, end) : null;
   }
 
   /// The selected lines between two fences of their own.
