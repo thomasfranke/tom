@@ -204,7 +204,8 @@ Future<void> main(List<String> arguments) async {
 /// Sequential because each one launches the app, and on macOS the next launch
 /// fails while the previous window is still there.
 Future<int> runAllScenarios({bool watch = false, bool board = false}) async {
-  final scenarios = discoverScenarios();
+  // The plans are data, not tests: `all` is every scenario that is written.
+  final scenarios = discoverScenarios(includePlanned: false);
   if (scenarios.isEmpty) {
     stderr.writeln('tom e2e: no scenarios found under $scenarioDirectory');
     return 1;
@@ -287,10 +288,15 @@ Future<int> runNamedScenario(
     stderr
       ..writeln('tom e2e: no scenario called "$name". There are:')
       ..writeln();
-    for (final scenario in scenarios) {
+    for (final scenario in scenarios.where((s) => !s.isPlanned)) {
       stderr.writeln('  ${scenario.name}');
     }
     return 64; // EX_USAGE
+  }
+  if (match.first.isPlanned) {
+    // Nothing is built or started for a plan.
+    stderr.writeln(plannedRefusal(match.first));
+    return plannedExitCode;
   }
   _freshEnvironmentFor(match.first);
   return runScenario(match.first, watch: watch, board: board);
@@ -322,7 +328,10 @@ Future<int> runE2eList() async {
   final results = readResults();
   _printTitle();
   announce('End-to-end — scenarios');
-  stdout.writeln();
+  final counts = countScenarios(scenarios);
+  stdout
+    ..writeln('  ${palette.detail}${describeCounts(counts)}${Ansi.reset}')
+    ..writeln();
 
   if (scenarios.isEmpty) {
     stdout.writeln('  None declared under $scenarioDirectory yet.');
@@ -330,35 +339,42 @@ Future<int> runE2eList() async {
   }
 
   final prepared = environmentIsPrepared();
-  final groups = <String, List<Scenario>>{
-    // Seeded in the declared order, so the list reads as the journey through
-    // the app; empty groups are dropped, an undeclared one lands at the end.
-    for (final heading in scenarioGroups) heading: <Scenario>[],
-  };
-  for (final scenario in scenarios) {
-    groups.putIfAbsent(scenario.group, () => <Scenario>[]).add(scenario);
-  }
-  groups.removeWhere((_, scenarios) => scenarios.isEmpty);
+  // Alphabetical, empty groups dropped, an undeclared one at the end.
+  final groups = scenariosByGroup(scenarios);
   final width = scenarios
       .map((s) => s.name.length)
       .reduce((a, b) => a > b ? a : b);
+  final whenWidth = relativeWidthOf(results.values);
 
-  for (final entry in groups.entries) {
+  // A group with submenus is printed as `Group › Submenu`, one block each.
+  final blocks = <String, List<Scenario>>{
+    for (final entry in groups.entries)
+      if (scenariosBySubmenu(entry.value).isEmpty)
+        entry.key: entry.value
+      else
+        for (final sub in scenariosBySubmenu(entry.value).entries)
+          '${entry.key} ${Layout.crumbSeparator} ${sub.key}': sub.value,
+  };
+
+  for (final entry in blocks.entries) {
     stdout
       ..writeln('  ${palette.section}${entry.key}${Ansi.reset}')
       ..writeln();
     for (final scenario in entry.value) {
       final result = results[scenario.name];
-      // Blocked, failed and never run read differently, and a scenario that
-      // never ran is listed without a date rather than hidden.
+      // Blocked, failed, never run and *did not run* read differently, and a
+      // scenario that never ran is listed without a date rather than hidden.
       final detail = switch (result) {
+        _ when scenario.isPlanned =>
+          '${palette.rowDisabled}○ planned · ${scenario.survey}${Ansi.reset}',
         _ when scenario.needsEnvironment && !prepared =>
           '${palette.rowDisabled}$blockedNote${Ansi.reset}',
         null => '${palette.rowDisabled}never run${Ansi.reset}',
         _ =>
           '${result.passed ? palette.ok : palette.fail}'
-              '${result.passed ? '✓' : '✘'}${Ansi.reset} '
-              '${palette.detail}${describeWhen(result.when)} · '
+              '${result.outcome.mark}${Ansi.reset} '
+              '${palette.detail}'
+              '${describeWhen(result.when, relativeWidth: whenWidth)} · '
               'v${result.version} · ${describeElapsed(result.elapsed)}'
               '${Ansi.reset}',
       };
@@ -371,9 +387,10 @@ Future<int> runE2eList() async {
   stdout.writeln(
     prepared
         ? '  ${palette.ok}✓${Ansi.reset} ${palette.detail}Environment ready '
-              'at $e2eDirectory/ — everything above can run.${Ansi.reset}'
+              'at $e2eDirectory/ — everything written above can run.'
+              '${Ansi.reset}'
         : '  ${palette.rowDisabled}Environment not built — '
-              '$blocked of ${scenarios.length} cannot run. '
+              '$blocked of ${counts.written} cannot run. '
               '`tom e2e prepare` builds it.${Ansi.reset}',
   );
   return 0;
@@ -462,9 +479,14 @@ final class E2eRemote {
     required this.theirs,
     required this.mine,
     this.isUnreachable = false,
+    this.isProtected = false,
     this.proposing,
     this.address,
   });
+
+  /// Whether the bare refuses every push, in the words GitHub uses for a
+  /// protected branch, once the drift is built.
+  final bool isProtected;
 
   /// A branch made off `main`, committed, pushed and left checked out —
   /// what a pull request is written for — or null for none.
@@ -490,6 +512,7 @@ final class E2eRemote {
       theirs: _commits(decoded['theirs']),
       mine: _commits(decoded['mine']),
       isUnreachable: decoded['unreachable'] == true,
+      isProtected: decoded['protected'] == true,
       proposing: decoded['proposing'] == null
           ? null
           : E2eBranch.read(<Object?>[decoded['proposing']]).single,
@@ -558,11 +581,22 @@ final class E2eBranch {
 
 /// One commit to manufacture: a message, and the files it writes.
 final class E2eCommit {
-  const E2eCommit({required this.message, required this.write});
+  const E2eCommit({
+    required this.message,
+    required this.write,
+    this.rename = const <String, String>{},
+  });
 
   /// Reads one entry of a `commits`, `theirs` or `mine` list.
   factory E2eCommit.read(Map<String, Object?> decoded) => E2eCommit(
     message: decoded['message']! as String,
+    rename: <String, String>{
+      for (final entry
+          in (decoded['rename'] as Map<String, Object?>? ??
+                  const <String, Object?>{})
+              .entries)
+        entry.key: entry.value! as String,
+    },
     write: <String, String>{
       for (final entry
           in (decoded['write'] as Map<String, Object?>? ??
@@ -574,6 +608,10 @@ final class E2eCommit {
 
   /// What it is called in the history.
   final String message;
+
+  /// Files it moves, old path to new, before anything is written — what
+  /// gives a document a history that crosses a rename.
+  final Map<String, String> rename;
 
   /// The files it creates or replaces, by path inside the repository.
   ///
@@ -602,8 +640,11 @@ Map<String, Object?> _build(E2eFixture fixture, Directory root) {
 
   if (!fixture.outsideTheProject) {
     _initRepository(destination);
-    // Committed without the tails, which are written back below.
+    // Committed without the tails, which are written back below. A file the
+    // content does not hold is made by a later commit, and keeps its tail
+    // for after that one.
     fixture.uncommitted.forEach((path, tail) {
+      if (!File('$destination/$path').existsSync()) return;
       _write('$destination/$path', _without(tail, at: '$destination/$path'));
     });
     _git(destination, <String>[
@@ -770,6 +811,19 @@ void _attachRemote(String path, E2eRemote remote) {
     _git(path, ['remote', 'set-url', 'origin', 'https://tom.invalid/docs.git']);
   }
 
+  // Last, so building the drift above could still push. A hook the bare
+  // really runs, in GitHub's own wording.
+  if (remote.isProtected) {
+    final hook = File('$bare/hooks/pre-receive')
+      ..writeAsStringSync(
+        '#!/bin/sh\n'
+        'echo "error: GH006: Protected branch update failed for '
+        'refs/heads/main." >&2\n'
+        'exit 1\n',
+      );
+    Process.runSync('chmod', ['+x', hook.path]);
+  }
+
   // The address is only what `get-url` answers: a push still reaches the
   // bare, and nothing in a scenario fetches.
   if (remote.address case final String address) {
@@ -780,6 +834,10 @@ void _attachRemote(String path, E2eRemote remote) {
 
 /// Writes [commit]'s files in [path] and records them.
 void _commit(String path, E2eCommit commit) {
+  commit.rename.forEach((from, to) {
+    Directory(File('$path/$to').parent.path).createSync(recursive: true);
+    _git(path, ['mv', from, to]);
+  });
   commit.write.forEach((file, content) => _write('$path/$file', content));
   _git(path, ['add', '--', '.']);
   _git(path, ['commit', '--quiet', '--message', commit.message]);

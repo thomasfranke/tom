@@ -10,6 +10,7 @@ import '../rule.dart';
 import '../rules/comment_rules.dart';
 import '../rules/data_layer_rules.dart';
 import '../rules/infrastructure_rules.dart';
+import '../rules/link_rules.dart';
 import '../rules/naming_rules.dart';
 import '../theme/theme.dart';
 import '../tty.dart';
@@ -52,6 +53,17 @@ const catalogue = <RuleFile>[
         "folder's whole contents, so what another package can see is "
         'answered by listing it.',
     checks: <Rule>[capabilitiesAreFolders, barrelIsWholeOfSrc],
+  ),
+  (
+    name: 'links',
+    label: 'Link Rules',
+    file: 'link_rules.dart',
+    description:
+        'Whether the written record can be followed. Every relative link in '
+        'docs/, the skills, AGENTS.md, CONTRIBUTING.md and README.md names a '
+        'file that exists and, in a markdown file, a heading it has. An '
+        'address on the network is not asked.',
+    checks: <Rule>[linksResolve],
   ),
   (
     name: 'naming',

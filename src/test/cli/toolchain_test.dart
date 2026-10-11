@@ -5,6 +5,9 @@ library;
 import 'package:test/test.dart';
 
 import '../../../tool/src/cli/dashboard.dart';
+import '../../../tool/src/commands/doctor.dart';
+import '../../../tool/src/commands/process.dart';
+import '../../../tool/src/commands/tests.dart';
 import '../../../tool/src/commands/toolchain.dart';
 
 void main() {
@@ -90,6 +93,79 @@ void main() {
         const Version(0, 13, 0).satisfiesCaret(const Version(0, 12, 0)),
         isFalse,
       );
+    });
+  });
+
+  group('gitVerdict', () {
+    test('fails with no git at all', () {
+      final ({String detail, bool ok}) verdict = gitVerdict(null);
+
+      expect(verdict.ok, isFalse);
+      expect(verdict.detail, contains('not on PATH'));
+    });
+
+    test('fails below 2.41, saying what was found and what is needed', () {
+      final ({String detail, bool ok}) verdict = gitVerdict(
+        const Version(2, 39, 5),
+      );
+
+      expect(verdict.ok, isFalse);
+      expect(verdict.detail, contains('2.39.5'));
+      expect(verdict.detail, contains('2.41.0 or newer'));
+      expect(verdict.detail, contains('ahead-behind'));
+    });
+
+    test('passes at 2.41 exactly, and above', () {
+      expect(gitVerdict(const Version(2, 41, 0)).ok, isTrue);
+      expect(gitVerdict(const Version(2, 54, 0)).ok, isTrue);
+      expect(gitVerdict(const Version(3, 0, 0)).ok, isTrue);
+    });
+
+    test('says the version it found when it passes', () {
+      expect(gitVerdict(const Version(2, 54, 0)).detail, contains('2.54.0'));
+    });
+
+    test('reads the version out of what Apple and Windows print', () {
+      expect(
+        gitVerdict(Version.parse('git version 2.39.5 (Apple Git-154)')).ok,
+        isFalse,
+      );
+      expect(
+        gitVerdict(Version.parse('git version 2.41.0.windows.1')).ok,
+        isTrue,
+      );
+    });
+  });
+
+  group('testRunArguments', () {
+    test('the whole run opens with the graph and closes with the CLI', () {
+      final List<String> arguments = testRunArguments(targets: allTargets);
+
+      expect(arguments.first, '--coverage');
+      expect(arguments[1], arch);
+      expect(arguments.last, cli);
+      expect(arguments, containsAllInOrder(allTargets));
+    });
+
+    test('a run narrowed to packages asks about neither', () {
+      final List<String> arguments = testRunArguments(
+        targets: <String>['core', 'domain'],
+        coverage: false,
+      );
+
+      expect(arguments, <String>['core', 'domain']);
+    });
+
+    test('a run narrowed to a kind asks about neither', () {
+      final List<String> arguments = testRunArguments(
+        kind: 'unit',
+        targets: allTargets,
+        coverage: false,
+      );
+
+      expect(arguments, isNot(contains(arch)));
+      expect(arguments, isNot(contains(cli)));
+      expect(arguments.first, 'core=test/unit');
     });
   });
 

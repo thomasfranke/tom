@@ -5,6 +5,7 @@
 // tool that resolves the workspace cannot need it resolved first.
 library;
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'src/cli/menu.dart';
@@ -79,7 +80,8 @@ const _commands = <_Command>[
   ),
   _Command(
     'coverage-gate',
-    'Fail if a package is under the coverage threshold',
+    'Fail if a package is under 90% of unit-test coverage '
+        '(--kind=unit|all, --threshold=N)',
     hidden: true,
   ),
   _Command(
@@ -208,13 +210,13 @@ const _codegenModes = <_CodegenMode>[
   ),
 ];
 
-/// The desktop platforms `build` targets, in the order the submenu lists them.
+/// The desktop platforms `build` targets, alphabetically by label.
 ///
 /// No "all of them" row: a macOS bundle cannot be produced on Linux and vice
 /// versa, so the only honest offer is one platform at a time.
 const _platforms = <_Platform>[
-  _Platform('macos', 'macOS'),
   _Platform('linux', 'Linux'),
+  _Platform('macos', 'macOS'),
   _Platform('windows', 'Windows'),
 ];
 
@@ -247,6 +249,16 @@ Future<int> _run(List<String> args) async {
   // `--preview` alone is the root; `--preview e2e` is the groups screen,
   // which is the other one long enough to be worth looking at without
   // driving the menu by hand.
+  // Every menu's lists of labels, as JSON: what a test reads the order from.
+  if (args.contains('--menus')) {
+    stdout.writeln(
+      jsonEncode({
+        for (final menu in _cliMenus().entries) menu.key: entryRuns(menu.value),
+      }),
+    );
+    return 0;
+  }
+
   if (args.contains('--preview')) {
     final which = args.where((word) => word != '--preview').toList();
     stdout.writeln(_previewFrame(which).join('\n'));
@@ -273,18 +285,30 @@ Future<int> _run(List<String> args) async {
 List<String> _previewFrame(List<String> which) {
   if (which.isEmpty || which.first != 'e2e') return _rootFrame(columns: 96);
   final scenarios = discoverScenarios();
-  final group = which.skip(1).join(' ');
-  final groups = _groupsOf(scenarios);
+  // `Group` or `Group › Submenu`.
+  final crumb = which.skip(1).join(' ');
+  final parts = crumb.split(' ${Layout.crumbSeparator} ');
+  final group = parts.first;
+  final submenu = parts.length > 1 ? parts[1] : null;
+  final groups = scenariosByGroup(scenarios);
+  final inGroup = groups[group] ?? const <Scenario>[];
+  final hasSubmenus = scenariosBySubmenu(inGroup).isNotEmpty;
   return composeFrame<String>(
     title: _title,
     titleSuffix: _subtitle,
-    section: group.isEmpty
+    section: crumb.isEmpty
         ? 'End-to-end'
-        : 'End-to-end ${Layout.crumbSeparator} $group',
-    prompt: group.isEmpty ? 'Which ones?' : 'Which one?',
-    items: group.isEmpty
+        : 'End-to-end ${Layout.crumbSeparator} $crumb',
+    prompt: crumb.isEmpty ? 'Which ones?' : 'Which one?',
+    items: crumb.isEmpty
         ? e2eGroupItems(scenarios)
-        : e2eScenarioItems(groups[group] ?? const <Scenario>[]),
+        : submenu != null
+        ? e2eScenarioItems(
+            scenariosBySubmenu(inGroup)[submenu] ?? const <Scenario>[],
+          )
+        : hasSubmenus
+        ? e2eSubmenuItems(inGroup)
+        : e2eScenarioItems(inGroup),
     selected: 0,
     columns: 96,
   );
@@ -443,47 +467,93 @@ const _devToolsGroup = {'clean', 'codegen', 'format', 'verify'};
 /// Commands the root screen lists under `Setup`: getting a machine ready.
 const _setupGroup = {'doctor', 'fvm', 'setup', 'updates'};
 
-/// The root screen's rows.
+/// Every menu the CLI can show, by the breadcrumb it opens under, built by the
+/// functions the screens themselves use.
+///
+/// `tom --menus` prints them as JSON for `src/test/cli/menus_test.dart`,
+/// which holds each one to alphabetical order; a screen added without a line
+/// here escapes the test.
+Map<String, List<MenuItem<String>>> _cliMenus() {
+  final scenarios = discoverScenarios();
+  final groups = scenariosByGroup(scenarios);
+  return <String, List<MenuItem<String>>>{
+    'Root': _rootItems,
+    'Build': _platformItems,
+    'Codegen': _codegenItems,
+    'Package': _packageItems,
+    'Rules': _ruleItems(),
+    'End-to-end › App': _e2eAppItems,
+    'End-to-end': e2eGroupItems(scenarios),
+    for (final entry in groups.entries) ...{
+      if (scenariosBySubmenu(entry.value).isEmpty)
+        'End-to-end › ${entry.key}': e2eScenarioItems(entry.value)
+      else ...{
+        'End-to-end › ${entry.key}': e2eSubmenuItems(entry.value),
+        for (final sub in scenariosBySubmenu(entry.value).entries)
+          'End-to-end › ${entry.key} › ${sub.key}': e2eScenarioItems(sub.value),
+      },
+    },
+  };
+}
+
+/// The root screen's rows, each list in it alphabetical.
 ///
 /// Labels only; the right-hand slot is for a row's metadata, not its
 /// description, which lives in `--help`. The test kinds are a group here
 /// rather than a submenu because they are the rows reached most often.
 List<MenuItem<String>> get _rootItems => [
-  for (final command in _commands)
-    if (!command.hidden &&
-        !_testGroup.contains(command.name) &&
-        !_setupGroup.contains(command.name) &&
-        !_devToolsGroup.contains(command.name))
-      MenuItem(command.label, command.name, description: command.description),
+  ...sortedByLabel([
+    for (final command in _commands)
+      if (!command.hidden &&
+          !_testGroup.contains(command.name) &&
+          !_setupGroup.contains(command.name) &&
+          !_devToolsGroup.contains(command.name))
+        MenuItem(command.label, command.name, description: command.description),
+  ]),
   const MenuItem.rule(),
   const MenuItem.section('Setup'),
   ..._setupRows,
   const MenuItem.rule(),
   const MenuItem.section('Dev Tools'),
-  for (final command in _commands)
-    if (_devToolsGroup.contains(command.name))
-      MenuItem(command.label, command.name, description: command.description),
+  ...sortedByLabel([
+    for (final command in _commands)
+      if (_devToolsGroup.contains(command.name))
+        MenuItem(command.label, command.name, description: command.description),
+  ]),
   const MenuItem.rule(),
   const MenuItem.section('Tests'),
   // The rule below separates what runs a body of tests from what asks a
   // question about the repository.
-  const MenuItem(
-    'Coverage (Unit + Integration)',
-    'coverage',
-    description:
-        'Measures one package, builds the HTML report and opens it. Needs '
-        'genhtml, which ships with lcov. The threshold itself is checked by '
-        'Verify, not here.',
-  ),
-  for (final kind in _testKinds)
-    MenuItem(kind.label, 'test ${kind.name}', description: kind.description),
-  // A command rather than a fourth kind: it opens the app on a device rather
-  // than running a folder of Dart files.
-  for (final command in _commands)
-    if (command.name == 'e2e')
-      MenuItem(command.label, command.name, description: command.description),
+  ...sortedByLabel([
+    const MenuItem(
+      'Coverage (Unit + Integration)',
+      'coverage',
+      description:
+          'Measures one package, builds the HTML report and opens it. Needs '
+          'genhtml, which ships with lcov. The threshold itself is checked by '
+          'Verify, not here.',
+    ),
+    for (final kind in _testKinds)
+      MenuItem(kind.label, 'test ${kind.name}', description: kind.description),
+    // A command rather than a fourth kind: it opens the app on a device
+    // rather than running a folder of Dart files.
+    for (final command in _commands)
+      if (command.name == 'e2e')
+        MenuItem(command.label, command.name, description: command.description),
+  ]),
   const MenuItem.rule(),
-  const MenuItem(
+  ...sortedByLabel(_questionRows),
+  const MenuItem.rule(),
+  const MenuItem.back(
+    label: Layout.quitLabel,
+    description: 'Leaves the CLI and restores the terminal as it was.',
+  ),
+];
+
+/// The `Tests` section's second list: what asks a question about the
+/// repository rather than running a body of tests. Sorted where it is shown.
+const List<MenuItem<String>> _questionRows = [
+  MenuItem(
     'Architecture',
     'test $arch',
     description:
@@ -491,7 +561,7 @@ List<MenuItem<String>> get _rootItems => [
         'depend only on the ones below it, and exactly one knows Flutter '
         'exists. The fastest answer to "did I just break a boundary".',
   ),
-  const MenuItem(
+  MenuItem(
     'Rules',
     'rules',
     description:
@@ -500,7 +570,7 @@ List<MenuItem<String>> get _rootItems => [
         'repository that holds no capability. Architecture answers who may '
         'depend on whom; this answers how things are named and shaped.',
   ),
-  const MenuItem(
+  MenuItem(
     'CLI',
     'test $cli',
     description:
@@ -508,7 +578,7 @@ List<MenuItem<String>> get _rootItems => [
         'script depends on, and the pure functions behind them. Black box: '
         'the CLI has no pubspec, so its tests live on the workspace side.',
   ),
-  const MenuItem(
+  MenuItem(
     'Diff — only what changed on this branch',
     'test $changed',
     description:
@@ -516,7 +586,7 @@ List<MenuItem<String>> get _rootItems => [
         'changed lib/foo.dart runs foo_test.dart. Proves the part you touched '
         'is green — the full run is what proves the workspace is.',
   ),
-  const MenuItem(
+  MenuItem(
     'Last — the 10 files edited most recently',
     'test $last',
     description:
@@ -525,18 +595,13 @@ List<MenuItem<String>> get _rootItems => [
         'answers "run what I was just working on" on a branch whose diff has '
         'grown too large to mean that.',
   ),
-  const MenuItem(
+  MenuItem(
     'Last coverage',
     'coverage $last',
     description:
         'Runs the test the file you just changed maps to, and reports the '
         'coverage of that file — here, in the terminal. Seconds, because the '
         'rest of the suite never runs.',
-  ),
-  const MenuItem.rule(),
-  const MenuItem.back(
-    label: Layout.quitLabel,
-    description: 'Leaves the CLI and restores the terminal as it was.',
   ),
 ];
 
@@ -546,8 +611,7 @@ List<MenuItem<String>> get _rootItems => [
 /// get`), and sorted here rather than stored in order so relabelling a row
 /// cannot leave the section out of order.
 List<MenuItem<String>> get _setupRows =>
-    [for (final name in _setupGroup) _rowFor(name)]
-      ..sort((a, b) => a.label.compareTo(b.label));
+    sortedByLabel([for (final name in _setupGroup) _rowFor(name)]);
 
 /// The root-screen row for the command called [name], read off the command so
 /// a row and its `--help` line cannot drift apart.
@@ -594,24 +658,33 @@ Future<List<String>?> _promptFor(
 /// A row is a file in `tool/src/rules/`, so the screen is a map of the folder;
 /// each row carries what it last said, the way the scenario list does.
 Future<List<String>?> _askRule(Terminal terminal) async {
-  final results = readRuleResults();
   final chosen = await showMenu<String>(
     terminal,
     title: _title,
     titleSuffix: _subtitle,
     section: 'Rules',
     prompt: 'Which rule file?',
-    items: <MenuItem<String>>[
-      const MenuItem<String>(
-        'All of them',
-        '',
-        emphasized: true,
-        description:
-            'Every file below, in one pass, reporting all the breaks rather '
-            'than stopping at the first.',
-      ),
-      const MenuItem<String>.rule(),
-      const MenuItem<String>.section('Files'),
+    items: _ruleItems(),
+  );
+  if (chosen == null) return null;
+  return chosen.isEmpty ? const <String>[] : <String>[chosen];
+}
+
+/// The rows of the rule screen, the files alphabetical by label.
+List<MenuItem<String>> _ruleItems() {
+  final results = readRuleResults();
+  return <MenuItem<String>>[
+    const MenuItem<String>(
+      'All of them',
+      '',
+      emphasized: true,
+      description:
+          'Every file below, in one pass, reporting all the breaks rather '
+          'than stopping at the first.',
+    ),
+    const MenuItem<String>.rule(),
+    const MenuItem<String>.section('Files'),
+    ...sortedByLabel([
       for (final entry in catalogue)
         MenuItem<String>(
           entry.label,
@@ -625,12 +698,10 @@ Future<List<String>?> _askRule(Terminal terminal) async {
           },
           description: entry.description,
         ),
-      const MenuItem<String>.rule(),
-      const MenuItem<String>.back(),
-    ],
-  );
-  if (chosen == null) return null;
-  return chosen.isEmpty ? const <String>[] : <String>[chosen];
+    ]),
+    const MenuItem<String>.rule(),
+    const MenuItem<String>.back(),
+  ];
 }
 
 /// Asks which app to drive, and then what to do with it.
@@ -651,28 +722,32 @@ Future<List<String>?> _askE2e(Terminal terminal, List<String> carried) async {
     titleSuffix: _subtitle,
     section: section,
     prompt: 'Which app?',
-    items: <MenuItem<String>>[
-      const MenuItem<String>(
-        'Desktop',
-        'desktop',
-        description:
-            'Drives the desktop app — the only one that exists today, and '
-            'the one the product is.',
-      ),
-      const MenuItem<String>.disabled(
-        'Mobile',
-        detail: 'coming soon',
-        description:
-            'src/apps/mobile is a placeholder in the workspace; there is '
-            'nothing to drive yet.',
-      ),
-      const MenuItem<String>.rule(),
-      const MenuItem<String>.back(),
-    ],
+    items: _e2eAppItems,
   );
   if (app == null) return null;
   return _askScenario(terminal, section: section);
 }
+
+/// The rows of the app screen: Desktop, then Mobile, which is alphabetical
+/// and also the order of what exists.
+const List<MenuItem<String>> _e2eAppItems = [
+  MenuItem<String>(
+    'Desktop',
+    'desktop',
+    description:
+        'Drives the desktop app — the only one that exists today, and '
+        'the one the product is.',
+  ),
+  MenuItem<String>.disabled(
+    'Mobile',
+    detail: 'coming soon',
+    description:
+        'src/apps/mobile is a placeholder in the workspace; there is '
+        'nothing to drive yet.',
+  ),
+  MenuItem<String>.rule(),
+  MenuItem<String>.back(),
+];
 
 /// Asks which group of scenarios to open, or what to do with the environment.
 ///
@@ -706,15 +781,67 @@ Future<List<String>?> _askScenario(
     if (!chosen.startsWith(_groupPrefix)) return <String>[chosen];
 
     final group = chosen.substring(_groupPrefix.length);
-    final scenario = await _askScenarioInGroup(
+    final scenario = await _askInGroup(
       terminal,
       section: '$section ${Layout.crumbSeparator} $group',
-      group: _groupsOf(scenarios)[group] ?? const <Scenario>[],
+      group: scenariosByGroup(scenarios)[group] ?? const <Scenario>[],
     );
     // Backing out of a group comes back to the groups rather than leaving
     // the screen, which is what makes two screens cheaper than one list.
     if (scenario != null) return <String>[scenario];
   }
+}
+
+/// What a submenu row resolves to, told apart from a scenario's own name.
+const String _submenuPrefix = 'submenu:';
+
+/// Asks for one scenario of a group: straight from its list, or through its
+/// submenus when it has them. Null is "back".
+Future<String?> _askInGroup(
+  Terminal terminal, {
+  required String section,
+  required List<Scenario> group,
+}) async {
+  final submenus = scenariosBySubmenu(group);
+  if (submenus.isEmpty) {
+    return _askScenarioInGroup(terminal, section: section, group: group);
+  }
+  while (true) {
+    final chosen = await showMenu<String>(
+      terminal,
+      title: _title,
+      titleSuffix: _subtitle,
+      section: section,
+      prompt: 'Which ones?',
+      items: e2eSubmenuItems(group),
+    );
+    if (chosen == null) return null;
+    final name = chosen.substring(_submenuPrefix.length);
+    final scenario = await _askScenarioInGroup(
+      terminal,
+      section: '$section ${Layout.crumbSeparator} $name',
+      group: submenus[name] ?? const <Scenario>[],
+    );
+    if (scenario != null) return scenario;
+  }
+}
+
+/// The rows of a group's submenu screen, alphabetical, each with what its
+/// scenarios add up to.
+List<MenuItem<String>> e2eSubmenuItems(List<Scenario> group) {
+  final results = readResults();
+  return <MenuItem<String>>[
+    for (final entry in scenariosBySubmenu(group).entries)
+      MenuItem<String>(
+        entry.key,
+        _submenuPrefix + entry.key,
+        detail: _groupState(entry.value, results),
+        detailColor: _groupColour(entry.value, results),
+        description: _groupDescription(entry.value, results),
+      ),
+    const MenuItem<String>.rule(),
+    const MenuItem<String>.back(description: _backDescription),
+  ];
 }
 
 /// The rows of the groups screen.
@@ -724,12 +851,14 @@ Future<List<String>?> _askScenario(
 List<MenuItem<String>> e2eGroupItems(List<Scenario> scenarios) {
   final results = readResults();
   final prepared = environmentIsPrepared();
-  final groups = _groupsOf(scenarios);
+  final groups = scenariosByGroup(scenarios);
 
   // Rows that need the environment are shown and not selectable rather than
   // hidden: the list is also how someone learns what exists.
+  // A plan is shown and counted, never run: it is not part of "all".
+  final counts = countScenarios(scenarios);
   final blocked = scenarios.where((s) => s.needsEnvironment).length;
-  final runnable = !prepared ? scenarios.length - blocked : scenarios.length;
+  final runnable = !prepared ? counts.written - blocked : counts.written;
 
   return <MenuItem<String>>[
     if (runnable == 0)
@@ -753,7 +882,7 @@ List<MenuItem<String>> e2eGroupItems(List<Scenario> scenarios) {
             : 'Runs the $runnable that do not need the environment.',
       ),
     const MenuItem<String>.rule(),
-    const MenuItem<String>.section('Groups'),
+    MenuItem<String>.section('Groups · ${describeCounts(counts)}'),
     for (final entry in groups.entries)
       MenuItem<String>(
         entry.key,
@@ -798,40 +927,45 @@ List<MenuItem<String>> e2eGroupItems(List<Scenario> scenarios) {
 /// value and the caller has to know which screen it came from.
 const String _groupPrefix = 'group:';
 
-/// The scenarios by group, in the declared order.
-///
-/// Seeded from [scenarioGroups] so the screen reads as the journey through
-/// the app; an empty group is dropped and an undeclared one lands at the end.
-Map<String, List<Scenario>> _groupsOf(List<Scenario> scenarios) {
-  final groups = <String, List<Scenario>>{
-    for (final heading in scenarioGroups) heading: <Scenario>[],
-  };
-  for (final scenario in scenarios) {
-    groups.putIfAbsent(scenario.group, () => <Scenario>[]).add(scenario);
-  }
-  groups.removeWhere((_, scenarios) => scenarios.isEmpty);
-  return groups;
-}
-
 /// What a group's rows add up to: how many, and whether any is red.
 ///
 /// A failure is what the eye is looking for, so it is said first and in the
 /// count; "all passed" is only claimed when every one of them actually ran.
 String _groupState(List<Scenario> group, Map<String, ScenarioResult> results) {
-  final failing = group.where((s) => results[s.name]?.passed == false).length;
-  final ran = group.where((s) => results.containsKey(s.name)).length;
-  if (failing > 0) {
-    return '\u2718 $failing failing';
-  }
-  return ran == group.length
-      ? '\u2713 ${group.length} passed'
-      : '$ran of ${group.length} run';
+  final counts = countScenarios(group);
+  // The plans come first and may be absent, so they are padded to a column of
+  // their own; what always exists ends the row and lines up on the right.
+  final planned =
+      (counts.planned == 0 ? '' : '${_count(counts.planned)} planned').padLeft(
+        _plannedColumn,
+      );
+  final written = group.where((s) => !s.isPlanned);
+  final failing = written.where((s) => results[s.name]?.passed == false).length;
+  final ran = written.where((s) => results.containsKey(s.name)).length;
+  final state = counts.written == 0
+      ? '\u25cb ${_count(0)} passed'
+      : failing > 0
+      ? '\u2718 ${_count(failing)} failing'
+      : ran == counts.written
+      ? '\u2713 ${_count(counts.written)} passed'
+      : '${_count(ran)} of ${_count(counts.written)} run';
+  return '$planned \u00b7 ${state.padLeft(_stateColumn)}';
 }
+
+/// A count in the three digits the columns are sized for, so `4` and `12`
+/// end on the same character.
+String _count(int count) => '$count'.padLeft(3);
+
+/// Widths of the two columns [_groupState] writes: `NNN planned`, then the
+/// state (`\u2713 NNN passed`, `\u2718 NNN failing`, `NNN of NNN run`).
+const int _plannedColumn = 11;
+const int _stateColumn = 14;
 
 /// The colour [_groupState] is painted in.
 String _groupColour(List<Scenario> group, Map<String, ScenarioResult> results) {
-  if (group.any((s) => results[s.name]?.passed == false)) return palette.fail;
-  return group.every((s) => results.containsKey(s.name))
+  final written = group.where((s) => !s.isPlanned).toList();
+  if (written.any((s) => results[s.name]?.passed == false)) return palette.fail;
+  return written.isNotEmpty && written.every((s) => results.containsKey(s.name))
       ? palette.ok
       : palette.rowDisabled;
 }
@@ -841,6 +975,11 @@ String _groupDescription(
   List<Scenario> group,
   Map<String, ScenarioResult> results,
 ) {
+  final planned = group.where((s) => s.isPlanned).length;
+  if (planned == group.length) {
+    return '$planned planned, not written yet — listed so nothing is lost.';
+  }
+  group = group.where((s) => !s.isPlanned).toList();
   final names = group.map((s) => s.name).take(3).join(' \u00b7 ');
   final more = group.length > 3 ? ' \u00b7 …' : '';
   return '${group.length} '
@@ -873,12 +1012,26 @@ List<MenuItem<String>> e2eScenarioItems(List<Scenario> group) {
   final results = readResults();
   final prepared = environmentIsPrepared();
   final items = <MenuItem<String>>[];
+  final whenWidth = relativeWidthOf(results.values);
   for (final scenario in group) {
+    if (scenario.isPlanned) {
+      // Shown, dim, and not selectable: the list is what is still to write.
+      items.add(
+        MenuItem<String>.disabled(
+          scenario.name,
+          detail: '○ planned · ${scenario.survey}',
+          detailColor: palette.rowDisabled,
+          description: '${scenario.describe} — planned, not written yet.',
+        ),
+      );
+      continue;
+    }
     final result = results[scenario.name];
     final result_ = result == null
         ? 'never run'
-        : '${result.passed ? '\u2713' : '\u2718'} '
-              '${describeWhen(result.when)} \u00b7 v${result.version} '
+        : '${result.outcome.mark} '
+              '${describeWhen(result.when, relativeWidth: whenWidth)} '
+              '\u00b7 v${result.version} '
               '\u00b7 ${describeElapsed(result.elapsed)}';
     // Grey for never run: "it passed" and "it ran" are different claims.
     final resultColor = result == null
@@ -953,17 +1106,7 @@ Future<List<String>?> _askCodegen(Terminal terminal) async {
       titleSuffix: _subtitle,
       section: 'Codegen',
       prompt: 'How much to regenerate?',
-      items: [
-        for (final option in _codegenModes)
-          MenuItem(
-            option.label,
-            option.name,
-            detail: option.caveat,
-            description: option.description,
-          ),
-        const MenuItem.rule(),
-        const MenuItem.back(description: _backDescription),
-      ],
+      items: _codegenItems,
     );
     if (mode == null) return null;
 
@@ -979,6 +1122,22 @@ Future<List<String>?> _askCodegen(Terminal terminal) async {
   }
 }
 
+/// The rows of the codegen mode screen.
+///
+/// **Not alphabetical, deliberately:** `Normal` then `Hard`, mildest first,
+/// so the safe default is the row the cursor starts on.
+List<MenuItem<String>> get _codegenItems => [
+  for (final option in _codegenModes)
+    MenuItem(
+      option.label,
+      option.name,
+      detail: option.caveat,
+      description: option.description,
+    ),
+  const MenuItem.rule(),
+  const MenuItem.back(description: _backDescription),
+];
+
 /// Asks which package to work on, with the whole workspace first.
 ///
 /// Grouped into packages and apps because that split decides where a target
@@ -990,36 +1149,45 @@ Future<String?> _askPackage(Terminal terminal, {required String section}) =>
       titleSuffix: _subtitle,
       section: section,
       prompt: 'Which package?',
-      items: [
-        const MenuItem(
-          'All of them',
-          _allTargets,
-          description:
-              'Every package and both apps, in dependency order — what the '
-              'command does when nothing narrows it.',
-        ),
-        const MenuItem.rule(),
-        const MenuItem.section('Packages'),
-        for (final target in allTargets)
-          if (!apps.contains(target))
-            MenuItem(
-              _labelFor(target),
-              target,
-              description: _packageDescriptions[target],
-            ),
-        const MenuItem.rule(),
-        const MenuItem.section('Apps'),
-        for (final target in allTargets)
-          if (apps.contains(target))
-            MenuItem(
-              _labelFor(target),
-              target,
-              description: _packageDescriptions[target],
-            ),
-        const MenuItem.rule(),
-        const MenuItem.back(description: _backDescription),
-      ],
+      items: _packageItems,
     );
+
+/// The rows of the package screen.
+///
+/// **The `Packages` list is not alphabetical, deliberately:** it is the layer
+/// graph from `core` up, the order every other command runs them in, and
+/// reading it as a stack is the point. `Apps` is alphabetical.
+List<MenuItem<String>> get _packageItems => [
+  const MenuItem(
+    'All of them',
+    _allTargets,
+    description:
+        'Every package and both apps, in dependency order — what the '
+        'command does when nothing narrows it.',
+  ),
+  const MenuItem.rule(),
+  const MenuItem.section('Packages'),
+  for (final target in allTargets)
+    if (!apps.contains(target))
+      MenuItem(
+        _labelFor(target),
+        target,
+        description: _packageDescriptions[target],
+      ),
+  const MenuItem.rule(),
+  const MenuItem.section('Apps'),
+  ...sortedByLabel([
+    for (final target in allTargets)
+      if (apps.contains(target))
+        MenuItem(
+          _labelFor(target),
+          target,
+          description: _packageDescriptions[target],
+        ),
+  ]),
+  const MenuItem.rule(),
+  const MenuItem.back(description: _backDescription),
+];
 
 /// What `← Back` says in the footer, on every screen that has one.
 const _backDescription =
@@ -1079,7 +1247,24 @@ const _packageDescriptions = <String, String>{
 /// `src/apps/mobile` is a real package and its absence would read as a bug.
 Future<List<String>?> _askPlatform(Terminal terminal) async {
   final host = hostPlatform;
-  final items = <MenuItem<String>>[
+  final items = _platformItems;
+
+  final chosen = await showMenu<String>(
+    terminal,
+    title: _title,
+    titleSuffix: _subtitle,
+    section: 'Build',
+    prompt: 'Which platform?',
+    items: items,
+    initialIndex: items.indexWhere((item) => item.value == host),
+  );
+  return chosen == null ? null : [chosen];
+}
+
+/// The rows of the build screen, the platforms alphabetical.
+List<MenuItem<String>> get _platformItems {
+  final host = hostPlatform;
+  return <MenuItem<String>>[
     const MenuItem.section('Desktop'),
     for (final platform in _platforms)
       MenuItem(
@@ -1107,17 +1292,6 @@ Future<List<String>?> _askPlatform(Terminal terminal) async {
     const MenuItem.rule(),
     const MenuItem.back(description: _backDescription),
   ];
-
-  final chosen = await showMenu<String>(
-    terminal,
-    title: _title,
-    titleSuffix: _subtitle,
-    section: 'Build',
-    prompt: 'Which platform?',
-    items: items,
-    initialIndex: items.indexWhere((item) => item.value == host),
-  );
-  return chosen == null ? null : [chosen];
 }
 
 /// Runs [name] with [rest], or explains why it cannot.
@@ -1165,7 +1339,10 @@ Future<int> _dispatch(String name, List<String> rest) async {
       ),
       _ => await runCoverageReport(targets: _targetsFrom(rest)),
     },
-    'coverage-gate' => await runCoverageGate(threshold: _thresholdFrom(rest)),
+    'coverage-gate' => await runCoverageGate(
+      threshold: _thresholdFrom(rest),
+      kind: _kindFrom(rest),
+    ),
     'codegen-gate' => await runCodegenGate(),
     'run' => await runApp(device: _firstOf(rest, _platformNames)),
     'test' => switch (rest) {
@@ -1244,7 +1421,7 @@ Set<String> _wordsFor(String command) => switch (command) {
 /// The flags [command] reads, by prefix — each one is `--name=value`.
 Set<String> _flagsFor(String command) => switch (command) {
   'test' || 'coverage' => const {'--base=', '--count='},
-  'coverage-gate' => const {'--threshold='},
+  'coverage-gate' => const {'--threshold=', '--kind='},
   _ => const {},
 };
 
@@ -1284,6 +1461,14 @@ int? _thresholdFrom(List<String> arguments) {
   return argument == null
       ? null
       : int.tryParse(argument.substring(flag.length));
+}
+
+/// The `--kind=unit|all` of the coverage gate, as typed: the gate itself
+/// refuses a value it does not know.
+String? _kindFrom(List<String> arguments) {
+  const flag = '--kind=';
+  final argument = arguments.where((a) => a.startsWith(flag)).firstOrNull;
+  return argument?.substring(flag.length);
 }
 
 /// The first argument that is one of [known], or `null`.

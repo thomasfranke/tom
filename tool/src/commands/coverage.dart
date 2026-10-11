@@ -7,14 +7,16 @@ import '../theme/theme.dart';
 import 'process.dart';
 import 'tests.dart';
 
-/// Fails if any gated package is under the line-coverage threshold; which
-/// packages are gated is coverage_gate.dart's to say.
-Future<int> runCoverageGate({int? threshold}) async {
+/// Fails if any gated package is under the line-coverage threshold, counting
+/// only unit tests unless [kind] says `all`; which packages are gated is
+/// coverage_gate.dart's to say, and none is excepted.
+Future<int> runCoverageGate({int? threshold, String? kind}) async {
   announce('Coverage gate');
   return dart([
     'run',
     'tool/src/commands/coverage_gate.dart',
     if (threshold != null) '--threshold=$threshold',
+    if (kind != null) '--kind=$kind',
   ]);
 }
 

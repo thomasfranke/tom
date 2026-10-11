@@ -64,14 +64,35 @@ Future<int> runDoctor() async {
 /// Git, which the infra layer drives as a system binary rather than through a
 /// library (Decision 2), so the product does not work without it.
 Future<_Check> _git() async {
-  final version = await versionOf('git');
-  return version == null
-      ? const _Check.failed(
-          'Git',
-          'not on PATH — TOM drives git through the system binary',
-        )
-      : _Check.ok('Git', '$version');
+  final verdict = gitVerdict(await versionOf('git'));
+  return verdict.ok
+      ? _Check.ok('Git', verdict.detail)
+      : _Check.failed('Git', verdict.detail);
 }
+
+/// The oldest git the app works on: `for-each-ref` learned
+/// `%(ahead-behind:…)` in 2.41, and that is how the app finds the branch a
+/// branch came from.
+const minimumGit = Version(2, 41, 0);
+
+/// What the report says about the git [found] on this machine, null being
+/// none at all.
+///
+/// An older one fails rather than warns: the tests that run git fail on it
+/// too, and "upgrade git" is a shorter read than their output.
+({bool ok, String detail}) gitVerdict(Version? found) => switch (found) {
+  null => (
+    ok: false,
+    detail: 'not on PATH — TOM drives git through the system binary',
+  ),
+  _ when found < minimumGit => (
+    ok: false,
+    detail:
+        '$found — TOM needs $minimumGit or newer, for '
+        '`for-each-ref %(ahead-behind:…)`',
+  ),
+  _ => (ok: true, detail: '$found — $minimumGit or newer'),
+};
 
 /// The Dart SDK running this CLI, against the constraint the workspace
 /// declares.

@@ -27,16 +27,30 @@ Future<int> runTests({
   String? kind,
   List<String> targets = allTargets,
   bool coverage = true,
+}) => dart([
+  'run',
+  _runner,
+  ...testRunArguments(kind: kind, targets: targets, coverage: coverage),
+]);
+
+/// What the dashboard is asked to run for [kind] over [targets].
+///
+/// The whole run — no kind, every target — is the one that also asks about
+/// the graph before the packages and about the CLI after the apps: neither is
+/// a package, so a narrowed run is not asking about either.
+List<String> testRunArguments({
+  required List<String> targets,
+  String? kind,
+  bool coverage = true,
 }) {
-  final arguments = [
-    'run',
-    _runner,
+  final whole = kind == null && targets.length == allTargets.length;
+  return [
     if (coverage) '--coverage',
-    if (kind == null && targets.length == allTargets.length) arch,
+    if (whole) arch,
     for (final target in targets)
       if (kind == null) target else '$target=test/$kind',
+    if (whole) cli,
   ];
-  return dart(arguments);
 }
 
 /// Runs only the architecture assertions: the fastest answer to "did I just

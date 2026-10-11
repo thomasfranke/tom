@@ -130,10 +130,11 @@ coverage-last: ## Coverage of the file edited most recently, in the terminal (N=
 coverage-diff: ## Coverage of what this branch changed, in the terminal (BASE=main)
 	@$(TOM) coverage diff $(if $(BASE),--base=$(BASE))
 
-# A package with no lib/src yet, or with code but no tests yet, is skipped
+# A package with no lib/src yet, or with code but no unit tests yet, is skipped
 # rather than counted against: the gate is about tests falling behind code.
-coverage-gate: ## Fail if any implemented package is under the coverage threshold (THRESHOLD=95)
-	@$(TOM) coverage-gate $(if $(THRESHOLD),--threshold=$(THRESHOLD))
+# Unit tests alone are counted unless KIND=all, which reports the whole test/.
+coverage-gate: ## Fail if any package is under the unit-test coverage bar (THRESHOLD=90, KIND=unit|all)
+	@$(TOM) coverage-gate $(if $(THRESHOLD),--threshold=$(THRESHOLD)) $(if $(KIND),--kind=$(KIND))
 
 ##############################
 ### *** Codegen *** ###
@@ -168,7 +169,7 @@ run: ## Run the app (override with DEVICE=windows|linux|macos)
 ##############################
 
 # The community build: proof the public repo compiles on its own. The
-# distributed artifact is built elsewhere — docs/technical/process/repository-settings.md.
+# distributed artifact is built elsewhere — docs/technical/process/repository-settings/README.md.
 
 build: ## Compile check for the current platform (artifact is not distributed)
 	@$(TOM) build $(DEVICE)

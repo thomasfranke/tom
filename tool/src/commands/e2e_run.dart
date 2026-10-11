@@ -54,6 +54,18 @@ void clearScreen() {
 /// size (`docs/design/screens/conventions.md`).
 const String _boardWindow = '1440x900';
 
+/// The `--dart-define` that makes a run draw in the theme named by the
+/// `TOM_E2E_THEME` environment variable (`light` or `dark`), or none.
+///
+/// For measuring the second theme against its boards; anything else — or
+/// nothing — leaves the platform's own theme, as every other run has it.
+String? themeDefineFor(String? value) {
+  final theme = value?.trim().toLowerCase();
+  return theme == 'light' || theme == 'dark'
+      ? '--dart-define=TOM_E2E_THEME=$theme'
+      : null;
+}
+
 /// Runs [scenario] and paints its progress until it is done.
 Future<int> runScenario(
   Scenario scenario, {
@@ -80,6 +92,7 @@ Future<int> runScenario(
     // The window the boards are drawn at, so a screenshot and a board crop
     // to the same rectangle and nothing has to be scaled to compare.
     if (board) '--dart-define=TOM_E2E_WINDOW=$_boardWindow',
+    ?themeDefineFor(Platform.environment['TOM_E2E_THEME']),
     '--dart-define=TOM_E2E_STAMP=$stamp',
   ], workingDirectory: '${repoRoot().path}/src/apps/desktop');
 
@@ -103,20 +116,19 @@ Future<int> runScenario(
   ]);
 
   final code = await process.exitCode;
-  // The outcome is the last word of every file the run leaves; a negative
-  // code means killed, not answered.
-  final outcome = code == 0
-      ? 'passed'
-      : code < 0
-      ? 'cancelled'
-      : 'failed';
-  final log = _keep(scenario, transcript.toString(), stamp, outcome);
-  await _film(scenario, stamp, outcome);
-  screen.finish(passed: code == 0, errors: errors, log: log);
+  // The outcome is the last word of every file the run leaves, what the
+  // record keeps and what decides the exit code.
+  final outcome = ScenarioOutcome.of(
+    exitCode: code,
+    declared: screen.stepsDeclared,
+  );
+  final log = _keep(scenario, transcript.toString(), stamp, outcome.label);
+  await _film(scenario, stamp, outcome.label);
+  screen.finish(outcome: outcome, errors: errors, log: log);
   writeResult(
     scenario.name,
     ScenarioResult(
-      passed: code == 0,
+      outcome: outcome,
       when: DateTime.now().toUtc(),
       version: appVersion(),
       steps: screen.stepsDone,
@@ -124,7 +136,7 @@ Future<int> runScenario(
     ),
   );
   await _waitForTheWindowToClose();
-  return code;
+  return outcome.exitCodeAfter(code);
 }
 
 /// Joins the frames a scenario left into a video, two a second.
@@ -294,9 +306,12 @@ final class _ScenarioScreen {
 
   int _total = 0;
   int _done = 0;
+
+  /// How many frames the scenario wrote, once it says — a run that wrote
+  /// none is told so, and still passes: evidence never fails a scenario.
+  int? _frames;
   String _step = 'starting the app…';
-  bool _finished = false;
-  bool _passed = false;
+  ScenarioOutcome? _outcome;
   int _drawn = 0;
   Timer? _ticker;
 
@@ -310,8 +325,14 @@ final class _ScenarioScreen {
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) => paint());
   }
 
+  String get _noEvidence =>
+      _frames == 0 ? ' · NO FRAME WAS WRITTEN — there is no evidence' : '';
+
   /// How many steps ran.
   int get stepsDone => _done;
+
+  /// How many steps the scenario said it has — none until the app is up.
+  int get stepsDeclared => _total;
 
   /// How long it has taken.
   Duration get elapsed => DateTime.now().difference(_started);
@@ -328,6 +349,7 @@ final class _ScenarioScreen {
         _step = report['name'] as String? ?? '';
       case 'finished':
         _done = report['steps'] as int? ?? _done;
+        _frames = report['frames'] as int?;
         _step = 'done';
     }
     paint();
@@ -335,16 +357,18 @@ final class _ScenarioScreen {
 
   /// Paints the last frame, and says what went wrong if anything did.
   void finish({
-    required bool passed,
+    required ScenarioOutcome outcome,
     required List<String> errors,
     required String log,
   }) {
     _ticker?.cancel();
-    _finished = true;
-    _passed = passed;
+    _outcome = outcome;
+    final passed = outcome == ScenarioOutcome.passed;
     if (passed) {
       _done = _total;
       _step = 'done';
+    } else if (outcome == ScenarioOutcome.didNotRun) {
+      _step = 'no step was reported — the build failed or the run was killed';
     }
     paint();
     if (passed || quiet) return;
@@ -362,9 +386,9 @@ final class _ScenarioScreen {
     if (quiet) return;
     if (!stdout.hasTerminal) {
       // Append-only, so a log of a CI run still reads as a sequence.
-      if (_finished) {
+      if (_outcome case final outcome?) {
         stdout.writeln(
-          '  ${_passed ? '✓' : '✘'} ${scenario.name} — $_done/$_total steps',
+          scenarioLine(scenario.name, outcome, done: _done, total: _total),
         );
       }
       return;
@@ -382,10 +406,18 @@ final class _ScenarioScreen {
   }
 
   List<String> _compose() {
-    final mark = _finished
-        ? (_passed ? '${palette.ok}✓' : '${palette.fail}✘')
-        : '${palette.running}▸';
-    final state = _finished ? (_passed ? 'finished' : 'failed') : 'running';
+    final mark = switch (_outcome) {
+      null => '${palette.running}▸',
+      ScenarioOutcome.passed => '${palette.ok}✓',
+      _ => '${palette.fail}✘',
+    };
+    final state = switch (_outcome) {
+      null => 'running',
+      ScenarioOutcome.passed => 'finished',
+      ScenarioOutcome.failed => 'failed',
+      ScenarioOutcome.cancelled => 'cancelled',
+      ScenarioOutcome.didNotRun => 'did not run',
+    };
     final percent = _total == 0 ? 0 : ((_done / _total) * 100).round();
     return <String>[
       ..._suiteHeader(),
@@ -401,7 +433,7 @@ final class _ScenarioScreen {
       '  ${_bar(percent)}  ${palette.detail}$percent%  $_done/$_total steps · '
           '${_clock(elapsed)}${Ansi.reset}',
       '',
-      '  ${palette.detail}$_step${Ansi.reset}',
+      '  ${palette.detail}$_step$_noEvidence${Ansi.reset}',
       '',
     ];
   }

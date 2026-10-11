@@ -103,6 +103,10 @@ void main() {
       }
     });
 
+    test('says which git it found, against the oldest the app works on', () {
+      expect(result.stdout, contains('2.41.0 or newer'));
+    });
+
     test('leaves the platform toolchains to flutter doctor', () {
       expect(result.stdout, contains('flutter doctor'));
     });
@@ -122,8 +126,10 @@ const List<String> _everyCommand = <String>[
   'coverage',
   'coverage-gate',
   'doctor',
+  'e2e',
   'format',
   'fvm',
+  'rules',
   'run',
   'setup',
   'test',

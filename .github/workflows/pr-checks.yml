@@ -1,12 +1,16 @@
 name: CI
 
-# Level one of the two described in docs/technical/process/ci.md:
-# format, analyze, a from-scratch codegen run (fails on drift between
-# committed .g.dart/.freezed.dart and what build_runner actually produces),
-# the architecture test, dart test on the six pure packages and flutter test
-# on the app, plus the coverage gate. Required to merge. The tag-triggered
-# build/sign/package pipeline is level two and lives in its own workflow,
-# added when there is something to sign.
+# Level one of the two described in docs/technical/process/ci.md: the steps of
+# `tom verify`, in its order — format, analyze, rules, a from-scratch codegen
+# run (fails on drift between committed .g.dart/.freezed.dart and what
+# build_runner actually produces), every test, the coverage gate — and then a
+# macOS release compile. The tag-triggered build/sign/package pipeline is
+# level two and lives in its own workflow, added when there is something to
+# sign.
+#
+# The job names are the required status checks, `Verify` and `Build (macOS)`,
+# beside `CLA` from cla.yml (docs/technical/process/repository-settings/).
+# Renaming a job here un-requires it on GitHub without a word.
 
 on:
   pull_request:
@@ -14,7 +18,7 @@ on:
   push:
     branches: [main]
 
-# Read-only by default (docs/technical/process/repository-settings.md); this workflow
+# Read-only by default (docs/technical/process/repository-settings/README.md); this workflow
 # never needs to write anything.
 permissions:
   contents: read
@@ -45,6 +49,13 @@ jobs:
       - name: Analyze
         run: make analyze
 
+      # What the analyzer cannot see: naming, the shape of the data and infra
+      # packages, the comment ceiling, and every relative link in the docs.
+      # Through the CLI, as the codegen gate is — a rule file added to the
+      # catalogue is run here the day it lands.
+      - name: Rules
+        run: dart run tool/tom.dart rules
+
       # These two used to be fifty lines of inlined bash, because the
       # dashboards behind them redraw with ANSI cursor moves that a CI log
       # prints as new lines instead of overwriting. They now detect the
@@ -54,7 +65,9 @@ jobs:
       - name: Codegen — regenerate from scratch, fail on drift
         run: dart run tool/tom.dart codegen-gate
 
-      - name: Test — architecture, the six packages, the apps
+      # The whole run ends with the CLI's own tests, which is what proves the
+      # commands this file calls still answer as it expects.
+      - name: Test — architecture, the packages, the apps, the CLI
         run: make flutter-test
 
       - name: Coverage gate

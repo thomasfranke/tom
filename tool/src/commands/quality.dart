@@ -18,12 +18,24 @@ Future<int> runFormat() async {
   return dart(['format', '--set-exit-if-changed', 'src', 'tool']);
 }
 
+/// What the workspace pass asks of `flutter analyze`: an info or a warning
+/// fails the gate. Pinned by a test, so an edit cannot quietly drop one.
+const List<String> workspaceAnalyzeFlags = <String>[
+  '--fatal-infos',
+  '--fatal-warnings',
+];
+
 /// Static analysis over the workspace and over the CLI itself — two passes,
 /// because `tool/` is not in the workspace and is analysed on its own
 /// `analysis_options.yaml`.
 Future<int> runAnalyze() async {
   announce('Analyze — workspace');
-  final workspace = await flutter(['analyze'], workingDirectory: srcDirectory);
+  // The flags are written out rather than left to `flutter analyze`'s own
+  // defaults: a lint that does not break the gate is a lint nobody obeys.
+  final workspace = await flutter([
+    'analyze',
+    ...workspaceAnalyzeFlags,
+  ], workingDirectory: srcDirectory);
   if (workspace != 0) return workspace;
 
   announce('Analyze — CLI');
