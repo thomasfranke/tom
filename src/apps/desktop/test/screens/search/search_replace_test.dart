@@ -301,6 +301,38 @@ void main() {
     expect(find.text('Visual language'), findsOneWidget);
   });
 
+  testWidgets('pressing an occurrence goes to it: the selection is the match', (
+    WidgetTester tester,
+  ) async {
+    // `docs/product/search/in-the-document/doc.md`.
+    documents.content = '# Visual language\n\nValues live in palette.py.\n';
+    await pumpColumn(tester, terms: 'palette');
+    final OccurrenceValueObject found = ready().occurrences.single;
+
+    await tester.tap(find.text('Visual language'));
+    await tester.pumpAndSettle();
+
+    final EditorReady editor = container.read(editorProvider) as EditorReady;
+    expect(editor.selectionStart, found.start);
+    expect(editor.selectionEnd, found.end);
+    expect(editor.reveals, 1);
+    expect(
+      editor.source.substring(editor.selectionStart, editor.selectionEnd),
+      'palette',
+    );
+  });
+
+  testWidgets('This file with an empty box says to type, not the tree', (
+    WidgetTester tester,
+  ) async {
+    // The third sentence of `docs/product/search/in-the-document/doc.md`.
+    documents.content = '# Visual language\n\nValues live in palette.py.\n';
+    await pumpColumn(tester);
+
+    expect(find.text('Type to search this document.'), findsOneWidget);
+    expect(find.text('note.md'), findsNothing);
+  });
+
   testWidgets('with nothing to replace with, the count stands alone', (
     WidgetTester tester,
   ) async {

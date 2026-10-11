@@ -103,6 +103,37 @@ void main() {
     expect(search.indexed, <SpaceRelativePathValueObject>[writing, index]);
   });
 
+  test('Reload re-reads the folder into the index, keeping the box', () async {
+    container.read(spaceSessionProvider.notifier).open(docs);
+    start();
+    await settle();
+    await notifier().type('rendered');
+    final SpaceRelativePathValueObject arrived = SpaceRelativePathValueObject(
+      'arrived.md',
+    );
+    spaces.held = <SpaceEntryValueObject>[
+      ...spaces.held,
+      SpaceEntryValueObject(path: arrived, type: SpaceEntryTypeEnum.file),
+    ];
+    search.asked.clear();
+
+    await notifier().reindex();
+
+    expect(search.indexed, contains(arrived));
+    expect(state(), isA<SearchReady>());
+    expect(state().terms, 'rendered');
+    expect(search.asked, <String>['rendered']);
+  });
+
+  test('Reload with no space open indexes nothing', () async {
+    start();
+
+    await notifier().reindex();
+
+    expect(search.indexed, isEmpty);
+    expect(state(), isA<SearchIdle>());
+  });
+
   test('what was typed while it built is searched for once it is', () async {
     container.read(spaceSessionProvider.notifier).open(docs);
     start();

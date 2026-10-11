@@ -1,6 +1,8 @@
 /// The index against a real sqlite, because FTS5 is the whole capability.
 library;
 
+import 'dart:collection';
+
 import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
@@ -135,6 +137,54 @@ void main() {
     });
   });
 
+  // A refill that breaks half way must not leave half an index: the search
+  // would then silently find some documents and not others.
+  group('a refill that fails part of the way', () {
+    setUp(
+      () => fill(<String, String>{
+        'old-a.md': 'marmalade',
+        'old-b.md': 'marmalade again',
+      }),
+    );
+
+    test('reports the failure', () async {
+      final Result<void, SearchIndexFailure> refilled = await index.replaceAll(
+        _BreakingAfter(const <IndexedDocumentDto>[
+          IndexedDocumentDto(key: 'new-a.md', text: 'honey'),
+          IndexedDocumentDto(key: 'new-b.md', text: 'honey'),
+        ]),
+      );
+
+      expect(refilled, isA<Failure<void, SearchIndexFailure>>());
+    });
+
+    test('leaves the index as it was, every old document and no new '
+        'one', () async {
+      await index.replaceAll(
+        _BreakingAfter(const <IndexedDocumentDto>[
+          IndexedDocumentDto(key: 'new-a.md', text: 'honey'),
+          IndexedDocumentDto(key: 'new-b.md', text: 'honey'),
+        ]),
+      );
+
+      expect(await keysFor('marmalade'), hasLength(2));
+      expect(await keysFor('honey'), isEmpty);
+    });
+
+    test('and the next refill lands whole', () async {
+      await index.replaceAll(
+        _BreakingAfter(const <IndexedDocumentDto>[
+          IndexedDocumentDto(key: 'new-a.md', text: 'honey'),
+        ]),
+      );
+
+      await fill(<String, String>{'c.md': 'jam'});
+
+      expect(await keysFor('jam'), <String>['c.md']);
+      expect(await keysFor('marmalade'), isEmpty);
+    });
+  });
+
   test('answers again after being disposed of', () async {
     await fill(<String, String>{'a.md': 'marmalade'});
     index.dispose();
@@ -143,4 +193,27 @@ void main() {
     // holds is a cache, and rebuilding it is the caller's move.
     expect(await keysFor('marmalade'), isEmpty);
   });
+}
+
+/// A list that hands over every document it holds and then throws, the way
+/// a refill interrupted half way through does.
+final class _BreakingAfter extends ListBase<IndexedDocumentDto> {
+  _BreakingAfter(this._documents);
+
+  final List<IndexedDocumentDto> _documents;
+
+  @override
+  int get length => _documents.length + 1;
+
+  @override
+  set length(int _) => throw UnsupportedError('fixed');
+
+  @override
+  IndexedDocumentDto operator [](int index) => index < _documents.length
+      ? _documents[index]
+      : throw StateError('the refill was interrupted');
+
+  @override
+  void operator []=(int index, IndexedDocumentDto value) =>
+      throw UnsupportedError('fixed');
 }

@@ -96,7 +96,9 @@ class _SegmentWidget extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: SearchDesign.scopeLabel,
                   height: 1.4,
-                  fontWeight: isChosen ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: isChosen
+                      ? TomFonts.segmentChosen
+                      : TomFonts.segmentRest,
                   color: isChosen ? colors.textPrimary : colors.textMuted,
                 ),
               ),

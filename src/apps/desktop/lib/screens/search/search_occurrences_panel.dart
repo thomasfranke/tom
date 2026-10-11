@@ -173,64 +173,73 @@ class _RowWidget extends ConsumerWidget {
       child: MouseRegion(
         onEnter: (PointerEnterEvent _) =>
             ref.read(searchProvider.notifier).focusOn(index),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: isCurrent ? colors.accentSoft : null,
-            borderRadius: BorderRadius.circular(SearchDesign.radius),
-          ),
-          child: SizedBox(
-            height: SearchDesign.rowHeight,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                SearchDesign.hitPad,
-                SearchDesign.rowTop,
-                SearchDesign.hitPad,
-                0,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        if (occurrence.heading.isNotEmpty) ...<Widget>[
-                          Text(
-                            occurrence.heading,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: SearchDesign.heading,
-                              height: 1.2,
-                              color: colors.textMuted,
+        // Going to it: the caret lands on the match and the pane scrolls
+        // there (`docs/product/search/in-the-document/doc.md`).
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => ref
+              .read(editorProvider.notifier)
+              .goTo(occurrence.start, occurrence.end),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: isCurrent ? colors.accentSoft : null,
+              borderRadius: BorderRadius.circular(SearchDesign.radius),
+            ),
+            child: SizedBox(
+              height: SearchDesign.rowHeight,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  SearchDesign.hitPad,
+                  SearchDesign.rowTop,
+                  SearchDesign.hitPad,
+                  0,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          if (occurrence.heading.isNotEmpty) ...<Widget>[
+                            Text(
+                              occurrence.heading,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: SearchDesign.heading,
+                                height: 1.2,
+                                color: colors.textMuted,
+                              ),
                             ),
+                            const SizedBox(height: SearchDesign.headingGap),
+                          ],
+                          _ExcerptWidget(
+                            occurrence: occurrence,
+                            replacement: replacement,
+                            isReplacing: isReplacing,
                           ),
-                          const SizedBox(height: SearchDesign.headingGap),
                         ],
-                        _ExcerptWidget(
-                          occurrence: occurrence,
-                          replacement: replacement,
-                          isReplacing: isReplacing,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  if (isReplacing && isCurrent) ...<Widget>[
-                    _ActionWidget(
-                      icon: TomGlyphEnum.replace,
-                      tooltip: context.l10n.searchReplaceThisOne,
-                      onPressed: () => ref
-                          .read(searchProvider.notifier)
-                          .replaceOne(occurrence),
-                    ),
-                    _ActionWidget(
-                      icon: TomGlyphEnum.close,
-                      tooltip: context.l10n.searchSkipThisOne,
-                      onPressed: () =>
-                          ref.read(searchProvider.notifier).dismiss(occurrence),
-                    ),
+                    if (isReplacing && isCurrent) ...<Widget>[
+                      _ActionWidget(
+                        icon: TomGlyphEnum.replace,
+                        tooltip: context.l10n.searchReplaceThisOne,
+                        onPressed: () => ref
+                            .read(searchProvider.notifier)
+                            .replaceOne(occurrence),
+                      ),
+                      _ActionWidget(
+                        icon: TomGlyphEnum.close,
+                        tooltip: context.l10n.searchSkipThisOne,
+                        onPressed: () => ref
+                            .read(searchProvider.notifier)
+                            .dismiss(occurrence),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

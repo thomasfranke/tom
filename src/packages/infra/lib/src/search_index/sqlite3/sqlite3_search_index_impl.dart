@@ -33,7 +33,7 @@ final class Sqlite3SearchIndexImpl implements SearchIndex {
   Future<Result<void, SearchIndexFailure>> replaceAll(
     List<IndexedDocumentDto> documents,
   ) async => _opened().flatMap(
-    (Database database) => _guard(() {
+    (Database database) => _atomically(database, () {
       database.execute('DELETE FROM $_table;');
       final PreparedStatement insert = database.prepare(
         'INSERT INTO $_table(key, text) VALUES (?, ?);',
@@ -52,7 +52,7 @@ final class Sqlite3SearchIndexImpl implements SearchIndex {
   Future<Result<void, SearchIndexFailure>> put(
     IndexedDocumentDto document,
   ) async => _opened().flatMap(
-    (Database database) => _guard(() {
+    (Database database) => _atomically(database, () {
       database
         ..execute('DELETE FROM $_table WHERE key = ?;', <Object>[document.key])
         ..execute('INSERT INTO $_table(key, text) VALUES (?, ?);', <Object>[
@@ -118,6 +118,26 @@ final class Sqlite3SearchIndexImpl implements SearchIndex {
       return opened;
     });
   }
+
+  /// [write] as one transaction: all of it lands, or the index is what it
+  /// was.
+  ///
+  /// A refill is a delete and then an insert per document; stopped half way
+  /// with no transaction, the search would find some documents and silently
+  /// not the rest.
+  static Result<void, SearchIndexFailure> _atomically(
+    Database database,
+    void Function() write,
+  ) => _guard(() {
+    database.execute('BEGIN;');
+    try {
+      write();
+      database.execute('COMMIT;');
+    } on Object {
+      database.execute('ROLLBACK;');
+      rethrow;
+    }
+  });
 
   /// [body]'s value, with anything sqlite throws reported instead.
   static Result<T, SearchIndexFailure> _guard<T>(T Function() body) {
