@@ -9,10 +9,7 @@ import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/src/commands/commands_providers.dart';
 import 'package:tom_presentation/src/editor/editor_notifier.dart';
-import 'package:tom_presentation/src/editor/editor_state.dart';
-import 'package:tom_presentation/src/editor/held_buffers_notifier.dart';
 import 'package:tom_presentation/src/preferences/preferences_providers.dart';
-import 'package:tom_presentation/src/spaces/document_tab.dart';
 import 'package:tom_presentation/src/spaces/space_session.dart';
 import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
 
@@ -73,6 +70,10 @@ class PreferencesNotifier extends _$PreferencesNotifier {
   void toggleFormattingBar() =>
       _apply(state.copyWith(showingFormattingBar: !state.showingFormattingBar));
 
+  /// Asks GitHub for a newer release when the app opens, or stops doing so.
+  void toggleCheckingForUpdates() =>
+      _apply(state.copyWith(checkingForUpdates: !state.checkingForUpdates));
+
   /// Puts [chosen] on screen, then in the store.
   void _apply(PreferencesValueObject chosen) {
     state = chosen;
@@ -88,13 +89,14 @@ class PreferencesNotifier extends _$PreferencesNotifier {
     if (!ref.mounted || written is! Success<void, AppFailure>) {
       return;
     }
-    // Only its own tab: the same slot can hold `git-approvals.json`, which
-    // this write did not touch.
-    final SpaceRelativePathValueObject? held = ref
-        .read(spaceSessionProvider)
-        ?.preferencesFile;
-    if (held != null && held != approvalsFile) {
-      await ref.read(editorProvider.notifier).preferencesFileChanged();
+    // Only its own tab: `git-approvals.json`, which this write did not
+    // touch, has one of its own.
+    if (ref.read(spaceSessionProvider)?.appFiles.isEmpty ?? true) {
+      return;
+    }
+    final SpaceRelativePathValueObject file = ref.read(preferencesFileProvider);
+    if (ref.read(spaceSessionProvider)!.appFiles.contains(file)) {
+      await ref.read(editorProvider.notifier).appFileChanged(file);
     }
   }
 
@@ -109,7 +111,7 @@ class PreferencesNotifier extends _$PreferencesNotifier {
     () => writePreferences.write(state),
   );
 
-  /// Opens `git-approvals.json` the same way, in the same tab: the list of
+  /// Opens `git-approvals.json` the same way, in a tab of its own: the list of
   /// what may run unasked, every command the app can run listed first
   /// (`docs/product/git-workflow/approvals/doc.md`).
   Future<void> openApprovalsFile() =>
@@ -123,8 +125,8 @@ class PreferencesNotifier extends _$PreferencesNotifier {
   /// Puts [file], one of the app's own, in the tab after the documents',
   /// [prepare]d first unless that tab already holds it.
   ///
-  /// **One such tab at a time**: opening the other file takes its place —
-  /// unless it holds edits nobody saved, which are shown instead of lost.
+  /// **A tab each**: the two files can be open at once, each with its own
+  /// unsaved edits.
   Future<void> _openAppFile(
     SpaceRelativePathValueObject file,
     Future<Result<void, AppFailure>> Function() prepare,
@@ -136,32 +138,13 @@ class PreferencesNotifier extends _$PreferencesNotifier {
     final SpaceSessionNotifier opening = ref.read(
       spaceSessionProvider.notifier,
     );
-    final SpaceRelativePathValueObject? held = session.preferencesFile;
-    if (held != null && held != file && _hasUnsaved(held)) {
-      opening.openPreferencesFile(held);
-      return;
-    }
-    if (held != file) {
+    if (!session.appFiles.contains(file)) {
       await prepare();
       if (!ref.mounted) {
         return;
       }
     }
     opening.openPreferencesFile(file);
-  }
-
-  /// Whether the app's file [held] by the tab has edits the disk does not,
-  /// on screen or behind another tab.
-  bool _hasUnsaved(SpaceRelativePathValueObject held) {
-    final DocumentTab tab = DocumentTab.preferences(held);
-    if (ref.read(heldBuffersProvider)[tab]?.isDirty ?? false) {
-      return true;
-    }
-    return ref.exists(editorProvider) &&
-        switch (ref.read(editorProvider)) {
-          final EditorReady open => open.isDirty && open.tab == tab,
-          _ => false,
-        };
   }
 
   /// Reads the store again — what saving the file by hand applies.

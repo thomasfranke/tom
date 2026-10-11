@@ -62,7 +62,7 @@ final class AccountNotifierProvider
   }
 }
 
-String _$accountNotifierHash() => r'6892f82bb7f212cecf6f3dd58a1c6a005d7e4ce7';
+String _$accountNotifierHash() => r'2b1a83ab182cab81444daa7835243ef5e4494153';
 
 /// The account of the open space — or the machine's, on Home — read when
 /// the space opens or closes, on the git menu's `Reload`, and after a choice

@@ -18,9 +18,13 @@ final class _Account extends AccountNotifier {
   final AccountState held;
   final List<String> chosen = <String>[];
   int opened = 0;
+  int readsIfUnread = 0;
 
   @override
   AccountState build() => held;
+
+  @override
+  Future<void> readIfUnread() async => readsIfUnread++;
 
   @override
   Future<void> choose(GithubAccountValueObject account) async =>
@@ -130,6 +134,22 @@ void main() {
     await tester.tap(find.byTooltip('Account'));
     await tester.pumpAndSettle();
   }
+
+  group('where git asks first', () {
+    testWidgets('the button says nothing was read, and opening it reads', (
+      WidgetTester tester,
+    ) async {
+      await pump(tester, const AccountState(isUnread: true));
+
+      expect(find.byTooltip('Account — not read yet'), findsOneWidget);
+      expect(account.readsIfUnread, 0);
+
+      await tester.tap(find.byTooltip('Account — not read yet'));
+      await tester.pumpAndSettle();
+
+      expect(account.readsIfUnread, 1);
+    });
+  });
 
   for (final Brightness brightness in Brightness.values) {
     group('in the ${brightness.name} theme', () {
@@ -319,31 +339,32 @@ void main() {
     expect(popover.width, 280);
   });
 
-  testWidgets('the button wears a ring while open, and closes as it opened', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('the button wears no mark of its own while open, and closes as '
+      'it opened', (WidgetTester tester) async {
     await pump(tester, signedOut);
 
-    /// The colour of the ring around the button.
-    Color ring() {
-      final Container circle = tester.widget<Container>(
-        find
-            .descendant(
-              of: find.byType(AccountControlWidget),
-              matching: find.byType(Container),
-            )
-            .first,
-      );
-      final BoxDecoration decoration = circle.decoration! as BoxDecoration;
-      return (decoration.border! as Border).top.color;
-    }
+    /// Every outline drawn inside the button — its popover is not in it.
+    Iterable<BoxBorder> outlines() => tester
+        .widgetList<Container>(
+          find.descendant(
+            of: find.byTooltip('Account'),
+            matching: find.byType(Container),
+          ),
+        )
+        .map((Container it) => it.decoration)
+        .whereType<BoxDecoration>()
+        .map((BoxDecoration it) => it.border)
+        .whereType<BoxBorder>();
 
-    expect(ring(), Colors.transparent);
+    /// The disc, which is the whole of the button.
+    Size disc() => tester.getSize(find.byType(AccountAvatarWidget));
+
+    expect(outlines(), isEmpty);
+    expect(disc(), const Size.square(24));
     await open(tester);
-    expect(
-      ring(),
-      TomColors.of(tester.element(find.byType(AccountControlWidget))).accent,
-    );
+    // The popover under it is what says it is open.
+    expect(outlines(), isEmpty);
+    expect(disc(), const Size.square(24));
 
     await open(tester);
     expect(find.byType(AccountPopoverWidget), findsNothing);
@@ -451,5 +472,58 @@ void main() {
 
     expect(find.text('FAZ COMMIT COMO'), findsOneWidget);
     expect(find.text('ESTE REPOSITÓRIO'), findsOneWidget);
+  });
+
+  group('at the numbers of `account-no-credentials`', () {
+    testWidgets('a hint is 14 a line, in all three places it appears', (
+      WidgetTester tester,
+    ) async {
+      await pump(tester, signedOut, brightness: Brightness.dark);
+      await open(tester);
+
+      for (final String hint in <String>[
+        'TOM uses what git and gh already have — run gh auth login, or push '
+            'once over HTTPS.',
+        'What you can do here shows once git or gh can reach GitHub.',
+      ]) {
+        final Text text = tester.widget<Text>(find.text(hint));
+        expect(text.style!.height! * text.style!.fontSize!, 14, reason: hint);
+      }
+    });
+
+    testWidgets('the first caption sits 15 under the card, the mark 27 under '
+        'its column label, and the hint 4 under the sentence', (
+      WidgetTester tester,
+    ) async {
+      await pump(tester, signedOut, brightness: Brightness.dark);
+      await open(tester);
+
+      final Rect card = tester.getRect(find.byType(AccountPopoverWidget));
+      expect(tester.getTopLeft(find.text('COMMITS AS')).dy - card.top, 15);
+
+      final Rect label = tester.getRect(find.text('READ'));
+      final Rect dash = tester.getRect(dashes().first);
+      // The board's dash sits 20.5 under its label's own middle.
+      expect(
+        dash.center.dy - label.center.dy,
+        moreOrLessEquals(20.5, epsilon: 0.6),
+      );
+
+      final Rect sentence = tester.getRect(
+        find.text('No GitHub credentials on this computer'),
+      );
+      final Rect hint = tester.getRect(find.textContaining('TOM uses what'));
+      expect(hint.top - sentence.bottom, 4);
+
+      // A caption to its content: 8 under the name's, 7 under the others'.
+      final Rect github = tester.getRect(find.text('GITHUB'));
+      expect(sentence.top - github.bottom, 7);
+      final Rect name = tester.getRect(find.text('Ada Lovelace'));
+      expect(name.top - tester.getRect(find.text('COMMITS AS')).bottom, 8);
+
+      // The last line to the card's foot: 10, and the stroke.
+      final Rect note = tester.getRect(find.textContaining('shows once'));
+      expect(card.bottom - note.bottom, 11);
+    });
   });
 }

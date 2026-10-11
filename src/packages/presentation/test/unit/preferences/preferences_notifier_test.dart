@@ -105,6 +105,18 @@ void main() {
     expect(stored.held.showingFormattingBar, isFalse);
   });
 
+  test('checking for updates is on, then a toggle that persists', () async {
+    start();
+    await settle();
+    expect(now().checkingForUpdates, isTrue);
+
+    container.read(preferencesProvider.notifier).toggleCheckingForUpdates();
+    await settle();
+
+    expect(now().checkingForUpdates, isFalse);
+    expect(stored.held.checkingForUpdates, isFalse);
+  });
+
   test('a store that refuses loses the choice between runs, not on screen', () {
     // The choice is already applied; there is nothing to take back.
     stored.refuses = true;
@@ -162,9 +174,9 @@ void main() {
         await container.read(preferencesProvider.notifier).openApprovalsFile();
 
         final SpaceSessionState session = container.read(spaceSessionProvider)!;
-        expect(session.preferencesFile, list);
+        expect(session.appFiles, <SpaceRelativePathValueObject>[list]);
         expect(session.isShowingPreferencesFile, isTrue);
-        expect(session.preferencesTab?.name, 'git-approvals.json');
+        expect(session.shownAppTab?.name, 'git-approvals.json');
         expect(approvals.seeded, 1);
         expect(stored.writes, 0, reason: 'the preferences are not its file');
       });
@@ -196,7 +208,7 @@ void main() {
         expect(approvals.seeded, 0);
       });
 
-      test('takes the preferences file\'s place in the one tab', () async {
+      test('has a tab of its own beside the preferences file\'s', () async {
         start();
         await settle();
         container.read(spaceSessionProvider.notifier)
@@ -205,10 +217,12 @@ void main() {
 
         await container.read(preferencesProvider.notifier).openApprovalsFile();
 
-        expect(container.read(spaceSessionProvider)?.preferencesFile, list);
+        final SpaceSessionState session = container.read(spaceSessionProvider)!;
+        expect(session.appFiles, <SpaceRelativePathValueObject>[file, list]);
+        expect(session.appFile, list, reason: 'the one just opened is shown');
       });
 
-      test('but never over edits nobody saved: those are shown', () async {
+      test('never takes edits nobody saved from the other tab', () async {
         start();
         await settle();
         container.read(spaceSessionProvider.notifier)
@@ -228,9 +242,13 @@ void main() {
         await container.read(preferencesProvider.notifier).openApprovalsFile();
 
         final SpaceSessionState session = container.read(spaceSessionProvider)!;
-        expect(session.preferencesFile, file, reason: 'not replaced');
-        expect(session.isShowingPreferencesFile, isTrue, reason: 'but shown');
-        expect(approvals.seeded, 0);
+        expect(session.appFiles, contains(file), reason: 'not replaced');
+        expect(
+          container.read(heldBuffersProvider)[DocumentTab.preferences(file)],
+          isNotNull,
+          reason: 'its edits are still held',
+        );
+        expect(session.appFile, list);
       });
 
       test('a choice in the popover does not disturb its tab', () async {
@@ -263,7 +281,7 @@ void main() {
 
       await container.read(preferencesProvider.notifier).openFile();
 
-      expect(container.read(spaceSessionProvider)?.preferencesFile, file);
+      expect(container.read(spaceSessionProvider)?.appFile, file);
       // A machine that never chose anything still finds them in the file.
       expect(stored.held.language, LanguageEnum.portuguese);
     });

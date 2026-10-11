@@ -7,9 +7,6 @@ abstract final class AccountDesign {
   /// The button, a circle at the bar's far right.
   static const double button = 24;
 
-  /// The ring the button wears while its popover is open.
-  static const double ring = 1;
-
   /// The person drawn when nobody is named.
   static const double person = 14;
 
@@ -41,8 +38,16 @@ abstract final class AccountDesign {
   /// Its tracking.
   static const double captionSpacing = 0.6;
 
-  /// A caption to what it heads.
-  static const double captionToContent = 8;
+  /// A caption to what it heads: 7 under `GITHUB` and `THIS REPOSITORY`,
+  /// where the boards read 22 between the inks.
+  static const double captionToContent = 7;
+
+  /// The same under `COMMITS AS`, where the boards read 23.
+  static const double captionToIdentity = 8;
+
+  /// The card's last line to its foot: the board's 13 between the ink and
+  /// the stroke.
+  static const double bottomInset = 10;
 
   /// Every line of plain text.
   static const double text = 12.5;
@@ -101,11 +106,23 @@ abstract final class AccountDesign {
   /// The name to its glyph.
   static const double externalGap = 6;
 
-  /// The repository's name to the grid's labels, top to top.
-  static const double linkToGrid = 26;
+  /// The repository's name to the grid's labels, top to top: the boards
+  /// read 28 between the two inks, which this spacing lands on.
+  static const double linkToGrid = 30;
 
-  /// A column label to its mark, top to top.
-  static const double labelToMark = 28;
+  /// A column label to its mark, top to top: 21 here puts a dash 24 under
+  /// its label's ink, as `account-no-credentials` does.
+  static const double labelToMark = 21;
+
+  /// A wrapped hint's line, in `Account` all three hints.
+  static const double hintLine = 14;
+
+  /// Above the card's first caption, one less than the sides: the boards'
+  /// first caption sits a point higher than the stroke-less inset gives.
+  static const double topInset = inset - 2;
+
+  /// The `No GitHub credentials` line to the hint under it.
+  static const double noteGap = 4;
 
   /// A granted column's tick.
   static const double check = 12;
@@ -114,5 +131,5 @@ abstract final class AccountDesign {
   static const double dash = 10;
 
   /// The grid to the note under it.
-  static const double gridToNote = 14;
+  static const double gridToNote = 11;
 }

@@ -38,6 +38,11 @@ abstract class PreferencesValueObject with _$PreferencesValueObject {
     /// Who says yes before git and `gh` run; nobody, until somebody chooses
     /// (`docs/product/git-workflow/approvals/doc.md`).
     @Default(GitApprovalModeEnum.automatic) GitApprovalModeEnum gitApprovals,
+
+    /// Whether opening the app asks GitHub for a newer release; on until
+    /// somebody unticks it, and a stored `false` keeps the choice
+    /// (`docs/product/about/doc.md`).
+    @Default(true) bool checkingForUpdates,
   }) = _PreferencesValueObject;
 
   const PreferencesValueObject._();

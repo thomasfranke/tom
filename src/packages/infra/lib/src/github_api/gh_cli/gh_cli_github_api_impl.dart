@@ -38,7 +38,7 @@ final class GhCliGithubApiImpl implements GithubApi {
     this.environment = const <String, String>{},
     this.includeParentEnvironment = true,
     this.timeout = const Duration(seconds: 15),
-    this.commandLog = const SilentCommandLog(),
+    this.commandLog = const SilentCommandLogImpl(),
     this.commandGate = const OpenCommandGateImpl(),
     GhRunner? run,
   }) {

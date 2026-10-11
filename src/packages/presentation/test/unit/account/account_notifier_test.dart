@@ -80,6 +80,43 @@ void main() {
     return container.read(accountProvider);
   }
 
+  group('where git asks first', () {
+    test('Manual: Home alone reads nothing and says it is not read yet; '
+        'opening the popover reads', () async {
+      container.dispose();
+      container = ProviderContainer(
+        overrides: <Override>[
+          preferencesProvider.overrideWith(
+            () => _Prefs(GitApprovalModeEnum.manual),
+          ),
+          readAccountProvider.overrideWithValue(
+            ReadAccountUseCase(
+              gitFor: (SpaceEntity _) => git,
+              accountsFor: (SpaceEntity _) => github,
+              machineGit: machine,
+              machineAccounts: machineAccounts,
+              observability: const _Silent(),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      container
+        ..listen<PreferencesValueObject>(preferencesProvider, (_, _) {})
+        ..listen<AccountState>(accountProvider, (_, _) {});
+      await settle();
+
+      expect(container.read(accountProvider).isUnread, isTrue);
+      expect(container.read(accountProvider).summary, isNull);
+      expect(machine.identityReads, 0, reason: 'Home asked git by itself');
+
+      await container.read(accountProvider.notifier).readIfUnread();
+
+      expect(container.read(accountProvider).isUnread, isFalse);
+      expect(container.read(accountProvider).summary?.identity.name, isNotNull);
+    });
+  });
+
   test("with no space open, the machine's own is read — Home's", () async {
     container.listen<AccountState>(accountProvider, (_, _) {});
     await settle();
@@ -246,6 +283,20 @@ void main() {
       expect(state.local?.identity.name, 'Ada Lovelace', reason: "git's half");
     },
   );
+}
+
+/// Preferences that already hold [mode], nothing read from a store.
+final class _Prefs extends PreferencesNotifier {
+  _Prefs(this.mode);
+
+  final GitApprovalModeEnum mode;
+
+  @override
+  PreferencesValueObject build() =>
+      PreferencesValueObject.defaults.copyWith(gitApprovals: mode);
+
+  @override
+  Future<void> get loaded => Future<void>.value();
 }
 
 final class _Git implements GitRepository {

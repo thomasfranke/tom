@@ -16,6 +16,7 @@ final class PreferencesDto {
     required this.language,
     required this.showingFormattingBar,
     required this.gitApprovals,
+    this.checkingForUpdates,
   });
 
   /// [row] as a DTO, with anything missing or unreadable left null.
@@ -28,7 +29,13 @@ final class PreferencesDto {
     gitApprovals: row['gitApprovals'] is String
         ? row['gitApprovals']! as String
         : null,
+    checkingForUpdates: row['checkingForUpdates'] is bool
+        ? row['checkingForUpdates']! as bool
+        : null,
   );
+
+  /// Whether the app asks for a newer release at opening, or null.
+  final bool? checkingForUpdates;
 
   /// The theme's name, or null where the store had none.
   final String? theme;
@@ -49,6 +56,7 @@ final class PreferencesDto {
     if (showingFormattingBar != null)
       'showingFormattingBar': showingFormattingBar,
     if (gitApprovals != null) 'gitApprovals': gitApprovals,
+    if (checkingForUpdates != null) 'checkingForUpdates': checkingForUpdates,
   };
 
   /// [preferences] as a row.
@@ -58,6 +66,7 @@ final class PreferencesDto {
         language: preferences.language.name,
         showingFormattingBar: preferences.showingFormattingBar,
         gitApprovals: preferences.gitApprovals.name,
+        checkingForUpdates: preferences.checkingForUpdates,
       );
 
   /// What this says, with the defaults standing in for anything it does not.
@@ -73,6 +82,9 @@ final class PreferencesDto {
       gitApprovals,
       GitApprovalModeEnum.automatic,
     ),
+    // On unless the file says `false`: a missing or unreadable value is the
+    // default, and a person who unticked it keeps the choice.
+    checkingForUpdates: checkingForUpdates ?? true,
   );
 
   /// The member of [values] called [name], or [fallback].

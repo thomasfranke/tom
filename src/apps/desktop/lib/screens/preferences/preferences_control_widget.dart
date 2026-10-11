@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tom_desktop/l10n/l10n.dart';
+import 'package:tom_desktop/screens/about/update_dot_widget.dart';
 import 'package:tom_desktop/screens/preferences/preferences_design.dart';
 import 'package:tom_desktop/screens/preferences/widgets/preferences_popover_widget.dart';
 import 'package:tom_desktop/screens/workspace/workspace_design.dart';
@@ -24,13 +25,30 @@ class PreferencesControlWidget extends StatefulWidget {
   /// Creates the control.
   const PreferencesControlWidget({super.key});
 
-  /// Popover top to the **bar's** bottom edge, not the button's.
-  ///
-  /// The button is a twenty-point glyph centred in a fifty-two-point bar, so
-  /// hanging the card off it would put it inside the bar
-  /// (`design/screens/desktop/preferences/preferences-light.svg` draws the
-  /// card eight under the bar).
-  static const double gap = 8;
+  /// Popover top to the **bar's** bottom edge, not the button's — negative:
+  /// the boards draw the card two *over* the bar, five under the ring
+  /// (`design/screens/desktop/preferences/preferences-dark.svg`, card top at
+  /// y 38 under a bar that ends at 40).
+  static const double gap = -2;
+
+  /// The popover's right edge past the button's: the boards hang the card
+  /// under the ring, which sits two to the right of the glyph.
+  static const double overhang = 2;
+
+  /// The ring's side — the box's 24 and one more on each side.
+  static const double ring = 26;
+
+  /// Where it starts, from the box's left edge.
+  static const double ringLeft = 1;
+
+  /// How far it rises above the box's top.
+  static const double ringOutset = 1;
+
+  /// Its corner.
+  static const double ringRadius = 6;
+
+  /// The accent's share in its stroke, which the board draws at about half.
+  static const double ringAlpha = 0.48;
 
   @override
   State<PreferencesControlWidget> createState() =>
@@ -76,15 +94,43 @@ class _PreferencesControlWidgetState extends State<PreferencesControlWidget> {
             borderRadius: BorderRadius.circular(WorkspaceDesign.toggleRadius),
             child: SizedBox.square(
               dimension: WorkspaceDesign.gearBox,
-              child: Center(
-                child: TomGlyphWidget(
-                  glyph: TomGlyphEnum.preferences,
-                  // Lit while it is open: the way to close it must be
-                  // visible.
-                  color: _isOpen ? colors.accent : colors.textSecondary,
-                  size: WorkspaceDesign.gear,
-                  outline: true,
-                ),
+              child: Stack(
+                alignment: Alignment.center,
+                // The ring and the dot reach past the box, as the boards'.
+                clipBehavior: Clip.none,
+                children: <Widget>[
+                  // Ringed while it is open — the selected face, so the way
+                  // to close it is visible (`about-updates/an-update-is-waiting`).
+                  if (_isOpen)
+                    Positioned(
+                      key: const Key('gearRing'),
+                      left: PreferencesControlWidget.ringLeft,
+                      top: -PreferencesControlWidget.ringOutset,
+                      width: PreferencesControlWidget.ring,
+                      height: PreferencesControlWidget.ring,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: colors.accent.withValues(
+                              alpha: PreferencesControlWidget.ringAlpha,
+                            ),
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            PreferencesControlWidget.ringRadius,
+                          ),
+                        ),
+                      ),
+                    ),
+                  TomGlyphWidget(
+                    glyph: TomGlyphEnum.preferences,
+                    color: colors.textSecondary,
+                    size: WorkspaceDesign.gear,
+                    outline: true,
+                  ),
+                  // An update found at opening, said quietly.
+                  const UpdateDotWidget(),
+                ],
               ),
             ),
           ),
@@ -115,7 +161,10 @@ class _PreferencesControlWidgetState extends State<PreferencesControlWidget> {
           // Its **right** edge under the button's, because a popover hung
           // under the left edge of a control at the right of a bar lands off
           // the window (`docs/product/preferences/the-popover/doc.md`).
-          left: corner.dx - PreferencesDesign.width,
+          left:
+              corner.dx +
+              PreferencesControlWidget.overhang -
+              PreferencesDesign.width,
           top: underTheBar,
           child: TapRegion(
             groupId: _group,

@@ -60,8 +60,9 @@ class AccountPopoverWidget extends ConsumerWidget {
           ),
           child: Padding(
             // The card's inset, less the stroke Flutter draws inside it.
-            padding: const EdgeInsets.symmetric(
-              vertical: AccountDesign.inset - 1,
+            padding: const EdgeInsets.only(
+              top: AccountDesign.topInset,
+              bottom: AccountDesign.bottomInset,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -69,6 +70,7 @@ class AccountPopoverWidget extends ConsumerWidget {
               children: <Widget>[
                 _SectionWidget(
                   caption: context.l10n.accountCommitsAs,
+                  gap: AccountDesign.captionToIdentity,
                   // Git answers at once; a line held empty until it does,
                   // never `Not set` for an identity nobody has read yet.
                   child: summary == null && isAsking
@@ -113,15 +115,24 @@ class AccountPopoverWidget extends ConsumerWidget {
 
 /// A caption and what it heads, inside the card's side inset.
 class _SectionWidget extends StatelessWidget {
-  const _SectionWidget({required this.caption, required this.child});
+  const _SectionWidget({
+    required this.caption,
+    required this.child,
+    this.gap = AccountDesign.captionToContent,
+  });
 
   final String caption;
   final Widget child;
 
+  /// What lies between the caption and [child].
+  final double gap;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(StringProperty('caption', caption));
+    properties
+      ..add(StringProperty('caption', caption))
+      ..add(DoubleProperty('gap', gap));
   }
 
   @override
@@ -141,7 +152,7 @@ class _SectionWidget extends StatelessWidget {
             color: TomColors.of(context).textMuted,
           ),
         ),
-        const SizedBox(height: AccountDesign.captionToContent),
+        SizedBox(height: gap),
         child,
       ],
     ),
@@ -236,7 +247,7 @@ class _GithubWidget extends ConsumerWidget {
             size: AccountDesign.text,
             color: colors.textSecondary,
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AccountDesign.noteGap),
           AccountLineWidget(
             l10n.accountNoCredentialsHint,
             size: AccountDesign.small,
@@ -413,7 +424,7 @@ class AccountLineWidget extends StatelessWidget {
     overflow: wraps ? TextOverflow.clip : TextOverflow.ellipsis,
     style: TextStyle(
       fontSize: size,
-      height: (wraps ? 16 : AccountDesign.line) / size,
+      height: (wraps ? AccountDesign.hintLine : AccountDesign.line) / size,
       fontWeight: weight,
       color: color,
     ),

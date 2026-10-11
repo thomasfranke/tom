@@ -23,7 +23,10 @@ mixin _$PreferencesValueObject {
 /// (`docs/product/editor/formatting-shortcuts/doc.md`).
  bool get showingFormattingBar;/// Who says yes before git and `gh` run; nobody, until somebody chooses
 /// (`docs/product/git-workflow/approvals/doc.md`).
- GitApprovalModeEnum get gitApprovals;
+ GitApprovalModeEnum get gitApprovals;/// Whether opening the app asks GitHub for a newer release; on until
+/// somebody unticks it, and a stored `false` keeps the choice
+/// (`docs/product/about/doc.md`).
+ bool get checkingForUpdates;
 /// Create a copy of PreferencesValueObject
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -34,16 +37,16 @@ $PreferencesValueObjectCopyWith<PreferencesValueObject> get copyWith => _$Prefer
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PreferencesValueObject&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.language, language) || other.language == language)&&(identical(other.showingFormattingBar, showingFormattingBar) || other.showingFormattingBar == showingFormattingBar)&&(identical(other.gitApprovals, gitApprovals) || other.gitApprovals == gitApprovals));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PreferencesValueObject&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.language, language) || other.language == language)&&(identical(other.showingFormattingBar, showingFormattingBar) || other.showingFormattingBar == showingFormattingBar)&&(identical(other.gitApprovals, gitApprovals) || other.gitApprovals == gitApprovals)&&(identical(other.checkingForUpdates, checkingForUpdates) || other.checkingForUpdates == checkingForUpdates));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,theme,language,showingFormattingBar,gitApprovals);
+int get hashCode => Object.hash(runtimeType,theme,language,showingFormattingBar,gitApprovals,checkingForUpdates);
 
 @override
 String toString() {
-  return 'PreferencesValueObject(theme: $theme, language: $language, showingFormattingBar: $showingFormattingBar, gitApprovals: $gitApprovals)';
+  return 'PreferencesValueObject(theme: $theme, language: $language, showingFormattingBar: $showingFormattingBar, gitApprovals: $gitApprovals, checkingForUpdates: $checkingForUpdates)';
 }
 
 
@@ -54,7 +57,7 @@ abstract mixin class $PreferencesValueObjectCopyWith<$Res>  {
   factory $PreferencesValueObjectCopyWith(PreferencesValueObject value, $Res Function(PreferencesValueObject) _then) = _$PreferencesValueObjectCopyWithImpl;
 @useResult
 $Res call({
- ThemeChoiceEnum theme, LanguageEnum language, bool showingFormattingBar, GitApprovalModeEnum gitApprovals
+ ThemeChoiceEnum theme, LanguageEnum language, bool showingFormattingBar, GitApprovalModeEnum gitApprovals, bool checkingForUpdates
 });
 
 
@@ -71,13 +74,14 @@ class _$PreferencesValueObjectCopyWithImpl<$Res>
 
 /// Create a copy of PreferencesValueObject
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? theme = null,Object? language = null,Object? showingFormattingBar = null,Object? gitApprovals = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? theme = null,Object? language = null,Object? showingFormattingBar = null,Object? gitApprovals = null,Object? checkingForUpdates = null,}) {
   return _then(_self.copyWith(
 theme: null == theme ? _self.theme : theme // ignore: cast_nullable_to_non_nullable
 as ThemeChoiceEnum,language: null == language ? _self.language : language // ignore: cast_nullable_to_non_nullable
 as LanguageEnum,showingFormattingBar: null == showingFormattingBar ? _self.showingFormattingBar : showingFormattingBar // ignore: cast_nullable_to_non_nullable
 as bool,gitApprovals: null == gitApprovals ? _self.gitApprovals : gitApprovals // ignore: cast_nullable_to_non_nullable
-as GitApprovalModeEnum,
+as GitApprovalModeEnum,checkingForUpdates: null == checkingForUpdates ? _self.checkingForUpdates : checkingForUpdates // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -162,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ThemeChoiceEnum theme,  LanguageEnum language,  bool showingFormattingBar,  GitApprovalModeEnum gitApprovals)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ThemeChoiceEnum theme,  LanguageEnum language,  bool showingFormattingBar,  GitApprovalModeEnum gitApprovals,  bool checkingForUpdates)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PreferencesValueObject() when $default != null:
-return $default(_that.theme,_that.language,_that.showingFormattingBar,_that.gitApprovals);case _:
+return $default(_that.theme,_that.language,_that.showingFormattingBar,_that.gitApprovals,_that.checkingForUpdates);case _:
   return orElse();
 
 }
@@ -183,10 +187,10 @@ return $default(_that.theme,_that.language,_that.showingFormattingBar,_that.gitA
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ThemeChoiceEnum theme,  LanguageEnum language,  bool showingFormattingBar,  GitApprovalModeEnum gitApprovals)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ThemeChoiceEnum theme,  LanguageEnum language,  bool showingFormattingBar,  GitApprovalModeEnum gitApprovals,  bool checkingForUpdates)  $default,) {final _that = this;
 switch (_that) {
 case _PreferencesValueObject():
-return $default(_that.theme,_that.language,_that.showingFormattingBar,_that.gitApprovals);case _:
+return $default(_that.theme,_that.language,_that.showingFormattingBar,_that.gitApprovals,_that.checkingForUpdates);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +207,10 @@ return $default(_that.theme,_that.language,_that.showingFormattingBar,_that.gitA
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ThemeChoiceEnum theme,  LanguageEnum language,  bool showingFormattingBar,  GitApprovalModeEnum gitApprovals)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ThemeChoiceEnum theme,  LanguageEnum language,  bool showingFormattingBar,  GitApprovalModeEnum gitApprovals,  bool checkingForUpdates)?  $default,) {final _that = this;
 switch (_that) {
 case _PreferencesValueObject() when $default != null:
-return $default(_that.theme,_that.language,_that.showingFormattingBar,_that.gitApprovals);case _:
+return $default(_that.theme,_that.language,_that.showingFormattingBar,_that.gitApprovals,_that.checkingForUpdates);case _:
   return null;
 
 }
@@ -218,7 +222,7 @@ return $default(_that.theme,_that.language,_that.showingFormattingBar,_that.gitA
 
 
 class _PreferencesValueObject extends PreferencesValueObject {
-  const _PreferencesValueObject({this.theme = ThemeChoiceEnum.system, this.language = LanguageEnum.system, this.showingFormattingBar = true, this.gitApprovals = GitApprovalModeEnum.automatic}): super._();
+  const _PreferencesValueObject({this.theme = ThemeChoiceEnum.system, this.language = LanguageEnum.system, this.showingFormattingBar = true, this.gitApprovals = GitApprovalModeEnum.automatic, this.checkingForUpdates = true}): super._();
   
 
 /// Which theme the window draws; the platform's until somebody chooses.
@@ -234,6 +238,10 @@ class _PreferencesValueObject extends PreferencesValueObject {
 /// Who says yes before git and `gh` run; nobody, until somebody chooses
 /// (`docs/product/git-workflow/approvals/doc.md`).
 @override@JsonKey() final  GitApprovalModeEnum gitApprovals;
+/// Whether opening the app asks GitHub for a newer release; on until
+/// somebody unticks it, and a stored `false` keeps the choice
+/// (`docs/product/about/doc.md`).
+@override@JsonKey() final  bool checkingForUpdates;
 
 /// Create a copy of PreferencesValueObject
 /// with the given fields replaced by the non-null parameter values.
@@ -245,16 +253,16 @@ _$PreferencesValueObjectCopyWith<_PreferencesValueObject> get copyWith => __$Pre
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PreferencesValueObject&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.language, language) || other.language == language)&&(identical(other.showingFormattingBar, showingFormattingBar) || other.showingFormattingBar == showingFormattingBar)&&(identical(other.gitApprovals, gitApprovals) || other.gitApprovals == gitApprovals));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PreferencesValueObject&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.language, language) || other.language == language)&&(identical(other.showingFormattingBar, showingFormattingBar) || other.showingFormattingBar == showingFormattingBar)&&(identical(other.gitApprovals, gitApprovals) || other.gitApprovals == gitApprovals)&&(identical(other.checkingForUpdates, checkingForUpdates) || other.checkingForUpdates == checkingForUpdates));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,theme,language,showingFormattingBar,gitApprovals);
+int get hashCode => Object.hash(runtimeType,theme,language,showingFormattingBar,gitApprovals,checkingForUpdates);
 
 @override
 String toString() {
-  return 'PreferencesValueObject(theme: $theme, language: $language, showingFormattingBar: $showingFormattingBar, gitApprovals: $gitApprovals)';
+  return 'PreferencesValueObject(theme: $theme, language: $language, showingFormattingBar: $showingFormattingBar, gitApprovals: $gitApprovals, checkingForUpdates: $checkingForUpdates)';
 }
 
 
@@ -265,7 +273,7 @@ abstract mixin class _$PreferencesValueObjectCopyWith<$Res> implements $Preferen
   factory _$PreferencesValueObjectCopyWith(_PreferencesValueObject value, $Res Function(_PreferencesValueObject) _then) = __$PreferencesValueObjectCopyWithImpl;
 @override @useResult
 $Res call({
- ThemeChoiceEnum theme, LanguageEnum language, bool showingFormattingBar, GitApprovalModeEnum gitApprovals
+ ThemeChoiceEnum theme, LanguageEnum language, bool showingFormattingBar, GitApprovalModeEnum gitApprovals, bool checkingForUpdates
 });
 
 
@@ -282,13 +290,14 @@ class __$PreferencesValueObjectCopyWithImpl<$Res>
 
 /// Create a copy of PreferencesValueObject
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? theme = null,Object? language = null,Object? showingFormattingBar = null,Object? gitApprovals = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? theme = null,Object? language = null,Object? showingFormattingBar = null,Object? gitApprovals = null,Object? checkingForUpdates = null,}) {
   return _then(_PreferencesValueObject(
 theme: null == theme ? _self.theme : theme // ignore: cast_nullable_to_non_nullable
 as ThemeChoiceEnum,language: null == language ? _self.language : language // ignore: cast_nullable_to_non_nullable
 as LanguageEnum,showingFormattingBar: null == showingFormattingBar ? _self.showingFormattingBar : showingFormattingBar // ignore: cast_nullable_to_non_nullable
 as bool,gitApprovals: null == gitApprovals ? _self.gitApprovals : gitApprovals // ignore: cast_nullable_to_non_nullable
-as GitApprovalModeEnum,
+as GitApprovalModeEnum,checkingForUpdates: null == checkingForUpdates ? _self.checkingForUpdates : checkingForUpdates // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

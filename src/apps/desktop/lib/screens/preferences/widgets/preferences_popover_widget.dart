@@ -6,7 +6,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/about/app_build.dart';
 import 'package:tom_desktop/l10n/l10n.dart';
+import 'package:tom_desktop/screens/about/about_dialog_widget.dart';
 import 'package:tom_desktop/screens/preferences/preferences_design.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -34,6 +36,10 @@ class PreferencesPopoverWidget extends ConsumerWidget {
   /// Closes the popover — what opening the file does first, since the tab
   /// it opens is behind it.
   final VoidCallback? onDismissed;
+
+  /// What a rule runs past the content on each side: the boards draw it from
+  /// stroke to stroke, the card's whole inside.
+  static const double _bleed = PreferencesDesign.inset - 1;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -77,7 +83,7 @@ class PreferencesPopoverWidget extends ConsumerWidget {
                   chosen: chosen.theme,
                   onChoose: notifier.chooseTheme,
                 ),
-                const SizedBox(height: PreferencesDesign.settingGap),
+                const SizedBox(height: PreferencesDesign.afterSwitch),
                 _CaptionWidget(context.l10n.preferencesLanguage),
                 _LanguageControlWidget(
                   tapGroup: tapGroup,
@@ -86,13 +92,57 @@ class PreferencesPopoverWidget extends ConsumerWidget {
                 ),
                 const SizedBox(height: PreferencesDesign.settingGap),
                 _FormattingBarCheckWidget(
+                  label: context.l10n.preferencesShowFormattingBar,
                   isShowing: chosen.showingFormattingBar,
                   onToggle: notifier.toggleFormattingBar,
                 ),
-                const SizedBox(height: PreferencesDesign.ruleGap),
-                Divider(height: 1, color: colors.border),
-                const SizedBox(height: PreferencesDesign.ruleGap),
-                _OpenTheFileWidget(onDismissed: onDismissed),
+                const SizedBox(height: PreferencesDesign.checkGap),
+                _FormattingBarCheckWidget(
+                  label: context.l10n.preferencesCheckForUpdates,
+                  isShowing: chosen.checkingForUpdates,
+                  onToggle: notifier.toggleCheckingForUpdates,
+                ),
+                const SizedBox(height: PreferencesDesign.settingGap),
+                _CaptionWidget(context.l10n.preferencesGitCommands),
+                _GitModeControlWidget(
+                  chosen: chosen.gitApprovals,
+                  onChoose: notifier.chooseGitApprovals,
+                ),
+                const SizedBox(height: PreferencesDesign.switchToWhy),
+                Text(
+                  switch (chosen.gitApprovals) {
+                    GitApprovalModeEnum.automatic =>
+                      context.l10n.preferencesGitAutomaticWhy,
+                    GitApprovalModeEnum.semi =>
+                      context.l10n.preferencesGitSemiWhy,
+                    GitApprovalModeEnum.manual =>
+                      context.l10n.preferencesGitManualWhy,
+                  },
+                  style: TextStyle(
+                    fontSize: PreferencesDesign.why,
+                    height: 1.4,
+                    color: colors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: PreferencesDesign.whyToButton),
+                _OpenTheFileWidget(
+                  label: context.l10n.preferencesOpenApprovals,
+                  open: (PreferencesNotifier it) => it.openApprovalsFile(),
+                  onDismissed: onDismissed,
+                ),
+                const SizedBox(height: PreferencesDesign.ruleAbove),
+                TomRulePainter.of(colors.border, bleed: _bleed),
+                const SizedBox(height: PreferencesDesign.ruleBelow),
+                _OpenTheFileWidget(
+                  label: context.l10n.preferencesOpenFile,
+                  open: (PreferencesNotifier it) => it.openFile(),
+                  onDismissed: onDismissed,
+                ),
+                const SizedBox(height: PreferencesDesign.ruleAbove),
+                TomRulePainter.of(colors.border, bleed: _bleed),
+                const SizedBox(height: PreferencesDesign.ruleBelow),
+                _AboutRowWidget(onDismissed: onDismissed),
+                const SizedBox(height: PreferencesDesign.footer),
               ],
             ),
           ),
@@ -228,10 +278,12 @@ class _HalfWidget extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: PreferencesDesign.label,
+                fontSize: PreferencesDesign.segment,
                 height: 1,
-                fontWeight: isChosen ? FontWeight.w600 : FontWeight.w500,
-                color: isChosen ? colors.textPrimary : colors.textSecondary,
+                fontWeight: isChosen
+                    ? TomFonts.segmentChosen
+                    : TomFonts.segmentRest,
+                color: isChosen ? colors.textPrimary : colors.textMuted,
               ),
             ),
           ),
@@ -275,7 +327,7 @@ class _LanguageControlWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final TomColors colors = TomColors.of(context);
     return SizedBox(
-      height: PreferencesDesign.rowHeight,
+      height: PreferencesDesign.selectHeight,
       child: MenuAnchor(
         menuChildren: <Widget>[
           for (final LanguageEnum language in LanguageEnum.values)
@@ -306,14 +358,15 @@ class _LanguageControlWidget extends StatelessWidget {
               onPressed: () => menu.isOpen ? menu.close() : menu.open(),
               style: OutlinedButton.styleFrom(
                 foregroundColor: colors.textPrimary,
-                backgroundColor: colors.surfaceRaised,
-                side: BorderSide(color: colors.borderStrong),
+                // The theme track's own fill and stroke, in both themes
+                // (`preferences-{dark,light}.svg`, the rect at y 130).
+                backgroundColor: colors.surfaceSunken,
+                side: BorderSide(color: colors.border),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(TomMetrics.radius),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: PreferencesDesign.boxToLabel + 6,
-                ),
+                // The chevron's box keeps its own margin, so less on the right.
+                padding: const EdgeInsets.fromLTRB(14, 0, 6, 0),
               ),
               child: Row(
                 children: <Widget>[
@@ -323,13 +376,13 @@ class _LanguageControlWidget extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: PreferencesDesign.label,
                         height: 1.4,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                  TomChevronWidget(
-                    isOpen: menu.isOpen,
-                    color: colors.textSecondary,
-                  ),
+                  // A select says *down* open or shut: the menu is what it
+                  // opens, not a branch of a tree.
+                  TomChevronWidget(isOpen: true, color: colors.textSecondary),
                 ],
               ),
             ),
@@ -341,10 +394,12 @@ class _LanguageControlWidget extends StatelessWidget {
 /// The formatting bar's own preference, as a checkbox and its sentence.
 class _FormattingBarCheckWidget extends StatelessWidget {
   const _FormattingBarCheckWidget({
+    required this.label,
     required this.isShowing,
     required this.onToggle,
   });
 
+  final String label;
   final bool isShowing;
   final VoidCallback onToggle;
 
@@ -352,6 +407,7 @@ class _FormattingBarCheckWidget extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
+      ..add(StringProperty('label', label))
       ..add(DiagnosticsProperty<bool>('isShowing', isShowing))
       ..add(ObjectFlagProperty<VoidCallback>.has('onToggle', onToggle));
   }
@@ -359,38 +415,42 @@ class _FormattingBarCheckWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: onToggle,
-    child: Row(
-      children: <Widget>[
-        TomCheckWidget(isChecked: isShowing, onChanged: (bool _) => onToggle()),
-        const SizedBox(width: PreferencesDesign.boxToLabel),
-        // Flexible so a longer sentence shrinks the row instead of throwing.
-        // It never happens in the app — but a widget test has no vendored
-        // font, so every character measures its font size square.
-        Flexible(
-          child: Text(
-            context.l10n.preferencesShowFormattingBar,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.fade,
-            style: TextStyle(
-              fontSize: PreferencesDesign.label,
-              height: 1.4,
-              color: TomColors.of(context).textPrimary,
+    child: SizedBox(
+      height: PreferencesDesign.checkRow,
+      child: Row(
+        children: <Widget>[
+          TomCheckWidget(
+            isChecked: isShowing,
+            onChanged: (bool _) => onToggle(),
+          ),
+          const SizedBox(width: PreferencesDesign.boxToLabel),
+          // Flexible so a longer sentence shrinks the row instead of
+          // throwing. It never happens in the app — but a widget test has no
+          // vendored font, so every character measures its font size square.
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.fade,
+              style: TextStyle(
+                fontSize: PreferencesDesign.label,
+                height: 1.4,
+                color: TomColors.of(context).textPrimary,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }
 
-/// The button at the foot, which opens the store in TOM's own editor as **a
-/// tab from outside the tree** (`docs/product/preferences/where-it-is-stored/doc.md`).
-///
-/// Dim on Home, which has no tabs to open it in: a control that cannot act
-/// is dim, never absent.
-class _OpenTheFileWidget extends ConsumerWidget {
-  const _OpenTheFileWidget({required this.onDismissed});
+/// The last row: `About TOM` with the running version at its right, or
+/// `Update available` where the version was when the opening check found
+/// one (`docs/product/about/doc.md`).
+class _AboutRowWidget extends ConsumerWidget {
+  const _AboutRowWidget({required this.onDismissed});
 
   final VoidCallback? onDismissed;
 
@@ -405,13 +465,90 @@ class _OpenTheFileWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
+    final bool isNewer = ref.watch(
+      updatesProvider.select((UpdatesState state) => state is UpdatesNewer),
+    );
+    return InkWell(
+      onTap: () {
+        // The popover leaves the tree when it closes, so the dialog is
+        // opened over the navigator's own context.
+        final NavigatorState navigator = Navigator.of(context);
+        onDismissed?.call();
+        unawaited(AboutDialogWidget.show(navigator.context));
+      },
+      child: SizedBox(
+        height: PreferencesDesign.aboutHeight,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Text(
+              context.l10n.aboutRow,
+              style: TextStyle(
+                fontSize: PreferencesDesign.label,
+                fontWeight: FontWeight.w500,
+                color: colors.textPrimary,
+              ),
+            ),
+            Text(
+              isNewer ? context.l10n.aboutUpdateAvailable : AppBuild.version,
+              style: TextStyle(
+                fontSize: PreferencesDesign.label,
+                fontWeight: isNewer ? FontWeight.w500 : FontWeight.w400,
+                color: isNewer ? colors.accent : colors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The button at the foot, which opens the store in TOM's own editor as **a
+/// tab from outside the tree** (`docs/product/preferences/where-it-is-stored/doc.md`).
+///
+/// Dim on Home, which has no tabs to open it in: a control that cannot act
+/// is dim, never absent.
+class _OpenTheFileWidget extends ConsumerWidget {
+  const _OpenTheFileWidget({
+    required this.label,
+    required this.open,
+    required this.onDismissed,
+  });
+
+  /// The file's name on the button.
+  final String label;
+
+  /// Opens the file behind it.
+  final Future<void> Function(PreferencesNotifier) open;
+
+  final VoidCallback? onDismissed;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(StringProperty('label', label))
+      ..add(
+        ObjectFlagProperty<Future<void> Function(PreferencesNotifier)>.has(
+          'open',
+          open,
+        ),
+      )
+      ..add(ObjectFlagProperty<VoidCallback?>.has('onDismissed', onDismissed));
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final TomColors colors = TomColors.of(context);
     final bool hasSpace = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => session != null,
       ),
     );
+    final Color ink = hasSpace ? colors.textSecondary : colors.textMuted;
     return SizedBox(
-      height: PreferencesDesign.rowHeight,
+      height: PreferencesDesign.buttonHeight,
       child: OutlinedButton(
         onPressed: hasSpace
             ? () {
@@ -420,7 +557,7 @@ class _OpenTheFileWidget extends ConsumerWidget {
                   preferencesProvider.notifier,
                 );
                 onDismissed?.call();
-                unawaited(preferences.openFile());
+                unawaited(open(preferences));
               }
             : null,
         style: OutlinedButton.styleFrom(
@@ -434,11 +571,85 @@ class _OpenTheFileWidget extends ConsumerWidget {
             borderRadius: BorderRadius.circular(TomMetrics.radius),
           ),
           textStyle: const TextStyle(
-            fontSize: PreferencesDesign.label,
+            fontSize: PreferencesDesign.buttonLabel,
             fontWeight: FontWeight.w500,
           ),
         ),
-        child: Text(context.l10n.preferencesOpenFile),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            // The document the button opens, as the tree draws one.
+            TomGlyphWidget(
+              glyph: TomGlyphEnum.file,
+              color: ink,
+              size: PreferencesDesign.fileGlyph,
+            ),
+            const SizedBox(width: PreferencesDesign.glyphToLabel),
+            Flexible(child: Text(label)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// `Automatic · Semi · Manual`: who says yes before git and `gh` run.
+///
+/// The theme control's shape — a segmented choice that applies when it is
+/// pressed — with its own three words
+/// (`docs/product/git-workflow/approvals/doc.md`).
+class _GitModeControlWidget extends StatelessWidget {
+  const _GitModeControlWidget({required this.chosen, required this.onChoose});
+
+  final GitApprovalModeEnum chosen;
+  final void Function(GitApprovalModeEnum) onChoose;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(EnumProperty<GitApprovalModeEnum>('chosen', chosen))
+      ..add(
+        ObjectFlagProperty<void Function(GitApprovalModeEnum)>.has(
+          'onChoose',
+          onChoose,
+        ),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final TomColors colors = TomColors.of(context);
+    final AppLocalizations l10n = context.l10n;
+    return SizedBox(
+      height: PreferencesDesign.switchHeight,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.surfaceSunken,
+          border: Border.all(color: colors.border),
+          borderRadius: BorderRadius.circular(TomMetrics.radius),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(PreferencesDesign.switchInset),
+          child: Row(
+            children: <Widget>[
+              for (final (GitApprovalModeEnum mode, String label)
+                  in <(GitApprovalModeEnum, String)>[
+                    (
+                      GitApprovalModeEnum.automatic,
+                      l10n.preferencesGitAutomatic,
+                    ),
+                    (GitApprovalModeEnum.semi, l10n.preferencesGitSemi),
+                    (GitApprovalModeEnum.manual, l10n.preferencesGitManual),
+                  ])
+                _HalfWidget(
+                  label: label,
+                  isChosen: chosen == mode,
+                  onPressed: () => onChoose(mode),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -14,6 +14,7 @@ import 'package:tom_presentation/src/account/account_providers.dart';
 import 'package:tom_presentation/src/account/account_state.dart';
 import 'package:tom_presentation/src/commands/command_action_enum.dart';
 import 'package:tom_presentation/src/commands/command_scope.dart';
+import 'package:tom_presentation/src/preferences/preferences_notifier.dart';
 import 'package:tom_presentation/src/pull_request/pull_request_providers.dart';
 import 'package:tom_presentation/src/spaces/space_session.dart';
 import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
@@ -54,8 +55,34 @@ class AccountNotifier extends _$AccountNotifier {
     // With no space, the machine's: Home carries the button too, and who
     // commits is a question before any repository is open. Scheduled, not
     // awaited: `build` answers synchronously.
-    unawaited(Future<void>.microtask(() => _read(space)));
+    unawaited(Future<void>.microtask(() => _begin(space)));
     return const AccountState(isReading: true);
+  }
+
+  /// Reads at once, except in Manual: there every command waits, and a
+  /// Home that asked by itself would put a question nobody made in front of
+  /// the person. The read then happens when the popover opens.
+  Future<void> _begin(SpaceEntity? space) async {
+    if (ref.exists(preferencesProvider)) {
+      await ref.read(preferencesProvider.notifier).loaded;
+      if (!ref.mounted) {
+        return;
+      }
+      if (ref.read(preferencesProvider).gitApprovals ==
+          GitApprovalModeEnum.manual) {
+        state = const AccountState(isUnread: true);
+        return;
+      }
+    }
+    await _read(space);
+  }
+
+  /// Reads the account if nothing has been read yet — what opening the
+  /// popover does in Manual.
+  Future<void> readIfUnread() async {
+    if (state.isUnread) {
+      await reload();
+    }
   }
 
   /// Reads everything again — the git menu's `Reload`.
@@ -100,7 +127,7 @@ class AccountNotifier extends _$AccountNotifier {
 
   Future<void> _readBoth(SpaceEntity? space) async {
     final int generation = ++_generation;
-    state = state.copyWith(isReading: true);
+    state = state.copyWith(isReading: true, isUnread: false);
     bool isCurrent() =>
         ref.mounted &&
         generation == _generation &&
@@ -125,7 +152,10 @@ class AccountNotifier extends _$AccountNotifier {
     if (read case Failure<AccountSummaryValueObject, AppFailure>(
       failure: AppFailure(isDenial: true),
     )) {
-      state = state.copyWith(isReading: false);
+      state = state.copyWith(
+        isReading: false,
+        isUnread: state.summary == null && state.local == null,
+      );
       return;
     }
     // Only the unexpected fails, and the popover's answer to it is the same

@@ -1,6 +1,8 @@
 /// The account button at the far right of the top bar, and what it opens.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,15 +12,13 @@ import 'package:tom_desktop/screens/account/account_design.dart';
 import 'package:tom_desktop/screens/account/widgets/account_avatar_widget.dart';
 import 'package:tom_desktop/screens/account/widgets/account_popover_widget.dart';
 import 'package:tom_presentation/tom_presentation.dart';
-import 'package:tom_ui/tom_ui.dart';
 
 /// The person behind the window: who commits, and as whom GitHub is reached
 /// (`docs/product/workspace/the-account/doc.md`).
 ///
-/// It hangs its popover from its right edge and wears an `accent` ring while
-/// it is open, the way the gear does, for the gear's reason: a control at
-/// the right of a bar drops its surface leftwards, and the way to close it
-/// must be visible.
+/// It hangs its popover from its right edge, for the gear's reason: a
+/// control at the right of a bar drops its surface leftwards. It wears no
+/// mark of its own while open.
 class AccountControlWidget extends ConsumerStatefulWidget {
   /// Creates the control.
   const AccountControlWidget({super.key});
@@ -40,7 +40,13 @@ class _AccountControlWidgetState extends ConsumerState<AccountControlWidget> {
 
   void _toggle() {
     setState(() => _isOpen = !_isOpen);
-    _isOpen ? _portal.show() : _portal.hide();
+    if (_isOpen) {
+      _portal.show();
+      // Where git asks first nothing was read by itself: opening is the ask.
+      unawaited(ref.read(accountProvider.notifier).readIfUnread());
+    } else {
+      _portal.hide();
+    }
   }
 
   void _close() {
@@ -53,9 +59,11 @@ class _AccountControlWidgetState extends ConsumerState<AccountControlWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final TomColors colors = TomColors.of(context);
     final String? initials = ref.watch(
       accountProvider.select((AccountState state) => state.initials),
+    );
+    final bool isUnread = ref.watch(
+      accountProvider.select((AccountState state) => state.isUnread),
     );
     return OverlayPortal(
       controller: _portal,
@@ -63,27 +71,18 @@ class _AccountControlWidgetState extends ConsumerState<AccountControlWidget> {
       child: TapRegion(
         groupId: _group,
         child: Tooltip(
-          message: context.l10n.accountTooltip,
+          message: isUnread
+              ? context.l10n.accountTooltipUnread
+              : context.l10n.accountTooltip,
           child: InkWell(
             key: _button,
             onTap: _toggle,
             customBorder: const CircleBorder(),
-            child: Container(
-              width: AccountDesign.button,
-              height: AccountDesign.button,
-              alignment: Alignment.center,
-              // The ring is drawn whether or not it shows, so opening the
-              // popover does not move the circle inside it.
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _isOpen ? colors.accent : Colors.transparent,
-                ),
-              ),
-              child: AccountAvatarWidget(
-                initials: initials,
-                size: AccountDesign.button - AccountDesign.ring * 2,
-              ),
+            // The disc is the whole button, open or not: the popover under
+            // it is what says it is open.
+            child: AccountAvatarWidget(
+              initials: initials,
+              size: AccountDesign.button,
             ),
           ),
         ),

@@ -20,6 +20,10 @@ abstract class AccountState with _$AccountState {
 
     /// Whether a reading is out.
     @Default(false) bool isReading,
+
+    /// Nothing was asked yet because git asks first (Manual): the button
+    /// says so, and opening the popover is what reads.
+    @Default(false) bool isUnread,
   }) = _AccountState;
 
   const AccountState._();

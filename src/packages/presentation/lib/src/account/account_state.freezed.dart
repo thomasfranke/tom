@@ -18,7 +18,9 @@ mixin _$AccountState {
  AccountSummaryValueObject? get summary;/// What git said before the first [summary]: who commits and the
 /// project, nothing about GitHub yet.
  AccountSummaryValueObject? get local;/// Whether a reading is out.
- bool get isReading;
+ bool get isReading;/// Nothing was asked yet because git asks first (Manual): the button
+/// says so, and opening the popover is what reads.
+ bool get isUnread;
 /// Create a copy of AccountState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +31,16 @@ $AccountStateCopyWith<AccountState> get copyWith => _$AccountStateCopyWithImpl<A
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AccountState&&(identical(other.summary, summary) || other.summary == summary)&&(identical(other.local, local) || other.local == local)&&(identical(other.isReading, isReading) || other.isReading == isReading));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AccountState&&(identical(other.summary, summary) || other.summary == summary)&&(identical(other.local, local) || other.local == local)&&(identical(other.isReading, isReading) || other.isReading == isReading)&&(identical(other.isUnread, isUnread) || other.isUnread == isUnread));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,summary,local,isReading);
+int get hashCode => Object.hash(runtimeType,summary,local,isReading,isUnread);
 
 @override
 String toString() {
-  return 'AccountState(summary: $summary, local: $local, isReading: $isReading)';
+  return 'AccountState(summary: $summary, local: $local, isReading: $isReading, isUnread: $isUnread)';
 }
 
 
@@ -49,7 +51,7 @@ abstract mixin class $AccountStateCopyWith<$Res>  {
   factory $AccountStateCopyWith(AccountState value, $Res Function(AccountState) _then) = _$AccountStateCopyWithImpl;
 @useResult
 $Res call({
- AccountSummaryValueObject? summary, AccountSummaryValueObject? local, bool isReading
+ AccountSummaryValueObject? summary, AccountSummaryValueObject? local, bool isReading, bool isUnread
 });
 
 
@@ -66,11 +68,12 @@ class _$AccountStateCopyWithImpl<$Res>
 
 /// Create a copy of AccountState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? summary = freezed,Object? local = freezed,Object? isReading = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? summary = freezed,Object? local = freezed,Object? isReading = null,Object? isUnread = null,}) {
   return _then(_self.copyWith(
 summary: freezed == summary ? _self.summary : summary // ignore: cast_nullable_to_non_nullable
 as AccountSummaryValueObject?,local: freezed == local ? _self.local : local // ignore: cast_nullable_to_non_nullable
 as AccountSummaryValueObject?,isReading: null == isReading ? _self.isReading : isReading // ignore: cast_nullable_to_non_nullable
+as bool,isUnread: null == isUnread ? _self.isUnread : isUnread // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -180,10 +183,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AccountSummaryValueObject? summary,  AccountSummaryValueObject? local,  bool isReading)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AccountSummaryValueObject? summary,  AccountSummaryValueObject? local,  bool isReading,  bool isUnread)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AccountState() when $default != null:
-return $default(_that.summary,_that.local,_that.isReading);case _:
+return $default(_that.summary,_that.local,_that.isReading,_that.isUnread);case _:
   return orElse();
 
 }
@@ -201,10 +204,10 @@ return $default(_that.summary,_that.local,_that.isReading);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AccountSummaryValueObject? summary,  AccountSummaryValueObject? local,  bool isReading)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AccountSummaryValueObject? summary,  AccountSummaryValueObject? local,  bool isReading,  bool isUnread)  $default,) {final _that = this;
 switch (_that) {
 case _AccountState():
-return $default(_that.summary,_that.local,_that.isReading);case _:
+return $default(_that.summary,_that.local,_that.isReading,_that.isUnread);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -221,10 +224,10 @@ return $default(_that.summary,_that.local,_that.isReading);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AccountSummaryValueObject? summary,  AccountSummaryValueObject? local,  bool isReading)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AccountSummaryValueObject? summary,  AccountSummaryValueObject? local,  bool isReading,  bool isUnread)?  $default,) {final _that = this;
 switch (_that) {
 case _AccountState() when $default != null:
-return $default(_that.summary,_that.local,_that.isReading);case _:
+return $default(_that.summary,_that.local,_that.isReading,_that.isUnread);case _:
   return null;
 
 }
@@ -236,7 +239,7 @@ return $default(_that.summary,_that.local,_that.isReading);case _:
 
 
 class _AccountState extends AccountState {
-  const _AccountState({this.summary, this.local, this.isReading = false}): super._();
+  const _AccountState({this.summary, this.local, this.isReading = false, this.isUnread = false}): super._();
   
 
 /// The last summary read, kept while the next one is read.
@@ -246,6 +249,9 @@ class _AccountState extends AccountState {
 @override final  AccountSummaryValueObject? local;
 /// Whether a reading is out.
 @override@JsonKey() final  bool isReading;
+/// Nothing was asked yet because git asks first (Manual): the button
+/// says so, and opening the popover is what reads.
+@override@JsonKey() final  bool isUnread;
 
 /// Create a copy of AccountState
 /// with the given fields replaced by the non-null parameter values.
@@ -257,16 +263,16 @@ _$AccountStateCopyWith<_AccountState> get copyWith => __$AccountStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AccountState&&(identical(other.summary, summary) || other.summary == summary)&&(identical(other.local, local) || other.local == local)&&(identical(other.isReading, isReading) || other.isReading == isReading));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AccountState&&(identical(other.summary, summary) || other.summary == summary)&&(identical(other.local, local) || other.local == local)&&(identical(other.isReading, isReading) || other.isReading == isReading)&&(identical(other.isUnread, isUnread) || other.isUnread == isUnread));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,summary,local,isReading);
+int get hashCode => Object.hash(runtimeType,summary,local,isReading,isUnread);
 
 @override
 String toString() {
-  return 'AccountState(summary: $summary, local: $local, isReading: $isReading)';
+  return 'AccountState(summary: $summary, local: $local, isReading: $isReading, isUnread: $isUnread)';
 }
 
 
@@ -277,7 +283,7 @@ abstract mixin class _$AccountStateCopyWith<$Res> implements $AccountStateCopyWi
   factory _$AccountStateCopyWith(_AccountState value, $Res Function(_AccountState) _then) = __$AccountStateCopyWithImpl;
 @override @useResult
 $Res call({
- AccountSummaryValueObject? summary, AccountSummaryValueObject? local, bool isReading
+ AccountSummaryValueObject? summary, AccountSummaryValueObject? local, bool isReading, bool isUnread
 });
 
 
@@ -294,11 +300,12 @@ class __$AccountStateCopyWithImpl<$Res>
 
 /// Create a copy of AccountState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? summary = freezed,Object? local = freezed,Object? isReading = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? summary = freezed,Object? local = freezed,Object? isReading = null,Object? isUnread = null,}) {
   return _then(_AccountState(
 summary: freezed == summary ? _self.summary : summary // ignore: cast_nullable_to_non_nullable
 as AccountSummaryValueObject?,local: freezed == local ? _self.local : local // ignore: cast_nullable_to_non_nullable
 as AccountSummaryValueObject?,isReading: null == isReading ? _self.isReading : isReading // ignore: cast_nullable_to_non_nullable
+as bool,isUnread: null == isUnread ? _self.isUnread : isUnread // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
