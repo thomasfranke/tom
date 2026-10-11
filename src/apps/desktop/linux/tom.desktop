@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=TOM
+GenericName=Markdown Git client
+Comment=A GitHub Desktop for docs: Git for markdown documentation, with a rendered diff
+Exec=tom
+Icon=tom
+Terminal=false
+Categories=Development;Utility;TextEditor;
+MimeType=text/markdown;
+StartupWMClass=dev.thomasfranke.tom

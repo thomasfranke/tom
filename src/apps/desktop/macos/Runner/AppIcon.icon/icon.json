@@ -16,38 +16,56 @@
     {
       "layers": [
         {
-          "fill-specializations": [
+          "image-name": "marks.svg",
+          "name": "marks",
+          "hidden-specializations": [
             {
-              "value": {
-                "solid": "srgb:0.96471,0.96078,0.94510,1.00000"
-              }
+              "value": false
             },
             {
               "appearance": "dark",
-              "value": {
-                "solid": "srgb:0.11765,0.12157,0.13333,1.00000"
-              }
+              "value": true
             }
-          ],
-          "image-name": "marks.svg",
-          "name": "marks"
+          ]
         },
         {
-          "fill-specializations": [
+          "image-name": "marks-dark.svg",
+          "name": "marks-dark",
+          "hidden-specializations": [
             {
-              "value": {
-                "solid": "srgb:0.09020,0.56078,0.44314,1.00000"
-              }
+              "value": true
             },
             {
               "appearance": "dark",
-              "value": {
-                "solid": "srgb:0.30980,0.81961,0.69020,1.00000"
-              }
+              "value": false
             }
-          ],
+          ]
+        },
+        {
           "image-name": "page.svg",
-          "name": "page"
+          "name": "page",
+          "hidden-specializations": [
+            {
+              "value": false
+            },
+            {
+              "appearance": "dark",
+              "value": true
+            }
+          ]
+        },
+        {
+          "image-name": "page-dark.svg",
+          "name": "page-dark",
+          "hidden-specializations": [
+            {
+              "value": true
+            },
+            {
+              "appearance": "dark",
+              "value": false
+            }
+          ]
         }
       ],
       "shadow": {
