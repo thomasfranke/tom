@@ -12,7 +12,7 @@ deviates.
 | [`naming.md`](naming.md) | What a name has to carry: the role last, entity versus value object, `Service`, `Impl`, and what counts as a seam |
 | [`errors.md`](errors.md) | `Result`, the `AppFailure` hierarchies, and why the translation happens in the repository and nowhere else |
 | [`external-dependencies.md`](external-dependencies.md) | The three tiers, and the declared exceptions — Flutter, Riverpod, Freezed — with the scope of each |
-| [`testing.md`](testing.md) | `unit/` · `integration/` · `integrity/`, the mirror rule, and what each kind of subject gets |
+| [`testing.md`](testing.md) | Where a test lives, the mirror rule, what each kind of subject gets, and how a screen is held to its board |
 
 ---
 

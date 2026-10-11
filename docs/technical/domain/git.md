@@ -38,8 +38,24 @@ is not this branch's change
 `BranchBaseService` holds the rule that picks it, pure, over what git answers:
 `BranchStandingValueObject` — every branch's `ahead`/`behind` against `HEAD`,
 read in one `for-each-ref %(ahead-behind:HEAD)` — and the base TOM recorded
-in `branch.<name>.tomBase` when it started the branch. ~~`RevisionValueObject`
-— a branch or a commit somebody chose~~ — deleted 2026-10-08 with the choice.
+in `branch.<name>.tomBase` when it started the branch. Nobody chooses the base, so no type models a
+chosen revision.
+
+## `MergeStateValueObject` · `ConflictRegionValueObject`
+
+`MergeStateValueObject`: `inProgress` — whether `MERGE_HEAD` is there — and the
+`message` git drafted. It carries no list of conflicted paths, because the
+status already answers that and one fact with two sources can disagree with
+itself.
+
+`ConflictRegionValueObject`: one stretch of a document where git left both
+sides — `start` and `end` as offsets over the whole span, marker lines
+included, the `current` and `incoming` text without their markers, and the two
+labels git wrote. `ConflictScannerService` finds them (`scan`), rewrites one
+(`resolve`) and answers whether any is left (`holdsMarker`).
+
+- **A choice is an edit to the buffer, never a value the model carries** — there is no `Resolution` type, and staging is how a resolution is declared ([the conflicted document](../../product/editor/conflicted-document/doc.md)).
+- Only a merge is modelled: nothing here reads a rebase, a cherry-pick or a revert in progress.
 
 ## `GitRepository`
 

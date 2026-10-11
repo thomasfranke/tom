@@ -10,6 +10,8 @@ An ADR is the one file here that is **not** split by subject: its sections are f
 
 ## At a glance
 
+A row says so when its decision is a draft, superseded, or revised in what it builds; the file's own **Status** line is the record.
+
 | # | Decision |
 |---|---|
 | [001](001-license-is-mit.md) | License is MIT |
@@ -21,7 +23,7 @@ An ADR is the one file here that is **not** split by subject: its sections are f
 | [007](007-external-dependencies-behind-contracts.md) | Minimal coupling to external dependencies |
 | [008](008-monorepo-with-pure-dart-core.md) | Monorepo with a build boundary between core and app |
 | [009](009-space-session-is-single-source-of-truth.md) | The space session is the single source of truth in presentation |
-| [010](010-watcher-and-git-cooperate-by-protocol.md) | The watcher and git operations cooperate by an explicit protocol |
+| [010](010-watcher-and-git-cooperate-by-protocol.md) | The watcher and git operations cooperate by an explicit protocol — revised: no watcher in the MVP |
 | [011](011-telemetry-is-opt-in.md) | Observability behind a contract, telemetry opt-in |
 | [012](012-shell-is-extensible-via-compile-time-modules.md) | The shell is extensible through compile-time modules |
 | [013](013-stack-is-flutter-and-dart.md) | The stack is Flutter and Dart |
@@ -43,13 +45,14 @@ An ADR is the one file here that is **not** split by subject: its sections are f
 | [029](029-the-assistant-is-the-users-own.md) | The assistant is the user's own — one contract, the user's endpoint and credential, nothing shipped or proxied |
 | [030](030-export-renders-the-preview-not-the-file.md) | Export renders the AST the preview already holds, through one capability with a folder per format |
 | [031](031-where-a-footnotes-text-goes.md) | A footnote's marker stays in the prose and its text goes to the foot; the number is the document's |
-| [032](032-the-icon-set-is-font-awesome.md) | Every glyph is Font Awesome Free 6 Solid, vendored as a font beside IBM Plex |
+| [032](032-the-icon-set-is-font-awesome.md) | Every glyph is Font Awesome Free 6 Solid, vendored as a font beside IBM Plex — but the formatting bar's, which are Material Symbols Outlined 300 drawn from SVG paths |
 | [033](033-a-pull-request-draft-is-a-document-outside-the-space.md) | A pull request draft is a document read through the same repository, rooted in `.git/tom/pull-request/` instead of the space |
 | [034](034-the-interface-is-localised-with-gen-l10n.md) | The interface is localised with Flutter's gen-l10n: ARB files, English the template, the preference the locale |
 | [035](035-github-is-reached-through-the-gh-cli.md) | GitHub is reached through the `gh` CLI with the logins the computer already holds; TOM stores no token |
 | [036](036-every-command-is-written-down.md) | Every process TOM starts is written down through a `CommandLog` port in `tom_core`, secrets removed, and shown in a bottom region |
-| [037](037-the-terminal-is-the-persons-own-shell-in-a-pty.md) | The Terminal tab is the person's own shell in a pseudo-terminal: the rules in `tom_infra`, the pty from `flutter_pty` in the composition root, the screen from `xterm` |
+| [037](037-the-terminal-is-the-persons-own-shell-in-a-pty.md) | The Terminal tab is the person's own shell in a pseudo-terminal: the rules and the pty (`pty2`) in `tom_infra`, the screen from `xterm` |
 | [038](038-a-command-waits-at-a-gate-in-tom-core.md) | Draft: git and `gh` commands wait at a `CommandGate` port in `tom_core` before they run; what may run unasked is `git-approvals.json`, keyed by the command with its flags |
+| [039](039-the-preview-is-read-in-public-sans.md) | The rendered document's prose is set in Public Sans, replacing IBM Plex Serif; code stays Plex Mono, the interface Plex Sans |
 
 ---
 

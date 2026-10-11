@@ -1,6 +1,6 @@
 # Decision 36 — Every command is written down, through a port in `tom_core`, and shown in a region under the document
 
-**Status:** draft, on the maintainer's calls of 2026-10-08.
+**Status:** accepted (2026-10-10), on the maintainer's calls of 2026-10-08.
 
 ## Context
 
@@ -8,7 +8,7 @@ TOM is a git client that runs git, `gh`, `ssh` and the platform's own openers as
 
 ## Decision
 
-1. **A port in `tom_core`: `CommandLog.record(CommandRecord)`**, with `SilentCommandLog` as the default. Mechanism, not vocabulary — a program, its arguments, a time, a duration, an exit code, an output — so it sits beside `Observability` for the same reason: the capabilities are in `tom_infra`, the list is in `tom_presentation`, and neither may see the other.
+1. **A port in `tom_core`: `CommandLog.record(CommandRecord)`**, with `SilentCommandLogImpl` as the default. Mechanism, not vocabulary — a program, its arguments, a time, a duration, an exit code, an output — so it sits beside `Observability` for the same reason: the capabilities are in `tom_infra`, the list is in `tom_presentation`, and neither may see the other.
 2. **Every capability that starts a process takes one by constructor injection** — `git_client`, `credentials`, `github_api`, `desktop_shell` — defaulting to the silent log, and times each process through `CommandLog.started`, **declaring the exit codes it reads as answers** (`answers`). A record is `failed` only on no exit or an exit not declared; a declared one is `answered`, drawn neutral.
 3. **`CommandRecord.of` is the one place a secret is taken out**: the environment is never read; the standard output of `git credential fill` and `gh auth token` is replaced by `••••`; any line holding `password=`, `oauth`, `Authorization:` or a GitHub token is replaced whole; an address's password in an argument is hidden. Output is cut to 200 lines per stream.
 4. **The log is `CommandsNotifier`, kept alive, bounded to the last 500, never written to disk.** The composition root hands the notifier to every capability as the port.

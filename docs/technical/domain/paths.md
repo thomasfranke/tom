@@ -4,7 +4,7 @@ The two halves of the space/repository split, as types.
 
 | Type | Spoken by |
 |---|---|
-| `SpaceRelativePathValueObject` | The file tree, the editor, the watcher, the search index |
+| `SpaceRelativePathValueObject` | The file tree, the editor, the search index |
 | `RepoRelativePathValueObject` | Git — what it reports and what it accepts |
 
 - Both refuse `..`, an empty segment, a backslash and a drive letter — **one rule, in one place** — so joining either onto its root cannot leave it.

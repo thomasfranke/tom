@@ -14,8 +14,8 @@ This chapter is *which* ones are taken.
 | [`state-and-models.md`](state-and-models.md) | Riverpod, Freezed, and the code generators — all pinned exactly |
 | [`markdown-and-diff.md`](markdown-and-diff.md) | The heart: the parser, the block renderer, Myers, the highlighter |
 | [`editor.md`](editor.md) | Source mode — `re_editor` and what it does not ship |
-| [`platform.md`](platform.md) | sqlite/FTS5, the watcher, paths, the desktop shell, and the terminal's pty and emulator |
-| [`fonts.md`](fonts.md) | The three IBM Plex faces, vendored rather than fetched |
+| [`platform.md`](platform.md) | sqlite/FTS5, paths, the desktop shell, the terminal's pty and emulator, and settings with no package |
+| [`fonts.md`](fonts.md) | IBM Plex Sans and Mono, Public Sans and Font Awesome, vendored rather than fetched |
 | [`export.md`](export.md) | PDF and HTML — `pdf`, and the `markdown` package again |
 | [`localisation.md`](localisation.md) | The interface's languages — `flutter_localizations`, `intl` and `gen-l10n` |
 
@@ -26,7 +26,7 @@ This chapter is *which* ones are taken.
 | `dartz` | Result pattern with native sealed classes ([Decision 5](../decisions/005-errors-use-result-with-sealed-classes.md); rules in [conventions/errors.md](../conventions/errors.md)) |
 | `appflowy_editor` (and anything AGPL/GPL) | Contaminates the MIT license ([Decision 1](../decisions/001-license-is-mit.md)) |
 | AutoRoute / any routing package | A panel-based desktop app has no navigation ([Decision 6](../decisions/006-no-navigation-package.md)) |
-| Dio / `http` | There is no HTTP in the MVP; it arrives with layer 3 (remote APIs) when needed |
+| Dio / `http` | The app makes no HTTP request: the host is reached through `gh` as a process ([Decision 35](../decisions/035-github-is-reached-through-the-gh-cli.md)) |
 | `sqflite` | Mobile-oriented; on desktop, plain `sqlite3` |
 | `shared_preferences` | A Flutter plugin, and settings belong to `tom_infra` — see [`platform.md`](platform.md) |
 | `google_fonts` | Downloads the face at runtime; the app works offline and the files are vendored instead — see [`fonts.md`](fonts.md) |

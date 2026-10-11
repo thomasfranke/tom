@@ -21,12 +21,11 @@ rather than `ref.read` while wiring.
 | Lifetime | What | Mechanism |
 |---|---|---|
 | **App** | parsers, `BlockDiffer`, `Observability`, the `CommandLog` every process-running capability is handed ([Decision 36](../decisions/036-every-command-is-written-down.md)), config | `keepAlive` |
-| **Space** | `GitClient` (the queue is per space), watcher, FTS5 index, the session | a `family` keyed by the space root; disposal tears down watcher and connections when the space closes |
+| **Space** | what a folder needs — the `GitClient`, the FTS5 index | no `family`: app-lifetime factories take the folder (`gitClientFor`, `gitRepositoryFor`, `searchRepositoryFor`). A client is kept per folder for as long as the app runs; an index is kept per space root and closed with the app |
 | **Transient** | use cases | default; lightweight objects created on demand |
 
-Per-space scoping is the point: a git queue or a sqlite connection that floats
-free instead of belonging to a space is an entire class of "closed resource"
-bugs, solved here by construction.
+- **An index asked for twice is the same index** — it holds an open database, and a fresh one would be a search that silently finds nothing ([search.md](search.md)).
+- **A git client asked for twice for one folder is the same client** — its queue is what serializes every use case's commands on that repository ([git.md](git.md)).
 
 ---
 

@@ -11,6 +11,8 @@ What a document is written out with, behind the `DocumentExporter` capability
 
 - **The faces reach the PDF as font files handed to the implementation**, since `tom_infra` cannot see `tom_ui`'s ([fonts.md](fonts.md)). A face not handed in falls back to the PDF's own Times, Helvetica or Courier, which draw nothing outside Latin-1.
 - **The HTML names the faces and embeds none**: the page falls back to the reader's own serif.
+- **The PDF's `MultiPage` carries `maxPages: 2000`** — `pdf`'s default ceiling for one widget failed the whole export on a fenced block of about twenty pages; a document beyond the new ceiling still fails as *too large*.
+- **Every heading in the HTML carries GitHub's id, unique across the document** (`HeadingAnchorService`'s rule, the package's HTML escapes undone first), so an exported link goes where the app's own anchor goes.
 
 ---
 

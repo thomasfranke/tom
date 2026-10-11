@@ -8,6 +8,8 @@ per-block selection. Rendering the document as one opaque widget tree would make
 the rendered diff impossible to express, and would have to be undone at M2.
 
 - Inline markdown *inside* a block is delegated to the `markdown` package, where CommonMark's real complexity lives. The app owns block-level layout only.
+- **The parser takes a long run of letters and digits in 200-character chunks** (`_LongRun`, ahead of the package's `TextSyntax`, which backtracks over the whole run from every position) — a run with no space parses in constant steps per chunk; an e-mail or `www` start inside a run that long is split.
+- **Line endings are normalised before the parse** (`\r\n` to `\n`), and the block reader and the line differ strip the carriage return from what they compare — a document with Windows endings has the blocks of its LF twin; `DocumentEntity.content` itself is never rewritten.
 - A document that matches its base is drawn as a document. When a diff arrives, the column is the **diff's** sequence rather than the document's, because a removed block is in no file on disk and has to be drawn where it used to be.
 - The preview renders the buffer, then asks what changed against its base and says so on the state it has already published — so the document is on screen while the comparison, a git process, is still being made.
 

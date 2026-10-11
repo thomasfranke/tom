@@ -5,9 +5,10 @@
 | Package | License | Role |
 |---|---|---|
 | `sqlite3` + `sqlite3_flutter_libs` | MIT | FTS5 for full-text search — **in use**. The table is in memory, one per open space, so the bundled library is what provides FTS5 and nothing is written to disk ([runtime/search.md](../runtime/search.md)) |
-| `watcher` | BSD-3 | Filesystem watching — external edits are an expected case |
-| `path` | BSD-3 | Cross-platform paths |
+| `watcher` | BSD-3 | **Not taken.** Nothing watches the folder in the MVP ([Decision 10](../decisions/010-watcher-and-git-cooperate-by-protocol.md), revised); it is the candidate the day something does |
+| `path` | BSD-3 | **Not taken** — no pubspec declares it; paths are the domain's own value objects ([paths](../domain/paths.md)) |
 | `dart:io` (`Process`) | SDK | The phase-1 Git integration; zero external dependencies |
+| `dart:io` (`HttpClient`) | SDK | The update check's one GET, in `app_updates/` ([runtime/updates.md](../runtime/updates.md)); no HTTP package was added |
 
 ## Desktop shell
 
@@ -15,25 +16,32 @@
 |---|---|---|
 | `window_manager` | MIT | Window control (title, minimum size, persisted position) |
 | `file_selector` | BSD-3 | Native "open folder" dialog — **in use**, `^1.1.0`. A plugin, so it lives only in `tom_desktop`; nothing below takes a folder from anywhere but its own arguments |
-| `url_launcher` | BSD-3 | Open external links from the preview in the browser |
+| `url_launcher` | BSD-3 | **Not taken.** A link is handed to the platform's own opener as a process, behind `DesktopShell.openUrl` in `tom_infra` — no plugin |
 
 ## Terminal
 
-Licences read on pub.dev on 2026-10-08 ([Decision 37](../decisions/037-the-terminal-is-the-persons-own-shell-in-a-pty.md)).
+Licences read in the packages' own `LICENSE` files ([Decision 37](../decisions/037-the-terminal-is-the-persons-own-shell-in-a-pty.md), revised).
 
 | Package | License | Role |
 |---|---|---|
-| `flutter_pty` | MIT | The pseudo-terminal — **in use**, `^0.4.2`: `forkpty` on macOS and Linux, ConPTY on Windows. A plugin with native code, so only the spawn lives in `tom_desktop`; which shell and with what is `tom_infra`'s `pseudo_terminal/login_shell/` |
+| `pty2` | MIT | The pseudo-terminal — **in use**, `^0.5.6`, in `tom_infra`: pure Dart over `dart:ffi`, no plugin, so it stays behind `pseudo_terminal/pty2/` and no type of its crosses the contract; which shell and with what is `pseudo_terminal/login_shell/` |
+| `ffi`, `win32` | BSD-3 | `pty2`'s own |
 | `xterm` | MIT | The emulator and its widget — **in use**, `^4.0.0`, reached from one file (`screens/terminal/widgets/terminal_emulator_widget.dart`) |
 | `zmodem`, `equatable` | MIT | `xterm`'s own |
 | `quiver` | Apache-2.0 | `xterm`'s own |
-| `convert`, `ffi` | BSD-3 | `xterm`'s and `flutter_pty`'s own |
+| `convert` | BSD-3 | `xterm`'s own |
+
+## Icons
+
+| Source | License | Role |
+|---|---|---|
+| Material Symbols Outlined (weight 300) | Apache-2.0 | The formatting bar's seventeen glyphs, as SVG paths painted by `TomOutline` — no package ([Decision 32](../decisions/032-the-icon-set-is-font-awesome.md), revised) |
 
 ## Settings: no package at all
 
 | Rejected | Reason |
 |---|---|
-| ~~`shared_preferences`~~ | **Not taken.** It is a Flutter plugin, and settings belong to `tom_infra`, which is pure Dart so that six of the eight packages run under `dart test` ([Decision 14](../decisions/014-each-layer-is-its-own-package.md)). Taking it would push the capability up into `tom_desktop` to store a list of folder paths |
+| ~~`shared_preferences`~~ | **Not taken.** It is a Flutter plugin, and settings belong to `tom_infra`, which is pure Dart so that every layer package runs under `dart test` ([Decision 14](../decisions/014-each-layer-is-its-own-package.md)). Taking it would push the capability up into `tom_desktop` to store a list of folder paths |
 | ~~`path_provider`~~ | Also a Flutter plugin; the application-data folder comes from the platform's own conventions instead, behind the `PlatformPaths` capability |
 
 App settings are one JSON file in the folder this platform keeps app data in —

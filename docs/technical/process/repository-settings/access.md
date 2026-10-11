@@ -14,7 +14,7 @@ Who can do what, and the repository-wide switches.
 
 ## Repository-wide
 
-- Issues and Discussions enabled; blank issues disabled, templates in `.github/ISSUE_TEMPLATE/`.
+- Issues and Discussions enabled. There are no issue templates until the repository is public; they arrive with it, in `.github/ISSUE_TEMPLATE/`.
 - Private vulnerability reporting enabled ([SECURITY.md](../../../../SECURITY.md)).
 - **Wiki disabled** — documentation lives in `docs/`, versioned with the code, which is the entire thesis of this project.
 - Default branch `main`, the only long-lived line of development.

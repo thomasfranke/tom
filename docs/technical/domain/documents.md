@@ -8,7 +8,9 @@ entity is a view over it, never a cache that can diverge.
 | Field | Type | Notes |
 |---|---|---|
 | `path` | path | Relative to the space root; the identity of the document |
-| `content` | string | The raw markdown source |
+| `content` | string | The raw markdown source, held whole and exactly as it was read — never normalized, since a line ending changed on the way through is a diff the user did not make |
+
+- **The entity is never dirty.** What is being typed is the editor's buffer in `tom_presentation` (`EditorReady.source`), beside the entity it was read as (`saved`); dirty is the two differing, compared rather than flagged, so a character typed and taken back leaves the document clean.
 
 ## `ParsedDocumentValueObject`
 

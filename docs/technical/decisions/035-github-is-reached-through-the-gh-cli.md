@@ -1,6 +1,6 @@
 # Decision 35 — GitHub is reached through the `gh` CLI; TOM stores no token
 
-**Status:** draft, on the maintainer's calls of 2026-10-08.
+**Status:** accepted (2026-10-10), on the maintainer's calls of 2026-10-08 — with the revisions at the foot: TOM also writes to GitHub, through the same `gh`.
 
 ## Context
 
@@ -38,5 +38,7 @@ The [account popover](../../product/workspace/the-account/doc.md) says who the p
 ## Revisit when
 
 **Revised (2026-10-08):** the first write arrived and the decision held. Opening a pull request is `gh pr create` and finding one already open is `gh pr list`, the same mechanism as reading — the chosen account's token in `GH_TOKEN` only, `--repo` named, every call in the commands panel. Without `gh` the browser's compare page stays the one action ([opening it](../../product/git-workflow/pull-request/opening-it/doc.md)).
+
+**Revised (2026-10-10):** accepted with that write inside it. Where the Decision says "GitHub's API is `gh api`" and "the one `gh api` call", read *`gh`*: `gh api` reads a login's permissions, `gh pr list` reads the open pull request and `gh pr create` writes one, all behind `github_api` and under the same rules — the token in `GH_TOKEN` only, nothing that prompts, no HTTP request of the app's own.
 
 ~~TOM writes to GitHub on the person's behalf — opening a pull request without the browser is the first case~~ (happened, see above), or `gh` stops being the common way to hold a GitHub login.

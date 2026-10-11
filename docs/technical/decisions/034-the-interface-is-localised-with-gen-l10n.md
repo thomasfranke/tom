@@ -1,6 +1,6 @@
 # Decision 34 — The interface is localised with Flutter's gen-l10n
 
-**Status:** draft, on the maintainer's call of 2026-10-08 — two languages to set up the structure, English and Português (Brasil).
+**Status:** accepted (2026-10-10), on the maintainer's call of 2026-10-08 — two languages to set up the structure, English and Português (Brasil).
 
 ## Context
 

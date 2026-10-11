@@ -30,3 +30,6 @@
 - In `Manual` the app's own reads queue behind the person; a screen that assumed a reading arrives promptly needs a state for *not yet asked*.
 - **It is a confirmation, not a security boundary**: the terminal and the file go round it, and the doc says so.
 - A zone value is ambient state. It is read in one place, the notifier, and nowhere below presentation.
+- **A folder never waits for git.** Where git asks first (`Semi`, `Manual`), opening is two halves — `SpaceLocationRepository.openFolder` reads the disk, `locate` asks git where the repository is — and the session opens with `locatingRepository` set so the tree and files show at once; `GitReadingNotifier` runs the second half behind the panel, in the same plan as the first reading. Home's panel remains for a clone, and Home's own reads (the recent rows' branches, the account) ask nothing by themselves in `Manual`.
+- **Opening a space is one plan.** The scope that runs the folder's commands is handed to the first reading the space makes (`OpeningPlanNotifier`), so `Reading the repository` counts both; every later reading is a plan of its own.
+- **The list and the preferences each have a tab**: the session holds the app's own files as a list, and the editor keeps one held buffer per tab, so an edit in one is never read as the other's.

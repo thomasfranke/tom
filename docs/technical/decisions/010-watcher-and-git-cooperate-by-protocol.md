@@ -1,6 +1,6 @@
 # Decision 10 — The watcher and git operations cooperate by an explicit protocol
 
-**Status:** accepted
+**Status:** accepted — revised (2026-10-10): there is no watcher in the MVP, so the protocol below is not built. See the note at the foot.
 
 ## Context
 The filesystem watcher exists to reflect external edits (VS Code open alongside is an expected use case). But three kinds of interference produce nasty bugs unless handled by design:
@@ -23,3 +23,5 @@ Concurrency between subsystems is never solved by chance — it is solved by a d
 - The watcher ↔ git client coupling is **deliberate and documented** — both are infrastructure and cooperation happens through contracts (`FileSystemInterface.pauseWatching()/resumeWatching()`), without leaking to upper layers.
 - Presentation never sees a raw file event: it sees the session change.
 - Testable in integration: temporary repo + git operation + assertion that exactly one consolidated event was emitted.
+
+**Revised (2026-10-10), the maintainer's call:** **no watcher in the MVP.** Nothing watches the folder, no package is taken for it, and points 1–3 above are not built — there is no `SpaceChanged`, no in-flight write list and no `pauseWatching()`/`resumeWatching()` on the filesystem contract. A change made outside TOM is caught in two places instead: by **`Reload`**, which reads the folder and git again, and **at save**, which asks the disk before it writes and never writes over what changed underneath it ([runtime/git.md](../runtime/git.md)). Point 4 stands on its own: git commands are serialized in the client's queue ([runtime/git.md](../runtime/git.md)). The protocol is what a watcher has to follow the day one arrives, which is why this file is revised and not superseded.

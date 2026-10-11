@@ -34,4 +34,4 @@ A `TomModule` contract member that is going away is marked `@Deprecated` with th
 
 ## The changelog
 
-Generated from Conventional Commits since the previous tag ([workflow](../../../CONTRIBUTING.md#workflow)): `feat` entries become the features section, `fix` the fixes, and `BREAKING CHANGE` footers are surfaced at the top. This is the practical reason the commit convention is enforced rather than merely suggested.
+To be generated from Conventional Commits since the previous tag ([workflow](../../../CONTRIBUTING.md#workflow)): `feat` entries become the features section, `fix` the fixes, and `BREAKING CHANGE` footers are surfaced at the top. Nothing generates it yet and nothing checks a commit message — there has been no release — so the convention is held by review, and this is the practical reason it is held at all.

@@ -21,6 +21,13 @@ The app drew its own set: glyphs traced on a 16 grid, stroked, painted from each
 - **`bold` and `italic` are glyphs again**, not letterforms in the serif: they come from the same set as their neighbours.
 - **No Material `Icons`** anywhere in the app: a second set is how the hand-drawn one ended up beside Material's `close` and `check`.
 
+**Revised (2026-10-11):** the formatting bar's seventeen glyphs are **Material Symbols Outlined at weight 300**, because Font Awesome Solid read as bold at the bar's size; everything else stays Font Awesome Solid.
+
+- **Drawn, not a font**: each is a hand-written SVG path in `docs/design/components/icons/toolbar/<name>.svg`, turned into `tom_toolbar_outlines.dart` by `docs/design/tools/toolbar_outlines.py` and painted by one painter (`TomOutline`) — no font file, no dependency.
+- **Still one door**: `TomGlyphWidget` and `TomGlyphEnum` answer for them too, so no screen knows which set a glyph is from.
+- **Replacing one is a file**: drop a new SVG over the old and run the script.
+- **Licence**: Material Symbols is Apache-2.0 ([fonts](../stack/fonts.md)).
+
 ## Licence
 
 Font Awesome Free's **icons are CC BY 4.0**, its **font files SIL OFL 1.1** and its code MIT — none of them copyleft, all compatible with the project's MIT ([Decision 1](001-license-is-mit.md)). CC BY asks for attribution: `FontAwesome-LICENSE.txt` travels beside the font, and [fonts](../stack/fonts.md) names it.

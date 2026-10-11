@@ -13,29 +13,28 @@ compatibility obligation from its first release
 ([versioning](../process/versioning.md)), and this product's whole claim is
 that it owns no format.
 
-## Document loading → decide in **M0**
+## Can `tom_infra` see a repository implementation?
 
-Does `DocumentEntity` hold `content` for the whole session, or read on demand?
-Decide against a real 5k-line file once the editor runs. Related: what the
-entity looks like while dirty.
-
-## Conflicted state → decide in **M3**
-
-`GitStatusValueObject` already reports conflicted paths. What is still open is
-the region: the two sides as spans of the document's own text, and whether the
-choice a reader makes is a value the model carries or only an edit to the
-buffer. The product says the latter
-([the conflicted document](../../product/editor/conflicted-document/doc.md)),
-which is why no `Resolution` is drawn here yet.
+It can. `tom_infra` depends on `tom_data` for the DTOs that cross its
+contracts, and `tom_data` has one barrel, which also exports the repository
+implementations
+([Decision 22](../decisions/022-capability-contracts-live-in-the-data-layer.md)
+named the gap under *Consequences* and left it "not yet closed").
+[Decision 24](../decisions/024-a-capability-is-a-folder.md) closed the half
+that matters — `tom_infra` has no `tom_domain` in its pubspec, so an adapter
+cannot name a domain type — and rejected a second public library for the rest.
+Open: whether an adapter *seeing* `GitRepositoryImpl` needs a rule or a test of
+its own, or the pubspec line is the whole answer and this question closes.
 
 ## How this gets filled in
 
 By evidence, not by a design session: **Spike B** answered `BlockValueObject`
 ([Decision 19](../decisions/019-blocks-come-from-the-markdown-package.md));
-**M0** answers document loading and dirty state; **M2** refines `DiffBlock`;
-**M3** answered `Wikilink`
+**M0** answered document loading and dirty state
+([documents.md](documents.md)); **M3** answered `Wikilink`
 ([Decision 28](../decisions/028-a-wikilink-resolves-by-name-inside-the-space.md),
-now [wikilinks.md](wikilinks.md)); **M3** answers the conflict region too.
+now [wikilinks.md](wikilinks.md)) and the conflict region
+([git.md](git.md)).
 
 When a milestone or spike answers a question, move it from here into the file
 it belongs to, in the same PR that implements it, and delete the question. The

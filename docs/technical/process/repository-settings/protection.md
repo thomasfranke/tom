@@ -11,7 +11,7 @@ What guards `main` and the release tags.
 ## Branch protection — `main`
 
 - Require a pull request before merging.
-- Require status checks to pass: analyze, tests, Linux compile check, `license/cla`.
+- Require status checks to pass, by the names the jobs carry ([ci.md](../ci.md)): `Verify`, `Build (macOS)`, `CLA`.
 - Require branches to be up to date before merging.
 - **Do not allow bypassing the above, administrators included** — without this the protection is advisory, and a rushed direct push by the maintainer is the most common way this discipline dies.
 - Require linear history, squash merges only, so the trunk stays readable and the generated changelog stays exact.
