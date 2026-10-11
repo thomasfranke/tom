@@ -71,7 +71,7 @@ final class ChangesNotifierProvider
   }
 }
 
-String _$changesNotifierHash() => r'766bd0f5d7b89d10efc5ec643552f44b98890594';
+String _$changesNotifierHash() => r'3f739830018c47d6e90485088597469f61d9e7a4';
 
 /// Stages, unstages and commits, and holds the git column's draft on top of
 /// what [GitReadingNotifier] reads.

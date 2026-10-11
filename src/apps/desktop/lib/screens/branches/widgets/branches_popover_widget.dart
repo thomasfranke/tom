@@ -184,7 +184,12 @@ class _CreateWidget extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          BranchesFieldWidget(hint: l10n.branchesNewNameHint),
+          // Enter does what the button does, and the notifier refuses what
+          // the button would not offer.
+          BranchesFieldWidget(
+            hint: l10n.branchesNewNameHint,
+            onSubmit: () => unawaited(notifier.create()),
+          ),
           const SizedBox(height: 8),
           Text(
             // What it branches from, said before rather than discovered after

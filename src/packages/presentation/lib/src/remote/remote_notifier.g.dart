@@ -59,7 +59,7 @@ final class RemoteNotifierProvider
   }
 }
 
-String _$remoteNotifierHash() => r'1a77cc7afda739aa993f5153dd52e9b8a05656ac';
+String _$remoteNotifierHash() => r'ee5f5e8b4158dc300f5aba15d80fe85b029f3f81';
 
 /// Fetch, pull and push, each started by somebody and never on its own
 /// (`docs/product/git-workflow/push-pull/README.md`).
@@ -141,3 +141,58 @@ final class RemoteAwaitingApprovalProvider
 
 String _$remoteAwaitingApprovalHash() =>
     r'8e21141751adfdeb2f1abc2ad79f40e99940755b';
+
+/// What the link is, when it is anything: what the last request said, else
+/// that the repository has no remote — read from the pull request's target
+/// when the space opened, so nobody has to fail a fetch to learn it
+/// (`docs/product/git-workflow/push-pull/when-the-link-is-broken/doc.md`).
+
+@ProviderFor(remoteLink)
+final remoteLinkProvider = RemoteLinkProvider._();
+
+/// What the link is, when it is anything: what the last request said, else
+/// that the repository has no remote — read from the pull request's target
+/// when the space opened, so nobody has to fail a fetch to learn it
+/// (`docs/product/git-workflow/push-pull/when-the-link-is-broken/doc.md`).
+
+final class RemoteLinkProvider
+    extends $FunctionalProvider<LinkStateEnum?, LinkStateEnum?, LinkStateEnum?>
+    with $Provider<LinkStateEnum?> {
+  /// What the link is, when it is anything: what the last request said, else
+  /// that the repository has no remote — read from the pull request's target
+  /// when the space opened, so nobody has to fail a fetch to learn it
+  /// (`docs/product/git-workflow/push-pull/when-the-link-is-broken/doc.md`).
+  RemoteLinkProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'remoteLinkProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$remoteLinkHash();
+
+  @$internal
+  @override
+  $ProviderElement<LinkStateEnum?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  LinkStateEnum? create(Ref ref) {
+    return remoteLink(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(LinkStateEnum? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<LinkStateEnum?>(value),
+    );
+  }
+}
+
+String _$remoteLinkHash() => r'bdcdc0c71d2e67fd869d70e1fc0d7c81c2141ab6';

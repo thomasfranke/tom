@@ -16,9 +16,13 @@ void main() {
     lastOpened: DateTime.utc(2026, 10, 8),
   );
 
-  ProviderContainer containerOver(RecentBranchRepository branches) {
+  ProviderContainer containerOver(
+    RecentBranchRepository branches, {
+    GitApprovalModeEnum mode = GitApprovalModeEnum.automatic,
+  }) {
     final ProviderContainer container = ProviderContainer(
       overrides: <Override>[
+        preferencesProvider.overrideWith(() => _Prefs(mode)),
         readRecentBranchProvider.overrideWithValue(
           ReadRecentBranchUseCase(
             branches: branches,
@@ -28,6 +32,8 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+    // The window keeps the preferences alive; here they are made to exist.
+    container.listen(preferencesProvider, (_, _) {});
     return container;
   }
 
@@ -46,10 +52,24 @@ void main() {
 
   test('a row on no branch gets nothing', () async {
     final ProviderContainer container = containerOver(
-      _Branches(const <String, BranchNameValueObject?>{}),
+      _Branches(<String, BranchNameValueObject?>{}),
     );
 
     expect(await container.read(recentBranchProvider(docs).future), isNull);
+  });
+
+  test('where git asks first, a row names no branch and git is not asked: '
+      'Home is not held by its own rows', () async {
+    final _Branches branches = _Branches(<String, BranchNameValueObject?>{
+      '/work/docs': BranchNameValueObject('feat/notes'),
+    });
+    final ProviderContainer container = containerOver(
+      branches,
+      mode: GitApprovalModeEnum.manual,
+    );
+
+    expect(await container.read(recentBranchProvider(docs).future), isNull);
+    expect(branches.asked, 0);
   });
 
   test('a repository that throws costs the branch, not the row', () async {
@@ -59,16 +79,33 @@ void main() {
   });
 }
 
+/// Preferences that already hold [mode], nothing read from a store.
+final class _Prefs extends PreferencesNotifier {
+  _Prefs(this.mode);
+
+  final GitApprovalModeEnum mode;
+
+  @override
+  PreferencesValueObject build() =>
+      PreferencesValueObject.defaults.copyWith(gitApprovals: mode);
+}
+
 /// Answers the branch [byRoot] holds for a row's folder.
 final class _Branches implements RecentBranchRepository {
-  const _Branches(this.byRoot);
+  _Branches(this.byRoot);
 
   final Map<String, BranchNameValueObject?> byRoot;
+
+  /// How many times git would have been asked.
+  int asked = 0;
 
   @override
   Future<Result<BranchNameValueObject?, Never>> branchOf(
     RecentSpaceEntity recent,
-  ) async => Success<BranchNameValueObject?, Never>(byRoot[recent.root]);
+  ) async {
+    asked++;
+    return Success<BranchNameValueObject?, Never>(byRoot[recent.root]);
+  }
 }
 
 /// Breaks its contract by throwing.

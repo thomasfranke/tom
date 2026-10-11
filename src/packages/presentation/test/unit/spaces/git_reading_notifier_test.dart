@@ -13,6 +13,7 @@ import 'package:tom_presentation/tom_presentation.dart';
 
 void main() {
   late _Git git;
+  late _Locator locator;
   late ProviderContainer container;
 
   final SpaceEntity docs = SpaceEntity(
@@ -45,8 +46,17 @@ void main() {
 
   setUp(() {
     git = _Git()..reported = statusOf('main');
+    locator = _Locator();
     container = ProviderContainer(
       overrides: <Override>[
+        openSpaceProvider.overrideWithValue(
+          OpenSpaceUseCase(
+            spaces: _NoSpaces(),
+            locator: locator,
+            recents: _NoRecents(),
+            observability: const _Silent(),
+          ),
+        ),
         readGitStatusProvider.overrideWithValue(
           ReadGitStatusUseCase(
             gitFor: (SpaceEntity _) => git,
@@ -264,6 +274,138 @@ void main() {
       expect(session()?.merge?.inProgress, isTrue);
     });
   });
+
+  group('a folder opened before git said where its repository is', () {
+    final SpaceEntity folder = SpaceEntity(
+      root: docs.root,
+      repositoryRoot: null,
+      name: 'docs',
+    );
+
+    void openFolder() => container
+        .read(spaceSessionProvider.notifier)
+        .open(folder, locating: true);
+
+    test('shows its folder at once, finds the repository behind it, then '
+        'reads it in the same plan', () async {
+      locator.found = docs;
+      start();
+      openFolder();
+
+      expect(session()?.space, folder, reason: 'the files show first');
+      expect(container.read(gitReadingProvider), isA<GitReadingLoading>());
+      await settle();
+
+      expect(session()?.locatingRepository, isFalse);
+      expect(session()?.space, docs);
+      expect(container.read(gitReadingProvider), isA<GitReadingReady>());
+      expect(git.asked, 1);
+      expect(locator.scopes.single, isNotNull);
+      expect(
+        git.scopes.single,
+        same(locator.scopes.single),
+        reason: 'opening and its first reading are one plan',
+      );
+    });
+
+    test('a folder git knows nothing about is never read', () async {
+      locator.found = folder;
+      start();
+      openFolder();
+      await settle();
+
+      expect(session()?.locatingRepository, isFalse);
+      expect(container.read(gitReadingProvider), isA<GitReadingInitial>());
+      expect(git.asked, 0);
+    });
+
+    test('a denial keeps the folder, says out of date, and Reload asks '
+        'again', () async {
+      locator.refusal = const GitCommandDenied();
+      start();
+      openFolder();
+      await settle();
+
+      expect(session()?.space, folder);
+      expect(session()?.locatingRepository, isTrue);
+      expect(container.read(gitReadingProvider), isA<GitReadingStale>());
+
+      locator
+        ..refusal = null
+        ..found = docs;
+      await container.read(gitReadingProvider.notifier).refresh();
+      await settle();
+
+      expect(locator.asked, 2);
+      expect(session()?.space, docs);
+      expect(container.read(gitReadingProvider), isA<GitReadingReady>());
+    });
+
+    test('an older git is a failed reading, the files stay', () async {
+      locator.refusal = const GitTooOld('2.30');
+      start();
+      openFolder();
+      await settle();
+
+      expect(container.read(gitReadingProvider), isA<GitReadingFailed>());
+      expect(session()?.space, folder);
+    });
+  });
+}
+
+/// Opens nothing itself: the locator is what these tests are about.
+final class _NoSpaces implements SpaceRepository {
+  @override
+  Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
+    SpaceEntity space,
+  ) async => throw UnimplementedError();
+}
+
+/// Finds a repository the way the test says, noting the plan it asked in.
+final class _Locator implements SpaceLocationRepository {
+  SpaceEntity? found;
+  AppFailure? refusal;
+  int asked = 0;
+  final List<Object?> scopes = <Object?>[];
+
+  @override
+  Future<Result<SpaceEntity, AppFailure>> openFolder(String folder) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<SpaceEntity, AppFailure>> locate(SpaceEntity space) async {
+    asked++;
+    scopes.add(CommandScope.current);
+    final AppFailure? refused = refusal;
+    return refused != null
+        ? Failure<SpaceEntity, AppFailure>(refused)
+        : Success<SpaceEntity, AppFailure>(found!);
+  }
+}
+
+/// The recent list, which these tests never read.
+final class _NoRecents implements RecentSpacesRepository {
+  @override
+  Future<Result<List<RecentSpaceEntity>, Never>> list() async =>
+      const Success<List<RecentSpaceEntity>, Never>(<RecentSpaceEntity>[]);
+
+  @override
+  Future<Result<void, Never>> remember(SpaceEntity space) async =>
+      const Success<void, Never>(null);
+
+  @override
+  Future<Result<void, Never>> forget(String root) async =>
+      const Success<void, Never>(null);
 }
 
 /// Git, answering what the test set and counting the times it was asked.
@@ -280,9 +422,13 @@ final class _Git implements GitRepository {
   /// The action each question was asked inside, in order.
   final List<CommandActionEnum?> actions = <CommandActionEnum?>[];
 
+  /// The run each status question was asked inside, in order.
+  final List<CommandScope?> scopes = <CommandScope?>[];
+
   @override
   Future<Result<GitStatusValueObject, GitFailure>> status() async {
     asked++;
+    scopes.add(CommandScope.current);
     actions.add(CommandScope.current?.action);
     // Captured now: the answer is the one git had when it was asked.
     final GitStatusValueObject? answer = reported;

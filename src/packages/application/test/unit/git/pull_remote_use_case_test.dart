@@ -27,6 +27,15 @@ void main() {
   int? arrived(Result<int?, AppFailure> result) =>
       (result as Success<int?, AppFailure>).value;
 
+  test('with no remote it says so, and git is never asked to pull', () async {
+    git.remote = null;
+
+    final Result<int?, AppFailure> result = await pulling().pull(docs);
+
+    expect((result as Failure<int?, AppFailure>).failure, const GitNoRemote());
+    expect(git.pulled, 0);
+  });
+
   test('it brings the remote commits in', () async {
     final Result<int?, AppFailure> result = await pulling().pull(docs);
 
@@ -149,6 +158,13 @@ final class _Git implements GitRepository {
 
   /// The calls, in the order they came.
   final List<String> order = <String>[];
+
+  /// Where `origin` is fetched from; null is a repository with no remote.
+  String? remote = 'https://example.test/docs.git';
+
+  @override
+  Future<Result<String?, GitFailure>> remoteAddress() async =>
+      Success<String?, GitFailure>(remote);
 
   @override
   Future<Result<CommitShaValueObject?, GitFailure>> head() async {

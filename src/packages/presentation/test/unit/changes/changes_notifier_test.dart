@@ -206,6 +206,31 @@ void main() {
       expect(editor?.reloads, 0);
     });
 
+    // The row said *new* and git says *committed*: the list was stale.
+    test('a file that turned out to be committed keeps its tab and its '
+        'buffer; git is read again and the column says why', () async {
+      git.writeFailure = GitPathCommitted(<String>[writing.value]);
+      final int before = git.asked;
+
+      await container
+          .read(changesProvider.notifier)
+          .discard(
+            StatusEntryValueObject(
+              path: writing,
+              state: FileStateEnum.untracked,
+              isStaged: false,
+            ),
+          );
+
+      expect(git.asked, before + 1, reason: 'the stale list is replaced');
+      expect(ready().failure, GitPathCommitted(<String>[writing.value]));
+      expect(ready().isBusy, isFalse);
+      expect(editor?.reloads, 0);
+      expect(container.read(spaceSessionProvider)!.tabs, <DocumentTab>[
+        DocumentTab.inSpace(open),
+      ]);
+    });
+
     test('a file git never had is deleted, and its tab closes', () async {
       await container
           .read(changesProvider.notifier)
@@ -649,6 +674,32 @@ void main() {
       expect(observed()?.entries, isEmpty);
     });
 
+    test('a commit that worked leaves its message as the news', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+      git.reported = statusOf(const <StatusEntryValueObject>[]);
+
+      await describeAndCommit('docs: say what changed');
+      // The summary only: the body is not what a band quotes.
+
+      expect(
+        container.read(remoteProvider),
+        const RemoteState.idle(committed: 'docs: say what changed'),
+      );
+    });
+
+    test('a commit that failed leaves no news', () async {
+      start();
+      container.read(spaceSessionProvider.notifier).open(docs);
+      await settle();
+      git.writeFailure = const GitOperationFailed();
+
+      await describeAndCommit('docs: say what changed');
+
+      expect(container.read(remoteProvider), const RemoteState.idle());
+    });
+
     test('while it runs the panel knows it is the commit, and after it does '
         'not', () async {
       start();
@@ -740,7 +791,9 @@ void main() {
 
       expect(ready().failure, isNull);
       expect(ready().isBusy, isFalse);
-      expect(git.asked, before + 1, reason: 'the window shows what is true');
+      // Once by the staging itself, to learn which files are conflicted, and
+      // once after it.
+      expect(git.asked, before + 2, reason: 'the window shows what is true');
     });
 
     test(
@@ -778,6 +831,30 @@ void main() {
       expect(ready().failure, isNull);
       expect(editor?.reloads ?? 0, 0, reason: 'its unsaved edits would go');
       expect(tree?.refreshes ?? 0, 0);
+    });
+
+    test('a Discard all that failed reads no document again either', () async {
+      git.discardAllFailure = const GitOperationFailed();
+
+      await container.read(changesProvider.notifier).discardAll();
+
+      expect(ready().failure, const GitOperationFailed());
+      expect(editor?.reloads ?? 0, 0, reason: 'its unsaved edits would go');
+      expect(tree?.refreshes ?? 0, 0);
+    });
+
+    test('a Discard all refused mid-merge says so, and nothing is put '
+        'back', () async {
+      git.merge = const MergeStateValueObject(
+        inProgress: true,
+        message: "Merge branch 'main'",
+      );
+
+      await container.read(changesProvider.notifier).discardAll();
+
+      expect(ready().failure, isA<GitMergeConflict>());
+      expect(git.discards, 0);
+      expect(editor?.reloads ?? 0, 0);
     });
 
     test('each press runs as the action it is', () async {
@@ -917,6 +994,12 @@ final class _Git implements GitRepository {
   @override
   Future<Result<MergeStateValueObject, GitFailure>> mergeState() async =>
       Success<MergeStateValueObject, GitFailure>(merge);
+
+  @override
+  Future<Result<CommitShaValueObject?, GitFailure>> head() async =>
+      Success<CommitShaValueObject?, GitFailure>(
+        CommitShaValueObject('a' * 40),
+      );
 
   /// How many times everything was put back.
   int discards = 0;

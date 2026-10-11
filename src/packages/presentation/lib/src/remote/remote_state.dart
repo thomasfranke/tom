@@ -23,6 +23,15 @@ sealed class RemoteState with _$RemoteState {
     /// How many commits the last pull brought in, 0 when the space was
     /// already level; null after anything else, or when git could not count.
     int? arrived,
+
+    /// The message of the commit that was just recorded, null after anything
+    /// else (`docs/product/git-workflow/commit/confirming/doc.md`).
+    String? committed,
+
+    /// How many commits the last push published, 0 when git could not say;
+    /// null after anything else
+    /// (`docs/product/git-workflow/push-pull/when-it-works/doc.md`).
+    int? published,
   }) = RemoteIdle;
 
   /// [action] is in flight — which one, so the working button can say so.

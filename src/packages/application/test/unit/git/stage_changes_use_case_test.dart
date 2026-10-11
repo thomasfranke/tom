@@ -105,7 +105,85 @@ void main() {
     expect(observability.captured.single.layer, 'application');
   });
 
+  group('a document git does not call conflicted', () {
+    // Outside a merge a marker line is prose — a page about resolving
+    // conflicts quotes whole regions — and it must stage.
+    test('is staged without being read, whole region or not', () async {
+      documents.contents['guides/writing.md'] = conflicted;
+
+      final Result<void, AppFailure> result = await staging().stage(
+        docs,
+        <RepoRelativePathValueObject>[writing],
+      );
+
+      expect(result, isA<Success<void, AppFailure>>());
+      expect(git.staged, <RepoRelativePathValueObject>[writing]);
+      expect(documents.read_, isEmpty);
+    });
+
+    test('is staged beside one that is, when that one reads clean', () async {
+      final RepoRelativePathValueObject reading = RepoRelativePathValueObject(
+        'docs/guides/reading.md',
+      );
+      git.conflicted.add(reading);
+      documents.contents['guides/writing.md'] = conflicted;
+      documents.contents['guides/reading.md'] = '# Resolved\n';
+
+      final Result<void, AppFailure> result = await staging().stage(
+        docs,
+        <RepoRelativePathValueObject>[writing, reading],
+      );
+
+      expect(result, isA<Success<void, AppFailure>>());
+      expect(documents.read_, <String>['guides/reading.md']);
+    });
+  });
+
+  test('a status git will not give stages nothing', () async {
+    git.reading = const Failure<GitStatusValueObject, GitFailure>(
+      GitOperationFailed(),
+    );
+
+    final Result<void, AppFailure> result = await staging().stage(
+      docs,
+      <RepoRelativePathValueObject>[writing],
+    );
+
+    expect(
+      (result as Failure<void, AppFailure>).failure,
+      const GitOperationFailed(),
+    );
+    expect(git.staged, isEmpty);
+  });
+
   group('a document still holding a conflict marker', () {
+    setUp(() => git.conflicted.add(writing));
+
+    // A region half resolved by hand: no longer a region, still not prose.
+    for (final (String left, String text) in <(String, String)>[
+      ('the opening line', '# Guide\n\n<<<<<<< HEAD\nours\n'),
+      ('the separator', '# Guide\n\nours\n=======\ntheirs\n'),
+      ('the closing line', '# Guide\n\ntheirs\n>>>>>>> main\n'),
+      ('the base line of diff3', '# Guide\n\nours\n||||||| 1a2b3c4\nwas\n'),
+    ]) {
+      test('is refused with only $left left', () async {
+        documents.contents['guides/writing.md'] = text;
+
+        final Result<void, AppFailure> result = await staging().stage(
+          docs,
+          <RepoRelativePathValueObject>[writing],
+        );
+
+        expect(
+          ((result as Failure<void, AppFailure>).failure
+                  as GitConflictMarkersPresent)
+              .paths,
+          <String>['docs/guides/writing.md'],
+        );
+        expect(git.staged, isEmpty);
+      });
+    }
+
     test('is refused, and the refusal names it', () async {
       documents.contents['guides/writing.md'] = conflicted;
 
@@ -135,6 +213,7 @@ void main() {
         final RepoRelativePathValueObject reading = RepoRelativePathValueObject(
           'docs/guides/reading.md',
         );
+        git.conflicted.add(reading);
         documents.contents['guides/writing.md'] = conflicted;
         documents.contents['guides/reading.md'] = conflicted;
 
@@ -181,24 +260,62 @@ void main() {
     });
   });
 
-  group('a path the space cannot read', () {
-    // The changes list is the repository's, so it names files this space
-    // cannot open. Refusing those would strand somebody who resolved one in
-    // another editor.
-    test('outside the space is staged without being read', () async {
-      final RepoRelativePathValueObject readme = RepoRelativePathValueObject(
-        'README.md',
-      );
+  group('a conflicted path outside the space', () {
+    // The changes list is the repository's, so it names files beside the
+    // space. They are read through the repository's own folder.
+    final RepoRelativePathValueObject readme = RepoRelativePathValueObject(
+      'README.md',
+    );
+    late _Documents beside;
 
-      final Result<void, AppFailure> result = await staging().stage(
+    setUp(() {
+      git.conflicted.add(readme);
+      beside = _Documents();
+    });
+
+    StageChangesUseCase stagingBeside() => StageChangesUseCase(
+      gitFor: (SpaceEntity space) => git,
+      documentsFor: (SpaceEntity space) =>
+          space.root == '/code/app' ? beside : documents,
+      observability: observability,
+    );
+
+    test('is refused while it holds a marker', () async {
+      beside.contents['README.md'] = conflicted;
+
+      final Result<void, AppFailure> result = await stagingBeside().stage(
         docs,
         <RepoRelativePathValueObject>[readme],
       );
 
-      expect(result, isA<Success<void, AppFailure>>());
-      expect(git.staged, <RepoRelativePathValueObject>[readme]);
-      expect(documents.read_, isEmpty);
+      expect(
+        ((result as Failure<void, AppFailure>).failure
+                as GitConflictMarkersPresent)
+            .paths,
+        <String>['README.md'],
+      );
+      expect(git.staged, isEmpty);
     });
+
+    test(
+      'is staged once it reads clean — resolved in another editor',
+      () async {
+        beside.contents['README.md'] = '# Resolved elsewhere\n';
+
+        final Result<void, AppFailure> result = await stagingBeside().stage(
+          docs,
+          <RepoRelativePathValueObject>[readme],
+        );
+
+        expect(result, isA<Success<void, AppFailure>>());
+        expect(git.staged, <RepoRelativePathValueObject>[readme]);
+        expect(documents.read_, isEmpty);
+      },
+    );
+  });
+
+  group('a conflicted path', () {
+    setUp(() => git.conflicted.add(writing));
 
     test('that cannot be read at all is left to git to report', () async {
       final Result<void, AppFailure> result = await staging().stage(
@@ -289,9 +406,34 @@ final class _Git implements GitRepository {
     return _done();
   }
 
+  /// The paths git calls conflicted; everything else it has nothing to say
+  /// about.
+  final List<RepoRelativePathValueObject> conflicted =
+      <RepoRelativePathValueObject>[];
+
+  /// What the status answers when it is not [conflicted]'s.
+  Result<GitStatusValueObject, GitFailure>? reading;
+
   @override
   Future<Result<GitStatusValueObject, GitFailure>> status() async =>
-      throw UnimplementedError();
+      reading ??
+      Success<GitStatusValueObject, GitFailure>(
+        GitStatusValueObject(
+          branch: BranchNameValueObject('main'),
+          upstream: null,
+          ahead: 0,
+          behind: 0,
+          entries: <StatusEntryValueObject>[
+            for (final RepoRelativePathValueObject path in conflicted)
+              StatusEntryValueObject(
+                path: path,
+                state: FileStateEnum.conflicted,
+                isStaged: false,
+              ),
+          ],
+          isDetached: false,
+        ),
+      );
 
   @override
   Future<Result<List<CommitEntity>, GitFailure>> history({

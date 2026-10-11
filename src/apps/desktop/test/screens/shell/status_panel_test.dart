@@ -314,13 +314,15 @@ void main() {
       expect(find.text('0'), findsOneWidget);
     });
 
-    testWidgets('a detached HEAD is named, not left blank', (
+    testWidgets('a repository on no branch says so, in the product\'s words', (
       WidgetTester tester,
     ) async {
-      // A state to get out of, not a missing value.
+      // A state to get out of, not a missing value — and never git's
+      // `detached` (`docs/product/workspace/status-bar/doc.md`).
       await pumpWith(tester, _status(isDetached: true));
 
-      expect(find.text('detached HEAD'), findsOneWidget);
+      expect(find.text('Not on a branch'), findsOneWidget);
+      expect(find.textContaining('etached'), findsNothing);
     });
   });
 }

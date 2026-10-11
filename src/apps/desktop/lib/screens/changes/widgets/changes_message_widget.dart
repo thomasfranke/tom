@@ -1,7 +1,9 @@
 /// The box a commit is described in.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/changes/changes_design.dart';
@@ -17,7 +19,17 @@ import 'package:tom_ui/tom_ui.dart';
 /// Never disabled, even while git works: describing a commit is not git's.
 class ChangesMessageWidget extends ConsumerStatefulWidget {
   /// Creates the box.
-  const ChangesMessageWidget({super.key});
+  const ChangesMessageWidget({this.onCommit, super.key});
+
+  /// What ⌘Enter (Ctrl+Enter off macOS) does; null while the button is
+  /// unavailable, and then the key does nothing.
+  final VoidCallback? onCommit;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(ObjectFlagProperty<VoidCallback?>.has('onCommit', onCommit));
+  }
 
   @override
   ConsumerState<ChangesMessageWidget> createState() =>
@@ -78,77 +90,89 @@ class _ChangesMessageWidgetState extends ConsumerState<ChangesMessageWidget> {
     final TomColors colors = TomColors.of(context);
     final bool isFocused = _summaryFocus.hasFocus || _descriptionFocus.hasFocus;
     final ChangesNotifier changes = ref.read(changesProvider.notifier);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: ChangesDesign.inset),
-      child: Container(
-        height: ChangesDesign.messageHeight,
-        decoration: BoxDecoration(
-          color: colors.surfaceSunken,
-          borderRadius: BorderRadius.circular(ChangesDesign.radius),
-          border: Border.all(color: isFocused ? colors.accent : colors.border),
-        ),
-        // The stroke is painted inside the box, so the board's inset is the
-        // pad less the stroke.
-        padding: const EdgeInsets.fromLTRB(
-          ChangesDesign.messagePad,
-          ChangesDesign.messageTop,
-          ChangesDesign.messagePad,
-          ChangesDesign.messageTop,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            TextField(
-              controller: _summary,
-              focusNode: _summaryFocus,
-              onChanged: changes.describe,
-              // Enter moves to the description, the way a message is written.
-              onSubmitted: (_) => _descriptionFocus.requestFocus(),
-              cursorColor: colors.accent,
-              cursorWidth: 1,
-              style: TextStyle(
-                fontSize: ChangesDesign.message,
-                height: 1.4,
-                fontWeight: FontWeight.w500,
-                color: colors.textPrimary,
-              ),
-              decoration: InputDecoration.collapsed(
-                hintText: context.l10n.changesSummaryHint,
-                hintStyle: TextStyle(
-                  fontSize: ChangesDesign.message,
-                  height: 1.4,
-                  fontWeight: FontWeight.w500,
-                  color: colors.textMuted,
-                ),
-              ),
+    final VoidCallback? onCommit = widget.onCommit;
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        SingleActivator(
+          LogicalKeyboardKey.enter,
+          meta: defaultTargetPlatform == TargetPlatform.macOS,
+          control: defaultTargetPlatform != TargetPlatform.macOS,
+        ): ?onCommit,
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: ChangesDesign.inset),
+        child: Container(
+          height: ChangesDesign.messageHeight,
+          decoration: BoxDecoration(
+            color: colors.surfaceSunken,
+            borderRadius: BorderRadius.circular(ChangesDesign.radius),
+            border: Border.all(
+              color: isFocused ? colors.accent : colors.border,
             ),
-            const SizedBox(height: ChangesDesign.descriptionGap),
-            Expanded(
-              child: TextField(
-                controller: _description,
-                focusNode: _descriptionFocus,
-                maxLines: null,
-                expands: true,
-                textAlignVertical: TextAlignVertical.top,
-                onChanged: changes.describeBody,
+          ),
+          // The stroke is painted inside the box, so the board's inset is the
+          // pad less the stroke.
+          padding: const EdgeInsets.fromLTRB(
+            ChangesDesign.messagePad,
+            ChangesDesign.messageTop,
+            ChangesDesign.messagePad,
+            ChangesDesign.messageTop,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              TextField(
+                controller: _summary,
+                focusNode: _summaryFocus,
+                onChanged: changes.describe,
+                // Enter moves to the description, the way a message is written.
+                onSubmitted: (_) => _descriptionFocus.requestFocus(),
                 cursorColor: colors.accent,
                 cursorWidth: 1,
                 style: TextStyle(
-                  fontSize: ChangesDesign.description,
+                  fontSize: ChangesDesign.message,
                   height: 1.4,
-                  color: colors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                  color: colors.textPrimary,
                 ),
                 decoration: InputDecoration.collapsed(
-                  hintText: context.l10n.changesDescriptionHint,
+                  hintText: context.l10n.changesSummaryHint,
                   hintStyle: TextStyle(
-                    fontSize: ChangesDesign.description,
+                    fontSize: ChangesDesign.message,
                     height: 1.4,
+                    fontWeight: FontWeight.w500,
                     color: colors.textMuted,
                   ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: ChangesDesign.descriptionGap),
+              Expanded(
+                child: TextField(
+                  controller: _description,
+                  focusNode: _descriptionFocus,
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  onChanged: changes.describeBody,
+                  cursorColor: colors.accent,
+                  cursorWidth: 1,
+                  style: TextStyle(
+                    fontSize: ChangesDesign.description,
+                    height: 1.4,
+                    color: colors.textSecondary,
+                  ),
+                  decoration: InputDecoration.collapsed(
+                    hintText: context.l10n.changesDescriptionHint,
+                    hintStyle: TextStyle(
+                      fontSize: ChangesDesign.description,
+                      height: 1.4,
+                      color: colors.textMuted,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

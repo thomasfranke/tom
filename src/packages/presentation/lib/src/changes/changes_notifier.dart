@@ -15,6 +15,7 @@ import 'package:tom_presentation/src/editor/editor_notifier.dart';
 import 'package:tom_presentation/src/editor/held_buffers_notifier.dart';
 import 'package:tom_presentation/src/file_tree/file_tree_notifier.dart';
 import 'package:tom_presentation/src/file_tree/file_tree_providers.dart';
+import 'package:tom_presentation/src/remote/remote_notifier.dart';
 import 'package:tom_presentation/src/spaces/document_mode_enum.dart';
 import 'package:tom_presentation/src/spaces/document_tab.dart';
 import 'package:tom_presentation/src/spaces/git_reading_notifier.dart';
@@ -59,6 +60,17 @@ class ChangesNotifier extends _$ChangesNotifier {
         (SpaceSessionState? session) => session?.space,
       ),
     );
+    // Git has not yet said where the repository is: the column says it is
+    // asking, not that there is no space.
+    if (space != null &&
+        ref.watch(
+          spaceSessionProvider.select(
+            (SpaceSessionState? session) =>
+                session?.locatingRepository ?? false,
+          ),
+        )) {
+      return const ChangesState.loading();
+    }
     if (space == null || !space.hasRepository) {
       return const ChangesState.initial();
     }
@@ -143,6 +155,7 @@ class ChangesNotifier extends _$ChangesNotifier {
       // that somebody refused, leaves the sentence where it was written.
       if (state case final ChangesReady now when outcome == _Outcome.landed) {
         state = now.copyWith(message: '', description: '');
+        ref.read(remoteProvider.notifier).commitLanded(summary);
       }
     }
   }
@@ -159,9 +172,9 @@ class ChangesNotifier extends _$ChangesNotifier {
       CommandActionEnum.discardAll,
       discardAllChanges.discard,
     );
-    // Refused, the working tree is as it was: reading the open document
-    // again would only throw its unsaved edits away.
-    if (!ref.mounted || outcome == _Outcome.denied) {
+    // Refused or failed, the working tree is as it was: reading the open
+    // document again would only throw its unsaved edits away.
+    if (!ref.mounted || outcome != _Outcome.landed) {
       return;
     }
     await tree.refresh();
@@ -298,11 +311,19 @@ class ChangesNotifier extends _$ChangesNotifier {
       Success<void, AppFailure>() => null,
     };
     if (why != null && !why.isDenial) {
-      state = (state as ChangesReady).copyWith(
-        isBusy: false,
-        isCommitting: false,
-        failure: why,
-      );
+      // Refused over a list that had gone stale: git is read again first, so
+      // the row is redrawn as what it is, and the reason is said over that.
+      if (why is GitPathCommitted ||
+          why is GitMergeConflict ||
+          why is GitNoCommitsYet) {
+        await ref.read(gitReadingProvider.notifier).refresh();
+        if (!ref.mounted) {
+          return _Outcome.skipped;
+        }
+      }
+      if (state case final ChangesReady now) {
+        state = now.copyWith(isBusy: false, isCommitting: false, failure: why);
+      }
       return _Outcome.failed;
     }
     // The reading lands back here through the listener `build` set up.

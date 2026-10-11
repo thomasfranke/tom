@@ -86,7 +86,7 @@ extension GitClientFailurePatterns on GitClientFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( GitClientExecutableNotFound value)?  executableNotFound,TResult Function( GitClientNotARepository value)?  notARepository,TResult Function( GitClientMergeConflict value)?  mergeConflict,TResult Function( GitClientAuthenticationFailed value)?  authenticationFailed,TResult Function( GitClientNetworkUnavailable value)?  networkUnavailable,TResult Function( GitClientNoRemote value)?  noRemote,TResult Function( GitClientRemoteNotFound value)?  remoteNotFound,TResult Function( GitClientDestinationTaken value)?  destinationTaken,TResult Function( GitClientPushRejected value)?  pushRejected,TResult Function( GitClientLocalChangesOverwritten value)?  localChangesOverwritten,TResult Function( GitClientTimedOut value)?  timedOut,TResult Function( GitClientPathNotInRevision value)?  pathNotInRevision,TResult Function( GitClientCommandDenied value)?  commandDenied,TResult Function( GitClientCommandFailed value)?  commandFailed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( GitClientExecutableNotFound value)?  executableNotFound,TResult Function( GitClientNotARepository value)?  notARepository,TResult Function( GitClientMergeConflict value)?  mergeConflict,TResult Function( GitClientAuthenticationFailed value)?  authenticationFailed,TResult Function( GitClientNetworkUnavailable value)?  networkUnavailable,TResult Function( GitClientNoRemote value)?  noRemote,TResult Function( GitClientRemoteNotFound value)?  remoteNotFound,TResult Function( GitClientDestinationTaken value)?  destinationTaken,TResult Function( GitClientPushRejected value)?  pushRejected,TResult Function( GitClientBranchProtected value)?  branchProtected,TResult Function( GitClientLocalChangesOverwritten value)?  localChangesOverwritten,TResult Function( GitClientTimedOut value)?  timedOut,TResult Function( GitClientPathNotInRevision value)?  pathNotInRevision,TResult Function( GitClientPathCommitted value)?  pathCommitted,TResult Function( GitClientCommandDenied value)?  commandDenied,TResult Function( GitClientCommandFailed value)?  commandFailed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound() when executableNotFound != null:
@@ -98,10 +98,12 @@ return networkUnavailable(_that);case GitClientNoRemote() when noRemote != null:
 return noRemote(_that);case GitClientRemoteNotFound() when remoteNotFound != null:
 return remoteNotFound(_that);case GitClientDestinationTaken() when destinationTaken != null:
 return destinationTaken(_that);case GitClientPushRejected() when pushRejected != null:
-return pushRejected(_that);case GitClientLocalChangesOverwritten() when localChangesOverwritten != null:
+return pushRejected(_that);case GitClientBranchProtected() when branchProtected != null:
+return branchProtected(_that);case GitClientLocalChangesOverwritten() when localChangesOverwritten != null:
 return localChangesOverwritten(_that);case GitClientTimedOut() when timedOut != null:
 return timedOut(_that);case GitClientPathNotInRevision() when pathNotInRevision != null:
-return pathNotInRevision(_that);case GitClientCommandDenied() when commandDenied != null:
+return pathNotInRevision(_that);case GitClientPathCommitted() when pathCommitted != null:
+return pathCommitted(_that);case GitClientCommandDenied() when commandDenied != null:
 return commandDenied(_that);case GitClientCommandFailed() when commandFailed != null:
 return commandFailed(_that);case _:
   return orElse();
@@ -121,7 +123,7 @@ return commandFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( GitClientExecutableNotFound value)  executableNotFound,required TResult Function( GitClientNotARepository value)  notARepository,required TResult Function( GitClientMergeConflict value)  mergeConflict,required TResult Function( GitClientAuthenticationFailed value)  authenticationFailed,required TResult Function( GitClientNetworkUnavailable value)  networkUnavailable,required TResult Function( GitClientNoRemote value)  noRemote,required TResult Function( GitClientRemoteNotFound value)  remoteNotFound,required TResult Function( GitClientDestinationTaken value)  destinationTaken,required TResult Function( GitClientPushRejected value)  pushRejected,required TResult Function( GitClientLocalChangesOverwritten value)  localChangesOverwritten,required TResult Function( GitClientTimedOut value)  timedOut,required TResult Function( GitClientPathNotInRevision value)  pathNotInRevision,required TResult Function( GitClientCommandDenied value)  commandDenied,required TResult Function( GitClientCommandFailed value)  commandFailed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( GitClientExecutableNotFound value)  executableNotFound,required TResult Function( GitClientNotARepository value)  notARepository,required TResult Function( GitClientMergeConflict value)  mergeConflict,required TResult Function( GitClientAuthenticationFailed value)  authenticationFailed,required TResult Function( GitClientNetworkUnavailable value)  networkUnavailable,required TResult Function( GitClientNoRemote value)  noRemote,required TResult Function( GitClientRemoteNotFound value)  remoteNotFound,required TResult Function( GitClientDestinationTaken value)  destinationTaken,required TResult Function( GitClientPushRejected value)  pushRejected,required TResult Function( GitClientBranchProtected value)  branchProtected,required TResult Function( GitClientLocalChangesOverwritten value)  localChangesOverwritten,required TResult Function( GitClientTimedOut value)  timedOut,required TResult Function( GitClientPathNotInRevision value)  pathNotInRevision,required TResult Function( GitClientPathCommitted value)  pathCommitted,required TResult Function( GitClientCommandDenied value)  commandDenied,required TResult Function( GitClientCommandFailed value)  commandFailed,}){
 final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound():
@@ -133,10 +135,12 @@ return networkUnavailable(_that);case GitClientNoRemote():
 return noRemote(_that);case GitClientRemoteNotFound():
 return remoteNotFound(_that);case GitClientDestinationTaken():
 return destinationTaken(_that);case GitClientPushRejected():
-return pushRejected(_that);case GitClientLocalChangesOverwritten():
+return pushRejected(_that);case GitClientBranchProtected():
+return branchProtected(_that);case GitClientLocalChangesOverwritten():
 return localChangesOverwritten(_that);case GitClientTimedOut():
 return timedOut(_that);case GitClientPathNotInRevision():
-return pathNotInRevision(_that);case GitClientCommandDenied():
+return pathNotInRevision(_that);case GitClientPathCommitted():
+return pathCommitted(_that);case GitClientCommandDenied():
 return commandDenied(_that);case GitClientCommandFailed():
 return commandFailed(_that);}
 }
@@ -152,7 +156,7 @@ return commandFailed(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( GitClientExecutableNotFound value)?  executableNotFound,TResult? Function( GitClientNotARepository value)?  notARepository,TResult? Function( GitClientMergeConflict value)?  mergeConflict,TResult? Function( GitClientAuthenticationFailed value)?  authenticationFailed,TResult? Function( GitClientNetworkUnavailable value)?  networkUnavailable,TResult? Function( GitClientNoRemote value)?  noRemote,TResult? Function( GitClientRemoteNotFound value)?  remoteNotFound,TResult? Function( GitClientDestinationTaken value)?  destinationTaken,TResult? Function( GitClientPushRejected value)?  pushRejected,TResult? Function( GitClientLocalChangesOverwritten value)?  localChangesOverwritten,TResult? Function( GitClientTimedOut value)?  timedOut,TResult? Function( GitClientPathNotInRevision value)?  pathNotInRevision,TResult? Function( GitClientCommandDenied value)?  commandDenied,TResult? Function( GitClientCommandFailed value)?  commandFailed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( GitClientExecutableNotFound value)?  executableNotFound,TResult? Function( GitClientNotARepository value)?  notARepository,TResult? Function( GitClientMergeConflict value)?  mergeConflict,TResult? Function( GitClientAuthenticationFailed value)?  authenticationFailed,TResult? Function( GitClientNetworkUnavailable value)?  networkUnavailable,TResult? Function( GitClientNoRemote value)?  noRemote,TResult? Function( GitClientRemoteNotFound value)?  remoteNotFound,TResult? Function( GitClientDestinationTaken value)?  destinationTaken,TResult? Function( GitClientPushRejected value)?  pushRejected,TResult? Function( GitClientBranchProtected value)?  branchProtected,TResult? Function( GitClientLocalChangesOverwritten value)?  localChangesOverwritten,TResult? Function( GitClientTimedOut value)?  timedOut,TResult? Function( GitClientPathNotInRevision value)?  pathNotInRevision,TResult? Function( GitClientPathCommitted value)?  pathCommitted,TResult? Function( GitClientCommandDenied value)?  commandDenied,TResult? Function( GitClientCommandFailed value)?  commandFailed,}){
 final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound() when executableNotFound != null:
@@ -164,10 +168,12 @@ return networkUnavailable(_that);case GitClientNoRemote() when noRemote != null:
 return noRemote(_that);case GitClientRemoteNotFound() when remoteNotFound != null:
 return remoteNotFound(_that);case GitClientDestinationTaken() when destinationTaken != null:
 return destinationTaken(_that);case GitClientPushRejected() when pushRejected != null:
-return pushRejected(_that);case GitClientLocalChangesOverwritten() when localChangesOverwritten != null:
+return pushRejected(_that);case GitClientBranchProtected() when branchProtected != null:
+return branchProtected(_that);case GitClientLocalChangesOverwritten() when localChangesOverwritten != null:
 return localChangesOverwritten(_that);case GitClientTimedOut() when timedOut != null:
 return timedOut(_that);case GitClientPathNotInRevision() when pathNotInRevision != null:
-return pathNotInRevision(_that);case GitClientCommandDenied() when commandDenied != null:
+return pathNotInRevision(_that);case GitClientPathCommitted() when pathCommitted != null:
+return pathCommitted(_that);case GitClientCommandDenied() when commandDenied != null:
 return commandDenied(_that);case GitClientCommandFailed() when commandFailed != null:
 return commandFailed(_that);case _:
   return null;
@@ -186,7 +192,7 @@ return commandFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( AppFailure? cause)?  executableNotFound,TResult Function( String path,  AppFailure? cause)?  notARepository,TResult Function( List<String> conflictedPaths,  AppFailure? cause)?  mergeConflict,TResult Function( String stderr,  AppFailure? cause)?  authenticationFailed,TResult Function( String stderr,  AppFailure? cause)?  networkUnavailable,TResult Function( String stderr,  AppFailure? cause)?  noRemote,TResult Function( String stderr,  AppFailure? cause)?  remoteNotFound,TResult Function( String path,  AppFailure? cause)?  destinationTaken,TResult Function( String stderr,  AppFailure? cause)?  pushRejected,TResult Function( List<String> paths,  AppFailure? cause)?  localChangesOverwritten,TResult Function( String command,  Duration timeout,  AppFailure? cause)?  timedOut,TResult Function( String revision,  String path,  AppFailure? cause)?  pathNotInRevision,TResult Function( String command,  AppFailure? cause)?  commandDenied,TResult Function( String command,  int exitCode,  String stderr,  AppFailure? cause)?  commandFailed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( AppFailure? cause)?  executableNotFound,TResult Function( String path,  AppFailure? cause)?  notARepository,TResult Function( List<String> conflictedPaths,  AppFailure? cause)?  mergeConflict,TResult Function( String stderr,  AppFailure? cause)?  authenticationFailed,TResult Function( String stderr,  AppFailure? cause)?  networkUnavailable,TResult Function( String stderr,  AppFailure? cause)?  noRemote,TResult Function( String stderr,  AppFailure? cause)?  remoteNotFound,TResult Function( String path,  AppFailure? cause)?  destinationTaken,TResult Function( String stderr,  AppFailure? cause)?  pushRejected,TResult Function( String stderr,  AppFailure? cause)?  branchProtected,TResult Function( List<String> paths,  AppFailure? cause)?  localChangesOverwritten,TResult Function( String command,  Duration timeout,  AppFailure? cause)?  timedOut,TResult Function( String revision,  String path,  AppFailure? cause)?  pathNotInRevision,TResult Function( List<String> paths,  AppFailure? cause)?  pathCommitted,TResult Function( String command,  AppFailure? cause)?  commandDenied,TResult Function( String command,  int exitCode,  String stderr,  AppFailure? cause)?  commandFailed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound() when executableNotFound != null:
 return executableNotFound(_that.cause);case GitClientNotARepository() when notARepository != null:
@@ -197,10 +203,12 @@ return networkUnavailable(_that.stderr,_that.cause);case GitClientNoRemote() whe
 return noRemote(_that.stderr,_that.cause);case GitClientRemoteNotFound() when remoteNotFound != null:
 return remoteNotFound(_that.stderr,_that.cause);case GitClientDestinationTaken() when destinationTaken != null:
 return destinationTaken(_that.path,_that.cause);case GitClientPushRejected() when pushRejected != null:
-return pushRejected(_that.stderr,_that.cause);case GitClientLocalChangesOverwritten() when localChangesOverwritten != null:
+return pushRejected(_that.stderr,_that.cause);case GitClientBranchProtected() when branchProtected != null:
+return branchProtected(_that.stderr,_that.cause);case GitClientLocalChangesOverwritten() when localChangesOverwritten != null:
 return localChangesOverwritten(_that.paths,_that.cause);case GitClientTimedOut() when timedOut != null:
 return timedOut(_that.command,_that.timeout,_that.cause);case GitClientPathNotInRevision() when pathNotInRevision != null:
-return pathNotInRevision(_that.revision,_that.path,_that.cause);case GitClientCommandDenied() when commandDenied != null:
+return pathNotInRevision(_that.revision,_that.path,_that.cause);case GitClientPathCommitted() when pathCommitted != null:
+return pathCommitted(_that.paths,_that.cause);case GitClientCommandDenied() when commandDenied != null:
 return commandDenied(_that.command,_that.cause);case GitClientCommandFailed() when commandFailed != null:
 return commandFailed(_that.command,_that.exitCode,_that.stderr,_that.cause);case _:
   return orElse();
@@ -220,7 +228,7 @@ return commandFailed(_that.command,_that.exitCode,_that.stderr,_that.cause);case
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( AppFailure? cause)  executableNotFound,required TResult Function( String path,  AppFailure? cause)  notARepository,required TResult Function( List<String> conflictedPaths,  AppFailure? cause)  mergeConflict,required TResult Function( String stderr,  AppFailure? cause)  authenticationFailed,required TResult Function( String stderr,  AppFailure? cause)  networkUnavailable,required TResult Function( String stderr,  AppFailure? cause)  noRemote,required TResult Function( String stderr,  AppFailure? cause)  remoteNotFound,required TResult Function( String path,  AppFailure? cause)  destinationTaken,required TResult Function( String stderr,  AppFailure? cause)  pushRejected,required TResult Function( List<String> paths,  AppFailure? cause)  localChangesOverwritten,required TResult Function( String command,  Duration timeout,  AppFailure? cause)  timedOut,required TResult Function( String revision,  String path,  AppFailure? cause)  pathNotInRevision,required TResult Function( String command,  AppFailure? cause)  commandDenied,required TResult Function( String command,  int exitCode,  String stderr,  AppFailure? cause)  commandFailed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( AppFailure? cause)  executableNotFound,required TResult Function( String path,  AppFailure? cause)  notARepository,required TResult Function( List<String> conflictedPaths,  AppFailure? cause)  mergeConflict,required TResult Function( String stderr,  AppFailure? cause)  authenticationFailed,required TResult Function( String stderr,  AppFailure? cause)  networkUnavailable,required TResult Function( String stderr,  AppFailure? cause)  noRemote,required TResult Function( String stderr,  AppFailure? cause)  remoteNotFound,required TResult Function( String path,  AppFailure? cause)  destinationTaken,required TResult Function( String stderr,  AppFailure? cause)  pushRejected,required TResult Function( String stderr,  AppFailure? cause)  branchProtected,required TResult Function( List<String> paths,  AppFailure? cause)  localChangesOverwritten,required TResult Function( String command,  Duration timeout,  AppFailure? cause)  timedOut,required TResult Function( String revision,  String path,  AppFailure? cause)  pathNotInRevision,required TResult Function( List<String> paths,  AppFailure? cause)  pathCommitted,required TResult Function( String command,  AppFailure? cause)  commandDenied,required TResult Function( String command,  int exitCode,  String stderr,  AppFailure? cause)  commandFailed,}) {final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound():
 return executableNotFound(_that.cause);case GitClientNotARepository():
@@ -231,10 +239,12 @@ return networkUnavailable(_that.stderr,_that.cause);case GitClientNoRemote():
 return noRemote(_that.stderr,_that.cause);case GitClientRemoteNotFound():
 return remoteNotFound(_that.stderr,_that.cause);case GitClientDestinationTaken():
 return destinationTaken(_that.path,_that.cause);case GitClientPushRejected():
-return pushRejected(_that.stderr,_that.cause);case GitClientLocalChangesOverwritten():
+return pushRejected(_that.stderr,_that.cause);case GitClientBranchProtected():
+return branchProtected(_that.stderr,_that.cause);case GitClientLocalChangesOverwritten():
 return localChangesOverwritten(_that.paths,_that.cause);case GitClientTimedOut():
 return timedOut(_that.command,_that.timeout,_that.cause);case GitClientPathNotInRevision():
-return pathNotInRevision(_that.revision,_that.path,_that.cause);case GitClientCommandDenied():
+return pathNotInRevision(_that.revision,_that.path,_that.cause);case GitClientPathCommitted():
+return pathCommitted(_that.paths,_that.cause);case GitClientCommandDenied():
 return commandDenied(_that.command,_that.cause);case GitClientCommandFailed():
 return commandFailed(_that.command,_that.exitCode,_that.stderr,_that.cause);}
 }
@@ -250,7 +260,7 @@ return commandFailed(_that.command,_that.exitCode,_that.stderr,_that.cause);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( AppFailure? cause)?  executableNotFound,TResult? Function( String path,  AppFailure? cause)?  notARepository,TResult? Function( List<String> conflictedPaths,  AppFailure? cause)?  mergeConflict,TResult? Function( String stderr,  AppFailure? cause)?  authenticationFailed,TResult? Function( String stderr,  AppFailure? cause)?  networkUnavailable,TResult? Function( String stderr,  AppFailure? cause)?  noRemote,TResult? Function( String stderr,  AppFailure? cause)?  remoteNotFound,TResult? Function( String path,  AppFailure? cause)?  destinationTaken,TResult? Function( String stderr,  AppFailure? cause)?  pushRejected,TResult? Function( List<String> paths,  AppFailure? cause)?  localChangesOverwritten,TResult? Function( String command,  Duration timeout,  AppFailure? cause)?  timedOut,TResult? Function( String revision,  String path,  AppFailure? cause)?  pathNotInRevision,TResult? Function( String command,  AppFailure? cause)?  commandDenied,TResult? Function( String command,  int exitCode,  String stderr,  AppFailure? cause)?  commandFailed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( AppFailure? cause)?  executableNotFound,TResult? Function( String path,  AppFailure? cause)?  notARepository,TResult? Function( List<String> conflictedPaths,  AppFailure? cause)?  mergeConflict,TResult? Function( String stderr,  AppFailure? cause)?  authenticationFailed,TResult? Function( String stderr,  AppFailure? cause)?  networkUnavailable,TResult? Function( String stderr,  AppFailure? cause)?  noRemote,TResult? Function( String stderr,  AppFailure? cause)?  remoteNotFound,TResult? Function( String path,  AppFailure? cause)?  destinationTaken,TResult? Function( String stderr,  AppFailure? cause)?  pushRejected,TResult? Function( String stderr,  AppFailure? cause)?  branchProtected,TResult? Function( List<String> paths,  AppFailure? cause)?  localChangesOverwritten,TResult? Function( String command,  Duration timeout,  AppFailure? cause)?  timedOut,TResult? Function( String revision,  String path,  AppFailure? cause)?  pathNotInRevision,TResult? Function( List<String> paths,  AppFailure? cause)?  pathCommitted,TResult? Function( String command,  AppFailure? cause)?  commandDenied,TResult? Function( String command,  int exitCode,  String stderr,  AppFailure? cause)?  commandFailed,}) {final _that = this;
 switch (_that) {
 case GitClientExecutableNotFound() when executableNotFound != null:
 return executableNotFound(_that.cause);case GitClientNotARepository() when notARepository != null:
@@ -261,10 +271,12 @@ return networkUnavailable(_that.stderr,_that.cause);case GitClientNoRemote() whe
 return noRemote(_that.stderr,_that.cause);case GitClientRemoteNotFound() when remoteNotFound != null:
 return remoteNotFound(_that.stderr,_that.cause);case GitClientDestinationTaken() when destinationTaken != null:
 return destinationTaken(_that.path,_that.cause);case GitClientPushRejected() when pushRejected != null:
-return pushRejected(_that.stderr,_that.cause);case GitClientLocalChangesOverwritten() when localChangesOverwritten != null:
+return pushRejected(_that.stderr,_that.cause);case GitClientBranchProtected() when branchProtected != null:
+return branchProtected(_that.stderr,_that.cause);case GitClientLocalChangesOverwritten() when localChangesOverwritten != null:
 return localChangesOverwritten(_that.paths,_that.cause);case GitClientTimedOut() when timedOut != null:
 return timedOut(_that.command,_that.timeout,_that.cause);case GitClientPathNotInRevision() when pathNotInRevision != null:
-return pathNotInRevision(_that.revision,_that.path,_that.cause);case GitClientCommandDenied() when commandDenied != null:
+return pathNotInRevision(_that.revision,_that.path,_that.cause);case GitClientPathCommitted() when pathCommitted != null:
+return pathCommitted(_that.paths,_that.cause);case GitClientCommandDenied() when commandDenied != null:
 return commandDenied(_that.command,_that.cause);case GitClientCommandFailed() when commandFailed != null:
 return commandFailed(_that.command,_that.exitCode,_that.stderr,_that.cause);case _:
   return null;
@@ -902,6 +914,75 @@ as AppFailure?,
 /// @nodoc
 
 
+class GitClientBranchProtected implements GitClientFailure {
+  const GitClientBranchProtected(this.stderr, {this.cause});
+  
+
+/// What git wrote to stderr, verbatim. For diagnostics — never parsed.
+ final  String stderr;
+@override final  AppFailure? cause;
+
+/// Create a copy of GitClientFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$GitClientBranchProtectedCopyWith<GitClientBranchProtected> get copyWith => _$GitClientBranchProtectedCopyWithImpl<GitClientBranchProtected>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitClientBranchProtected&&(identical(other.stderr, stderr) || other.stderr == stderr)&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,stderr,cause);
+
+@override
+String toString() {
+  return 'GitClientFailure.branchProtected(stderr: $stderr, cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $GitClientBranchProtectedCopyWith<$Res> implements $GitClientFailureCopyWith<$Res> {
+  factory $GitClientBranchProtectedCopyWith(GitClientBranchProtected value, $Res Function(GitClientBranchProtected) _then) = _$GitClientBranchProtectedCopyWithImpl;
+@override @useResult
+$Res call({
+ String stderr, AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$GitClientBranchProtectedCopyWithImpl<$Res>
+    implements $GitClientBranchProtectedCopyWith<$Res> {
+  _$GitClientBranchProtectedCopyWithImpl(this._self, this._then);
+
+  final GitClientBranchProtected _self;
+  final $Res Function(GitClientBranchProtected) _then;
+
+/// Create a copy of GitClientFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? stderr = null,Object? cause = freezed,}) {
+  return _then(GitClientBranchProtected(
+null == stderr ? _self.stderr : stderr // ignore: cast_nullable_to_non_nullable
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
 class GitClientLocalChangesOverwritten implements GitClientFailure {
   const GitClientLocalChangesOverwritten(final  List<String> paths, {this.cause}): _paths = paths;
   
@@ -1112,6 +1193,82 @@ class _$GitClientPathNotInRevisionCopyWithImpl<$Res>
 null == revision ? _self.revision : revision // ignore: cast_nullable_to_non_nullable
 as String,null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class GitClientPathCommitted implements GitClientFailure {
+  const GitClientPathCommitted(final  List<String> paths, {this.cause}): _paths = paths;
+  
+
+/// The ones `HEAD` holds, relative to the repository root.
+ final  List<String> _paths;
+/// The ones `HEAD` holds, relative to the repository root.
+ List<String> get paths {
+  if (_paths is EqualUnmodifiableListView) return _paths;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_paths);
+}
+
+@override final  AppFailure? cause;
+
+/// Create a copy of GitClientFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$GitClientPathCommittedCopyWith<GitClientPathCommitted> get copyWith => _$GitClientPathCommittedCopyWithImpl<GitClientPathCommitted>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitClientPathCommitted&&const DeepCollectionEquality().equals(other._paths, _paths)&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_paths),cause);
+
+@override
+String toString() {
+  return 'GitClientFailure.pathCommitted(paths: $paths, cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $GitClientPathCommittedCopyWith<$Res> implements $GitClientFailureCopyWith<$Res> {
+  factory $GitClientPathCommittedCopyWith(GitClientPathCommitted value, $Res Function(GitClientPathCommitted) _then) = _$GitClientPathCommittedCopyWithImpl;
+@override @useResult
+$Res call({
+ List<String> paths, AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$GitClientPathCommittedCopyWithImpl<$Res>
+    implements $GitClientPathCommittedCopyWith<$Res> {
+  _$GitClientPathCommittedCopyWithImpl(this._self, this._then);
+
+  final GitClientPathCommitted _self;
+  final $Res Function(GitClientPathCommitted) _then;
+
+/// Create a copy of GitClientFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? paths = null,Object? cause = freezed,}) {
+  return _then(GitClientPathCommitted(
+null == paths ? _self._paths : paths // ignore: cast_nullable_to_non_nullable
+as List<String>,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
 as AppFailure?,
   ));
 }

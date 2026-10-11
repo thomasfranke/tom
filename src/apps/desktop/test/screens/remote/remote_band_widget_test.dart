@@ -14,6 +14,7 @@ import 'package:tom_ui/tom_ui.dart';
 
 void main() {
   late _Git git;
+  late _Opens opens;
   late ProviderContainer container;
 
   final SpaceEntity docs = SpaceEntity(
@@ -43,8 +44,10 @@ void main() {
 
   setUp(() {
     git = _Git()..reported = statusOf();
+    opens = _Opens();
     container = ProviderContainer(
       overrides: <Override>[
+        pullRequestProvider.overrideWith(() => opens),
         readGitStatusProvider.overrideWithValue(
           ReadGitStatusUseCase(
             gitFor: (SpaceEntity space) => git,
@@ -132,6 +135,72 @@ void main() {
       0,
       reason: 'a band nobody needs must not push the document down',
     );
+  });
+
+  group('a push to a branch the remote protects', () {
+    Future<void> pushAndBeRefused(WidgetTester tester) async {
+      git.pushFailure = const GitBranchProtected();
+      await container.read(remoteProvider.notifier).push();
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('says so, offers Pull request and never Try again', (
+      WidgetTester tester,
+    ) async {
+      opens.initial = PullRequestState(
+        target: PullRequestTargetValueObject(
+          project: RemoteProjectValueObject.tryParse(
+            'https://github.com/tom/docs.git',
+          ),
+          hasRemote: true,
+          defaultBranch: BranchNameValueObject('trunk'),
+          branch: BranchNameValueObject('main'),
+        ),
+      );
+      await pumpBand(tester);
+
+      await pushAndBeRefused(tester);
+
+      expect(
+        find.text(
+          'The remote refused this branch. '
+          'Nothing was published, and nothing you committed has been lost.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Try again'), findsNothing);
+      expect(find.text('Show the command'), findsOneWidget);
+      await tester.tap(find.text('Pull request'));
+      expect(opens.opened, 1);
+    });
+
+    testWidgets('offers no Pull request where none can be opened', (
+      WidgetTester tester,
+    ) async {
+      await pumpBand(tester);
+
+      await pushAndBeRefused(tester);
+
+      expect(find.text('Pull request'), findsNothing);
+      expect(find.text('Try again'), findsNothing);
+      expect(find.text('Show the command'), findsOneWidget);
+    });
+
+    testWidgets('speaks Portuguese when it is asked to', (
+      WidgetTester tester,
+    ) async {
+      await pumpBand(tester, locale: const Locale('pt', 'BR'));
+
+      await pushAndBeRefused(tester);
+
+      expect(
+        find.text(
+          'O remoto recusou esta branch. '
+          'Nada foi publicado, e nenhum commit seu foi perdido.',
+        ),
+        findsOneWidget,
+      );
+    });
   });
 
   group('a push the remote refused', () {
@@ -410,11 +479,9 @@ void main() {
     });
   });
 
-  testWidgets('a pull in flight says so on the band that started it', (
-    WidgetTester tester,
-  ) async {
-    // Pull has no button of its own, so the band is the control that was
-    // pressed and the one that must say it is working.
+  testWidgets('a pull in flight draws no band', (WidgetTester tester) async {
+    // The button that was pressed says `Pulling…` and the bar over the
+    // column runs; a band is news from a request that ended.
     final Completer<void> pulling = Completer<void>();
     git.pullGate = pulling.future;
     await pumpBand(tester);
@@ -422,7 +489,8 @@ void main() {
     final Future<void> done = container.read(remoteProvider.notifier).pull();
     await tester.pump();
 
-    expect(find.text('Pulling what the remote has…'), findsOneWidget);
+    expect(container.read(remoteProvider), isA<RemoteWorking>());
+    expect(find.byType(NoticeBandWidget), findsNothing);
 
     pulling.complete();
     await done;
@@ -588,11 +656,31 @@ void main() {
 }
 
 /// Git, answering what the test set and counting what it was asked.
+/// A pull request that has read what the test puts in it, and opens
+/// nothing but a count.
+final class _Opens extends PullRequestNotifier {
+  int opened = 0;
+
+  /// What it has read by the time the test mounts the band.
+  PullRequestState initial = const PullRequestState();
+
+  @override
+  PullRequestState build() => initial;
+
+  @override
+  void open() => opened++;
+}
+
 final class _Git implements GitRepository {
   GitStatusValueObject? reported;
   GitFailure? fetchFailure;
   GitFailure? pullFailure;
   GitFailure? pushFailure;
+
+  /// Where `origin` is: fetching and pulling ask before they start.
+  @override
+  Future<Result<String?, GitFailure>> remoteAddress() async =>
+      const Success<String?, GitFailure>('https://example.test/docs.git');
 
   /// Held open to keep an action in flight.
   Future<void>? pullGate;

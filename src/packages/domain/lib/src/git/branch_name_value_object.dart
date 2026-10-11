@@ -17,13 +17,15 @@ extension type const BranchNameValueObject._(String value) {
   /// [value] as a branch name, or null when it is not one.
   ///
   /// A strict subset of `git check-ref-format --branch`, the part a person
-  /// trips over in a dialog: not empty, no whitespace, none of `~^:?*[\`,
+  /// trips over in a dialog: not empty, no leading `-` (git would read it as
+  /// an option), no whitespace, none of `~^:?*[\`,
   /// no `..` or `@{`, no empty segment, and no segment starting with `.`,
   /// ending with `.` or ending in `.lock` (git applies those per component,
   /// so `feat/.wip` fails like `.wip`). Control characters and a lone `@`
   /// are left to git, since no dialog produces them by accident.
   static BranchNameValueObject? tryParse(String value) {
     if (value.isEmpty ||
+        value.startsWith('-') ||
         value.contains('..') ||
         value.contains('@{') ||
         _forbidden.hasMatch(value)) {

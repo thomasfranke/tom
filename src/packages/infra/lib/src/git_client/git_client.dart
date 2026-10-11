@@ -33,6 +33,11 @@ abstract interface class GitClient {
   /// (`docs/product/home/opening-a-space/doc.md`).
   Future<Result<String, GitClientFailure>> repositoryRoot();
 
+  /// What `git --version` prints, trimmed — `git version 2.54.0 (Apple
+  /// Git-157)`. Fails with [GitClientExecutableNotFound] when there is no
+  /// git on the machine.
+  Future<Result<String, GitClientFailure>> version();
+
   /// Clones [url] into this client's own folder, which must not exist yet or
   /// be empty, handing each line git reports to [onProgress].
   ///
@@ -204,6 +209,10 @@ abstract interface class GitClient {
 
   /// Deletes [paths], which git never committed: out of the index when they
   /// are staged, then off the disk.
+  ///
+  /// **`HEAD` is asked first**, at the moment of deleting: with any of them
+  /// committed nothing is deleted and the answer is [GitClientPathCommitted]
+  /// naming those — the caller's list may be older than the repository.
   Future<Result<void, GitClientFailure>> deleteUncommitted(List<String> paths);
 
   /// Records what is staged, with [message].

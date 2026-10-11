@@ -538,9 +538,19 @@ void main() {
 
   group('discarding everything', () {
     test('asks the client to put the tracked files back', () async {
+      // `HEAD` names a commit: before the first one nothing is put back.
+      client.text = 'c' * 40;
+
       await repository.discardAll();
 
       expect(client.calls, contains('discardAll'));
+    });
+
+    test('before the first commit it asks for nothing to be written', () async {
+      client.text = '';
+
+      expect(failureOf(await repository.discardAll()), isA<GitNoCommitsYet>());
+      expect(client.calls, isNot(contains('discardAll')));
     });
 
     test('a refusal comes back in the product vocabulary', () async {
@@ -569,6 +579,19 @@ void main() {
         expect(client.calls.last, call);
         expect(client.discarded, <String>['docs/new.md', 'docs/old.md']);
       }
+    });
+
+    test('a file that turned out committed keeps its name', () async {
+      client.failure = const GitClientPathCommitted(<String>['docs/old.md']);
+
+      expect(
+        failureOf(await repository.discard(DiscardKindEnum.delete, paths)),
+        isA<GitPathCommitted>().having(
+          (GitPathCommitted f) => f.paths,
+          'paths',
+          <String>['docs/old.md'],
+        ),
+      );
     });
 
     test('a refusal comes back in the product vocabulary', () async {
@@ -715,6 +738,10 @@ final class _RecordingGitClient implements GitClient {
   @override
   Future<Result<String, GitClientFailure>> repositoryRoot() async =>
       _answer<String>('repositoryRoot', text);
+
+  @override
+  Future<Result<String, GitClientFailure>> version() async =>
+      _answer<String>('version', text);
 
   @override
   Future<Result<String, GitClientFailure>> status() async =>

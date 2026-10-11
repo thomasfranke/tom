@@ -7,6 +7,7 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/src/commands/command_action_enum.dart';
 import 'package:tom_presentation/src/commands/command_scope.dart';
 import 'package:tom_presentation/src/home/home_providers.dart';
+import 'package:tom_presentation/src/preferences/preferences_notifier.dart';
 
 part 'recent_branch.g.dart';
 
@@ -21,6 +22,19 @@ Future<BranchNameValueObject?> recentBranch(
   Ref ref,
   RecentSpaceEntity recent,
 ) async {
+  // Where git asks first a row's branch is not worth a question: it would
+  // open the Commands panel over Home for a decoration, and hold the list
+  // behind a yes. The row simply names no branch.
+  if (ref.exists(preferencesProvider)) {
+    await ref.read(preferencesProvider.notifier).loaded;
+    if (!ref.mounted) {
+      return null;
+    }
+    if (ref.read(preferencesProvider).gitApprovals !=
+        GitApprovalModeEnum.automatic) {
+      return null;
+    }
+  }
   final Result<BranchNameValueObject?, AppFailure> read =
       await CommandScope.run(
         CommandActionEnum.readRecentBranch,

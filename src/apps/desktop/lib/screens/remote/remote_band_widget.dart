@@ -50,6 +50,16 @@ class RemoteBandWidget extends ConsumerWidget {
           ),
         ) ??
         l10n.remoteTheRemote;
+    // A branch that tracks nothing has nothing to be ahead of, yet `Push`
+    // publishes it — unless the repository has no remote to publish to.
+    final bool isUntracked =
+        ref.watch(
+          spaceSessionProvider.select(
+            (SpaceSessionState? session) =>
+                session?.git != null && session!.git!.upstream == null,
+          ),
+        ) &&
+        ref.watch(remoteLinkProvider) != LinkStateEnum.noRemote;
     final int conflicted = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) =>
@@ -72,11 +82,30 @@ class RemoteBandWidget extends ConsumerWidget {
       );
     }
     return switch (remote) {
-      RemoteWorking(action: RemoteActionEnum.pull) => NoticeBandWidget(
-        sentence: l10n.remotePullingWhatTheRemoteHas,
-        ink: colors.modified,
-        fill: colors.modifiedSoft,
+      // A commit that worked quotes its message and offers `Push` while
+      // there is something to publish
+      // (`git-workflow/commit/confirming/doc.md`).
+      RemoteIdle(committed: final String message) => NoticeBandWidget(
+        sentence: ahead > 0
+            ? l10n.remoteCommittedWaiting(message, ahead)
+            : l10n.remoteCommitted(message),
+        ink: colors.added,
+        fill: colors.addedSoft,
+        action: ahead > 0 || isUntracked ? l10n.commonPush : null,
+        onAction: ahead > 0 || isUntracked
+            ? () => unawaited(ref.read(remoteProvider.notifier).push())
+            : null,
       ),
+      // A push that landed says so and offers nothing: a button returning to
+      // `Push` looks exactly like a push that never left.
+      RemoteIdle(published: final int count) when count >= 0 =>
+        NoticeBandWidget(
+          sentence: count > 0
+              ? l10n.remotePublished(count, upstream)
+              : l10n.remotePublishedBranch(upstream),
+          ink: colors.added,
+          fill: colors.addedSoft,
+        ),
       // A pull that worked says how many arrived, and offers Push only while
       // something of this branch is still to publish
       // (`git-workflow/push-pull/when-it-works/doc.md`).
@@ -89,7 +118,8 @@ class RemoteBandWidget extends ConsumerWidget {
             ? () => unawaited(ref.read(remoteProvider.notifier).push())
             : null,
       ),
-      // Fetch and push say they are working on the button that was pressed.
+      // A request in flight says so on the button that was pressed and in the
+      // bar over the column; a band is news from one that ended.
       RemoteIdle() || RemoteWorking() => const SizedBox.shrink(),
       RemoteRejected() => NoticeBandWidget(
         // Counted only when known, because a fetch may not have happened yet.
@@ -102,6 +132,20 @@ class RemoteBandWidget extends ConsumerWidget {
         onAction: () => unawaited(ref.read(remoteProvider.notifier).pull()),
         alternative: l10n.remoteShowTheCommand,
         onAlternative: () => _showTheCommand(ref, RemoteActionEnum.push),
+      ),
+      // A protected branch has no `Try again`, which would answer the same
+      // for ever: the way in is a pull request, offered while one can be
+      // opened (`git-workflow/push-pull/when-it-fails/doc.md`).
+      RemoteFailed(failure: GitBranchProtected()) => _protected(
+        context,
+        ref,
+        l10n,
+        colors,
+        git: ref.watch(
+          spaceSessionProvider.select(
+            (SpaceSessionState? session) => session?.git,
+          ),
+        ),
       ),
       RemoteFailed(
         action: final RemoteActionEnum action,
@@ -125,6 +169,30 @@ class RemoteBandWidget extends ConsumerWidget {
           onAlternative: () => _showTheCommand(ref, action),
         ),
     };
+  }
+
+  /// The refusal of a branch the remote protects.
+  static Widget _protected(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+    TomColors colors, {
+    required GitStatusValueObject? git,
+  }) {
+    final bool canOpen =
+        ref.watch(pullRequestProvider).availability(git) ==
+        PullRequestAvailabilityEnum.available;
+    return NoticeBandWidget(
+      sentence: l10n.remoteBranchProtected,
+      ink: colors.modified,
+      fill: colors.modifiedSoft,
+      action: canOpen ? l10n.panelPullRequest : null,
+      onAction: canOpen
+          ? () => ref.read(pullRequestProvider.notifier).open()
+          : null,
+      alternative: l10n.remoteShowTheCommand,
+      onAlternative: () => _showTheCommand(ref, RemoteActionEnum.push),
+    );
   }
 
   /// Opens the commands panel on the `git <action>` that failed, open onto

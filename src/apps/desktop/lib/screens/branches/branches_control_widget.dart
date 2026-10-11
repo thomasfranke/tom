@@ -148,10 +148,10 @@ class _TriggerWidget extends StatelessWidget {
 
   /// What the control says it is on.
   ///
-  /// A detached `HEAD` is named, in the status bar's words, because it is a
-  /// state to get out of rather than a missing value.
+  /// A repository on no branch says so, in the status bar's words, because it
+  /// is a state to get out of rather than a missing value.
   String _name(AppLocalizations l10n) => switch (git) {
-    GitStatusValueObject(isDetached: true) => l10n.commonDetachedHead,
+    GitStatusValueObject(isDetached: true) => l10n.commonNotOnABranch,
     GitStatusValueObject(branch: final BranchNameValueObject branch) =>
       branch.value,
     _ => l10n.commonNoBranch,

@@ -122,8 +122,10 @@ final class GitCloneRepositoryImpl implements GitCloneRepository {
         GitClientNotARepository() ||
         GitClientMergeConflict() ||
         GitClientPushRejected() ||
+        GitClientBranchProtected() ||
         GitClientLocalChangesOverwritten() ||
         GitClientPathNotInRevision() ||
+        GitClientPathCommitted() ||
         GitClientCommandFailed() => GitOperationFailed(cause: failure),
       };
 }

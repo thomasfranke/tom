@@ -12,6 +12,9 @@ import 'package:tom_presentation/src/commands/command_scope.dart';
 import 'package:tom_presentation/src/commands/commands_notifier.dart';
 import 'package:tom_presentation/src/commands/commands_state.dart';
 import 'package:tom_presentation/src/file_tree/file_tree_notifier.dart';
+import 'package:tom_presentation/src/pull_request/pull_request_notifier.dart';
+import 'package:tom_presentation/src/pull_request/pull_request_state.dart';
+import 'package:tom_presentation/src/remote/link_state_enum.dart';
 import 'package:tom_presentation/src/remote/remote_action_enum.dart';
 import 'package:tom_presentation/src/remote/remote_providers.dart';
 import 'package:tom_presentation/src/remote/remote_state.dart';
@@ -75,11 +78,24 @@ class RemoteNotifier extends _$RemoteNotifier {
     succeeded: (int? arrived) => RemoteState.idle(arrived: arrived),
   );
 
-  /// Publishes this branch's commits.
-  Future<void> push() => _run(
-    RemoteActionEnum.push,
-    (SpaceEntity space) => pushRemote.push(space),
-  );
+  /// Publishes this branch's commits, keeping how many went.
+  Future<void> push() {
+    // Counted before the push, because the reading after it says 0.
+    final int toPublish = ref.read(spaceSessionProvider)?.git?.ahead ?? 0;
+    return _run(
+      RemoteActionEnum.push,
+      (SpaceEntity space) => pushRemote.push(space),
+      succeeded: (void _) => RemoteState.idle(published: toPublish),
+    );
+  }
+
+  /// Keeps [summary], the message of the commit just recorded, as the news
+  /// the band quotes until the next thing happens.
+  void commitLanded(String summary) {
+    if (!state.isBusy) {
+      state = RemoteState.idle(committed: summary);
+    }
+  }
 
   /// Puts the working tree back where the conflicted pull found it.
   ///
@@ -179,3 +195,23 @@ bool remoteAwaitingApproval(Ref ref) => switch (ref.watch(remoteProvider)) {
   ),
   _ => false,
 };
+
+/// What the link is, when it is anything: what the last request said, else
+/// that the repository has no remote — read from the pull request's target
+/// when the space opened, so nobody has to fail a fetch to learn it
+/// (`docs/product/git-workflow/push-pull/when-the-link-is-broken/doc.md`).
+@riverpod
+LinkStateEnum? remoteLink(Ref ref) {
+  final LinkStateEnum? said = ref.watch(
+    remoteProvider.select((RemoteState state) => state.link),
+  );
+  if (said != null) {
+    return said;
+  }
+  final bool hasNone = ref.watch(
+    pullRequestProvider.select(
+      (PullRequestState state) => state.target?.hasRemote == false,
+    ),
+  );
+  return hasNone ? LinkStateEnum.noRemote : null;
+}

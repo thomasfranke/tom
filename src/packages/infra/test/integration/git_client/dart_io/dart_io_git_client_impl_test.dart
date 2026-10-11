@@ -251,6 +251,31 @@ void main() {
       expect(records.single, contains('Add B'));
     });
 
+    test('log follows the document across a rename', () async {
+      write(
+        'docs/old.md',
+        '# Old\n\nA paragraph long enough for git to know it again.\n'
+            'And a second line, so the similarity is not in doubt.\n',
+      );
+      await below.stage(<String>['docs/old.md']);
+      await below.commit('Write it');
+      git(<String>['mv', 'docs/old.md', 'docs/new.md']);
+      git(<String>['commit', '--quiet', '--message', 'Rename it']);
+      write(
+        'docs/new.md',
+        '# Old\n\nA paragraph long enough for git to know it again.\n'
+            'And a second line, so the similarity is not in doubt.\nMore.\n',
+      );
+      await below.stage(<String>['docs/new.md']);
+      await below.commit('Extend it');
+
+      final String log = valueOf(await below.log(path: 'docs/new.md'));
+
+      expect(log, contains('Extend it'));
+      expect(log, contains('Rename it'));
+      expect(log, contains('Write it'));
+    });
+
     test('a path git would read as a glob is taken literally', () async {
       write('docs/notes[draft].md', '# Draft\n');
 
@@ -582,6 +607,104 @@ void main() {
       expect(valueOf(await client.status()), isNot(contains('b.md')));
     });
 
+    // The caller's list can be older than the repository — a commit made in
+    // the terminal meanwhile — and `clean` cannot be undone.
+    group('deleteUncommitted handed a file HEAD holds', () {
+      test('deletes nothing, and names it', () async {
+        write('a.md', '# A, edited and not committed\n');
+
+        final Result<void, GitClientFailure> result = await client
+            .deleteUncommitted(<String>['a.md']);
+
+        expect(
+          (result as Failure<void, GitClientFailure>).failure,
+          const GitClientPathCommitted(<String>['a.md']),
+        );
+        expect(read('a.md'), '# A, edited and not committed\n');
+        expect(valueOf(await client.status()), contains('a.md'));
+      });
+
+      test('a file committed since the list was read is kept, though it '
+          'was new when the row was drawn', () async {
+        write('b.md', '# B\n');
+        final String listedAsNew = valueOf(await client.status());
+        expect(listedAsNew, contains('b.md'));
+        git(<String>['add', 'b.md']);
+        git(<String>['commit', '--quiet', '--message', 'Add B, elsewhere']);
+
+        final Result<void, GitClientFailure> result = await client
+            .deleteUncommitted(<String>['b.md']);
+
+        expect(
+          (result as Failure<void, GitClientFailure>).failure,
+          const GitClientPathCommitted(<String>['b.md']),
+        );
+        expect(read('b.md'), '# B\n');
+        expect(
+          git(<String>['ls-files', 'b.md']).stdout.toString().trim(),
+          'b.md',
+        );
+      });
+
+      test('refuses the whole batch, the new files beside it kept '
+          'too', () async {
+        write('new.md', '# New\n');
+        write('a.md', '# A, changed\n');
+
+        final Result<void, GitClientFailure> result = await client
+            .deleteUncommitted(<String>['new.md', 'a.md']);
+
+        expect(
+          (result as Failure<void, GitClientFailure>).failure,
+          const GitClientPathCommitted(<String>['a.md']),
+        );
+        expect(File('$repoPath/new.md').existsSync(), isTrue);
+        expect(read('a.md'), '# A, changed\n');
+      });
+
+      test('a committed file deleted from the disk and staged that way is '
+          'still committed', () async {
+        git(<String>['rm', '--quiet', 'a.md']);
+
+        final Result<void, GitClientFailure> result = await client
+            .deleteUncommitted(<String>['a.md']);
+
+        expect(
+          (result as Failure<void, GitClientFailure>).failure,
+          const GitClientPathCommitted(<String>['a.md']),
+        );
+      });
+
+      test('from a folder below the root, by the root\'s path', () async {
+        write('docs/c.md', '# C\n');
+        git(<String>['add', 'docs/c.md']);
+        git(<String>['commit', '--quiet', '--message', 'Add C']);
+        final DartIoGitClientImpl below = DartIoGitClientImpl(
+          workingDirectory: '$repoPath/docs',
+        );
+
+        final Result<void, GitClientFailure> result = await below
+            .deleteUncommitted(<String>['docs/c.md']);
+
+        expect(
+          (result as Failure<void, GitClientFailure>).failure,
+          const GitClientPathCommitted(<String>['docs/c.md']),
+        );
+        expect(read('docs/c.md'), '# C\n');
+      });
+
+      test('a name git would read as a pattern matches only itself', () async {
+        write('[a].md', '# New, with brackets\n');
+
+        expect(
+          await client.deleteUncommitted(<String>['[a].md']),
+          isA<Success<void, GitClientFailure>>(),
+        );
+        expect(File('$repoPath/[a].md').existsSync(), isFalse);
+        expect(read('a.md'), '# A\n');
+      });
+    });
+
     test('reaches the repository root from a folder below it', () async {
       write('docs/c.md', '# C\n');
       write('a.md', '# A, changed\n');
@@ -708,6 +831,14 @@ void main() {
       expect(records, hasLength(1));
       expect(records.single, contains('Add B'));
     });
+  });
+
+  test('version is the one line git prints, with a release in it', () async {
+    final String line = valueOf(await client.version());
+
+    expect(line, startsWith('git version '));
+    expect(line, isNot(contains('\n')));
+    expect(line, matches(RegExp(r'\d+\.\d+')));
   });
 
   group('branches', () {
@@ -1355,6 +1486,24 @@ void main() {
       },
     );
 
+    test('push fails with GitClientBranchProtected when the remote protects '
+        'the branch, whatever else it says', () async {
+      // GitHub's own wording, from a hook the bare remote really runs.
+      final File hook = File('$remotePath/hooks/pre-receive')
+        ..writeAsStringSync(
+          '#!/bin/sh\n'
+          'echo "error: GH006: Protected branch update failed for '
+          'refs/heads/main." >&2\n'
+          'exit 1\n',
+        );
+      Process.runSync('chmod', <String>['+x', hook.path]);
+      write('b.md', '# B\n');
+      await client.stage(<String>['b.md']);
+      await client.commit('Add B');
+
+      expect(failureOf(await client.push()), isA<GitClientBranchProtected>());
+    });
+
     group('what a pull request proposes', () {
       /// A branch off `main` with two commits, while `main` moves on the
       /// remote — what three dots exist to leave out.
@@ -1962,16 +2111,22 @@ void main() {
       expect(gate.asked, 1, reason: 'the restore was never asked about');
     });
 
-    test('deleting a never-committed file is one plan of two', () async {
+    test('deleting a never-committed file asks HEAD, then is one plan of '
+        'two', () async {
       write('b.md', '# B\n');
       git(<String>['add', 'b.md']);
 
       await gated.deleteUncommitted(<String>['b.md']);
 
-      expect(gate.plans.single.map((CommandRequest it) => it.key), <String>[
+      expect(
+        gate.plans.first.single.key,
+        GitCommandKeyEnum.committedPaths.template,
+      );
+      expect(gate.plans.last.map((CommandRequest it) => it.key), <String>[
         'git rm --cached -f --quiet --ignore-unmatch -- <file>',
         'git clean -f -x --quiet -- <file>',
       ]);
+      expect(gate.plans, hasLength(2));
       expect(File('$repoPath/b.md').existsSync(), isFalse);
     });
 
@@ -2001,6 +2156,52 @@ void main() {
     });
   });
 
+  group('the executable', () {
+    test(
+      'is what is started, and the command is still written as git',
+      () async {
+        final File script = File('$base/older-git')
+          ..writeAsStringSync(
+            '#!/bin/sh\n'
+            r'if [ "$1" = "--version" ]; then '
+            'echo "git version 2.39.2"; exit 0; fi\n'
+            r'exec git "$@"'
+            '\n',
+          );
+        Process.runSync('chmod', <String>['+x', script.path]);
+        final List<CommandRecord> written = <CommandRecord>[];
+        final DartIoGitClientImpl older = DartIoGitClientImpl(
+          workingDirectory: repoPath,
+          executable: script.path,
+          commandLog: _Kept(written),
+        );
+
+        expect(valueOf(await older.version()), 'git version 2.39.2');
+        // Every other command goes through to the real git.
+        expect(valueOf(await older.repositoryRoot()), repoPath);
+        expect(written.first.commandLine, 'git --version');
+      },
+    );
+
+    test('that does not exist is git missing', () async {
+      final DartIoGitClientImpl missing = DartIoGitClientImpl(
+        workingDirectory: repoPath,
+        executable: '$base/no-such-git',
+      );
+
+      final Result<String, GitClientFailure> said = await missing.version();
+
+      expect(
+        said,
+        isA<Failure<String, GitClientFailure>>().having(
+          (Failure<String, GitClientFailure> it) => it.failure,
+          'failure',
+          isA<GitClientExecutableNotFound>(),
+        ),
+      );
+    });
+  });
+
   group('the keys', () {
     test('are each a git command, and no two are the same', () {
       final List<String> templates = GitCommandKeyEnum.values
@@ -2018,6 +2219,7 @@ void main() {
             .map((GitCommandKeyEnum it) => it.template.split(' ')[1]),
         everyElement(
           isIn(<String>[
+            '--version',
             'rev-parse',
             'status',
             'log',
@@ -2030,6 +2232,7 @@ void main() {
             'remote',
             'symbolic-ref',
             'show',
+            'ls-tree',
           ]),
         ),
       );

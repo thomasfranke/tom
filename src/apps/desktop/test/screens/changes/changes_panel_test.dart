@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/changes/changes_panel.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_commit_button_widget.dart';
 import 'package:tom_desktop/screens/changes/widgets/changes_message_widget.dart';
@@ -21,7 +23,15 @@ final Finder commitButton = find.ancestor(
 
 void main() {
   late _Git git;
+
+  /// What the documents hold, by path inside the space; empty unless a test
+  /// about the marker check says otherwise.
+  final Map<String, String> onDisk = <String, String>{};
   late ProviderContainer container;
+
+  /// What the pull request already read of the repository's remote, which
+  /// is where the column learns there is none before anything is pressed.
+  PullRequestState pullRequest = const PullRequestState();
 
   final SpaceEntity docs = SpaceEntity(
     root: '/code/app/docs',
@@ -55,8 +65,11 @@ void main() {
 
   setUp(() {
     git = _Git()..reported = statusOf(const <StatusEntryValueObject>[]);
+    onDisk.clear();
+    pullRequest = const PullRequestState();
     container = ProviderContainer(
       overrides: <Override>[
+        pullRequestProvider.overrideWith(() => _Remembers(() => pullRequest)),
         readGitStatusProvider.overrideWithValue(
           ReadGitStatusUseCase(
             gitFor: (SpaceEntity space) => git,
@@ -72,7 +85,7 @@ void main() {
         stageChangesProvider.overrideWithValue(
           StageChangesUseCase(
             gitFor: (SpaceEntity space) => git,
-            documentsFor: (SpaceEntity space) => const _NoDocuments(),
+            documentsFor: (SpaceEntity space) => _Documents(onDisk),
             observability: const _Silent(),
           ),
         ),
@@ -115,6 +128,7 @@ void main() {
     WidgetTester tester, {
     SpaceEntity? space,
     double? height,
+    Locale? locale,
   }) async {
     tester.view
       ..physicalSize = const Size(1280, 800)
@@ -128,6 +142,13 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: tomTheme(Brightness.light),
+          locale: locale,
+          localizationsDelegates: locale == null
+              ? null
+              : AppLocalizations.localizationsDelegates,
+          supportedLocales: locale == null
+              ? const <Locale>[Locale('en', 'US')]
+              : AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Row(
               children: <Widget>[
@@ -375,6 +396,58 @@ void main() {
       expect(isEnabled(tester), isFalse);
     });
 
+    group('with the repository on no branch', () {
+      setUp(
+        () => git.reported = GitStatusValueObject(
+          branch: null,
+          upstream: null,
+          ahead: 0,
+          behind: 0,
+          entries: <StatusEntryValueObject>[
+            entry('docs/index.md', FileStateEnum.modified, isStaged: true),
+          ],
+          isDetached: true,
+        ),
+      );
+
+      testWidgets('is unavailable, names no branch, and the column says why', (
+        WidgetTester tester,
+      ) async {
+        // Refused before anything is asked of git: the commit would be
+        // reachable from nothing
+        // (`docs/product/git-workflow/commit/the-message/doc.md`).
+        await pumpPanel(tester, space: docs);
+        await tester.enterText(find.byType(TextField).first, 'docs: say it');
+        await tester.pumpAndSettle();
+
+        expect(isEnabled(tester), isFalse);
+        expect(find.text('Commit'), findsOneWidget);
+        expect(
+          find.text('Not on a branch — switch to one to commit.'),
+          findsOneWidget,
+        );
+        // Above the message box, where the commit is asked for.
+        expect(
+          tester
+              .getBottomLeft(
+                find.text('Not on a branch — switch to one to commit.'),
+              )
+              .dy,
+          lessThan(tester.getTopLeft(find.byType(ChangesMessageWidget)).dy),
+        );
+        expect(git.messages, isEmpty);
+      });
+
+      testWidgets('and says it in Portuguese', (WidgetTester tester) async {
+        await pumpPanel(tester, space: docs, locale: const Locale('pt'));
+
+        expect(
+          find.text('Fora de uma branch — mude para uma para fazer commit.'),
+          findsOneWidget,
+        );
+      });
+    });
+
     testWidgets('commits what is staged, and empties the box', (
       WidgetTester tester,
     ) async {
@@ -396,6 +469,45 @@ void main() {
         find.text('Nothing has changed since the last commit.'),
         findsOneWidget,
       );
+    });
+
+    group('the key that commits', () {
+      // `docs/product/git-workflow/commit/the-message/doc.md`.
+      final TargetPlatformVariant platform = TargetPlatformVariant.only(
+        TargetPlatform.macOS,
+      );
+
+      Future<void> pressCommandEnter(WidgetTester tester) async {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('⌘Enter commits when the button would', (
+        WidgetTester tester,
+      ) async {
+        await pumpPanel(tester, space: docs);
+        await tester.enterText(find.byType(TextField).first, 'docs: say it');
+        await tester.pumpAndSettle();
+        git.reported = statusOf(const <StatusEntryValueObject>[]);
+
+        await pressCommandEnter(tester);
+
+        expect(git.messages, <String>['docs: say it']);
+      }, variant: platform);
+
+      testWidgets('⌘Enter does nothing while the button is unavailable', (
+        WidgetTester tester,
+      ) async {
+        await pumpPanel(tester, space: docs);
+        await tester.tap(find.byType(TextField).first);
+        await tester.pumpAndSettle();
+
+        await pressCommandEnter(tester);
+
+        expect(git.messages, isEmpty);
+      }, variant: platform);
     });
 
     testWidgets('a description goes under the summary, after a blank line', (
@@ -429,6 +541,42 @@ void main() {
       expect(find.text('Description (optional)'), findsOneWidget);
     });
   });
+
+  // The refusals the git menu and a row's ↶ can meet, each in its own words
+  // above the message box, muted (`git-menu/doc.md`, `the-changes-list/doc.md`).
+  for (final (GitFailure failure, String sentence) in <(GitFailure, String)>[
+    (
+      const GitMergeConflict(<String>[]),
+      'A merge is in progress — resolve it first.',
+    ),
+    (const GitNoCommitsYet(), 'There is no commit to go back to yet.'),
+    (
+      const GitPathCommitted(<String>['docs/index.md']),
+      'index.md is in the last commit, so it was not deleted. The list '
+          'has been read again.',
+    ),
+  ]) {
+    testWidgets('a refusal says "$sentence" and keeps the list', (
+      WidgetTester tester,
+    ) async {
+      git.reported = statusOf(<StatusEntryValueObject>[
+        entry('docs/index.md', FileStateEnum.modified, isStaged: false),
+      ]);
+      await pumpPanel(tester, space: docs);
+      git.writeFailure = failure;
+
+      await tester.tap(find.byType(TomCheckWidget).last);
+      await tester.pumpAndSettle();
+
+      final Finder line = find.text(sentence);
+      expect(line, findsOneWidget);
+      expect(
+        tester.widget<Text>(line).style!.color,
+        TomColors.of(tester.element(line)).textMuted,
+      );
+      expect(find.text('index.md'), findsOneWidget);
+    });
+  }
 
   testWidgets('a refused operation says so without losing the list', (
     WidgetTester tester,
@@ -547,6 +695,33 @@ void main() {
       expect(find.textContaining('ahead'), findsNothing);
     });
 
+    testWidgets('a repository with no remote says so before any press', (
+      WidgetTester tester,
+    ) async {
+      pullRequest = const PullRequestState(
+        target: PullRequestTargetValueObject(),
+      );
+      git.reported = statusOf(const <StatusEntryValueObject>[], ahead: 2);
+      await pumpPanel(tester, space: docs);
+      await tester.pumpAndSettle();
+
+      expect(find.text('No remote configured'), findsOneWidget);
+      expect(isEnabled(tester, 'Push'), isFalse);
+      expect(isEnabled(tester, 'Fetch'), isFalse);
+      expect(isEnabled(tester, 'Pull'), isFalse);
+    });
+
+    testWidgets('a repository with a remote says nothing of the kind', (
+      WidgetTester tester,
+    ) async {
+      pullRequest = const PullRequestState(
+        target: PullRequestTargetValueObject(hasRemote: true),
+      );
+      await pumpPanel(tester, space: docs);
+
+      expect(find.text('No remote configured'), findsNothing);
+    });
+
     testWidgets('a broken link replaces where the branch stands', (
       WidgetTester tester,
     ) async {
@@ -652,6 +827,106 @@ void main() {
     await pumpPanel(tester, space: docs);
 
     expect(find.text('1 document to resolve'), findsOneWidget);
+  });
+
+  group('staging a conflicted document that still holds a marker', () {
+    const MergeStateValueObject merging = MergeStateValueObject(
+      inProgress: true,
+      message: "Merge branch 'main'",
+    );
+
+    testWidgets('is refused by name, and the row stays where it was', (
+      WidgetTester tester,
+    ) async {
+      git
+        ..reported = statusOf(<StatusEntryValueObject>[
+          entry('docs/roadmap.md', FileStateEnum.conflicted, isStaged: false),
+        ])
+        ..merge = merging;
+      // One line left of a region somebody resolved by hand.
+      onDisk['roadmap.md'] = '# Roadmap\n\nours\n=======\ntheirs\n';
+      await pumpPanel(tester, space: docs);
+
+      await tester.tap(find.byType(TomCheckWidget).last);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'roadmap.md still holds a conflict marker — resolve it, then stage.',
+        ),
+        findsOneWidget,
+      );
+      expect(git.staged, isEmpty);
+      expect(find.text('roadmap.md'), findsOneWidget);
+    });
+
+    testWidgets('says it in removed, where the other refusals stay muted', (
+      WidgetTester tester,
+    ) async {
+      git
+        ..reported = statusOf(<StatusEntryValueObject>[
+          entry('docs/roadmap.md', FileStateEnum.conflicted, isStaged: false),
+        ])
+        ..merge = merging;
+      onDisk['roadmap.md'] = '# Roadmap\n\nours\n=======\ntheirs\n';
+      await pumpPanel(tester, space: docs);
+
+      await tester.tap(find.byType(TomCheckWidget).last);
+      await tester.pumpAndSettle();
+
+      final Finder sentence = find.text(
+        'roadmap.md still holds a conflict marker — resolve it, then stage.',
+      );
+      expect(
+        tester.widget<Text>(sentence).style!.color,
+        TomColors.of(tester.element(sentence)).removed,
+      );
+    });
+
+    testWidgets('several are counted, never listed', (
+      WidgetTester tester,
+    ) async {
+      git
+        ..reported = statusOf(<StatusEntryValueObject>[
+          entry('docs/roadmap.md', FileStateEnum.conflicted, isStaged: false),
+          entry('docs/guide.md', FileStateEnum.conflicted, isStaged: false),
+        ])
+        ..merge = merging;
+      onDisk['roadmap.md'] = '<<<<<<< HEAD\nours\n';
+      onDisk['guide.md'] = 'theirs\n>>>>>>> main\n';
+      await pumpPanel(tester, space: docs);
+
+      await tester.tap(find.text('Stage all'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          '2 documents still hold a conflict marker — resolve them, then '
+          'stage.',
+        ),
+        findsOneWidget,
+      );
+      expect(git.staged, isEmpty);
+    });
+
+    testWidgets('once it reads clean it stages, though git still calls it '
+        'conflicted', (WidgetTester tester) async {
+      git
+        ..reported = statusOf(<StatusEntryValueObject>[
+          entry('docs/roadmap.md', FileStateEnum.conflicted, isStaged: false),
+        ])
+        ..merge = merging;
+      onDisk['roadmap.md'] = '# Roadmap\n\nours\ntheirs\n';
+      await pumpPanel(tester, space: docs);
+
+      await tester.tap(find.byType(TomCheckWidget).last);
+      await tester.pumpAndSettle();
+
+      expect(git.staged, <RepoRelativePathValueObject>[
+        RepoRelativePathValueObject('docs/roadmap.md'),
+      ]);
+      expect(find.textContaining('conflict marker'), findsNothing);
+    });
   });
 
   // Concluding the merge is a commit, and it cannot be made while a document
@@ -826,16 +1101,35 @@ final class _Silent implements Observability {
   }) async {}
 }
 
-/// Documents nothing can be read from, so the marker check finds nothing to
-/// refuse and staging behaves as it did before the check existed.
-final class _NoDocuments implements DocumentRepository {
-  const _NoDocuments();
+/// A pull request that has already read what the test says, and reads
+/// nothing of its own.
+final class _Remembers extends PullRequestNotifier {
+  _Remembers(this.read);
+
+  final PullRequestState Function() read;
+
+  @override
+  PullRequestState build() => read();
+}
+
+/// Documents read from a map; with nothing in it nothing can be read, so
+/// the marker check finds nothing to refuse.
+final class _Documents implements DocumentRepository {
+  const _Documents(this.contents);
+
+  final Map<String, String> contents;
 
   @override
   Future<Result<DocumentEntity, DocumentFailure>> read(
     SpaceRelativePathValueObject path,
-  ) async =>
-      Failure<DocumentEntity, DocumentFailure>(DocumentNotFound(path.value));
+  ) async => switch (contents[path.value]) {
+    final String text => Success<DocumentEntity, DocumentFailure>(
+      DocumentEntity(path: path, content: text),
+    ),
+    null => Failure<DocumentEntity, DocumentFailure>(
+      DocumentNotFound(path.value),
+    ),
+  };
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

@@ -12,6 +12,8 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/src/changes/changes_providers.dart';
 import 'package:tom_presentation/src/commands/command_action_enum.dart';
 import 'package:tom_presentation/src/commands/command_scope.dart';
+import 'package:tom_presentation/src/commands/opening_plan_notifier.dart';
+import 'package:tom_presentation/src/home/home_providers.dart';
 import 'package:tom_presentation/src/spaces/git_reading_state.dart';
 import 'package:tom_presentation/src/spaces/space_session.dart';
 import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
@@ -46,6 +48,24 @@ class GitReadingNotifier extends _$GitReadingNotifier {
         (SpaceSessionState? session) => session?.space,
       ),
     );
+    final bool locating = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) => session?.locatingRepository ?? false,
+      ),
+    );
+    // The folder is on screen and git has not said where its repository is:
+    // that is asked here, in the background, and may wait for a yes.
+    if (space != null && locating) {
+      unawaited(
+        Future<void>.microtask(
+          () => _locate(
+            space,
+            plan: ref.read(openingPlanProvider.notifier).take(),
+          ),
+        ),
+      );
+      return const GitReadingState.loading();
+    }
     // A folder with no repository is never asked: what opening it found is
     // the whole answer (`docs/product/workspace/without-a-repository/doc.md`).
     if (space == null || !space.hasRepository) {
@@ -53,7 +73,11 @@ class GitReadingNotifier extends _$GitReadingNotifier {
     }
     // Scheduled, not awaited: `build` answers synchronously and may not
     // write the session.
-    unawaited(Future<void>.microtask(() => _read(space)));
+    unawaited(
+      Future<void>.microtask(
+        () => _read(space, plan: ref.read(openingPlanProvider.notifier).take()),
+      ),
+    );
     return const GitReadingState.loading();
   }
 
@@ -67,18 +91,52 @@ class GitReadingNotifier extends _$GitReadingNotifier {
   /// Asks git where it stands again — after a commit, a stage, a fetch, a
   /// pull, a push, a branch switch, a save or a `Reload`.
   Future<void> refresh() async {
-    final SpaceEntity? space = ref.read(spaceSessionProvider)?.space;
-    if (space != null && space.hasRepository) {
+    final SpaceSessionState? session = ref.read(spaceSessionProvider);
+    final SpaceEntity? space = session?.space;
+    if (space != null && session!.locatingRepository) {
+      await _locate(space);
+    } else if (space != null && space.hasRepository) {
       await _read(space);
     }
   }
 
+  /// Asks git where [space]'s repository is — the half of opening that
+  /// waited — and completes the session with it; the reading that follows
+  /// joins the same plan ([plan]).
+  ///
+  /// Refused, the folder stays as it is and the column says it is out of
+  /// date, with `Reload` to ask again.
+  Future<void> _locate(SpaceEntity space, {CommandScope? plan}) async {
+    final CommandScope scope =
+        plan ?? CommandScope.start(CommandActionEnum.readRepository);
+    final Result<SpaceEntity, AppFailure> located = await scope.within(
+      () => ref.read(openSpaceProvider).locate(space),
+    );
+    if (!ref.mounted ||
+        ref.read(spaceSessionProvider)?.space.root != space.root) {
+      return;
+    }
+    switch (located) {
+      case Success<SpaceEntity, AppFailure>(value: final SpaceEntity found):
+        ref.read(openingPlanProvider.notifier).handed = scope;
+        ref.read(spaceSessionProvider.notifier).located(found);
+      case Failure<SpaceEntity, AppFailure>(
+        failure: AppFailure(isDenial: true),
+      ):
+        state = const GitReadingState.stale();
+      case Failure<SpaceEntity, AppFailure>(failure: final AppFailure failure):
+        state = GitReadingState.failed(failure);
+    }
+  }
+
   /// Reads the status, then the merge, and tells the session both — one
-  /// action, so in the commands panel the two are one plan.
-  Future<void> _read(SpaceEntity space) => CommandScope.run(
-    CommandActionEnum.readRepository,
-    () => _readBoth(space),
-  );
+  /// action, so in the commands panel the two are one plan — and, when the
+  /// space was just opened, the same plan as the opening's own commands
+  /// ([plan]).
+  Future<void> _read(SpaceEntity space, {CommandScope? plan}) =>
+      (plan ?? CommandScope.start(CommandActionEnum.readRepository)).within(
+        () => _readBoth(space),
+      );
 
   Future<void> _readBoth(SpaceEntity space) async {
     final int generation = ++_generation;

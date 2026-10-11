@@ -314,8 +314,32 @@ final class GitRepositoryImpl implements GitRepository {
       git.abortMerge().mapFailure(_asGitFailure);
 
   @override
-  Future<Result<void, GitFailure>> discardAll() =>
-      git.discardAll().mapFailure(_asGitFailure);
+  Future<Result<void, GitFailure>> discardAll() async {
+    // Safe on its own: mid-merge it would end the merge and overwrite the
+    // conflicted files, and before the first commit it would unstage and then
+    // fail half-applied, so both are refused before git is asked to write.
+    switch (await mergeState()) {
+      case Failure<MergeStateValueObject, GitFailure>(
+        failure: final GitFailure failure,
+      ):
+        return Failure<void, GitFailure>(failure);
+      case Success<MergeStateValueObject, GitFailure>(
+        value: MergeStateValueObject(inProgress: true),
+      ):
+        return const Failure<void, GitFailure>(GitMergeConflict(<String>[]));
+      case Success<MergeStateValueObject, GitFailure>():
+    }
+    switch (await head()) {
+      case Failure<CommitShaValueObject?, GitFailure>(
+        failure: final GitFailure failure,
+      ):
+        return Failure<void, GitFailure>(failure);
+      case Success<CommitShaValueObject?, GitFailure>(value: null):
+        return const Failure<void, GitFailure>(GitNoCommitsYet());
+      case Success<CommitShaValueObject?, GitFailure>():
+    }
+    return git.discardAll().mapFailure(_asGitFailure);
+  }
 
   @override
   Future<Result<void, GitFailure>> discard(
@@ -350,6 +374,7 @@ final class GitRepositoryImpl implements GitRepository {
           cause: failure,
         ),
         GitClientPushRejected() => GitPushRejected(cause: failure),
+        GitClientBranchProtected() => GitBranchProtected(cause: failure),
         GitClientLocalChangesOverwritten(paths: final List<String> paths) =>
           GitLocalChangesOverwritten(paths, cause: failure),
         GitClientNetworkUnavailable() => GitNetworkUnavailable(cause: failure),
@@ -359,6 +384,8 @@ final class GitRepositoryImpl implements GitRepository {
           GitCloneDestinationTaken(path, cause: failure),
         GitClientPathNotInRevision(path: final String path) =>
           GitPathNotInRevision(path, cause: failure),
+        GitClientPathCommitted(paths: final List<String> paths) =>
+          GitPathCommitted(paths, cause: failure),
         GitClientTimedOut() => GitTimedOut(cause: failure),
         GitClientCommandDenied() => GitCommandDenied(cause: failure),
         GitClientCommandFailed() => GitOperationFailed(cause: failure),

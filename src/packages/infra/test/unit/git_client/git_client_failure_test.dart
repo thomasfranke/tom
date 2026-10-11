@@ -13,6 +13,7 @@ void main() {
         'Conflicts: ${paths.length}',
       GitClientAuthenticationFailed() => 'Auth',
       GitClientPushRejected() => 'Rejected',
+      GitClientBranchProtected() => 'Protected',
       GitClientLocalChangesOverwritten(paths: final List<String> paths) =>
         'In the way: ${paths.length}',
       GitClientNetworkUnavailable() => 'Offline',
@@ -26,6 +27,8 @@ void main() {
         path: final String path,
       ) =>
         'No $path in $revision',
+      GitClientPathCommitted(paths: final List<String> paths) =>
+        'Committed: ${paths.length}',
       GitClientCommandDenied(command: final String command) =>
         'Refused: $command',
       GitClientCommandFailed(exitCode: final int exitCode) => 'Exit $exitCode',
@@ -67,6 +70,10 @@ void main() {
       expect(
         headline(const GitClientPathNotInRevision('HEAD', 'docs/new.md')),
         'No docs/new.md in HEAD',
+      );
+      expect(
+        headline(const GitClientPathCommitted(<String>['a.md'])),
+        'Committed: 1',
       );
       expect(
         headline(const GitClientCommandFailed('git commit', 1, 'nothing')),

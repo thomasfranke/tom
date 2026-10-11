@@ -30,6 +30,13 @@ final class PullRemoteUseCase with UseCase {
   /// already landed on disk and saying it failed would be the lie.
   Future<Result<int?, AppFailure>> pull(SpaceEntity space) => guard(() async {
     final GitRepository git = gitFor(space);
+    switch (await git.remoteAddress()) {
+      case Failure<String?, GitFailure>(failure: final GitFailure failure):
+        return Failure<int?, AppFailure>(failure);
+      case Success<String?, GitFailure>(value: null):
+        return const Failure<int?, AppFailure>(GitNoRemote());
+      case Success<String?, GitFailure>():
+    }
     final Result<CommitShaValueObject?, AppFailure> before = await guard(
       git.head,
     );

@@ -128,6 +128,52 @@ void main() {
     });
   });
 
+  group('hasNothingAtHead', () {
+    StatusEntryValueObject at(
+      String path,
+      FileStateEnum state, {
+      bool isStaged = false,
+    }) => StatusEntryValueObject(
+      path: RepoRelativePathValueObject(path),
+      state: state,
+      isStaged: isStaged,
+    );
+
+    test('is true for untracked, added and renamed paths', () {
+      final GitStatusValueObject status = statusWith(
+        entries: <StatusEntryValueObject>[
+          at('u.md', FileStateEnum.untracked),
+          at('a.md', FileStateEnum.added, isStaged: true),
+          at('r.md', FileStateEnum.renamed, isStaged: true),
+        ],
+      );
+
+      for (final String name in <String>['u.md', 'a.md', 'r.md']) {
+        expect(
+          status.hasNothingAtHead(RepoRelativePathValueObject(name)),
+          true,
+        );
+      }
+    });
+
+    test('is false for committed paths, whatever happened to them', () {
+      final GitStatusValueObject status = statusWith(
+        entries: <StatusEntryValueObject>[
+          at('m.md', FileStateEnum.modified),
+          at('d.md', FileStateEnum.deleted),
+          at('c.md', FileStateEnum.conflicted),
+        ],
+      );
+
+      for (final String name in <String>['m.md', 'd.md', 'c.md', 'other.md']) {
+        expect(
+          status.hasNothingAtHead(RepoRelativePathValueObject(name)),
+          false,
+        );
+      }
+    });
+  });
+
   test('two statuses with the same content are equal', () {
     expect(
       statusWith(

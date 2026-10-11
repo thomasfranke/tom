@@ -20,6 +20,18 @@ final class FetchRemoteUseCase with UseCase {
   final Observability observability;
 
   /// Brings [space]'s remote-tracking branches up to date.
-  Future<Result<void, AppFailure>> fetch(SpaceEntity space) =>
-      guard(() => gitFor(space).fetch());
+  ///
+  /// A repository with no remote says so before git is asked to fetch, since
+  /// `git fetch` with none exits 0 and the button would claim it worked.
+  Future<Result<void, AppFailure>> fetch(SpaceEntity space) => guard(() async {
+    final GitRepository git = gitFor(space);
+    switch (await git.remoteAddress()) {
+      case Failure<String?, GitFailure>(failure: final GitFailure failure):
+        return Failure<void, GitFailure>(failure);
+      case Success<String?, GitFailure>(value: null):
+        return const Failure<void, GitFailure>(GitNoRemote());
+      case Success<String?, GitFailure>():
+    }
+    return git.fetch();
+  });
 }

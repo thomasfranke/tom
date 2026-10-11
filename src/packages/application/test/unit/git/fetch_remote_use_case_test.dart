@@ -23,6 +23,15 @@ void main() {
     observability: observability,
   );
 
+  test('with no remote it says so, and git is never asked to fetch', () async {
+    git.remote = null;
+
+    final Result<void, AppFailure> result = await fetching().fetch(docs);
+
+    expect((result as Failure<void, AppFailure>).failure, const GitNoRemote());
+    expect(git.fetched, 0);
+  });
+
   test('it asks the remote what it has', () async {
     final Result<void, AppFailure> result = await fetching().fetch(docs);
 
@@ -77,6 +86,13 @@ final class _Git implements GitRepository {
   Result<void, GitFailure>? answer;
   bool throws = false;
   int fetched = 0;
+
+  /// Where `origin` is fetched from; null is a repository with no remote.
+  String? remote = 'https://example.test/docs.git';
+
+  @override
+  Future<Result<String?, GitFailure>> remoteAddress() async =>
+      Success<String?, GitFailure>(remote);
 
   @override
   Future<Result<void, GitFailure>> fetch() async {

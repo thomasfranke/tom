@@ -72,6 +72,20 @@ class _HomeCloneState extends ConsumerState<HomeCloneWidget> {
   // The outline follows the keyboard.
   void _refocused() => setState(() {});
 
+  @override
+  void didUpdateWidget(HomeCloneWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The field takes the keyboard when it appears, even though Home holds
+    // focus for its shortcuts: `autofocus` only wins over an empty scope.
+    if (oldWidget.clone is HomeCloneClosed && widget.clone is HomeCloneOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((Duration _) {
+        if (mounted) {
+          _focus.requestFocus();
+        }
+      });
+    }
+  }
+
   /// Asks for the folder to clone into, then clones; a cancelled dialog
   /// moves nothing.
   Future<void> _clone() async {

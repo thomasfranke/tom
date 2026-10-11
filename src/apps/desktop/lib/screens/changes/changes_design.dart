@@ -9,6 +9,11 @@ abstract final class ChangesDesign {
   /// The column's edge to everything in it: list, message, buttons.
   static const double inset = 14;
 
+  /// The note a read waiting for a yes leaves in the list's place: under the
+  /// tabs' rule to its first line, and from the column's edge
+  /// (`manual-opening-a-space`: the line's top 55 under the rule, 14 in).
+  static const double waitingTop = 55;
+
   /// Island's right edge to the centre of the column's `⋮`
   /// (`design/screens/desktop/git-commit/git-menu-dark.svg`).
   static const double menuCentreRight = 15.5;

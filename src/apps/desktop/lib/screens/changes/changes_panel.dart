@@ -52,31 +52,64 @@ class ChangesPanel extends ConsumerWidget {
       ),
     );
     final AppLocalizations l10n = context.l10n;
+    final bool isAwaitingApproval = ref.watch(
+      commandsProvider.select(
+        (CommandsState it) => it.isWaitingOn(CommandActionEnum.readRepository),
+      ),
+    );
+    final bool isDetached = status?.isDetached ?? false;
+    final bool canCommit =
+        !isBusy &&
+        !isDetached &&
+        toResolve == 0 &&
+        state is ChangesReady &&
+        state.message.trim().isNotEmpty &&
+        (status?.hasStagedChanges ?? false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Expanded(child: _body(l10n, ref, state, entries, isBusy: isBusy)),
+        Expanded(
+          child: _body(
+            l10n,
+            ref,
+            state,
+            entries,
+            isBusy: isBusy,
+            isAwaitingApproval: isAwaitingApproval,
+          ),
+        ),
         // Above the box rather than in place of the list, so a refusal is
         // said while what it refused is still on screen.
         if (state case ChangesReady(failure: final AppFailure refused))
           Padding(
             padding: const EdgeInsets.only(top: ChangesDesign.stackGap),
-            child: ChangesNoteWidget(_explain(l10n, refused)),
+            child: ChangesNoteWidget(
+              _explain(l10n, refused),
+              isRefusal: refused is GitConflictMarkersPresent,
+            ),
+          )
+        // The app's own policy, said before anything is pressed: the branch
+        // is already on the session, so the refusal costs no round trip
+        // (`docs/product/git-workflow/commit/the-message/doc.md`).
+        else if (isDetached)
+          Padding(
+            padding: const EdgeInsets.only(top: ChangesDesign.stackGap),
+            child: ChangesNoteWidget(l10n.changesNotOnABranch),
           ),
         // Never taken away, not even by a refused push: the refusal is a band
         // above the document and this column keeps working
         // (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
         const SizedBox(height: ChangesDesign.stackGap),
-        const ChangesMessageWidget(),
+        // ⌘Enter commits when the button would (`the-message/doc.md`).
+        ChangesMessageWidget(
+          onCommit: canCommit
+              ? () => unawaited(ref.read(changesProvider.notifier).commit())
+              : null,
+        ),
         const SizedBox(height: ChangesDesign.stackGap),
         ChangesCommitButtonWidget(
-          canCommit:
-              !isBusy &&
-              toResolve == 0 &&
-              state is ChangesReady &&
-              state.message.trim().isNotEmpty &&
-              (status?.hasStagedChanges ?? false),
-          branch: status?.isDetached ?? false ? null : status?.branch,
+          canCommit: canCommit,
+          branch: isDetached ? null : status?.branch,
         ),
         // Under the button rather than on it: what is going in is a fact
         // about the list above, and the button says what it does. Absent
@@ -120,8 +153,15 @@ class ChangesPanel extends ConsumerWidget {
     ChangesState state,
     List<StatusEntryValueObject> entries, {
     required bool isBusy,
+    required bool isAwaitingApproval,
   }) => switch (state) {
     ChangesInitial() => ChangesNoteWidget(l10n.commonNoSpaceOpen),
+    // A read that waits for a yes is not git being slow: the sentence says
+    // whose turn it is.
+    ChangesLoading() when isAwaitingApproval => ChangesNoteWidget(
+      l10n.commonWaitingForApproval,
+      isWaiting: true,
+    ),
     ChangesLoading() => ChangesNoteWidget(l10n.commonAskingGit),
     ChangesFailed(failure: final AppFailure failure) => ChangesNoteWidget(
       _explain(l10n, failure),
@@ -200,6 +240,15 @@ class ChangesPanel extends ConsumerWidget {
         GitNotInstalled() => l10n.gitNotInstalled,
         GitNotARepository() => l10n.gitNotARepository,
         GitMergeConflict() => l10n.changesMergeInProgress,
+        GitDetachedHead() => l10n.changesNotOnABranch,
+        // Named, because the way out is in that one document.
+        GitConflictMarkersPresent(paths: [final String only]) =>
+          l10n.changesStillHoldsMarker(only.split('/').last),
+        GitConflictMarkersPresent(paths: final List<String> several) =>
+          l10n.changesStillHoldMarkers(several.length),
+        GitNoCommitsYet() => l10n.changesNoCommitYet,
+        GitPathCommitted(paths: [final String first, ...]) =>
+          l10n.changesAlreadyCommitted(first.split('/').last),
         GitTimedOut() => l10n.gitTimedOut,
         _ => l10n.changesGitCouldNot,
       };

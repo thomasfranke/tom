@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/l10n/l10n.dart';
+import 'package:tom_desktop/screens/about/update_dot_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -74,6 +75,8 @@ class StatusPanel extends ConsumerWidget {
           ],
         ],
         const Spacer(),
+        const UpdateNoticeWidget(),
+        const SizedBox(width: _gap),
         if (editor case EditorReady(
           :final bool isSaving,
           :final bool isBinary,
@@ -115,11 +118,11 @@ class StatusPanel extends ConsumerWidget {
     );
   }
 
-  /// The branch in the status bar's words: a detached `HEAD` is named, since
-  /// it is a state to get out of rather than a missing value.
+  /// The branch in the status bar's words: a repository on none says so,
+  /// since it is a state to get out of rather than a missing value.
   static String _branch(AppLocalizations l10n, GitStatusValueObject git) =>
       switch (git) {
-        GitStatusValueObject(isDetached: true) => l10n.commonDetachedHead,
+        GitStatusValueObject(isDetached: true) => l10n.commonNotOnABranch,
         GitStatusValueObject(branch: final BranchNameValueObject branch) =>
           branch.value,
         _ => l10n.commonNoBranch,

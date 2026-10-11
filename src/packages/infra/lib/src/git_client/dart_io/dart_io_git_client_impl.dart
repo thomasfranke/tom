@@ -9,6 +9,16 @@ import 'dart:typed_data';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_infra/tom_infra.dart';
 
+/// What starts a process: [Process.start] in production, a scripted process
+/// in a unit test, so the client's own logic is proved without a real git.
+typedef GitProcessStarter =
+    Future<Process> Function(
+      String executable,
+      List<String> arguments, {
+      String? workingDirectory,
+      Map<String, String>? environment,
+    });
+
 /// Drives the system's `git` binary through [Process].
 ///
 /// The user's own git, so credentials, SSH and config come for free
@@ -25,12 +35,27 @@ final class DartIoGitClientImpl implements GitClient {
     required this.workingDirectory,
     this.timeout = const Duration(seconds: 30),
     this.networkTimeout = const Duration(minutes: 2),
-    this.commandLog = const SilentCommandLog(),
+    this.commandLog = const SilentCommandLogImpl(),
     this.commandGate = const OpenCommandGateImpl(),
+    this.executable = 'git',
+    this.environment = const <String, String>{},
+    this.startProcess = Process.start,
   });
+
+  /// What starts git; only a unit test hands a different one.
+  final GitProcessStarter startProcess;
 
   /// The folder every command runs inside.
   final String workingDirectory;
+
+  /// Variables added on top of the ones git is always run with — how a test
+  /// keeps the developer's own git configuration out of a run.
+  final Map<String, String> environment;
+
+  /// What is started to run git: a name found on the `PATH`, or a path.
+  ///
+  /// Commands are still written down as `git …`, whatever this is.
+  final String executable;
 
   /// Where every command is written down once it ends.
   final CommandLog commandLog;
@@ -45,11 +70,12 @@ final class DartIoGitClientImpl implements GitClient {
   /// How long a command reaching a remote may take before it is killed.
   final Duration networkTimeout;
 
-  /// The tail of the serialized queue.
+  /// The tail of each folder's serialized queue.
   ///
   /// Every operation chains onto it, so two commands cannot race for the
-  /// index lock on one instance.
-  Future<void> _queue = Future<void>.value();
+  /// index lock — and the queue is the folder's, not the instance's, because
+  /// two clients over one folder meet at the same `index.lock`.
+  static final Map<String, Future<void>> _tails = <String, Future<void>>{};
 
   /// Bytes to text, tolerating anything that is not valid UTF-8, so an odd
   /// file cannot throw across the boundary.
@@ -90,6 +116,19 @@ final class DartIoGitClientImpl implements GitClient {
         '%(ahead-behind:HEAD)',
       ].join(GitClient.unitSeparator) +
       GitClient.recordSeparator;
+
+  @override
+  Future<Result<String, GitClientFailure>> version() async {
+    final Result<String, GitClientFailure> said = await _git(
+      GitCommandKeyEnum.version,
+      <String>['--version'],
+    );
+    return switch (said) {
+      Success<String, GitClientFailure>(:final String value) =>
+        Success<String, GitClientFailure>(value.trim()),
+      Failure<String, GitClientFailure>() => said,
+    };
+  }
 
   @override
   Future<Result<String, GitClientFailure>> repositoryRoot() async {
@@ -180,6 +219,9 @@ final class DartIoGitClientImpl implements GitClient {
       <String>[
         'log',
         '--format=$_logFormat',
+        // A document's history goes on across its renames: it is the same
+        // document under another name.
+        if (path != null) '--follow',
         if (limit != null) '--max-count=$limit',
         if (since != null) '$since..HEAD',
         if (path != null) ...<String>['--', _pathspec(path)],
@@ -446,6 +488,13 @@ final class DartIoGitClientImpl implements GitClient {
     )) {
       return head;
     }
+    // Only exit 1 says "nothing says"; a git that never started, or a folder
+    // that is no repository, is a failure and not an empty answer.
+    if (head case Failure<String, GitClientFailure>(
+      failure: final GitClientFailure failure,
+    ) when failure is! GitClientCommandFailed || failure.exitCode != 1) {
+      return head;
+    }
     for (final String guess in <String>['main', 'master']) {
       final Result<String, GitClientFailure> found = await _git(
         GitCommandKeyEnum.remoteBranchExists,
@@ -496,6 +545,9 @@ final class DartIoGitClientImpl implements GitClient {
     final Result<String, GitClientFailure> result = await _git(
       GitCommandKeyEnum.show,
       <String>['show', '$revision:$path'],
+      // "No earlier version" is an answer, so its row is not drawn as a
+      // failure; git's other fatals stay red.
+      answeredWhen: _pathNotInRevision,
     );
     return _orNotInRevision(result, revision, path);
   }
@@ -508,7 +560,7 @@ final class DartIoGitClientImpl implements GitClient {
     await _gitBytes(GitCommandKeyEnum.show, <String>[
       'show',
       '$revision:$path',
-    ]),
+    ], answeredWhen: _pathNotInRevision),
     revision,
     path,
   );
@@ -517,7 +569,10 @@ final class DartIoGitClientImpl implements GitClient {
   Future<Result<Uint8List, GitClientFailure>> showStagedBytes(
     String path,
   ) async => _orNotInRevision(
-    await _gitBytes(GitCommandKeyEnum.showStaged, <String>['show', ':$path']),
+    await _gitBytes(GitCommandKeyEnum.showStaged, <String>[
+      'show',
+      ':$path',
+    ], answeredWhen: _pathNotInRevision),
     '',
     path,
   );
@@ -583,6 +638,51 @@ final class DartIoGitClientImpl implements GitClient {
   @override
   Future<Result<void, GitClientFailure>> deleteUncommitted(
     List<String> paths,
+  ) async {
+    // Asked of `HEAD` now rather than trusted from a status read earlier:
+    // `clean` cannot be undone, and a committed file would go with the rest.
+    final Result<String, GitClientFailure> held = await _git(
+      GitCommandKeyEnum.committedPaths,
+      // `--full-tree` for the reason [_pathspec] says `top`; `ls-tree` takes
+      // plain paths, with no glob to escape.
+      <String>[
+        'ls-tree',
+        '--full-tree',
+        '--name-only',
+        '-z',
+        'HEAD',
+        '--',
+        ...paths,
+      ],
+      answers: _noSuchObject,
+    );
+    switch (held) {
+      case Success<String, GitClientFailure>(:final String value):
+        final List<String> committed = value
+            .split(GitClient.nulSeparator)
+            .where((String path) => path.isNotEmpty)
+            .toList(growable: false);
+        if (committed.isNotEmpty) {
+          return Failure<void, GitClientFailure>(
+            GitClientPathCommitted(committed),
+          );
+        }
+      // No `HEAD` at all is nothing committed, which is the answer wanted.
+      case Failure<String, GitClientFailure>(
+            failure: GitClientCommandFailed(:final String stderr),
+          )
+          when _noHead.hasMatch(stderr):
+        break;
+      case Failure<String, GitClientFailure>(:final GitClientFailure failure):
+        return Failure<void, GitClientFailure>(failure);
+    }
+    return _deleteNeverCommitted(paths);
+  }
+
+  /// Takes [paths] out of the index and off the disk, [deleteUncommitted]
+  /// having found none of them in `HEAD`.
+  Future<Result<void, GitClientFailure>> _deleteNeverCommitted(
+    List<String> paths,
   ) => _inOrder(<(GitCommandKeyEnum, List<String>)>[
     // Out of the index first, which works on an unborn `HEAD` too; `-f`
     // because a staged file edited since differs from both sides, and
@@ -610,6 +710,11 @@ final class DartIoGitClientImpl implements GitClient {
 
   @override
   Future<Result<void, GitClientFailure>> unstage(List<String> paths) async {
+    // Nothing to take out is nothing to ask git, which exits 128 on an empty
+    // pathspec list (`stage` of none succeeds the same way).
+    if (paths.isEmpty) {
+      return const Success<void, GitClientFailure>(null);
+    }
     final Result<void, GitClientFailure> result = await _gitVoid(
       GitCommandKeyEnum.restoreStaged,
       <String>['restore', '--staged', '--', ...paths.map(_pathspec)],
@@ -639,7 +744,9 @@ final class DartIoGitClientImpl implements GitClient {
   @override
   Future<Result<void, GitClientFailure>> commit(String message) => _gitVoid(
     GitCommandKeyEnum.commit,
-    <String>['commit', '--message', message],
+    // `whitespace`, because the person's `commit.cleanup=strip` would take a
+    // markdown heading out of the message as a comment.
+    <String>['commit', '--cleanup=whitespace', '--message', message],
   );
 
   @override
@@ -649,8 +756,25 @@ final class DartIoGitClientImpl implements GitClient {
   );
 
   @override
-  Future<Result<void, GitClientFailure>> switchBranch(String name) =>
-      _gitVoid(GitCommandKeyEnum.switchBranch, <String>['switch', name]);
+  Future<Result<void, GitClientFailure>> switchBranch(String name) async {
+    // Git forbids a branch name that starts with a dash, and `switch` reads
+    // even `-- -` as "the previous branch"; so none is asked.
+    if (name.startsWith('-')) {
+      return Failure<void, GitClientFailure>(
+        GitClientCommandFailed(
+          'git switch -- $name',
+          128,
+          "fatal: '$name' is not a valid branch name",
+        ),
+      );
+    }
+    // `--` so nothing after it can be read as an option.
+    return _gitVoid(GitCommandKeyEnum.switchBranch, <String>[
+      'switch',
+      '--',
+      name,
+    ]);
+  }
 
   @override
   Future<Result<void, GitClientFailure>> fetch() => _gitVoid(
@@ -865,12 +989,19 @@ final class DartIoGitClientImpl implements GitClient {
     List<String> arguments, {
     Duration? limit,
     Set<int> answers = const <int>{},
+    RegExp? answeredWhen,
     CommandPlan? plan,
   }) => _asked(
     key,
     arguments,
     (int? ticket) => _enqueue(
-      () => _run(arguments, limit ?? timeout, answers: answers, ticket: ticket),
+      () => _run(
+        arguments,
+        limit ?? timeout,
+        answers: answers,
+        answeredWhen: answeredWhen,
+        ticket: ticket,
+      ),
     ),
     plan: plan,
   );
@@ -878,12 +1009,19 @@ final class DartIoGitClientImpl implements GitClient {
   /// [_git], with what git printed left as bytes.
   Future<Result<Uint8List, GitClientFailure>> _gitBytes(
     GitCommandKeyEnum key,
-    List<String> arguments,
-  ) => _asked(
+    List<String> arguments, {
+    RegExp? answeredWhen,
+  }) => _asked(
     key,
     arguments,
-    (int? ticket) =>
-        _enqueue(() => _runBytes(arguments, timeout, ticket: ticket)),
+    (int? ticket) => _enqueue(
+      () => _runBytes(
+        arguments,
+        timeout,
+        answeredWhen: answeredWhen,
+        ticket: ticket,
+      ),
+    ),
   );
 
   /// What the gate is told about running [arguments] as [key].
@@ -924,8 +1062,21 @@ final class DartIoGitClientImpl implements GitClient {
   /// The queue never carries a failure forward, so one operation that threw
   /// cannot stop every later command in the space.
   Future<T> _enqueue<T>(Future<T> Function() operation) {
-    final Future<T> result = _queue.then((void _) => operation());
-    _queue = result.then<void>((T _) {}).catchError((Object _) {});
+    final String folder = Directory(workingDirectory).absolute.path;
+    final Future<void> tail = _tails[folder] ?? Future<void>.value();
+    final Future<T> result = tail.then((void _) => operation());
+    final Future<void> next = result
+        .then<void>((T _) {})
+        .catchError((Object _) {});
+    _tails[folder] = next;
+    // An idle folder leaves no entry behind.
+    unawaited(
+      next.then((void _) {
+        if (identical(_tails[folder], next)) {
+          _tails.remove(folder)?.ignore();
+        }
+      }),
+    );
     return result;
   }
 
@@ -936,6 +1087,7 @@ final class DartIoGitClientImpl implements GitClient {
     bool insideFolder = true,
     void Function(String line)? onLine,
     Set<int> answers = const <int>{},
+    RegExp? answeredWhen,
     int? ticket,
   }) async => (await _runBytes(
     arguments,
@@ -943,6 +1095,7 @@ final class DartIoGitClientImpl implements GitClient {
     insideFolder: insideFolder,
     onLine: onLine,
     answers: answers,
+    answeredWhen: answeredWhen,
     ticket: ticket,
   )).map(_decoder.convert);
 
@@ -958,22 +1111,26 @@ final class DartIoGitClientImpl implements GitClient {
     bool insideFolder = true,
     void Function(String line)? onLine,
     Set<int> answers = const <int>{},
+    RegExp? answeredWhen,
     int? ticket,
   }) async {
     final String command = 'git ${arguments.join(' ')}';
+    // A copy the run may add to: the log keeps the set it was handed, and
+    // [answeredWhen] is only known once stderr is.
+    final Set<int> answered = <int>{...answers};
     final CommandEnded ended = commandLog.started(
       'git',
       arguments,
-      answers: answers,
+      answers: answered,
       ticket: ticket,
     );
     final Process process;
     try {
-      process = await Process.start(
-        'git',
+      process = await startProcess(
+        executable,
         arguments,
         workingDirectory: insideFolder ? workingDirectory : null,
-        environment: _environment,
+        environment: <String, String>{..._environment, ...environment},
       );
     } on ProcessException catch (error) {
       ended(null, stderr: error.message, ran: false);
@@ -1039,6 +1196,9 @@ final class DartIoGitClientImpl implements GitClient {
     final Uint8List printed = await out;
     final String stdout = _decoder.convert(printed);
     final String stderr = await err;
+    if (exitCode != 0 && (answeredWhen?.hasMatch(stderr) ?? false)) {
+      answered.add(exitCode);
+    }
     ended(exitCode, stdout: stdout, stderr: stderr);
     if (exitCode == 0) {
       return Success<Uint8List, GitClientFailure>(printed);
@@ -1141,7 +1301,12 @@ final class DartIoGitClientImpl implements GitClient {
   /// `GIT_OPTIONAL_LOCKS=0` because TOM reads far more often than a person;
   /// `LC_ALL=C` so the patterns below are not a bet on the locale.
   /// `GIT_SSH_COMMAND` stays unset: it would override `core.sshCommand`.
+  /// `i18n.logOutputEncoding` is pinned to UTF-8 through `GIT_CONFIG_*`:
+  /// every read decodes UTF-8, whatever the person's own setting says.
   static const Map<String, String> _environment = <String, String>{
+    'GIT_CONFIG_COUNT': '1',
+    'GIT_CONFIG_KEY_0': 'i18n.logOutputEncoding',
+    'GIT_CONFIG_VALUE_0': 'UTF-8',
     'GIT_TERMINAL_PROMPT': '0',
     'GIT_ASKPASS': '',
     'SSH_ASKPASS_REQUIRE': 'never',
@@ -1174,6 +1339,11 @@ final class DartIoGitClientImpl implements GitClient {
     }
     if (_noRemote.hasMatch(stderr)) {
       return GitClientNoRemote(stderr);
+    }
+    // Before the race: a protected branch is refused with `[remote
+    // rejected]` too, and pulling would not be the way out.
+    if (_branchProtected.hasMatch(output)) {
+      return GitClientBranchProtected(stderr);
     }
     if (_pushRejected.hasMatch(output)) {
       return GitClientPushRejected(stderr);
@@ -1210,9 +1380,12 @@ final class DartIoGitClientImpl implements GitClient {
     caseSensitive: false,
   );
 
-  /// The folder is outside any repository.
+  /// The folder is outside any repository — or holds one with no working
+  /// tree (a bare repository), or is asked for `--local` config outside one.
   static final RegExp _notARepository = RegExp(
-    'not a git repository',
+    'not a git repository'
+    '|can only be used inside a git repository'
+    '|must be run in a work tree',
     caseSensitive: false,
   );
 
@@ -1240,6 +1413,13 @@ final class DartIoGitClientImpl implements GitClient {
   static final RegExp _noRemote = RegExp(
     'does not appear to be a git repository|no configured push destination|'
     'no remote repository specified|no such remote',
+    caseSensitive: false,
+  );
+
+  /// A push refused because the remote protects the branch: GitHub's
+  /// `GH006`/`GH013` and GitLab's `protected branch` wording.
+  static final RegExp _branchProtected = RegExp(
+    r'protected branch|GH006|GH013',
     caseSensitive: false,
   );
 
@@ -1282,6 +1462,16 @@ final class DartIoGitClientImpl implements GitClient {
     "|invalid object name '?HEAD'?",
     caseSensitive: false,
   );
+
+  /// `ls-tree HEAD` on a branch with no commit yet.
+  static final RegExp _noHead = RegExp(
+    'not a valid object name HEAD',
+    caseSensitive: false,
+  );
+
+  /// The exit `ls-tree` gives for a `HEAD` that names nothing, which
+  /// [deleteUncommitted] reads as an answer.
+  static const Set<int> _noSuchObject = <int>{128};
 
   /// `HEAD` names no commit yet: `log` says the first, `rev-parse` the
   /// second, `restore --staged` the third.

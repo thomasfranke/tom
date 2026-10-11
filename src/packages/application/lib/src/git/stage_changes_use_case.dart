@@ -33,19 +33,44 @@ final class StageChangesUseCase with UseCase {
   /// [paths] added to [space]'s index; an empty list succeeds and does nothing.
   ///
   /// Refused with `GitConflictMarkersPresent` when any of them still holds a
-  /// marker. The policy is this use case's, the way the detached-HEAD refusal
-  /// is `CommitChangesUseCase`'s: git would record the marker, and
-  /// `<<<<<<<` in committed documentation is read by everyone who opens the
-  /// file next.
+  /// marker line **while git calls it conflicted**. The policy is this use
+  /// case's, the way the detached-HEAD refusal is `CommitChangesUseCase`'s:
+  /// git would record the marker, and `<<<<<<<` in committed documentation
+  /// is read by everyone who opens the file next.
+  ///
+  /// Git is asked first because one line is enough to refuse, and outside a
+  /// merge one such line is prose: a document *about* conflicts stages.
   Future<Result<void, AppFailure>> stage(
     SpaceEntity space,
     List<RepoRelativePathValueObject> paths,
   ) => guard(() async {
-    final List<String> holding = await _pathsHoldingMarkers(space, paths);
+    final GitRepository git = gitFor(space);
+    if (paths.isEmpty) {
+      return git.stage(paths);
+    }
+    final Result<GitStatusValueObject, GitFailure> reading = await git.status();
+    if (reading case Failure<GitStatusValueObject, GitFailure>(
+      failure: final GitFailure failure,
+    )) {
+      // Not knowing which files are conflicted is not knowing they are safe.
+      return Failure<void, GitFailure>(failure);
+    }
+    final Set<RepoRelativePathValueObject> conflicted =
+        <RepoRelativePathValueObject>{
+          for (final StatusEntryValueObject entry
+              in (reading as Success<GitStatusValueObject, GitFailure>)
+                  .value
+                  .entries)
+            if (entry.state == FileStateEnum.conflicted) entry.path,
+        };
+    final List<String> holding = await _pathsHoldingMarkers(
+      space,
+      paths.where(conflicted.contains),
+    );
     if (holding.isNotEmpty) {
       return Failure<void, GitFailure>(GitConflictMarkersPresent(holding));
     }
-    return gitFor(space).stage(paths);
+    return git.stage(paths);
   });
 
   /// [paths] taken back out of the index, the working tree left alone.
@@ -56,30 +81,32 @@ final class StageChangesUseCase with UseCase {
     List<RepoRelativePathValueObject> paths,
   ) => guard(() => gitFor(space).unstage(paths));
 
-  /// Which of [paths] still read as conflicted, in the order given.
+  /// Which of [paths] — the ones git calls conflicted — still hold a marker
+  /// line, in the order given.
   ///
-  /// The check is the **text**, never git's `u` record: resolving happens in
-  /// the buffer and staging is how the resolution is declared, so refusing
-  /// what git still calls conflicted would refuse the way out.
+  /// The check is the **text**, never git's `u` record alone: resolving
+  /// happens in the buffer and staging is how the resolution is declared, so
+  /// refusing everything git still calls conflicted would refuse the way out.
   ///
-  /// A path outside the space is not read and not refused. The changes list
-  /// is the repository's, so it can name a file this space cannot open — and
-  /// somebody who resolved that one in another editor has to be able to
-  /// finish here.
+  /// A path outside the space is read through the repository: the changes
+  /// list is the repository's, and one resolved in another editor reads
+  /// clean and stages here like any other.
   Future<List<String>> _pathsHoldingMarkers(
     SpaceEntity space,
-    List<RepoRelativePathValueObject> paths,
+    Iterable<RepoRelativePathValueObject> paths,
   ) async {
-    final DocumentRepository documents = documentsFor(space);
     final List<String> holding = <String>[];
     for (final RepoRelativePathValueObject path in paths) {
       final SpaceRelativePathValueObject? within = space.toSpaceRelative(path);
-      if (within == null) {
+      final SpaceEntity? repository = space.repositorySpace;
+      if (within == null && repository == null) {
         continue;
       }
-      final Result<DocumentEntity, DocumentFailure> read = await documents.read(
-        within,
-      );
+      final Result<DocumentEntity, DocumentFailure> read = within != null
+          ? await documentsFor(space).read(within)
+          : await documentsFor(
+              repository!,
+            ).read(SpaceRelativePathValueObject(path.value));
       // A file that cannot be read is not a file with a marker. Whatever is
       // wrong with it, git is about to report it too.
       if (read case Success<DocumentEntity, DocumentFailure>(

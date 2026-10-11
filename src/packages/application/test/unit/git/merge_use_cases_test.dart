@@ -166,6 +166,46 @@ void main() {
         isA<UnexpectedFailure>(),
       );
     });
+
+    // Refused here, whatever the menu drew: it would end the merge and
+    // write over the conflicted files.
+    test('mid-merge it is refused, and git is never asked', () async {
+      git.state = const MergeStateValueObject(
+        inProgress: true,
+        message: "Merge branch 'main'",
+      );
+
+      final Result<void, AppFailure> result = await discarding().discard(docs);
+
+      expect(
+        (result as Failure<void, AppFailure>).failure,
+        isA<GitMergeConflict>(),
+      );
+      expect(git.discarded, 0);
+      expect(observability.captured, isEmpty);
+    });
+
+    // It would unstage everything and then fail, half done.
+    test('before the first commit it is refused, and git is never '
+        'asked', () async {
+      git.hasCommits = false;
+
+      final Result<void, AppFailure> result = await discarding().discard(docs);
+
+      expect(
+        (result as Failure<void, AppFailure>).failure,
+        const GitNoCommitsYet(),
+      );
+      expect(git.discarded, 0);
+    });
+
+    test('a merge state git will not give discards nothing', () async {
+      git.failure = const GitOperationFailed();
+
+      await discarding().discard(docs);
+
+      expect(git.discarded, 0);
+    });
   });
 }
 
@@ -191,6 +231,15 @@ final class _Git implements GitRepository {
         ? Success<MergeStateValueObject, GitFailure>(state)
         : Failure<MergeStateValueObject, GitFailure>(refused);
   }
+
+  /// Whether the branch has a commit; one, unless a test says otherwise.
+  bool hasCommits = true;
+
+  @override
+  Future<Result<CommitShaValueObject?, GitFailure>> head() async =>
+      Success<CommitShaValueObject?, GitFailure>(
+        hasCommits ? CommitShaValueObject('a' * 40) : null,
+      );
 
   @override
   Future<Result<void, GitFailure>> discardAll() async {

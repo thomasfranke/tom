@@ -16,15 +16,20 @@ import 'package:tom_ui/tom_ui.dart';
 /// under a cursor loses what is being typed.
 class BranchesFieldWidget extends ConsumerStatefulWidget {
   /// Creates the box, labelled [hint].
-  const BranchesFieldWidget({required this.hint, super.key});
+  const BranchesFieldWidget({required this.hint, this.onSubmit, super.key});
 
   /// What the box is for, in the words the design uses.
   final String hint;
 
+  /// Enter in the box — creating the branch, when it is the name's.
+  final VoidCallback? onSubmit;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(StringProperty('hint', hint));
+    properties
+      ..add(StringProperty('hint', hint))
+      ..add(ObjectFlagProperty<VoidCallback?>.has('onSubmit', onSubmit));
   }
 
   @override
@@ -81,6 +86,7 @@ class _BranchesFieldWidgetState extends ConsumerState<BranchesFieldWidget> {
         controller: _controller,
         focusNode: _focus,
         onChanged: ref.read(branchesProvider.notifier).type,
+        onSubmit: widget.onSubmit,
         hint: widget.hint,
         fontSize: BranchesDesign.note,
       ),

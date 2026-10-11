@@ -25,6 +25,17 @@ void main() {
   group('tryParse refuses what git would refuse', () {
     test('empty', () => expect(BranchNameValueObject.tryParse(''), isNull));
 
+    test('a leading dash, which git would read as an option', () {
+      expect(BranchNameValueObject.tryParse('-D'), isNull);
+      expect(BranchNameValueObject.tryParse('--force'), isNull);
+      expect(BranchNameValueObject.tryParse('-'), isNull);
+    });
+
+    test('a dash anywhere else is ordinary', () {
+      expect(BranchNameValueObject.tryParse('feat/-wip')?.value, 'feat/-wip');
+      expect(BranchNameValueObject.tryParse('a-b')?.value, 'a-b');
+    });
+
     test('a leading slash', () {
       expect(BranchNameValueObject.tryParse('/main'), isNull);
     });

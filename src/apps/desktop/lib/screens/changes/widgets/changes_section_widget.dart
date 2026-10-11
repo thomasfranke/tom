@@ -66,19 +66,29 @@ class ChangesSectionWidget extends StatelessWidget {
                 color: colors.textMuted,
               ),
             ),
-            const Spacer(),
-            InkWell(
-              onTap: onAction,
-              borderRadius: BorderRadius.circular(TomMetrics.radiusTight),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  action,
-                  style: TextStyle(
-                    fontSize: ChangesDesign.action,
-                    height: 1.3,
-                    fontWeight: FontWeight.w500,
-                    color: onAction == null ? colors.textMuted : colors.accent,
+            // The slack is the action's: a translation longer than the
+            // column is cut there rather than pushing the row off its edge.
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: InkWell(
+                  onTap: onAction,
+                  borderRadius: BorderRadius.circular(TomMetrics.radiusTight),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      action,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: ChangesDesign.action,
+                        height: 1.3,
+                        fontWeight: FontWeight.w500,
+                        color: onAction == null
+                            ? colors.textMuted
+                            : colors.accent,
+                      ),
+                    ),
                   ),
                 ),
               ),

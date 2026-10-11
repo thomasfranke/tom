@@ -94,6 +94,16 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
     AppFailure? cause,
   }) = GitClientPushRejected;
 
+  /// The remote refused a push because it protects the branch.
+  ///
+  /// Its own variant because trying again answers the same for ever
+  /// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
+  const factory GitClientFailure.branchProtected(
+    /// What git wrote to stderr, verbatim. For diagnostics — never parsed.
+    String stderr, {
+    AppFailure? cause,
+  }) = GitClientBranchProtected;
+
   /// A merge — a pull's second half — refused to start, because it would
   /// overwrite changes nobody committed, tracked or not.
   const factory GitClientFailure.localChangesOverwritten(
@@ -127,6 +137,16 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
     String path, {
     AppFailure? cause,
   }) = GitClientPathNotInRevision;
+
+  /// Paths to be deleted as never committed are in `HEAD`.
+  ///
+  /// Nothing was deleted: the caller's reading of the repository was stale,
+  /// and a committed file is one git can put back instead.
+  const factory GitClientFailure.pathCommitted(
+    /// The ones `HEAD` holds, relative to the repository root.
+    List<String> paths, {
+    AppFailure? cause,
+  }) = GitClientPathCommitted;
 
   /// The command was refused before it started: somebody said no at the
   /// gate ([Decision 38](../../../../../../docs/technical/decisions/038-a-command-waits-at-a-gate-in-tom-core.md)).

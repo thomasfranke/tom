@@ -25,6 +25,37 @@ final class DiscardAllChangesUseCase with UseCase {
   final Observability observability;
 
   /// Puts every tracked file of [space]'s repository back as `HEAD` has it.
-  Future<Result<void, AppFailure>> discard(SpaceEntity space) =>
-      guard(() => gitFor(space).discardAll());
+  ///
+  /// **Refused in two states, here and not only by the menu that hides it**,
+  /// because the list a menu was drawn from can be stale and git itself
+  /// refuses neither. Mid-merge it would end the merge and write over the
+  /// conflicted files — `GitMergeConflict`, since `Abort the pull` is the
+  /// way back. Before the first commit it would unstage everything and then
+  /// fail — `GitNoCommitsYet`.
+  Future<Result<void, AppFailure>> discard(SpaceEntity space) => guard(
+    () async {
+      final GitRepository git = gitFor(space);
+      switch (await git.mergeState()) {
+        case Failure<MergeStateValueObject, GitFailure>(
+          failure: final GitFailure failure,
+        ):
+          return Failure<void, GitFailure>(failure);
+        case Success<MergeStateValueObject, GitFailure>(
+          value: MergeStateValueObject(inProgress: true),
+        ):
+          return const Failure<void, GitFailure>(GitMergeConflict(<String>[]));
+        case Success<MergeStateValueObject, GitFailure>():
+      }
+      switch (await git.head()) {
+        case Failure<CommitShaValueObject?, GitFailure>(
+          failure: final GitFailure failure,
+        ):
+          return Failure<void, GitFailure>(failure);
+        case Success<CommitShaValueObject?, GitFailure>(value: null):
+          return const Failure<void, GitFailure>(GitNoCommitsYet());
+        case Success<CommitShaValueObject?, GitFailure>():
+      }
+      return git.discardAll();
+    },
+  );
 }

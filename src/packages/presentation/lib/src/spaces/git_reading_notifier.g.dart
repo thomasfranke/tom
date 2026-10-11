@@ -69,7 +69,7 @@ final class GitReadingNotifierProvider
 }
 
 String _$gitReadingNotifierHash() =>
-    r'a0789eef72ef6a93165272cb8da399cbb5d7df6f';
+    r'86bae46ea227b6d33349a41166a704f309d5e237';
 
 /// Reads where the repository stands and writes it into
 /// [SpaceSessionState.git] and [SpaceSessionState.merge], for everyone who

@@ -156,14 +156,15 @@ void main() {
     expect(find.text('main'), findsOneWidget);
   });
 
-  testWidgets('a detached HEAD is named as that, not left blank', (
+  testWidgets('a repository on no branch says Not on a branch', (
     WidgetTester tester,
   ) async {
-    // A state to get out of, not a missing value
+    // A state to get out of, not a missing value, and never `detached`
     // (`docs/product/git-workflow/branch-switch/doc.md`).
     await pumpControl(tester, status: statusOf(isDetached: true));
 
-    expect(find.text('detached HEAD'), findsOneWidget);
+    expect(find.text('Not on a branch'), findsOneWidget);
+    expect(find.textContaining('etached'), findsNothing);
   });
 
   group('the popover', () {
@@ -252,6 +253,36 @@ void main() {
       );
     });
 
+    testWidgets('Enter in the name creates the branch, as the button does', (
+      WidgetTester tester,
+    ) async {
+      await pumpControl(tester, status: statusOf(branch: 'main'));
+      await openIt(tester);
+      await tester.tap(find.text('Create branch…'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'feat/three');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(git.created, <String>['feat/three']);
+    });
+
+    testWidgets('Enter on a name the button would refuse creates nothing', (
+      WidgetTester tester,
+    ) async {
+      await pumpControl(tester, status: statusOf(branch: 'main'));
+      await openIt(tester);
+      await tester.tap(find.text('Create branch…'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'fix/two');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(git.created, isEmpty);
+    });
+
     testWidgets('and so is a name git would not accept', (
       WidgetTester tester,
     ) async {
@@ -264,6 +295,23 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Not a name git accepts'), findsOneWidget);
+    });
+
+    testWidgets('a name beginning with a dash is refused, creating nothing', (
+      WidgetTester tester,
+    ) async {
+      await pumpControl(tester, status: statusOf(branch: 'main'));
+      await openIt(tester);
+      await tester.tap(find.text('Create branch…'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '-x');
+      await tester.pumpAndSettle();
+      expect(find.text('Not a name git accepts'), findsOneWidget);
+
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(git.created, isEmpty);
     });
   });
 

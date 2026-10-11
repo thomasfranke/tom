@@ -67,6 +67,60 @@ void main() {
 
   tearDown(() => tempDir.deleteSync(recursive: true));
 
+  group('deleting a row as never committed', () {
+    final RepoRelativePathValueObject guide = RepoRelativePathValueObject(
+      'guide.md',
+    );
+
+    setUp(() {
+      write('index.md', '# Index\n');
+      git(<String>['add', 'index.md']);
+      git(<String>['commit', '--quiet', '-m', 'first']);
+      write('guide.md', '# Guide\n');
+    });
+
+    test('deletes a file git never had', () async {
+      final Result<void, GitFailure> result = await repository.discard(
+        DiscardKindEnum.delete,
+        <RepoRelativePathValueObject>[guide],
+      );
+
+      expect(result, isA<Success<void, GitFailure>>());
+      expect(File('$repoPath/guide.md').existsSync(), isFalse);
+    });
+
+    // The status was read, the row drawn as new — and then somebody
+    // committed the file in the terminal.
+    test('refuses one committed since the list was read, and keeps '
+        'it', () async {
+      final StatusEntryValueObject asListed = valueOf(
+        await repository.status(),
+      ).entries.single;
+      expect(DiscardKindEnum.of(asListed), DiscardKindEnum.delete);
+      git(<String>['add', 'guide.md']);
+      git(<String>['commit', '--quiet', '-m', 'meanwhile']);
+      write('guide.md', '# Guide, edited since\n');
+
+      final Result<void, GitFailure> result = await repository.discard(
+        DiscardKindEnum.of(asListed)!,
+        <RepoRelativePathValueObject>[asListed.path],
+      );
+
+      expect(
+        (result as Failure<void, GitFailure>).failure,
+        isA<GitPathCommitted>().having(
+          (GitPathCommitted it) => it.paths,
+          'the files named',
+          <String>['guide.md'],
+        ),
+      );
+      expect(
+        File('$repoPath/guide.md').readAsStringSync(),
+        '# Guide, edited since\n',
+      );
+    });
+  });
+
   group('a repository with nothing in it yet', () {
     test('has an empty history rather than a failure', () async {
       expect(valueOf(await repository.history()), isEmpty);

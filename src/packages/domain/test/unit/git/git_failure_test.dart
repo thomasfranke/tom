@@ -21,8 +21,13 @@ void main() {
       GitRemoteNotFound() => 'Nothing to clone there',
       GitCloneDestinationTaken(path: final String path) => '$path is taken',
       GitPushRejected() => 'The remote moved first',
+      GitBranchProtected() => 'The remote protects this branch',
+      GitTooOld(found: final String found) => 'TOM needs git 2.41; has $found',
       GitLocalChangesOverwritten(paths: final List<String> paths) =>
         '${paths.length} uncommitted files in the way',
+      GitNoCommitsYet() => 'Nothing committed yet',
+      GitPathCommitted(paths: final List<String> paths) =>
+        '${paths.length} files are in the last commit',
       GitTimedOut() => 'That took too long',
       GitPathNotInRevision(path: final String path) =>
         'No earlier version of $path',
@@ -55,7 +60,20 @@ void main() {
       );
       expect(headline(const GitPushRejected()), 'The remote moved first');
       expect(
+        headline(const GitBranchProtected()),
+        'The remote protects this branch',
+      );
+      expect(
+        headline(const GitTooOld('2.39.2')),
+        'TOM needs git 2.41; has 2.39.2',
+      );
+      expect(
         headline(const GitLocalChangesOverwritten(<String>['a.md'])),
+        startsWith('1'),
+      );
+      expect(headline(const GitNoCommitsYet()), 'Nothing committed yet');
+      expect(
+        headline(const GitPathCommitted(<String>['a.md'])),
         startsWith('1'),
       );
       expect(headline(const GitTimedOut()), 'That took too long');

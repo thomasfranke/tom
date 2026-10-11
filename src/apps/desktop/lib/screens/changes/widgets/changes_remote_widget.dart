@@ -47,14 +47,21 @@ class ChangesRemoteWidget extends ConsumerWidget {
     );
     if (git == null) {
       // Nothing has read git yet: a button that cannot say what it would do
-      // is worse than no button.
-      return const SizedBox.shrink();
+      // is worse than no button. A first read that was denied still says so.
+      return ref.watch(gitReadingProvider) is GitReadingStale
+          ? const Padding(
+              padding: EdgeInsets.symmetric(horizontal: ChangesDesign.inset),
+              child: _StaleLineWidget(),
+            )
+          : const SizedBox.shrink();
     }
     final RemoteState remote = ref.watch(remoteProvider);
     final RemoteNotifier notifier = ref.read(remoteProvider.notifier);
     // What the last request said about the link: the line under the buttons,
     // and whether they stay live (`push-pull/when-the-link-is-broken/doc.md`).
-    final LinkStateEnum? link = remote.link;
+    final LinkStateEnum? link = ref.watch(remoteLinkProvider);
+    final bool isAwaiting = ref.watch(remoteAwaitingApprovalProvider);
+    final bool isStale = ref.watch(gitReadingProvider) is GitReadingStale;
     final bool isReachable = link?.isPressable ?? true;
     // Ahead is counted against a remote, so with none the number goes.
     final int ahead = link == LinkStateEnum.noRemote ? 0 : git.ahead;
@@ -77,6 +84,7 @@ class ChangesRemoteWidget extends ConsumerWidget {
             // The column's content, edge to edge — 248 at the width the
             // column opens at, which is what the boards draw.
             width: double.infinity,
+            isAwaitingApproval: isAwaiting,
             isPrimary: true,
             // Nothing to publish is said by the button, not reported after.
             onPressed: ahead == 0 || !isReachable
@@ -96,6 +104,7 @@ class ChangesRemoteWidget extends ConsumerWidget {
                   action: RemoteActionEnum.fetch,
                   remote: remote,
                   width: double.infinity,
+                  isAwaitingApproval: isAwaiting,
                   onPressed: isReachable
                       ? () => unawaited(notifier.fetch())
                       : null,
@@ -110,6 +119,7 @@ class ChangesRemoteWidget extends ConsumerWidget {
                   action: RemoteActionEnum.pull,
                   remote: remote,
                   width: double.infinity,
+                  isAwaitingApproval: isAwaiting,
                   onPressed: isReachable
                       ? () => unawaited(notifier.pull())
                       : null,
@@ -117,7 +127,11 @@ class ChangesRemoteWidget extends ConsumerWidget {
               ),
             ],
           ),
-          if (link != null)
+          // A read that was denied leaves the last reading on screen, and
+          // the foot says it is not current.
+          if (isStale)
+            const _StaleLineWidget()
+          else if (link != null)
             _LinkLineWidget(link: link)
           else if (standing(l10n, git) case final String sentence)
             _StandingLineWidget(sentence: sentence),
@@ -145,6 +159,54 @@ class ChangesRemoteWidget extends ConsumerWidget {
         name,
       ),
     };
+  }
+}
+
+/// `Out of date: a read was denied.` with `Reload` beside it: the window
+/// shows what was read last, and asking again is the person's to do
+/// (`docs/product/git-workflow/approvals/doc.md`).
+class _StaleLineWidget extends ConsumerWidget {
+  const _StaleLineWidget();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final TomColors colors = TomColors.of(context);
+    return Padding(
+      // The foot hangs from the column's bottom, so the board's words, 2
+      // higher than the link lines', are lifted by room under them and the
+      // same two taken off the top.
+      padding: const EdgeInsets.only(top: _LinkLineWidget.top - 2, bottom: 2),
+      child: Row(
+        children: <Widget>[
+          // No glyph: the board draws the sentence from the column's edge.
+          Expanded(
+            child: Text(
+              context.l10n.changesOutOfDate,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: _LinkLineWidget.text,
+                height: 1.4,
+                color: colors.modified,
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: () =>
+                unawaited(ref.read(gitReadingProvider.notifier).refresh()),
+            child: Text(
+              context.l10n.changesOutOfDateReload,
+              style: TextStyle(
+                fontSize: _LinkLineWidget.text,
+                height: 1.4,
+                fontWeight: FontWeight.w500,
+                color: colors.accent,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -255,7 +317,12 @@ class _ActionWidget extends StatelessWidget {
     required this.onPressed,
     this.count = 0,
     this.isPrimary = false,
+    this.isAwaitingApproval = false,
   });
+
+  /// Whether the pressed one is still waiting for somebody to say yes: it
+  /// says so, and nothing is on the network yet.
+  final bool isAwaitingApproval;
 
   final String label;
   final TomGlyphEnum glyph;
@@ -286,6 +353,7 @@ class _ActionWidget extends StatelessWidget {
       ..add(DoubleProperty('width', width))
       ..add(IntProperty('count', count))
       ..add(DiagnosticsProperty<bool>('isPrimary', isPrimary))
+      ..add(DiagnosticsProperty<bool>('isAwaitingApproval', isAwaitingApproval))
       ..add(ObjectFlagProperty<VoidCallback?>.has('onPressed', onPressed));
   }
 
@@ -296,7 +364,11 @@ class _ActionWidget extends StatelessWidget {
         remote is RemoteWorking && (remote as RemoteWorking).action == action;
     // The pressed one names itself so nothing has to guess which of the
     // three is in flight; the other two only go dim.
-    final String text = isThisOne ? _working(context.l10n) : label;
+    final String text = isThisOne
+        ? (isAwaitingApproval
+              ? context.l10n.changesWaitingForApproval
+              : _working(context.l10n))
+        : label;
     final bool enabled = !remote.isBusy && onPressed != null;
     final Color ink = enabled
         ? (isPrimary ? colors.textPrimary : colors.textSecondary)

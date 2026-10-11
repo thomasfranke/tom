@@ -15,7 +15,8 @@ import 'package:tom_infra/tom_infra.dart';
 /// space is. What is here is the order the questions are asked in and the
 /// translations; the walk and its `.git/` rule are the source's
 /// ([Decision 25](../../../../../../docs/technical/decisions/025-a-repository-reads-through-a-data-source.md)).
-final class SpaceRepositoryImpl implements SpaceRepository {
+final class SpaceRepositoryImpl
+    implements SpaceRepository, SpaceLocationRepository {
   /// Creates a repository over [spaces].
   const SpaceRepositoryImpl({required this.spaces});
 
@@ -24,6 +25,16 @@ final class SpaceRepositoryImpl implements SpaceRepository {
 
   @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async {
+    final Result<SpaceEntity, AppFailure> folderOnly = await openFolder(folder);
+    return switch (folderOnly) {
+      Success<SpaceEntity, AppFailure>(value: final SpaceEntity space) =>
+        locate(space),
+      Failure<SpaceEntity, AppFailure>() => folderOnly,
+    };
+  }
+
+  @override
+  Future<Result<SpaceEntity, AppFailure>> openFolder(String folder) async {
     // The disk is asked before git, because git reports a missing folder as
     // "not a repository" and the two send the user somewhere different.
     final Result<bool, SpaceFailure> exists = await spaces
@@ -49,6 +60,39 @@ final class SpaceRepositoryImpl implements SpaceRepository {
       return Failure<SpaceEntity, AppFailure>(failure);
     }
     final String root = (resolved as Success<String, SpaceFailure>).value;
+    return Success<SpaceEntity, AppFailure>(
+      SpaceEntity(
+        root: root,
+        repositoryRoot: null,
+        name: SpaceEntity.nameOfFolder(root),
+      ),
+    );
+  }
+
+  @override
+  Future<Result<SpaceEntity, AppFailure>> locate(SpaceEntity space) async {
+    final String root = space.root;
+    final String folder = space.root;
+
+    // An older git is refused before it is asked anything else: it would
+    // fail later and further from the cause
+    // (`docs/product/home/opening-a-space/doc.md`).
+    final Result<String, GitClientFailure> version = await spaces.gitVersionOf(
+      root,
+    );
+    switch (version) {
+      case Failure<String, GitClientFailure>(
+        failure: final GitClientFailure failure,
+      ):
+        return Failure<SpaceEntity, AppFailure>(_asGitFailure(failure, folder));
+      case Success<String, GitClientFailure>(value: final String said):
+        final GitVersionValueObject? found = GitVersionValueObject.tryParse(
+          said,
+        );
+        if (found != null && !found.isSupported) {
+          return Failure<SpaceEntity, AppFailure>(GitTooOld(found.text));
+        }
+    }
 
     final Result<String, GitClientFailure> located = await spaces
         .repositoryRootOf(root);
@@ -59,11 +103,7 @@ final class SpaceRepositoryImpl implements SpaceRepository {
         failure: GitClientNotARepository(),
       ):
         return Success<SpaceEntity, AppFailure>(
-          SpaceEntity(
-            root: root,
-            repositoryRoot: null,
-            name: SpaceEntity.nameOfFolder(root),
-          ),
+          SpaceEntity(root: root, repositoryRoot: null, name: space.name),
         );
       case Failure<String, GitClientFailure>(
         failure: final GitClientFailure failure,
@@ -81,7 +121,7 @@ final class SpaceRepositoryImpl implements SpaceRepository {
           SpaceEntity(
             root: root,
             repositoryRoot: repositoryRoot,
-            name: SpaceEntity.nameOfFolder(root),
+            name: space.name,
           ),
         );
     }
@@ -181,11 +221,13 @@ final class SpaceRepositoryImpl implements SpaceRepository {
         GitClientMergeConflict() ||
         GitClientAuthenticationFailed() ||
         GitClientPushRejected() ||
+        GitClientBranchProtected() ||
         GitClientLocalChangesOverwritten() ||
         GitClientNetworkUnavailable() ||
         GitClientNoRemote() ||
         GitClientRemoteNotFound() ||
         GitClientDestinationTaken() ||
-        GitClientPathNotInRevision() => GitOperationFailed(cause: failure),
+        GitClientPathNotInRevision() ||
+        GitClientPathCommitted() => GitOperationFailed(cause: failure),
       };
 }

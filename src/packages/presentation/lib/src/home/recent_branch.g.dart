@@ -85,7 +85,7 @@ final class RecentBranchProvider
   }
 }
 
-String _$recentBranchHash() => r'36786e1eef77fc8eb116660ad2054bf8222a60a3';
+String _$recentBranchHash() => r'b60be75e6da90bf1336bf6225496f2a2126bd8c5';
 
 /// The branch [recent] was left on, or null when there is none to name
 /// (`docs/product/home/recent-spaces/doc.md`).

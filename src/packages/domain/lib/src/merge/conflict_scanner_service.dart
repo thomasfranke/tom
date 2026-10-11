@@ -27,14 +27,21 @@ final class ConflictScannerService {
   const ConflictScannerService();
 
   static const String _start = '<<<<<<<';
+  static const String _base = '|||||||';
   static const String _middle = '=======';
   static const String _end = '>>>>>>>';
 
   /// Every conflict in [text], in the order they appear.
   ///
-  /// A region needs all three markers, each at the start of its own line and
-  /// in order. Anything less is text: a document *about* merging quotes these
-  /// markers, and quoting them must not turn a paragraph into a conflict.
+  /// A region needs its markers each at the start of a line of its own and
+  /// in order: the opening, the separator, the closing. Anything less is
+  /// text: a document *about* merging quotes these markers, and quoting them
+  /// must not turn a paragraph into a conflict.
+  ///
+  /// With `merge.conflictStyle` set to `diff3` or `zdiff3` git writes a
+  /// fourth line, `|||||||`, and under it what both sides started from. That
+  /// stretch is inside the region and on neither side, so no choice can write
+  /// it — or its marker — into the document.
   List<ConflictRegionValueObject> scan(String text) {
     if (!text.contains(_start)) {
       return const <ConflictRegionValueObject>[];
@@ -49,7 +56,7 @@ final class ConflictScannerService {
     int index = 0;
     while (index < lines.length) {
       final String line = lines[index];
-      if (!line.startsWith(_start)) {
+      if (!_is(line, _start)) {
         offset += line.length + 1;
         index += 1;
         continue;
@@ -63,16 +70,33 @@ final class ConflictScannerService {
       final List<String> current = <String>[];
       int? middle;
       while (scan < lines.length) {
-        if (lines[scan].startsWith(_middle)) {
+        if (_is(lines[scan], _middle) || _is(lines[scan], _base)) {
           middle = scan;
           break;
         }
-        if (lines[scan].startsWith(_start)) {
+        if (_is(lines[scan], _start)) {
           break;
         }
         current.add(lines[scan]);
         cursor += lines[scan].length + 1;
         scan += 1;
+      }
+      if (middle != null && _is(lines[middle], _base)) {
+        // The base section: walked over, kept by nobody.
+        cursor += lines[middle].length + 1;
+        scan = middle + 1;
+        middle = null;
+        while (scan < lines.length) {
+          if (_is(lines[scan], _middle)) {
+            middle = scan;
+            break;
+          }
+          if (_isAnyMarker(lines[scan])) {
+            break;
+          }
+          cursor += lines[scan].length + 1;
+          scan += 1;
+        }
       }
       if (middle == null) {
         // An opening with no separator is not a conflict; carry on from the
@@ -87,11 +111,11 @@ final class ConflictScannerService {
       final List<String> incoming = <String>[];
       int? closing;
       while (scan < lines.length) {
-        if (lines[scan].startsWith(_end)) {
+        if (_is(lines[scan], _end)) {
           closing = scan;
           break;
         }
-        if (lines[scan].startsWith(_start) || lines[scan].startsWith(_middle)) {
+        if (_isAnyMarker(lines[scan])) {
           break;
         }
         incoming.add(lines[scan]);
@@ -172,13 +196,39 @@ final class ConflictScannerService {
     return segments;
   }
 
-  /// Whether [text] still holds a marker of any kind.
+  /// Whether [text] still holds a marker of any kind: **one line is enough**,
+  /// with no region around it.
   ///
   /// This is what refuses to stage a document mid-merge: git will happily
-  /// record a marker somebody staged, and `<<<<<<<` committed into
-  /// documentation is read by everyone who opens the file next
+  /// record a marker somebody staged, and a region half resolved by hand
+  /// leaves one behind that [scan] no longer sees
   /// (`docs/product/git-workflow/push-pull/when-a-pull-conflicts/doc.md`).
-  bool holdsMarker(String text) => scan(text).isNotEmpty;
+  /// Stricter than [scan] on purpose, so only ask it about a document git
+  /// calls conflicted — elsewhere a lone `=======` is a heading's underline.
+  bool holdsMarker(String text) => text.split('\n').any(_isAnyMarker);
+
+  /// Whether [line] is any of the four marker lines.
+  static bool _isAnyMarker(String line) =>
+      _is(line, _start) ||
+      _is(line, _base) ||
+      _is(line, _middle) ||
+      _is(line, _end);
+
+  /// Whether [line] is the [marker] line as git writes it: the seven
+  /// characters at the very start, then nothing or a label.
+  ///
+  /// Exactly seven, so a heading underlined with eight `=` and a table row
+  /// opening with empty cells stay what they are.
+  static bool _is(String line, String marker) {
+    if (!line.startsWith(marker)) {
+      return false;
+    }
+    if (line.length == marker.length) {
+      return true;
+    }
+    final String next = line[marker.length];
+    return next == ' ' || next == '\r';
+  }
 
   /// What follows a marker on its own line, trimmed; empty when it says
   /// nothing.

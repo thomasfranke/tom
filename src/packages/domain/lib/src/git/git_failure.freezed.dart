@@ -86,22 +86,26 @@ extension GitFailurePatterns on GitFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( GitNotInstalled value)?  notInstalled,TResult Function( GitNotARepository value)?  notARepository,TResult Function( GitMergeConflict value)?  mergeConflict,TResult Function( GitConflictMarkersPresent value)?  conflictMarkersPresent,TResult Function( GitAuthenticationFailed value)?  authenticationFailed,TResult Function( GitNetworkUnavailable value)?  networkUnavailable,TResult Function( GitNoRemote value)?  noRemote,TResult Function( GitRemoteNotFound value)?  remoteNotFound,TResult Function( GitCloneDestinationTaken value)?  cloneDestinationTaken,TResult Function( GitDetachedHead value)?  detachedHead,TResult Function( GitPushRejected value)?  pushRejected,TResult Function( GitLocalChangesOverwritten value)?  localChangesOverwritten,TResult Function( GitTimedOut value)?  timedOut,TResult Function( GitPathNotInRevision value)?  pathNotInRevision,TResult Function( GitCommandDenied value)?  commandDenied,TResult Function( GitOperationFailed value)?  operationFailed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( GitNotInstalled value)?  notInstalled,TResult Function( GitNotARepository value)?  notARepository,TResult Function( GitMergeConflict value)?  mergeConflict,TResult Function( GitConflictMarkersPresent value)?  conflictMarkersPresent,TResult Function( GitTooOld value)?  tooOld,TResult Function( GitAuthenticationFailed value)?  authenticationFailed,TResult Function( GitNetworkUnavailable value)?  networkUnavailable,TResult Function( GitNoRemote value)?  noRemote,TResult Function( GitRemoteNotFound value)?  remoteNotFound,TResult Function( GitCloneDestinationTaken value)?  cloneDestinationTaken,TResult Function( GitDetachedHead value)?  detachedHead,TResult Function( GitPushRejected value)?  pushRejected,TResult Function( GitBranchProtected value)?  branchProtected,TResult Function( GitLocalChangesOverwritten value)?  localChangesOverwritten,TResult Function( GitNoCommitsYet value)?  noCommitsYet,TResult Function( GitPathCommitted value)?  pathCommitted,TResult Function( GitTimedOut value)?  timedOut,TResult Function( GitPathNotInRevision value)?  pathNotInRevision,TResult Function( GitCommandDenied value)?  commandDenied,TResult Function( GitOperationFailed value)?  operationFailed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
 return notInstalled(_that);case GitNotARepository() when notARepository != null:
 return notARepository(_that);case GitMergeConflict() when mergeConflict != null:
 return mergeConflict(_that);case GitConflictMarkersPresent() when conflictMarkersPresent != null:
-return conflictMarkersPresent(_that);case GitAuthenticationFailed() when authenticationFailed != null:
+return conflictMarkersPresent(_that);case GitTooOld() when tooOld != null:
+return tooOld(_that);case GitAuthenticationFailed() when authenticationFailed != null:
 return authenticationFailed(_that);case GitNetworkUnavailable() when networkUnavailable != null:
 return networkUnavailable(_that);case GitNoRemote() when noRemote != null:
 return noRemote(_that);case GitRemoteNotFound() when remoteNotFound != null:
 return remoteNotFound(_that);case GitCloneDestinationTaken() when cloneDestinationTaken != null:
 return cloneDestinationTaken(_that);case GitDetachedHead() when detachedHead != null:
 return detachedHead(_that);case GitPushRejected() when pushRejected != null:
-return pushRejected(_that);case GitLocalChangesOverwritten() when localChangesOverwritten != null:
-return localChangesOverwritten(_that);case GitTimedOut() when timedOut != null:
+return pushRejected(_that);case GitBranchProtected() when branchProtected != null:
+return branchProtected(_that);case GitLocalChangesOverwritten() when localChangesOverwritten != null:
+return localChangesOverwritten(_that);case GitNoCommitsYet() when noCommitsYet != null:
+return noCommitsYet(_that);case GitPathCommitted() when pathCommitted != null:
+return pathCommitted(_that);case GitTimedOut() when timedOut != null:
 return timedOut(_that);case GitPathNotInRevision() when pathNotInRevision != null:
 return pathNotInRevision(_that);case GitCommandDenied() when commandDenied != null:
 return commandDenied(_that);case GitOperationFailed() when operationFailed != null:
@@ -123,22 +127,26 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( GitNotInstalled value)  notInstalled,required TResult Function( GitNotARepository value)  notARepository,required TResult Function( GitMergeConflict value)  mergeConflict,required TResult Function( GitConflictMarkersPresent value)  conflictMarkersPresent,required TResult Function( GitAuthenticationFailed value)  authenticationFailed,required TResult Function( GitNetworkUnavailable value)  networkUnavailable,required TResult Function( GitNoRemote value)  noRemote,required TResult Function( GitRemoteNotFound value)  remoteNotFound,required TResult Function( GitCloneDestinationTaken value)  cloneDestinationTaken,required TResult Function( GitDetachedHead value)  detachedHead,required TResult Function( GitPushRejected value)  pushRejected,required TResult Function( GitLocalChangesOverwritten value)  localChangesOverwritten,required TResult Function( GitTimedOut value)  timedOut,required TResult Function( GitPathNotInRevision value)  pathNotInRevision,required TResult Function( GitCommandDenied value)  commandDenied,required TResult Function( GitOperationFailed value)  operationFailed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( GitNotInstalled value)  notInstalled,required TResult Function( GitNotARepository value)  notARepository,required TResult Function( GitMergeConflict value)  mergeConflict,required TResult Function( GitConflictMarkersPresent value)  conflictMarkersPresent,required TResult Function( GitTooOld value)  tooOld,required TResult Function( GitAuthenticationFailed value)  authenticationFailed,required TResult Function( GitNetworkUnavailable value)  networkUnavailable,required TResult Function( GitNoRemote value)  noRemote,required TResult Function( GitRemoteNotFound value)  remoteNotFound,required TResult Function( GitCloneDestinationTaken value)  cloneDestinationTaken,required TResult Function( GitDetachedHead value)  detachedHead,required TResult Function( GitPushRejected value)  pushRejected,required TResult Function( GitBranchProtected value)  branchProtected,required TResult Function( GitLocalChangesOverwritten value)  localChangesOverwritten,required TResult Function( GitNoCommitsYet value)  noCommitsYet,required TResult Function( GitPathCommitted value)  pathCommitted,required TResult Function( GitTimedOut value)  timedOut,required TResult Function( GitPathNotInRevision value)  pathNotInRevision,required TResult Function( GitCommandDenied value)  commandDenied,required TResult Function( GitOperationFailed value)  operationFailed,}){
 final _that = this;
 switch (_that) {
 case GitNotInstalled():
 return notInstalled(_that);case GitNotARepository():
 return notARepository(_that);case GitMergeConflict():
 return mergeConflict(_that);case GitConflictMarkersPresent():
-return conflictMarkersPresent(_that);case GitAuthenticationFailed():
+return conflictMarkersPresent(_that);case GitTooOld():
+return tooOld(_that);case GitAuthenticationFailed():
 return authenticationFailed(_that);case GitNetworkUnavailable():
 return networkUnavailable(_that);case GitNoRemote():
 return noRemote(_that);case GitRemoteNotFound():
 return remoteNotFound(_that);case GitCloneDestinationTaken():
 return cloneDestinationTaken(_that);case GitDetachedHead():
 return detachedHead(_that);case GitPushRejected():
-return pushRejected(_that);case GitLocalChangesOverwritten():
-return localChangesOverwritten(_that);case GitTimedOut():
+return pushRejected(_that);case GitBranchProtected():
+return branchProtected(_that);case GitLocalChangesOverwritten():
+return localChangesOverwritten(_that);case GitNoCommitsYet():
+return noCommitsYet(_that);case GitPathCommitted():
+return pathCommitted(_that);case GitTimedOut():
 return timedOut(_that);case GitPathNotInRevision():
 return pathNotInRevision(_that);case GitCommandDenied():
 return commandDenied(_that);case GitOperationFailed():
@@ -156,22 +164,26 @@ return operationFailed(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( GitNotInstalled value)?  notInstalled,TResult? Function( GitNotARepository value)?  notARepository,TResult? Function( GitMergeConflict value)?  mergeConflict,TResult? Function( GitConflictMarkersPresent value)?  conflictMarkersPresent,TResult? Function( GitAuthenticationFailed value)?  authenticationFailed,TResult? Function( GitNetworkUnavailable value)?  networkUnavailable,TResult? Function( GitNoRemote value)?  noRemote,TResult? Function( GitRemoteNotFound value)?  remoteNotFound,TResult? Function( GitCloneDestinationTaken value)?  cloneDestinationTaken,TResult? Function( GitDetachedHead value)?  detachedHead,TResult? Function( GitPushRejected value)?  pushRejected,TResult? Function( GitLocalChangesOverwritten value)?  localChangesOverwritten,TResult? Function( GitTimedOut value)?  timedOut,TResult? Function( GitPathNotInRevision value)?  pathNotInRevision,TResult? Function( GitCommandDenied value)?  commandDenied,TResult? Function( GitOperationFailed value)?  operationFailed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( GitNotInstalled value)?  notInstalled,TResult? Function( GitNotARepository value)?  notARepository,TResult? Function( GitMergeConflict value)?  mergeConflict,TResult? Function( GitConflictMarkersPresent value)?  conflictMarkersPresent,TResult? Function( GitTooOld value)?  tooOld,TResult? Function( GitAuthenticationFailed value)?  authenticationFailed,TResult? Function( GitNetworkUnavailable value)?  networkUnavailable,TResult? Function( GitNoRemote value)?  noRemote,TResult? Function( GitRemoteNotFound value)?  remoteNotFound,TResult? Function( GitCloneDestinationTaken value)?  cloneDestinationTaken,TResult? Function( GitDetachedHead value)?  detachedHead,TResult? Function( GitPushRejected value)?  pushRejected,TResult? Function( GitBranchProtected value)?  branchProtected,TResult? Function( GitLocalChangesOverwritten value)?  localChangesOverwritten,TResult? Function( GitNoCommitsYet value)?  noCommitsYet,TResult? Function( GitPathCommitted value)?  pathCommitted,TResult? Function( GitTimedOut value)?  timedOut,TResult? Function( GitPathNotInRevision value)?  pathNotInRevision,TResult? Function( GitCommandDenied value)?  commandDenied,TResult? Function( GitOperationFailed value)?  operationFailed,}){
 final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
 return notInstalled(_that);case GitNotARepository() when notARepository != null:
 return notARepository(_that);case GitMergeConflict() when mergeConflict != null:
 return mergeConflict(_that);case GitConflictMarkersPresent() when conflictMarkersPresent != null:
-return conflictMarkersPresent(_that);case GitAuthenticationFailed() when authenticationFailed != null:
+return conflictMarkersPresent(_that);case GitTooOld() when tooOld != null:
+return tooOld(_that);case GitAuthenticationFailed() when authenticationFailed != null:
 return authenticationFailed(_that);case GitNetworkUnavailable() when networkUnavailable != null:
 return networkUnavailable(_that);case GitNoRemote() when noRemote != null:
 return noRemote(_that);case GitRemoteNotFound() when remoteNotFound != null:
 return remoteNotFound(_that);case GitCloneDestinationTaken() when cloneDestinationTaken != null:
 return cloneDestinationTaken(_that);case GitDetachedHead() when detachedHead != null:
 return detachedHead(_that);case GitPushRejected() when pushRejected != null:
-return pushRejected(_that);case GitLocalChangesOverwritten() when localChangesOverwritten != null:
-return localChangesOverwritten(_that);case GitTimedOut() when timedOut != null:
+return pushRejected(_that);case GitBranchProtected() when branchProtected != null:
+return branchProtected(_that);case GitLocalChangesOverwritten() when localChangesOverwritten != null:
+return localChangesOverwritten(_that);case GitNoCommitsYet() when noCommitsYet != null:
+return noCommitsYet(_that);case GitPathCommitted() when pathCommitted != null:
+return pathCommitted(_that);case GitTimedOut() when timedOut != null:
 return timedOut(_that);case GitPathNotInRevision() when pathNotInRevision != null:
 return pathNotInRevision(_that);case GitCommandDenied() when commandDenied != null:
 return commandDenied(_that);case GitOperationFailed() when operationFailed != null:
@@ -192,21 +204,25 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( AppFailure? cause)?  notInstalled,TResult Function( String path,  AppFailure? cause)?  notARepository,TResult Function( List<String> conflictedFiles,  AppFailure? cause)?  mergeConflict,TResult Function( List<String> paths,  AppFailure? cause)?  conflictMarkersPresent,TResult Function( AppFailure? cause)?  authenticationFailed,TResult Function( AppFailure? cause)?  networkUnavailable,TResult Function( AppFailure? cause)?  noRemote,TResult Function( AppFailure? cause)?  remoteNotFound,TResult Function( String path,  AppFailure? cause)?  cloneDestinationTaken,TResult Function( AppFailure? cause)?  detachedHead,TResult Function( AppFailure? cause)?  pushRejected,TResult Function( List<String> paths,  AppFailure? cause)?  localChangesOverwritten,TResult Function( AppFailure? cause)?  timedOut,TResult Function( String path,  AppFailure? cause)?  pathNotInRevision,TResult Function( AppFailure? cause)?  commandDenied,TResult Function( AppFailure? cause)?  operationFailed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( AppFailure? cause)?  notInstalled,TResult Function( String path,  AppFailure? cause)?  notARepository,TResult Function( List<String> conflictedFiles,  AppFailure? cause)?  mergeConflict,TResult Function( List<String> paths,  AppFailure? cause)?  conflictMarkersPresent,TResult Function( String found,  AppFailure? cause)?  tooOld,TResult Function( AppFailure? cause)?  authenticationFailed,TResult Function( AppFailure? cause)?  networkUnavailable,TResult Function( AppFailure? cause)?  noRemote,TResult Function( AppFailure? cause)?  remoteNotFound,TResult Function( String path,  AppFailure? cause)?  cloneDestinationTaken,TResult Function( AppFailure? cause)?  detachedHead,TResult Function( AppFailure? cause)?  pushRejected,TResult Function( AppFailure? cause)?  branchProtected,TResult Function( List<String> paths,  AppFailure? cause)?  localChangesOverwritten,TResult Function( AppFailure? cause)?  noCommitsYet,TResult Function( List<String> paths,  AppFailure? cause)?  pathCommitted,TResult Function( AppFailure? cause)?  timedOut,TResult Function( String path,  AppFailure? cause)?  pathNotInRevision,TResult Function( AppFailure? cause)?  commandDenied,TResult Function( AppFailure? cause)?  operationFailed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
 return notInstalled(_that.cause);case GitNotARepository() when notARepository != null:
 return notARepository(_that.path,_that.cause);case GitMergeConflict() when mergeConflict != null:
 return mergeConflict(_that.conflictedFiles,_that.cause);case GitConflictMarkersPresent() when conflictMarkersPresent != null:
-return conflictMarkersPresent(_that.paths,_that.cause);case GitAuthenticationFailed() when authenticationFailed != null:
+return conflictMarkersPresent(_that.paths,_that.cause);case GitTooOld() when tooOld != null:
+return tooOld(_that.found,_that.cause);case GitAuthenticationFailed() when authenticationFailed != null:
 return authenticationFailed(_that.cause);case GitNetworkUnavailable() when networkUnavailable != null:
 return networkUnavailable(_that.cause);case GitNoRemote() when noRemote != null:
 return noRemote(_that.cause);case GitRemoteNotFound() when remoteNotFound != null:
 return remoteNotFound(_that.cause);case GitCloneDestinationTaken() when cloneDestinationTaken != null:
 return cloneDestinationTaken(_that.path,_that.cause);case GitDetachedHead() when detachedHead != null:
 return detachedHead(_that.cause);case GitPushRejected() when pushRejected != null:
-return pushRejected(_that.cause);case GitLocalChangesOverwritten() when localChangesOverwritten != null:
-return localChangesOverwritten(_that.paths,_that.cause);case GitTimedOut() when timedOut != null:
+return pushRejected(_that.cause);case GitBranchProtected() when branchProtected != null:
+return branchProtected(_that.cause);case GitLocalChangesOverwritten() when localChangesOverwritten != null:
+return localChangesOverwritten(_that.paths,_that.cause);case GitNoCommitsYet() when noCommitsYet != null:
+return noCommitsYet(_that.cause);case GitPathCommitted() when pathCommitted != null:
+return pathCommitted(_that.paths,_that.cause);case GitTimedOut() when timedOut != null:
 return timedOut(_that.cause);case GitPathNotInRevision() when pathNotInRevision != null:
 return pathNotInRevision(_that.path,_that.cause);case GitCommandDenied() when commandDenied != null:
 return commandDenied(_that.cause);case GitOperationFailed() when operationFailed != null:
@@ -228,21 +244,25 @@ return operationFailed(_that.cause);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( AppFailure? cause)  notInstalled,required TResult Function( String path,  AppFailure? cause)  notARepository,required TResult Function( List<String> conflictedFiles,  AppFailure? cause)  mergeConflict,required TResult Function( List<String> paths,  AppFailure? cause)  conflictMarkersPresent,required TResult Function( AppFailure? cause)  authenticationFailed,required TResult Function( AppFailure? cause)  networkUnavailable,required TResult Function( AppFailure? cause)  noRemote,required TResult Function( AppFailure? cause)  remoteNotFound,required TResult Function( String path,  AppFailure? cause)  cloneDestinationTaken,required TResult Function( AppFailure? cause)  detachedHead,required TResult Function( AppFailure? cause)  pushRejected,required TResult Function( List<String> paths,  AppFailure? cause)  localChangesOverwritten,required TResult Function( AppFailure? cause)  timedOut,required TResult Function( String path,  AppFailure? cause)  pathNotInRevision,required TResult Function( AppFailure? cause)  commandDenied,required TResult Function( AppFailure? cause)  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( AppFailure? cause)  notInstalled,required TResult Function( String path,  AppFailure? cause)  notARepository,required TResult Function( List<String> conflictedFiles,  AppFailure? cause)  mergeConflict,required TResult Function( List<String> paths,  AppFailure? cause)  conflictMarkersPresent,required TResult Function( String found,  AppFailure? cause)  tooOld,required TResult Function( AppFailure? cause)  authenticationFailed,required TResult Function( AppFailure? cause)  networkUnavailable,required TResult Function( AppFailure? cause)  noRemote,required TResult Function( AppFailure? cause)  remoteNotFound,required TResult Function( String path,  AppFailure? cause)  cloneDestinationTaken,required TResult Function( AppFailure? cause)  detachedHead,required TResult Function( AppFailure? cause)  pushRejected,required TResult Function( AppFailure? cause)  branchProtected,required TResult Function( List<String> paths,  AppFailure? cause)  localChangesOverwritten,required TResult Function( AppFailure? cause)  noCommitsYet,required TResult Function( List<String> paths,  AppFailure? cause)  pathCommitted,required TResult Function( AppFailure? cause)  timedOut,required TResult Function( String path,  AppFailure? cause)  pathNotInRevision,required TResult Function( AppFailure? cause)  commandDenied,required TResult Function( AppFailure? cause)  operationFailed,}) {final _that = this;
 switch (_that) {
 case GitNotInstalled():
 return notInstalled(_that.cause);case GitNotARepository():
 return notARepository(_that.path,_that.cause);case GitMergeConflict():
 return mergeConflict(_that.conflictedFiles,_that.cause);case GitConflictMarkersPresent():
-return conflictMarkersPresent(_that.paths,_that.cause);case GitAuthenticationFailed():
+return conflictMarkersPresent(_that.paths,_that.cause);case GitTooOld():
+return tooOld(_that.found,_that.cause);case GitAuthenticationFailed():
 return authenticationFailed(_that.cause);case GitNetworkUnavailable():
 return networkUnavailable(_that.cause);case GitNoRemote():
 return noRemote(_that.cause);case GitRemoteNotFound():
 return remoteNotFound(_that.cause);case GitCloneDestinationTaken():
 return cloneDestinationTaken(_that.path,_that.cause);case GitDetachedHead():
 return detachedHead(_that.cause);case GitPushRejected():
-return pushRejected(_that.cause);case GitLocalChangesOverwritten():
-return localChangesOverwritten(_that.paths,_that.cause);case GitTimedOut():
+return pushRejected(_that.cause);case GitBranchProtected():
+return branchProtected(_that.cause);case GitLocalChangesOverwritten():
+return localChangesOverwritten(_that.paths,_that.cause);case GitNoCommitsYet():
+return noCommitsYet(_that.cause);case GitPathCommitted():
+return pathCommitted(_that.paths,_that.cause);case GitTimedOut():
 return timedOut(_that.cause);case GitPathNotInRevision():
 return pathNotInRevision(_that.path,_that.cause);case GitCommandDenied():
 return commandDenied(_that.cause);case GitOperationFailed():
@@ -260,21 +280,25 @@ return operationFailed(_that.cause);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( AppFailure? cause)?  notInstalled,TResult? Function( String path,  AppFailure? cause)?  notARepository,TResult? Function( List<String> conflictedFiles,  AppFailure? cause)?  mergeConflict,TResult? Function( List<String> paths,  AppFailure? cause)?  conflictMarkersPresent,TResult? Function( AppFailure? cause)?  authenticationFailed,TResult? Function( AppFailure? cause)?  networkUnavailable,TResult? Function( AppFailure? cause)?  noRemote,TResult? Function( AppFailure? cause)?  remoteNotFound,TResult? Function( String path,  AppFailure? cause)?  cloneDestinationTaken,TResult? Function( AppFailure? cause)?  detachedHead,TResult? Function( AppFailure? cause)?  pushRejected,TResult? Function( List<String> paths,  AppFailure? cause)?  localChangesOverwritten,TResult? Function( AppFailure? cause)?  timedOut,TResult? Function( String path,  AppFailure? cause)?  pathNotInRevision,TResult? Function( AppFailure? cause)?  commandDenied,TResult? Function( AppFailure? cause)?  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( AppFailure? cause)?  notInstalled,TResult? Function( String path,  AppFailure? cause)?  notARepository,TResult? Function( List<String> conflictedFiles,  AppFailure? cause)?  mergeConflict,TResult? Function( List<String> paths,  AppFailure? cause)?  conflictMarkersPresent,TResult? Function( String found,  AppFailure? cause)?  tooOld,TResult? Function( AppFailure? cause)?  authenticationFailed,TResult? Function( AppFailure? cause)?  networkUnavailable,TResult? Function( AppFailure? cause)?  noRemote,TResult? Function( AppFailure? cause)?  remoteNotFound,TResult? Function( String path,  AppFailure? cause)?  cloneDestinationTaken,TResult? Function( AppFailure? cause)?  detachedHead,TResult? Function( AppFailure? cause)?  pushRejected,TResult? Function( AppFailure? cause)?  branchProtected,TResult? Function( List<String> paths,  AppFailure? cause)?  localChangesOverwritten,TResult? Function( AppFailure? cause)?  noCommitsYet,TResult? Function( List<String> paths,  AppFailure? cause)?  pathCommitted,TResult? Function( AppFailure? cause)?  timedOut,TResult? Function( String path,  AppFailure? cause)?  pathNotInRevision,TResult? Function( AppFailure? cause)?  commandDenied,TResult? Function( AppFailure? cause)?  operationFailed,}) {final _that = this;
 switch (_that) {
 case GitNotInstalled() when notInstalled != null:
 return notInstalled(_that.cause);case GitNotARepository() when notARepository != null:
 return notARepository(_that.path,_that.cause);case GitMergeConflict() when mergeConflict != null:
 return mergeConflict(_that.conflictedFiles,_that.cause);case GitConflictMarkersPresent() when conflictMarkersPresent != null:
-return conflictMarkersPresent(_that.paths,_that.cause);case GitAuthenticationFailed() when authenticationFailed != null:
+return conflictMarkersPresent(_that.paths,_that.cause);case GitTooOld() when tooOld != null:
+return tooOld(_that.found,_that.cause);case GitAuthenticationFailed() when authenticationFailed != null:
 return authenticationFailed(_that.cause);case GitNetworkUnavailable() when networkUnavailable != null:
 return networkUnavailable(_that.cause);case GitNoRemote() when noRemote != null:
 return noRemote(_that.cause);case GitRemoteNotFound() when remoteNotFound != null:
 return remoteNotFound(_that.cause);case GitCloneDestinationTaken() when cloneDestinationTaken != null:
 return cloneDestinationTaken(_that.path,_that.cause);case GitDetachedHead() when detachedHead != null:
 return detachedHead(_that.cause);case GitPushRejected() when pushRejected != null:
-return pushRejected(_that.cause);case GitLocalChangesOverwritten() when localChangesOverwritten != null:
-return localChangesOverwritten(_that.paths,_that.cause);case GitTimedOut() when timedOut != null:
+return pushRejected(_that.cause);case GitBranchProtected() when branchProtected != null:
+return branchProtected(_that.cause);case GitLocalChangesOverwritten() when localChangesOverwritten != null:
+return localChangesOverwritten(_that.paths,_that.cause);case GitNoCommitsYet() when noCommitsYet != null:
+return noCommitsYet(_that.cause);case GitPathCommitted() when pathCommitted != null:
+return pathCommitted(_that.paths,_that.cause);case GitTimedOut() when timedOut != null:
 return timedOut(_that.cause);case GitPathNotInRevision() when pathNotInRevision != null:
 return pathNotInRevision(_that.path,_that.cause);case GitCommandDenied() when commandDenied != null:
 return commandDenied(_that.cause);case GitOperationFailed() when operationFailed != null:
@@ -570,6 +594,75 @@ class _$GitConflictMarkersPresentCopyWithImpl<$Res>
   return _then(GitConflictMarkersPresent(
 null == paths ? _self._paths : paths // ignore: cast_nullable_to_non_nullable
 as List<String>,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class GitTooOld implements GitFailure {
+  const GitTooOld(this.found, {this.cause});
+  
+
+/// The release this machine has, as `2.39.2`.
+ final  String found;
+@override final  AppFailure? cause;
+
+/// Create a copy of GitFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$GitTooOldCopyWith<GitTooOld> get copyWith => _$GitTooOldCopyWithImpl<GitTooOld>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitTooOld&&(identical(other.found, found) || other.found == found)&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,found,cause);
+
+@override
+String toString() {
+  return 'GitFailure.tooOld(found: $found, cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $GitTooOldCopyWith<$Res> implements $GitFailureCopyWith<$Res> {
+  factory $GitTooOldCopyWith(GitTooOld value, $Res Function(GitTooOld) _then) = _$GitTooOldCopyWithImpl;
+@override @useResult
+$Res call({
+ String found, AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$GitTooOldCopyWithImpl<$Res>
+    implements $GitTooOldCopyWith<$Res> {
+  _$GitTooOldCopyWithImpl(this._self, this._then);
+
+  final GitTooOld _self;
+  final $Res Function(GitTooOld) _then;
+
+/// Create a copy of GitFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? found = null,Object? cause = freezed,}) {
+  return _then(GitTooOld(
+null == found ? _self.found : found // ignore: cast_nullable_to_non_nullable
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
 as AppFailure?,
   ));
 }
@@ -1045,6 +1138,72 @@ as AppFailure?,
 /// @nodoc
 
 
+class GitBranchProtected implements GitFailure {
+  const GitBranchProtected({this.cause});
+  
+
+@override final  AppFailure? cause;
+
+/// Create a copy of GitFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$GitBranchProtectedCopyWith<GitBranchProtected> get copyWith => _$GitBranchProtectedCopyWithImpl<GitBranchProtected>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitBranchProtected&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,cause);
+
+@override
+String toString() {
+  return 'GitFailure.branchProtected(cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $GitBranchProtectedCopyWith<$Res> implements $GitFailureCopyWith<$Res> {
+  factory $GitBranchProtectedCopyWith(GitBranchProtected value, $Res Function(GitBranchProtected) _then) = _$GitBranchProtectedCopyWithImpl;
+@override @useResult
+$Res call({
+ AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$GitBranchProtectedCopyWithImpl<$Res>
+    implements $GitBranchProtectedCopyWith<$Res> {
+  _$GitBranchProtectedCopyWithImpl(this._self, this._then);
+
+  final GitBranchProtected _self;
+  final $Res Function(GitBranchProtected) _then;
+
+/// Create a copy of GitFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? cause = freezed,}) {
+  return _then(GitBranchProtected(
+cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
 class GitLocalChangesOverwritten implements GitFailure {
   const GitLocalChangesOverwritten(final  List<String> paths, {this.cause}): _paths = paths;
   
@@ -1109,6 +1268,150 @@ class _$GitLocalChangesOverwrittenCopyWithImpl<$Res>
 /// with the given fields replaced by the non-null parameter values.
 @override @pragma('vm:prefer-inline') $Res call({Object? paths = null,Object? cause = freezed,}) {
   return _then(GitLocalChangesOverwritten(
+null == paths ? _self._paths : paths // ignore: cast_nullable_to_non_nullable
+as List<String>,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class GitNoCommitsYet implements GitFailure {
+  const GitNoCommitsYet({this.cause});
+  
+
+@override final  AppFailure? cause;
+
+/// Create a copy of GitFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$GitNoCommitsYetCopyWith<GitNoCommitsYet> get copyWith => _$GitNoCommitsYetCopyWithImpl<GitNoCommitsYet>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitNoCommitsYet&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,cause);
+
+@override
+String toString() {
+  return 'GitFailure.noCommitsYet(cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $GitNoCommitsYetCopyWith<$Res> implements $GitFailureCopyWith<$Res> {
+  factory $GitNoCommitsYetCopyWith(GitNoCommitsYet value, $Res Function(GitNoCommitsYet) _then) = _$GitNoCommitsYetCopyWithImpl;
+@override @useResult
+$Res call({
+ AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$GitNoCommitsYetCopyWithImpl<$Res>
+    implements $GitNoCommitsYetCopyWith<$Res> {
+  _$GitNoCommitsYetCopyWithImpl(this._self, this._then);
+
+  final GitNoCommitsYet _self;
+  final $Res Function(GitNoCommitsYet) _then;
+
+/// Create a copy of GitFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? cause = freezed,}) {
+  return _then(GitNoCommitsYet(
+cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class GitPathCommitted implements GitFailure {
+  const GitPathCommitted(final  List<String> paths, {this.cause}): _paths = paths;
+  
+
+/// The files that turned out to be committed, relative to the
+/// repository root.
+ final  List<String> _paths;
+/// The files that turned out to be committed, relative to the
+/// repository root.
+ List<String> get paths {
+  if (_paths is EqualUnmodifiableListView) return _paths;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_paths);
+}
+
+@override final  AppFailure? cause;
+
+/// Create a copy of GitFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$GitPathCommittedCopyWith<GitPathCommitted> get copyWith => _$GitPathCommittedCopyWithImpl<GitPathCommitted>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GitPathCommitted&&const DeepCollectionEquality().equals(other._paths, _paths)&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_paths),cause);
+
+@override
+String toString() {
+  return 'GitFailure.pathCommitted(paths: $paths, cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $GitPathCommittedCopyWith<$Res> implements $GitFailureCopyWith<$Res> {
+  factory $GitPathCommittedCopyWith(GitPathCommitted value, $Res Function(GitPathCommitted) _then) = _$GitPathCommittedCopyWithImpl;
+@override @useResult
+$Res call({
+ List<String> paths, AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$GitPathCommittedCopyWithImpl<$Res>
+    implements $GitPathCommittedCopyWith<$Res> {
+  _$GitPathCommittedCopyWithImpl(this._self, this._then);
+
+  final GitPathCommitted _self;
+  final $Res Function(GitPathCommitted) _then;
+
+/// Create a copy of GitFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? paths = null,Object? cause = freezed,}) {
+  return _then(GitPathCommitted(
 null == paths ? _self._paths : paths // ignore: cast_nullable_to_non_nullable
 as List<String>,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
 as AppFailure?,

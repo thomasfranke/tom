@@ -175,12 +175,21 @@ void main() {
       expect(failed.failure, const GitAuthenticationFailed());
     });
 
-    test('a push that landed leaves nothing on screen', () async {
+    test('a push that landed keeps how many commits it published', () async {
       await open();
 
       await container.read(remoteProvider.notifier).push();
 
-      expect(remote(), isA<RemoteIdle>());
+      expect(remote(), const RemoteState.idle(published: 2));
+    });
+
+    test('the next action takes the news away', () async {
+      await open();
+      await container.read(remoteProvider.notifier).push();
+
+      await container.read(remoteProvider.notifier).fetch();
+
+      expect(remote(), const RemoteState.idle());
     });
   });
 
@@ -303,7 +312,7 @@ void main() {
       await container.read(remoteProvider.notifier).fetch();
       expect(remote(), const RemoteState.idle());
       await container.read(remoteProvider.notifier).push();
-      expect(remote(), const RemoteState.idle());
+      expect((remote() as RemoteIdle).arrived, isNull);
     });
   });
 
@@ -539,6 +548,11 @@ final class _Git implements GitRepository {
     _held = null;
     holdUp = false;
   }
+
+  /// Where `origin` is: fetching and pulling ask before they start.
+  @override
+  Future<Result<String?, GitFailure>> remoteAddress() async =>
+      const Success<String?, GitFailure>('https://example.test/docs.git');
 
   Future<Result<void, GitFailure>> _done() async {
     if (holdUp) {
