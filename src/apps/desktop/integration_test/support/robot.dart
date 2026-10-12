@@ -3504,6 +3504,12 @@ final class TomRobot {
   }
 
   /// Rests a mouse on the `Diff` chip long enough for its tooltip to open.
+  ///
+  /// Removed again before returning, not deferred to `addTearDown`: this is
+  /// called more than once in a scenario, and a branch switch right after
+  /// can rebuild the chip out from under a pointer MouseTracker still thinks
+  /// is resting on it — a `mouse_tracker.dart` assertion in a later step,
+  /// nowhere near here.
   Future<void> _hoversTheChip() async {
     final TestGesture mouse = await tester.createGesture(
       kind: PointerDeviceKind.mouse,
@@ -3518,6 +3524,7 @@ final class TomRobot {
       ),
     );
     await tester.pump(const Duration(seconds: 2));
+    await mouse.removePointer();
   }
 
   /// Asserts the working tree is compared against `HEAD`: no branch is
