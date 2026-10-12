@@ -98,6 +98,17 @@ jobs:
       - name: End-to-end (headless, Linux)
         run: xvfb-run -a dart run tool/cli.dart e2e all --ci
 
+      # The transcript of a failure, --ci's one piece of evidence (no frame,
+      # no video): kept past the runner's own lifetime, since nothing else
+      # downloads it.
+      - name: Upload e2e evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-evidence
+          path: .e2e-evidence/
+          if-no-files-found: ignore
+
   build-macos:
     name: Build (macOS)
     runs-on: macos-latest
