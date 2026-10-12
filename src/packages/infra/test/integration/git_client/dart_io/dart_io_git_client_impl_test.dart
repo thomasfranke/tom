@@ -8,6 +8,21 @@ import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_infra/tom_infra.dart';
 
+/// A timeout short enough for a test and long enough to be a real clock.
+///
+/// A zero timeout is a race: on a fast machine git can answer before the
+/// timer fires, so a test that needs the kill runs a command that never ends.
+const Duration _briefly = Duration(milliseconds: 300);
+
+/// An executable that stands in for git and sleeps instead of answering, so a
+/// timeout is certain; it lives in the repository's own `.git` folder.
+String _slowGit(String repository) {
+  final File script = File('$repository/.git/slow-git.sh')
+    ..writeAsStringSync('#!/bin/sh\nexec sleep 30\n');
+  Process.runSync('chmod', <String>['755', script.path]);
+  return script.path;
+}
+
 void main() {
   late Directory tempDir;
   late String base;
@@ -1844,13 +1859,14 @@ void main() {
     test('kills the command and fails with GitClientTimedOut', () async {
       final DartIoGitClientImpl impatient = DartIoGitClientImpl(
         workingDirectory: repoPath,
-        timeout: Duration.zero,
+        timeout: _briefly,
+        executable: _slowGit(repoPath),
       );
 
       final AppFailure failure = failureOf(await impatient.status());
 
       expect(failure, isA<GitClientTimedOut>());
-      expect((failure as GitClientTimedOut).timeout, Duration.zero);
+      expect((failure as GitClientTimedOut).timeout, _briefly);
     });
 
     test(
@@ -1883,10 +1899,11 @@ void main() {
     test('one timeout does not poison the queue behind it', () async {
       final DartIoGitClientImpl impatient = DartIoGitClientImpl(
         workingDirectory: repoPath,
-        timeout: Duration.zero,
+        timeout: _briefly,
+        executable: _slowGit(repoPath),
       );
 
-      await impatient.status();
+      expect(failureOf(await impatient.status()), isA<GitClientTimedOut>());
 
       expect(await client.status(), isA<Success<String, GitClientFailure>>());
     });
@@ -1947,7 +1964,8 @@ void main() {
     test('a command killed for its time is written down unfinished', () async {
       await DartIoGitClientImpl(
         workingDirectory: repoPath,
-        timeout: Duration.zero,
+        timeout: _briefly,
+        executable: _slowGit(repoPath),
         commandLog: _Kept(written),
       ).status();
 
