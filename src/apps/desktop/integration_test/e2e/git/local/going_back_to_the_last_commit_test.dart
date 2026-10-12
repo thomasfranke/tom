@@ -7,6 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/harness.dart';
 
+/// The git menu's third row, which names the platform's own file manager
+/// (`file_manager_words.dart`'s `openRepositoryLabel`): `Finder` on macOS,
+/// `Files` everywhere this suite runs.
+final String _openRepositoryLabel = Platform.isMacOS
+    ? 'Open repository in Finder'
+    : 'Open repository in Files';
+
 void main() {
   final E2eFixtures fixtures = E2eFixtures.load();
   final Fixture docsInRepo = fixtures['docs-in-repo'];
@@ -53,7 +60,7 @@ void main() {
         await robot.seesInTheMenu(<String>[
           'Reload',
           'Open in terminal',
-          'Open repository in Finder',
+          _openRepositoryLabel,
           'Discard all changes',
         ]);
       }),
@@ -67,7 +74,7 @@ void main() {
       Step('Open repository in Finder asks for the repository\'s folder', (
         TomRobot robot,
       ) async {
-        await robot.choosesFromTheMenu('Git menu', 'Open repository in Finder');
+        await robot.choosesFromTheMenu('Git menu', _openRepositoryLabel);
 
         await robot.seesTheFileManagerAskedFor(docsInRepo.repositoryRoot);
       }),
@@ -175,7 +182,7 @@ void main() {
         await robot.seesInTheMenu(<String>[
           'Reload',
           'Open in terminal',
-          'Open repository in Finder',
+          _openRepositoryLabel,
           'Discard all changes',
         ]);
       }),
@@ -222,7 +229,7 @@ void main() {
         await robot.seesInTheMenu(<String>[
           'Reload',
           'Open in terminal',
-          'Open repository in Finder',
+          _openRepositoryLabel,
         ]);
         await robot.dismissesTheMenu();
         robot.seesNothingBroken();

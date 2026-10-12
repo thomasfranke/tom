@@ -8,6 +8,13 @@ import 'package:tom_domain/tom_domain.dart';
 
 import '../../../support/harness.dart';
 
+/// The explorer menu's last row, which names the platform's own file
+/// manager (`file_manager_words.dart`'s `revealLabel`): `Finder` on macOS,
+/// `Files` everywhere this suite runs.
+final String _revealLabel = Platform.isMacOS
+    ? 'Reveal in Finder'
+    : 'Show in Files';
+
 void main() {
   final E2eFixtures fixtures = E2eFixtures.load();
   final Fixture docsInRepo = fixtures['docs-in-repo'];
@@ -92,7 +99,7 @@ void main() {
           'New folder',
           'Collapse all',
           'Reload',
-          'Reveal in Finder',
+          _revealLabel,
         ]);
       }),
       Step('Escape puts it away', (TomRobot robot) async {
@@ -101,7 +108,7 @@ void main() {
       Step('Reveal asks the file manager for the space\'s folder', (
         TomRobot robot,
       ) async {
-        await robot.choosesFromTheMenu('Explorer menu', 'Reveal in Finder');
+        await robot.choosesFromTheMenu('Explorer menu', _revealLabel);
         await robot.seesTheFileManagerAskedFor(docsInRepo.root);
       }),
       Step('Reload files what arrived into the search, too', (
