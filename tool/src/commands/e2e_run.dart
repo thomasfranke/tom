@@ -7,6 +7,7 @@ import 'dart:io';
 
 import '../repo.dart';
 import '../theme/theme.dart';
+import 'app.dart';
 import 'e2e_catalogue.dart';
 
 /// The marker the scenarios prefix their reports with.
@@ -67,12 +68,17 @@ String? themeDefineFor(String? value) {
 }
 
 /// Runs [scenario] and paints its progress until it is done.
+///
+/// [ci] asks for no frame and no video — the exit code is the whole answer,
+/// for the headless pass a workflow runs under `xvfb-run` on Linux
+/// ([ci.md](../../../docs/technical/process/ci.md)).
 Future<int> runScenario(
   Scenario scenario, {
   bool quiet = false,
   SuiteProgress? suite,
   bool watch = false,
   bool board = false,
+  bool ci = false,
 }) async {
   final screen = _ScenarioScreen(scenario, quiet: quiet, suite: suite)..start();
   // One stamp for the whole run, handed to the app, so the frames, the video
@@ -83,7 +89,10 @@ Future<int> runScenario(
     'test',
     '$scenarioDirectory/${scenario.file}'.replaceFirst('src/apps/desktop/', ''),
     '-d',
-    'macos',
+    // The machine's own desktop target — `linux` under CI's `xvfb-run`,
+    // `macos` on a maintainer's laptop. Never `null`: the three desktop
+    // platforms are the only ones this app runs `flutter test` against.
+    hostPlatform!,
     '--plain-name',
     scenario.name,
     // A define rather than a file the run reads: the value belongs to this
@@ -92,6 +101,7 @@ Future<int> runScenario(
     // The window the boards are drawn at, so a screenshot and a board crop
     // to the same rectangle and nothing has to be scaled to compare.
     if (board) '--dart-define=TOM_E2E_WINDOW=$_boardWindow',
+    if (ci) '--dart-define=TOM_E2E_NO_FRAMES=true',
     ?themeDefineFor(Platform.environment['TOM_E2E_THEME']),
     '--dart-define=TOM_E2E_STAMP=$stamp',
   ], workingDirectory: '${repoRoot().path}/src/apps/desktop');
@@ -123,7 +133,8 @@ Future<int> runScenario(
     declared: screen.stepsDeclared,
   );
   final log = _keep(scenario, transcript.toString(), stamp, outcome.label);
-  await _film(scenario, stamp, outcome.label);
+  // No frame was written to join: the directory scan would find nothing.
+  if (!ci) await _film(scenario, stamp, outcome.label);
   screen.finish(outcome: outcome, errors: errors, log: log);
   writeResult(
     scenario.name,

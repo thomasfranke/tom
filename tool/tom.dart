@@ -18,6 +18,7 @@ import 'src/commands/e2e.dart';
 import 'src/commands/e2e_catalogue.dart';
 import 'src/commands/process.dart';
 import 'src/commands/quality.dart';
+import 'src/commands/release.dart';
 import 'src/commands/rules.dart';
 import 'src/commands/tests.dart';
 import 'src/commands/updates.dart';
@@ -164,6 +165,16 @@ const _commands = <_Command>[
         'Format, analyze, the codegen gate, the whole suite and the coverage '
         'gate — in that order, stopping at the first failure. Green here '
         'means green on the PR.',
+  ),
+  _Command(
+    'release',
+    'Bump the version (major, minor or patch), write the changelog, '
+        'commit and tag',
+    description:
+        'Moves every pubspec\'s version in lockstep, writes the changelog '
+        'from Conventional Commits since the last tag, then leaves a local '
+        'commit and an annotated tag — nothing is pushed. The tag is what a '
+        'release workflow would build from (docs/technical/process/ci.md).',
   ),
 ];
 
@@ -462,7 +473,7 @@ const _testGroup = {'test', 'coverage', 'e2e', 'rules'};
 
 /// Commands the root screen lists under `Dev Tools`: what acts on the
 /// repository rather than on the product.
-const _devToolsGroup = {'clean', 'codegen', 'format', 'verify'};
+const _devToolsGroup = {'clean', 'codegen', 'format', 'verify', 'release'};
 
 /// Commands the root screen lists under `Setup`: getting a machine ready.
 const _setupGroup = {'doctor', 'fvm', 'setup', 'updates'};
@@ -1201,8 +1212,9 @@ const _allTargets = 'all';
 ///
 /// Both questions — was a name given, and what is it — are asked of the
 /// filtered list, or `tom e2e --watch` looks for a scenario called nothing.
-List<String> _scenarioWords(List<String> rest) =>
-    rest.where((word) => word != watchFlag && word != boardFlag).toList();
+List<String> _scenarioWords(List<String> rest) => rest
+    .where((word) => word != watchFlag && word != boardFlag && word != ciFlag)
+    .toList();
 
 /// A package name as the menu shows it: capitalized, except where the package
 /// spells itself.
@@ -1365,6 +1377,7 @@ Future<int> _dispatch(String name, List<String> rest) async {
       _ when rest.contains(_allTargets) => await runAllScenarios(
         watch: rest.contains(watchFlag),
         board: rest.contains(boardFlag),
+        ci: rest.contains(ciFlag),
       ),
       // `tom e2e` and `tom e2e --watch` both name no scenario, so both list.
       _ when _scenarioWords(rest).isEmpty => await runE2eList(),
@@ -1373,10 +1386,12 @@ Future<int> _dispatch(String name, List<String> rest) async {
         _scenarioWords(rest).join(' '),
         watch: rest.contains(watchFlag),
         board: rest.contains(boardFlag),
+        ci: rest.contains(ciFlag),
       ),
     },
     'rules' => await runRules(rest.isEmpty ? null : rest.first),
     'verify' => await runVerify(),
+    'release' => await runRelease(rest.isEmpty ? null : rest.first),
     _ => 64,
   };
 }
@@ -1405,6 +1420,7 @@ Set<String> _wordsFor(String command) => switch (command) {
   'clean' => const {_allTargets, ...allTargets},
   'coverage' => const {_allTargets, ...allTargets, changed, last},
   'e2e' => const {_allTargets, 'prepare', 'clean', 'list', 'fixtures'},
+  'release' => releaseBumps,
   'codegen' => const {_allTargets, ...allTargets, ..._codegenModeNames},
   'test' => const {
     _allTargets,

@@ -179,14 +179,23 @@ const watchFlag = '--watch';
 /// (`docs/design/screens/conventions.md`).
 const boardFlag = '--board';
 
+/// Runs without frames or a video, for a CI pass that only needs the exit
+/// code: `tom e2e all --ci`.
+///
+/// Headless by what runs it, not by this flag — Linux still opens a real
+/// window, under `xvfb-run` in the workflow that asks for this
+/// ([ci.md](../../../docs/technical/process/ci.md)).
+const ciFlag = '--ci';
+
 /// Runs one of the environment commands directly, without the menu.
 ///
 /// [watchFlag] is taken from anywhere in the line, as the menu takes it.
 Future<void> main(List<String> arguments) async {
   final watch = arguments.contains(watchFlag);
   final board = arguments.contains(boardFlag);
+  final ci = arguments.contains(ciFlag);
   final words = arguments
-      .where((word) => word != watchFlag && word != boardFlag)
+      .where((word) => word != watchFlag && word != boardFlag && word != ciFlag)
       .toList();
   final mode = words.isEmpty ? 'list' : words.first;
   exitCode = switch (mode) {
@@ -194,8 +203,13 @@ Future<void> main(List<String> arguments) async {
     'clean' => await runE2eClean(),
     'list' => await runE2eList(),
     'fixtures' => await runE2eFixtures(),
-    'all' => await runAllScenarios(watch: watch, board: board),
-    _ => await runNamedScenario(words.join(' '), watch: watch, board: board),
+    'all' => await runAllScenarios(watch: watch, board: board, ci: ci),
+    _ => await runNamedScenario(
+      words.join(' '),
+      watch: watch,
+      board: board,
+      ci: ci,
+    ),
   };
 }
 
@@ -203,7 +217,11 @@ Future<void> main(List<String> arguments) async {
 ///
 /// Sequential because each one launches the app, and on macOS the next launch
 /// fails while the previous window is still there.
-Future<int> runAllScenarios({bool watch = false, bool board = false}) async {
+Future<int> runAllScenarios({
+  bool watch = false,
+  bool board = false,
+  bool ci = false,
+}) async {
   // The plans are data, not tests: `all` is every scenario that is written.
   final scenarios = discoverScenarios(includePlanned: false);
   if (scenarios.isEmpty) {
@@ -225,6 +243,7 @@ Future<int> runAllScenarios({bool watch = false, bool board = false}) async {
       suite: progress,
       watch: watch,
       board: board,
+      ci: ci,
     );
     if (code == 0) {
       progress.passed++;
@@ -281,6 +300,7 @@ Future<int> runNamedScenario(
   String name, {
   bool watch = false,
   bool board = false,
+  bool ci = false,
 }) async {
   final scenarios = discoverScenarios();
   final match = scenarios.where((s) => s.name == name);
@@ -299,7 +319,7 @@ Future<int> runNamedScenario(
     return plannedExitCode;
   }
   _freshEnvironmentFor(match.first);
-  return runScenario(match.first, watch: watch, board: board);
+  return runScenario(match.first, watch: watch, board: board, ci: ci);
 }
 
 /// Rebuilds the environment before [scenario], when it reads one.

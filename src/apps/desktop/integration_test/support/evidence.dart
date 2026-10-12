@@ -61,11 +61,18 @@ final class Evidence {
     '${slugOf(group)}/${slugOf(scenario)}',
   );
 
+  /// True when a run asked to skip the frames entirely — CI's headless pass,
+  /// which only needs the exit code and has no board to compare against.
+  static const bool skip = bool.fromEnvironment('TOM_E2E_NO_FRAMES');
+
   /// Writes what is on screen now, named after the [step] it is inside.
   ///
   /// Numbered in the order taken, because that order is the recording. It
   /// never fails a scenario: a frame that cannot be read is simply not there.
   Future<void> capture() async {
+    if (skip) {
+      return;
+    }
     taken++;
     // Three digits: the video is joined from a glob read alphabetically, and
     // `shot-100` sorts before `shot-99`.

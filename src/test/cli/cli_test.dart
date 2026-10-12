@@ -129,6 +129,7 @@ const List<String> _everyCommand = <String>[
   'e2e',
   'format',
   'fvm',
+  'release',
   'rules',
   'run',
   'setup',

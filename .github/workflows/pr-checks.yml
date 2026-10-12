@@ -8,9 +8,10 @@ name: CI
 # level two and lives in its own workflow, added when there is something to
 # sign.
 #
-# The job names are the required status checks, `Verify` and `Build (macOS)`,
-# beside `CLA` from cla.yml (docs/technical/process/repository-settings/).
-# Renaming a job here un-requires it on GitHub without a word.
+# The job names are the required status checks, `Pull Request Checks` and
+# `Build (macOS)`, beside `CLA` from cla.yml
+# (docs/technical/process/repository-settings/). Renaming a job here
+# un-requires it on GitHub without a word.
 
 on:
   pull_request:
@@ -24,8 +25,8 @@ permissions:
   contents: read
 
 jobs:
-  verify:
-    name: Verify
+  checks:
+    name: Pull Request Checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +40,13 @@ jobs:
 
       - name: Enable desktop platforms
         run: flutter config --enable-windows-desktop --enable-macos-desktop --enable-linux-desktop
+
+      # What the linux desktop target needs to build and to open a window —
+      # xvfb included, for the headless end-to-end step below.
+      - name: Linux desktop build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev xvfb
 
       - name: Resolve the workspace
         run: make setup
@@ -65,18 +73,35 @@ jobs:
       - name: Codegen — regenerate from scratch, fail on drift
         run: dart run tool/tom.dart codegen-gate
 
-      # The whole run ends with the CLI's own tests, which is what proves the
-      # commands this file calls still answer as it expects.
-      - name: Test — architecture, the packages, the apps, the CLI
-        run: make flutter-test
+      # Split from one step into the four `make flutter-test-*` targets below:
+      # a failure now points straight at architecture, a package, an app or
+      # the CLI, instead of one combined log for all of them.
+      - name: Test — architecture
+        run: make flutter-test-arch
+
+      - name: Test — packages
+        run: make flutter-test-packages
+
+      - name: Test — apps
+        run: make flutter-test-app
+
+      - name: Test — CLI
+        run: make flutter-test-cli
 
       - name: Coverage gate
         run: make coverage-gate
 
+      # Execution only — headless under Xvfb, since the linux target still
+      # opens a real window. No frame is written (TOM_E2E_NO_FRAMES): CI asks
+      # for the exit code, not the evidence a person reviewing a run reads
+      # (docs/technical/conventions/testing.md).
+      - name: End-to-end (headless, Linux)
+        run: xvfb-run -a dart run tool/tom.dart e2e all --ci
+
   build-macos:
     name: Build (macOS)
     runs-on: macos-latest
-    needs: verify
+    needs: checks
     steps:
       - uses: actions/checkout@v4
 

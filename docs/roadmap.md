@@ -63,7 +63,7 @@ All four run Git through the system binary via `dart:io Process` behind a `GitCl
 - [x] [Opening a change](product/git-workflow/commit/opening-a-change/doc.md) — every row of the changes list opens, whatever the file is and wherever in the repository it sits
 - [ ] [Git approvals](product/git-workflow/approvals/doc.md) — commands wait at a `CommandGate` port before they run ([Decision 38](technical/decisions/038-a-command-waits-at-a-gate-in-tom-core.md), draft). The layers under the interface are built; left are the widgets, one plan for opening a space, the Commands panel on Home, a tab each for the two settings files, and its scenarios
 - [x] [About and the update check](product/about/doc.md) — the About dialog, and an opt-in check over `dart:io HttpClient` against GitHub's latest release, in the `app_updates/` capability. `Update and restart`, the download and `Restart now` are not in the MVP: they wait on code signing and a per-platform updater
-- [ ] Packaging: Windows (msix), macOS (dmg), Linux (AppImage/deb) — `flutter_distributor`, unsigned at launch *(distribution, not a product)*. The Mac App Store is **out**: the app cannot be sandboxed and drive the user's own git ([Decision 20](technical/decisions/020-the-macos-app-is-not-sandboxed.md))
+- [ ] Packaging: Windows (exe), macOS (dmg), Linux (AppImage/deb) — `fastforge`, unsigned at launch *(distribution, not a product)*. Windows is **exe, not msix**: an unsigned msix refuses to install by a double-click, which defeats the point of shipping unsigned. The Mac App Store is **out**: the app cannot be sandboxed and drive the user's own git ([Decision 20](technical/decisions/020-the-macos-app-is-not-sandboxed.md))
 - [ ] Landing page + a polished README + a GIF of the rendered diff *(marketing, not a product)* — with a real screenshot of the app, taken at launch
 
 **M3 — alignment**
@@ -147,7 +147,7 @@ Feedback comes from use, not from research. The maintainer is the first user and
 
 - [x] Binary signing — **none at launch**: the README says how to open an unsigned app (macOS: *Privacy & Security → Open Anyway*; Windows: SmartScreen's *More info → Run anyway*). Signing and notarising macOS needs the paid Apple Developer Program even outside the App Store, so it waits for traction. The maintainer's call, 2026-10-08
 - [x] PDF/HTML export package — `pdf` for a paginated A4, HTML from the same AST ([Decision 30](technical/decisions/030-export-renders-the-preview-not-the-file.md))
-- [x] Packaging tooling — **`flutter_distributor`**, one config for dmg, msix, AppImage and deb, local and in CI (licence to be checked when it is added, rule 1). The maintainer's call, 2026-10-08
+- [x] Packaging tooling — **`fastforge`**, one config for dmg, exe, AppImage and deb, local and in CI; MIT (rule 1). Not `flutter_distributor`, named here on 2026-10-08: that package is discontinued, replaced by `fastforge` from the same publisher. Found and swapped 2026-10-11
 - [ ] **macOS profile and release builds fail on a machine with Xcode 27** — a `flutter_tools` 3.44.5 incompatibility in the tool's `lipo` check of the engine framework; debug builds are unaffected, and CI's `Build (macOS)` job builds a release on the same Flutter ([ci.md](technical/process/ci.md)). Blocks a local release build and any release-mode measurement there; found during Spike A ([Decision 18](technical/decisions/018-source-mode-uses-re-editor.md))
 
 ---

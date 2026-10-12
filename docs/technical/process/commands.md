@@ -33,6 +33,7 @@ Run as `dart run tool/tom.dart <command>`, from the repository root.
 | `build [macos\|linux\|windows]` | A release compile, as proof the repository builds on its own; never the distributed artifact |
 | `verify` | `format` → `analyze` → `rules` → `codegen-gate` → `test` → `coverage-gate`, stopping at the first failure |
 | `codegen-gate` · `coverage-gate [--kind=unit\|all] [--threshold=N]` | Exist to fail a build: regenerate from scratch and fail on drift; fail if a package is under 90 % of line coverage by unit tests alone (`all` reports the whole `test/`) |
+| `release <major\|minor\|patch>` | Bumps every pubspec in lockstep, writes the changelog since the last tag, and leaves a commit and an annotated tag — locally; nothing is pushed ([versioning.md](versioning.md)) |
 
 ## `test`
 
@@ -60,6 +61,7 @@ The scenarios drive the assembled app on this machine, one at a time
 | `e2e fixtures` | Lists the situations on disk the scenarios flow through |
 | `--watch` | Holds the screen after each action, slowly enough to follow |
 | `--board` | Opens the window at the boards' own 1440 × 900, so a frame and a board crop to the same rectangle ([testing](../conventions/testing.md)) |
+| `--ci` | No frame, no video — only the exit code, for the headless pass [ci.md](ci.md) runs under `xvfb-run` on Linux |
 
 - **A name that matches no scenario exits 64 and prints the names there are.** It never runs something else.
 - **The environment is rebuilt before each scenario that reads a fixture** — scenarios commit, save and push, so the next one would otherwise open a situation nobody described.

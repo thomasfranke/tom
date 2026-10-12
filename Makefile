@@ -34,7 +34,7 @@ ARGS ?=
         flutter-test-packages flutter-test-app flutter-test-diff \
         flutter-test-last flutter-test-cli \
         coverage coverage-last coverage-diff coverage-gate runner runner-hard runner-watch fvm run \
-        build build-linux build-macos build-windows
+        build build-linux build-macos build-windows release
 
 ##############################
 ### *** Help *** ###
@@ -182,3 +182,10 @@ build-macos: ## Compile check for macOS
 
 build-windows: ## Compile check for Windows
 	@$(TOM) build windows
+
+##############################
+### *** Release *** ###
+##############################
+
+release: ## Bump the version (BUMP=major|minor|patch), write the changelog, commit and tag locally
+	@$(TOM) release $(BUMP)

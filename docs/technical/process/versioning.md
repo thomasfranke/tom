@@ -34,4 +34,4 @@ A `TomModule` contract member that is going away is marked `@Deprecated` with th
 
 ## The changelog
 
-To be generated from Conventional Commits since the previous tag ([workflow](../../../CONTRIBUTING.md#workflow)): `feat` entries become the features section, `fix` the fixes, and `BREAKING CHANGE` footers are surfaced at the top. Nothing generates it yet and nothing checks a commit message — there has been no release — so the convention is held by review, and this is the practical reason it is held at all.
+Generated from Conventional Commits since the previous tag by `tom release <major|minor|patch>` (`make release BUMP=<…>`, [`commands.md`](commands.md)): `feat` entries become the features section, `fix` the fixes, and a `!` or a `BREAKING CHANGE` footer is surfaced at the top instead. The command bumps every pubspec in lockstep, writes the changelog into an annotated tag, and leaves a commit — both local, never pushed. Nothing checks a commit message yet, so the convention is still held by review.
