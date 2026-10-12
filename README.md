@@ -46,7 +46,7 @@ Stage, write the message, commit to the branch and publish — one column, no te
 Every document in the space, name · folder · excerpt, with the typed words marked.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/design/screens/desktop/search/searching-every-document-dark.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/design/screens/desktop/search/searching-in-every-document-dark.svg">
   <img alt="Search panel listing twelve documents with marked excerpts" src="docs/design/screens/desktop/search/searching-in-every-document-light.svg" width="100%">
 </picture>
 
@@ -73,7 +73,7 @@ Every commit that touched the open document; open one and read that version.
 Source and preview, a formatting bar, tabs, and the file tree carrying each document's change mark.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/design/screens/desktop/workspace-shell/shell-dark.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/design/screens/desktop/workspace-shell/shell-reading-and-editing-dark.svg">
   <img alt="Split editor with the file tree, the formatting bar and the open tabs" src="docs/design/screens/desktop/workspace-shell/shell-reading-and-editing-light.svg" width="100%">
 </picture>
 
