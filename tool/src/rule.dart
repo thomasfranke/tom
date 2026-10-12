@@ -11,7 +11,7 @@ typedef Offence = ({String rule, String where, String detail});
 /// `src/test/integrity/architecture_test.dart`.
 typedef Rule = Iterable<Offence> Function(Directory root);
 
-/// One file of rules, as the menu and the subcommand both see it, so `tom
+/// One file of rules, as the menu and the subcommand both see it, so `cli
 /// rules <name>` runs exactly what the row named after the file runs.
 typedef RuleFile = ({
   String name,
@@ -46,15 +46,25 @@ Iterable<File> libraryFilesUnder(Directory root) =>
 
 /// Every `.dart` file under [directory], generated output excluded.
 Iterable<File> dartFilesUnder(Directory directory) => directory.existsSync()
-    ? directory.listSync(recursive: true).whereType<File>().where((file) {
-        final path = slashed(file.path);
-        return path.endsWith('.dart') &&
-            !path.endsWith('.freezed.dart') &&
-            !path.endsWith('.g.dart') &&
-            !path.contains('/.dart_tool/') &&
-            !path.contains('/coverage/');
-      })
+    ? directory
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => isHandWritten(file.path))
     : const <File>[];
+
+/// Whether the Dart file at [path] is somebody's to rename or trim.
+///
+/// `gen-l10n` marks its output by folder rather than by suffix, and writes a
+/// header no rule here could ask it to shorten.
+bool isHandWritten(String path) {
+  final spelled = slashed(path);
+  return spelled.endsWith('.dart') &&
+      !spelled.endsWith('.freezed.dart') &&
+      !spelled.endsWith('.g.dart') &&
+      !spelled.contains('/l10n/generated/') &&
+      !spelled.contains('/.dart_tool/') &&
+      !spelled.contains('/coverage/');
+}
 
 /// [file] as the repository spells it.
 String relative(Directory root, File file) =>

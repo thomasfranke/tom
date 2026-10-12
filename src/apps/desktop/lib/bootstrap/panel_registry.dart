@@ -4,6 +4,7 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
+import 'package:tom_desktop/bootstrap/panel_page_enum.dart';
 import 'package:tom_desktop/bootstrap/panel_placement_enum.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -53,15 +54,33 @@ class PanelRegistry {
   /// [mode] narrows it to the panels of that document mode. The filtering
   /// lives here so the shell never reads `modes` and never learns what a
   /// panel is for.
+  /// [page] narrows it the same way to the panels of that page.
   List<PanelDescriptor> at(
     PanelPlacementEnum placement, {
     DocumentModeEnum? mode,
+    PanelPageEnum? page,
   }) => List<PanelDescriptor>.unmodifiable(
-    mode == null
-        ? _byPlacement[placement]!
-        : _byPlacement[placement]!.where(
-            (PanelDescriptor panel) => panel.modes.contains(mode),
-          ),
+    _byPlacement[placement]!.where(
+      (PanelDescriptor panel) =>
+          (mode == null || panel.modes.contains(mode)) &&
+          (page == null || panel.pages.contains(page)),
+    ),
+  );
+
+  /// What [placement] keeps mounted but does not draw in [mode]: the panels
+  /// that ask to be kept alive and are not among [at]'s answer.
+  List<PanelDescriptor> keptAt(
+    PanelPlacementEnum placement, {
+    DocumentModeEnum? mode,
+    PanelPageEnum? page,
+  }) => List<PanelDescriptor>.unmodifiable(
+    _byPlacement[placement]!.where(
+      (PanelDescriptor panel) =>
+          panel.isKeptAlive &&
+          mode != null &&
+          !panel.modes.contains(mode) &&
+          (page == null || panel.pages.contains(page)),
+    ),
   );
 
   /// Whether anything at all is registered.

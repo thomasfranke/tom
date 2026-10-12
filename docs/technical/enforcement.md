@@ -16,7 +16,9 @@ has to remember. Four mechanisms prove it.
 - **An SDK library**, which needs no declaration at all. `dart:io` is available to every package by default, so the pubspec graph has nothing to say about a domain entity calling `Process.run`. The test holds a second table — which *capabilities* each layer may import — and scans every `.dart` file under `lib/`, generated code included.
 - **A Flutter package in `dev_dependencies`**, the quiet version of the leak: nothing imports a widget, but the package stops running under `dart test` and framework independence stops being provable.
 
-Run it with `dart run tool/tom.dart test arch`. A dependency between layers is
+The same test holds the look to its table: every `*Widget` class under `packages/ui/lib/src/widgets` is named in [`controls.md`](../design/components/controls.md), and every `Tom…`, `Notice…`, `Diff…` or `Commit…` widget the table names exists — a shared component without a row has nothing to be held to.
+
+Run it with `dart run tool/cli.dart test arch`. A dependency between layers is
 declared there deliberately, because the graph is a decision
 ([Decision 14](decisions/014-each-layer-is-its-own-package.md)).
 

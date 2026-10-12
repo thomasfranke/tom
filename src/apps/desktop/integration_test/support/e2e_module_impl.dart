@@ -1,12 +1,20 @@
-/// The two things an end-to-end run has to replace.
+/// What an end-to-end run has to replace: the native dialogs, the
+/// preferences, the browser, and the machine's own GitHub logins.
 library;
+
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
+import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/bootstrap/git_wiring.dart';
 import 'package:tom_desktop/bootstrap/panel_descriptor.dart';
 import 'package:tom_desktop/bootstrap/providers.dart';
 import 'package:tom_desktop/bootstrap/tom_module.dart';
+import 'package:tom_desktop/bootstrap/updates_wiring.dart';
+import 'package:tom_desktop/screens/export/save_location_picker.dart';
 import 'package:tom_desktop/screens/home/folder_picker.dart';
+import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_infra/tom_infra.dart';
 
 /// A module that answers the folder dialog and keeps its own preferences.
@@ -17,14 +25,59 @@ import 'package:tom_infra/tom_infra.dart';
 /// panel, and the real preferences hold the developer's own recent spaces.
 class E2eModuleImpl implements TomModule {
   /// Answers the picker with [folder] — null is the user cancelling — and
-  /// stores preferences at [settingsPath].
-  const E2eModuleImpl({required this.settingsPath, this.folder});
+  /// stores preferences at [settingsPath]; [withGh] puts the run's own `gh`
+  /// on the machine.
+  const E2eModuleImpl({
+    required this.settingsPath,
+    this.folder,
+    this.withGh = false,
+    this.releasesAt,
+    this.gitExecutable,
+  });
+
+  /// The program started as `git`, or null for the one on the `PATH` — a
+  /// script of the scenario's own, to give the app a git it can refuse.
+  final String? gitExecutable;
 
   /// What the picker answers, or null to cancel.
   final String? folder;
 
   /// Where this scenario's preferences live — never the real ones.
   final String settingsPath;
+
+  /// Whether the machine has a `gh` holding a login: the run's own script,
+  /// which answers from files and reaches no network ([_fakeGh]).
+  final bool withGh;
+
+  /// Where this run's releases are published — a server of the scenario's
+  /// own — or null for the app's default, which publishes none.
+  final Uri? releasesAt;
+
+  /// Where an address the app opened is written, one per line, instead of
+  /// reaching a browser.
+  static String openedPath(String settingsPath) =>
+      '${File(settingsPath).parent.path}/opened-urls.txt';
+
+  /// Where a scenario writes what the save dialog answers: `cancel`, or a
+  /// path. Absent, the dialog answers beside the scenario's preferences.
+  static String saveAnswerPath(String settingsPath) =>
+      '${File(settingsPath).parent.path}/save-answer.txt';
+
+  /// Where the folders the app asked the file manager to show (`reveal …`)
+  /// and the terminals it asked for (`terminal …`) are written, one per
+  /// line, instead of opening Finder or a terminal on whoever runs the suite.
+  static String desktopAskedPath(String settingsPath) =>
+      '${File(settingsPath).parent.path}/desktop-asked.txt';
+
+  /// Where the window being closed for good is written down, one line a
+  /// time, instead of ending the run that is driving it.
+  static String closedPath(String settingsPath) =>
+      '${File(settingsPath).parent.path}/window-closed.txt';
+
+  /// Where the run's `gh` keeps the pull request it opened, wiped with the
+  /// scenario's preferences and kept across a relaunch.
+  static String githubPath(String settingsPath) =>
+      '${File(settingsPath).parent.path}/machine/github';
 
   @override
   String get id => 'tom.e2e';
@@ -34,12 +87,231 @@ class E2eModuleImpl implements TomModule {
 
   @override
   List<Override> get overrides => <Override>[
+    if (releasesAt case final Uri address) ...<Override>[
+      appUpdatesProvider.overrideWithValue(
+        DartIoHttpClientAppUpdatesImpl(endpoint: address),
+      ),
+      releasesAreOutProvider.overrideWithValue(true),
+    ],
+    if (gitExecutable case final String executable)
+      gitExecutableProvider.overrideWithValue(executable),
+    // The developer's own git configuration (`pull.rebase`, `diff3`,
+    // `core.autocrlf`…) never reaches the git a scenario drives: an empty
+    // global file and no system one. Fixtures write what they need into the
+    // repository's own config.
+    gitEnvironmentProvider.overrideWithValue(<String, String>{
+      for (final MapEntry<String, String> entry in _bareMachine(
+        File(settingsPath).parent.path,
+      ).entries)
+        if (entry.key.startsWith('GIT_CONFIG')) entry.key: entry.value,
+    }),
     folderPickerProvider.overrideWithValue(() async => folder),
+    // A window really closed would take the run with it: the request the
+    // app makes once leaving was answered is written down instead.
+    desktopWindowCloserProvider.overrideWithValue(
+      () async => File(closedPath(settingsPath))
+        ..parent.createSync(recursive: true)
+        ..writeAsStringSync('closed\n', mode: FileMode.append),
+    ),
+    // Beside the scenario's preferences, so an export lands in a folder the
+    // run owns and a scenario can open what was written.
+    // A scenario can answer otherwise by writing `save-answer.txt`: `cancel`
+    // is the dialog dismissed, any other line the path chosen.
+    saveLocationPickerProvider.overrideWithValue((
+      String suggestedName,
+      ExportFormatEnum format,
+    ) async {
+      final File answer = File(saveAnswerPath(settingsPath));
+      final String said = answer.existsSync()
+          ? answer.readAsStringSync().trim()
+          : '';
+      if (said == 'cancel') {
+        return null;
+      }
+      return said.isNotEmpty
+          ? said
+          : '${File(settingsPath).parent.path}/$suggestedName';
+    }),
     settingsProvider.overrideWith(
       (Ref ref) => JsonFileSettingsImpl(
         filesystem: ref.watch(filesystemProvider),
         path: settingsPath,
       ),
     ),
+    // A browser opened by a run is a window on whoever runs it; the address
+    // is written down instead, for the robot to read.
+    desktopRepositoryProvider.overrideWith(
+      (Ref ref) => _RecordingDesktop(
+        File(openedPath(settingsPath)),
+        File(desktopAskedPath(settingsPath)),
+      ),
+    ),
+    // The developer's own `gh`, keychain and SSH key are out of reach: a
+    // `PATH` holding git alone, an empty home, no system config.
+    credentialsProvider.overrideWith(
+      (Ref ref) => CommandLineCredentialsImpl(
+        environment: _bareMachine(
+          File(settingsPath).parent.path,
+          withGh: withGh,
+        ),
+        includeParentEnvironment: false,
+        commandLog: ref.watch(commandLogProvider),
+        commandGate: ref.watch(commandGateProvider),
+      ),
+    ),
+    // And GitHub is never reached: either no `gh` at all, or the run's own.
+    if (withGh)
+      githubApiProvider.overrideWith(
+        (Ref ref) => GhCliGithubApiImpl(
+          environment: _bareMachine(
+            File(settingsPath).parent.path,
+            withGh: true,
+          ),
+          includeParentEnvironment: false,
+          commandLog: ref.watch(commandLogProvider),
+          commandGate: ref.watch(commandGateProvider),
+        ),
+      )
+    else
+      githubApiProvider.overrideWithValue(const _OfflineGithubApi()),
   ];
+}
+
+/// A machine with git and nothing else, built under [folder]: a `bin` with
+/// one link to the real git, and a home whose config is empty — plus the
+/// run's own `gh` when [withGh].
+Map<String, String> _bareMachine(String folder, {bool withGh = false}) {
+  final Directory bin = Directory('$folder/machine/bin')
+    ..createSync(recursive: true);
+  final File gh = File('${bin.path}/gh');
+  if (withGh) {
+    gh.writeAsStringSync(
+      _fakeGh.trimLeft().replaceAll('@STATE@', '$folder/machine/github'),
+    );
+    Process.runSync('chmod', <String>['+x', gh.path]);
+  } else if (gh.existsSync()) {
+    gh.deleteSync();
+  }
+  final Directory home = Directory('$folder/machine/home')
+    ..createSync(recursive: true);
+  final File config = File('${home.path}/.gitconfig')..writeAsStringSync('');
+  final Link git = Link('${bin.path}/git');
+  if (!git.existsSync()) {
+    final String real =
+        (Process.runSync('which', <String>['git']).stdout as String).trim();
+    git.createSync(real);
+  }
+  return <String, String>{
+    'PATH': bin.path,
+    'HOME': home.path,
+    'GIT_CONFIG_NOSYSTEM': '1',
+    'GIT_CONFIG_GLOBAL': config.path,
+  };
+}
+
+/// The run's `gh`: one login, a token that opens nothing, `gh api` a 404,
+/// and one pull request — `#123`, kept in `@STATE@` once `pr create` ran.
+///
+/// A script rather than a fake [GithubApi], so the real implementation's
+/// process, environment, input and working folder are what the run drives.
+/// Written with its leading newline trimmed, so `#!` is the first line.
+const String _fakeGh = r'''
+#!/bin/sh
+PATH=/usr/bin:/bin
+state='@STATE@'
+mkdir -p "$state"
+echo "$*" >> "$state/asked.log"
+case "$1 $2" in
+  'auth status')
+    echo '{"hosts":{"github.com":[{"login":"tom-e2e","active":true}]}}' ;;
+  'auth token')
+    echo 'gho_e2e000000000000000000000000000000000000' ;;
+  'pr list')
+    if [ -f "$state/opened.json" ]; then cat "$state/opened.json"
+    else echo '[]'; fi ;;
+  'pr create')
+    title=''
+    previous=''
+    for argument in "$@"; do
+      [ "$previous" = '--title' ] && title="$argument"
+      previous="$argument"
+    done
+    cat > "$state/body.md"
+    printf '[{"number":123,"url":"https://github.com/acme/docs/pull/123","title":"%s"}]\n' "$title" > "$state/opened.json"
+    echo 'https://github.com/acme/docs/pull/123' ;;
+  *)
+    echo 'gh: Not Found (HTTP 404)' >&2
+    exit 1 ;;
+esac
+''';
+
+/// The desktop, writing down what it would have opened: the addresses, the
+/// folders shown in the file manager and those a terminal was started in.
+/// Nothing reaches the machine the run is on.
+final class _RecordingDesktop implements DesktopRepository {
+  _RecordingDesktop(this.opened, this.asked);
+
+  final File opened;
+
+  final File asked;
+
+  @override
+  Future<Result<void, AppFailure>> openUrl(Uri address) async {
+    opened.writeAsStringSync('$address\n', mode: FileMode.append);
+    return const Success<void, AppFailure>(null);
+  }
+
+  @override
+  Future<Result<void, AppFailure>> reveal(String folder) async {
+    _note('reveal', folder);
+    return const Success<void, AppFailure>(null);
+  }
+
+  @override
+  Future<Result<void, AppFailure>> openTerminal(String folder) async {
+    _note('terminal', folder);
+    return const Success<void, AppFailure>(null);
+  }
+
+  void _note(String what, String folder) {
+    asked
+      ..parent.createSync(recursive: true)
+      ..writeAsStringSync('$what $folder\n', mode: FileMode.append);
+  }
+}
+
+/// GitHub, out of reach.
+final class _OfflineGithubApi implements GithubApi {
+  const _OfflineGithubApi();
+
+  @override
+  Future<Result<String, GithubApiFailure>> repository(
+    String path, {
+    required String token,
+  }) async => const Failure<String, GithubApiFailure>(
+    GithubApiUnreachable('an end-to-end run reaches no network'),
+  );
+
+  @override
+  Future<Result<String, GithubApiFailure>> openPullRequests(
+    String folder, {
+    required String repository,
+    required String head,
+    required String token,
+  }) async => const Failure<String, GithubApiFailure>(
+    GithubApiUnreachable('an end-to-end run reaches no network'),
+  );
+
+  @override
+  Future<Result<String, GithubApiFailure>> createPullRequest(
+    String folder, {
+    required String repository,
+    required String base,
+    required String head,
+    required String title,
+    required String body,
+    required String token,
+  }) async => const Failure<String, GithubApiFailure>(
+    GithubApiUnreachable('an end-to-end run reaches no network'),
+  );
 }

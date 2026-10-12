@@ -1,18 +1,20 @@
 # Development setup
 
 **Prerequisites:** Flutter (Dart ≥ 3.12, for the workspace's `sdk` constraint)
-and git — `tom doctor` checks for both, and says what is missing. Nothing else
-— no Melos, no global tooling, and `make` is optional. `src/.fvmrc` pins the
-exact version CI uses (`tom fvm` to match it locally); anything recent enough
-should resolve regardless.
+and **git 2.41 or newer** — `cli doctor` checks for both, and says what is
+missing. Nothing else — no Melos, no global tooling, and `make` is optional.
+`src/.fvmrc` pins the exact version CI uses (`cli fvm` to match it locally);
+anything recent enough should resolve regardless.
+
+- **2.41 is where `for-each-ref` learnt `%(ahead-behind)`**, which the diff's base is deduced with ([runtime/git.md](../runtime/git.md)); an older git fails that command. `cli doctor` fails on one and names the version it found; the app is to refuse on Home with `TOM needs git 2.41 or newer. This machine has <version>.` ([opening a space](../../product/home/opening-a-space/doc.md)), and does not say it yet.
 
 ```bash
 git clone https://github.com/thomasfranke/tom.git
 cd tom
 flutter config --enable-windows-desktop --enable-macos-desktop --enable-linux-desktop
 
-dart run tool/tom.dart setup   # one resolve for every package
-dart run tool/tom.dart run     # opens the desktop app
+dart run tool/cli.dart setup   # one resolve for every package
+dart run tool/cli.dart run     # opens the desktop app
 ```
 
 ## Where things are
@@ -45,8 +47,9 @@ A new *external* dependency needs a licence check — nothing AGPL or GPL
 - **Trunk-based branches:** `feat/*` → PR into `main` (squash) → a tag
   publishes. No `dev`. See [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) and
   the `tom-git-workflow` skill.
-- **Feature flags are build-time only** (`--dart-define`); enable experimental
-  ones locally, never in a release build.
+- **Feature flags are a pattern, and nothing declares one yet**: build-time
+  only (`--dart-define`), never in a release build
+  ([CONTRIBUTING.md](../../../CONTRIBUTING.md#feature-flags)).
 
 ---
 

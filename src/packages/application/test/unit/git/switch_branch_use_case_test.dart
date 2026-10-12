@@ -46,6 +46,48 @@ void main() {
     expect(git.switched, isEmpty);
   });
 
+  test('creating records the branch it was started from', () async {
+    final BranchNameValueObject notes = BranchNameValueObject('feat/notes');
+
+    await switching().create(docs, notes);
+
+    expect(git.recorded, <(BranchNameValueObject, BranchNameValueObject)>[
+      (notes, BranchNameValueObject('develop')),
+    ]);
+  });
+
+  test('a branch started from a detached HEAD records nothing', () async {
+    git.current = null;
+
+    final Result<void, AppFailure> result = await switching().create(
+      docs,
+      main,
+    );
+
+    expect(result, isA<Success<void, AppFailure>>());
+    expect(git.recorded, isEmpty);
+  });
+
+  test('a branch git refused to start records nothing', () async {
+    git.answer = const Failure<void, GitFailure>(GitOperationFailed());
+
+    await switching().create(docs, main);
+
+    expect(git.recorded, isEmpty);
+  });
+
+  test('a record that fails is reported, and the branch still is', () async {
+    git.recordAnswer = const Failure<void, GitFailure>(GitOperationFailed());
+
+    final Result<void, AppFailure> result = await switching().create(
+      docs,
+      main,
+    );
+
+    expect(result, isA<Success<void, AppFailure>>());
+    expect(observability.captured.single.error, isA<GitOperationFailed>());
+  });
+
   test('the repository is built for the space it was asked about', () async {
     final List<SpaceEntity> asked = <SpaceEntity>[];
 
@@ -117,6 +159,32 @@ final class _Git implements GitRepository {
   ) async {
     created.add(name);
     return _answer;
+  }
+
+  /// The branch checked out before anything moved, or null for detached.
+  BranchNameValueObject? current = BranchNameValueObject('develop');
+
+  /// What [recordBase] answers.
+  Result<void, GitFailure> recordAnswer = const Success<void, GitFailure>(null);
+
+  /// What [recordBase] was handed, as `(branch, base)`.
+  final List<(BranchNameValueObject, BranchNameValueObject)> recorded =
+      <(BranchNameValueObject, BranchNameValueObject)>[];
+
+  @override
+  Future<Result<List<BranchEntity>, GitFailure>> branches() async =>
+      Success<List<BranchEntity>, GitFailure>(<BranchEntity>[
+        if (current case final BranchNameValueObject name)
+          BranchEntity(name: name, isCurrent: true),
+      ]);
+
+  @override
+  Future<Result<void, GitFailure>> recordBase(
+    BranchNameValueObject branch,
+    BranchNameValueObject base,
+  ) async {
+    recorded.add((branch, base));
+    return recordAnswer;
   }
 
   @override

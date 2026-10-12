@@ -1,4 +1,5 @@
 import 'package:test/test.dart';
+import 'package:tom_core/tom_core.dart';
 import 'package:tom_infra/tom_infra.dart';
 
 void main() {
@@ -12,6 +13,13 @@ void main() {
         'Conflicts: ${paths.length}',
       GitClientAuthenticationFailed() => 'Auth',
       GitClientPushRejected() => 'Rejected',
+      GitClientBranchProtected() => 'Protected',
+      GitClientLocalChangesOverwritten(paths: final List<String> paths) =>
+        'In the way: ${paths.length}',
+      GitClientNetworkUnavailable() => 'Offline',
+      GitClientNoRemote() => 'No remote',
+      GitClientRemoteNotFound() => 'Nothing there',
+      GitClientDestinationTaken(path: final String path) => '$path is taken',
       GitClientTimedOut(timeout: final Duration timeout) =>
         'Timed out after ${timeout.inSeconds}s',
       GitClientPathNotInRevision(
@@ -19,6 +27,10 @@ void main() {
         path: final String path,
       ) =>
         'No $path in $revision',
+      GitClientPathCommitted(paths: final List<String> paths) =>
+        'Committed: ${paths.length}',
+      GitClientCommandDenied(command: final String command) =>
+        'Refused: $command',
       GitClientCommandFailed(exitCode: final int exitCode) => 'Exit $exitCode',
     };
 
@@ -33,9 +45,23 @@ void main() {
         'Conflicts: 2',
       );
       expect(headline(const GitClientAuthenticationFailed('denied')), 'Auth');
+      expect(headline(const GitClientNetworkUnavailable('dns')), 'Offline');
+      expect(headline(const GitClientNoRemote('none')), 'No remote');
+      expect(
+        headline(const GitClientRemoteNotFound('does not exist')),
+        'Nothing there',
+      );
+      expect(
+        headline(const GitClientDestinationTaken('/tmp/docs')),
+        contains('/tmp/docs'),
+      );
       expect(
         headline(const GitClientPushRejected('non-fast-forward')),
         'Rejected',
+      );
+      expect(
+        headline(const GitClientLocalChangesOverwritten(<String>['a.md'])),
+        'In the way: 1',
       );
       expect(
         headline(const GitClientTimedOut('git push', Duration(seconds: 30))),
@@ -46,8 +72,24 @@ void main() {
         'No docs/new.md in HEAD',
       );
       expect(
+        headline(const GitClientPathCommitted(<String>['a.md'])),
+        'Committed: 1',
+      );
+      expect(
         headline(const GitClientCommandFailed('git commit', 1, 'nothing')),
         'Exit 1',
+      );
+      expect(
+        headline(const GitClientCommandDenied('git push')),
+        'Refused: git push',
+      );
+    });
+
+    test('a refusal is a denial, and nothing else is', () {
+      expect(const GitClientCommandDenied('git push').isDenial, isTrue);
+      expect(
+        const GitClientCommandFailed('git push', 1, 'no').isDenial,
+        isFalse,
       );
     });
   });

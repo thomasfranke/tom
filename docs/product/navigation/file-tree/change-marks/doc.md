@@ -2,11 +2,11 @@
 
 What the tree says about a file git has something to say about.
 
-**Status:** Planned · Milestone M0
+**Status:** Shipped · Milestone M0
 
 ## Rules
 
-- **A changed file carries its letter at the right of its row**, in the same alphabet the changes column uses: `M` modified, `A` added, `R` removed, `N` untracked, `C` conflicted.
+- **A changed file carries its letter at the right of its row**, in the same alphabet the changes column uses — git's own: `M` modified, `A` added, `D` deleted, `R` renamed, `N` untracked, `C` conflicted.
 - **`C` outranks every other letter.** A document git stopped a merge on is not also "modified": it is the one that has to be dealt with before anything else means anything.
 - The tree and the [changes list](../../../git-workflow/commit/the-changes-list/doc.md) never disagree about what happened to a file.
 - **The letter is the signal, not the colour.** A row's name keeps its own colour, so the mark never competes with the open document's highlight and two kinds of change are never told apart by hue alone.
@@ -14,6 +14,10 @@ What the tree says about a file git has something to say about.
 
 Colour alone cannot tell added from untracked, and cannot survive the open row's
 highlight — which is why the letter, out of six treatments prototyped.
+
+## Mocks
+
+- **shell** — the letters at the right of the rows, and the dot on a folder that holds a change. [light](../../../../design/screens/desktop/workspace-shell/shell-reading-and-editing-light.svg) · [dark](../../../../design/screens/desktop/workspace-shell/shell-reading-and-editing-dark.svg).
 
 ---
 

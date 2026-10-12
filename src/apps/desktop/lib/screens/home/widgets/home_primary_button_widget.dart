@@ -55,7 +55,13 @@ class HomePrimaryButtonWidget extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(HomeDesign.controlRadius),
         ),
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        // The family is restated: a button's text style replaces the
+        // theme's rather than merging with it, so it would lose the face.
+        textStyle: const TextStyle(
+          fontFamily: TomFonts.sans,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

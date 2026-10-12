@@ -42,6 +42,12 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        readPreferencesFileProvider.overrideWithValue(
+          ReadDocumentUseCase(
+            documentsFor: (SpaceEntity space) => documents,
+            observability: const _Silent(),
+          ),
+        ),
         // The preview's three: with no conflict the marks are the diff's,
         // and the diff is the preview's reading. Git here has no earlier
         // version of anything, so the fall-through is *no marks*.
@@ -120,6 +126,21 @@ void main() {
       tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
       '# Title\n\nProse.\n',
     );
+  });
+
+  testWidgets('the preferences file is drawn plain, not as markdown', (
+    WidgetTester tester,
+  ) async {
+    documents.content = '{\n  "theme": "dark"\n}';
+    await pumpEditor(tester);
+    container.read(spaceSessionProvider.notifier)
+      ..open(docs)
+      ..openPreferencesFile(SpaceRelativePathValueObject('preferences.json'));
+    await tester.pumpAndSettle();
+
+    final CodeEditor editor = tester.widget(find.byType(CodeEditor));
+    expect(editor.controller!.text, '{\n  "theme": "dark"\n}');
+    expect(editor.style?.codeTheme, isNull);
   });
 
   testWidgets('a document that is gone is named as that', (
@@ -253,17 +274,41 @@ void main() {
     WidgetTester tester,
   ) async {
     // A buffer that differs from the disk is the user's; nothing re-seeds
-    // the controller under their cursor.
+    // the controller under their cursor. Typed through the pane's own
+    // controller, which is what a keystroke is.
     documents.content = '# On main\n';
     await pumpEditor(tester, document: writing);
 
-    container.read(editorProvider.notifier).edit('half a sentence');
+    tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text =
+        'half a sentence';
     await settleTyping(tester);
 
     expect(
       tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
-      '# On main\n',
+      'half a sentence',
       reason: 'the pane re-seeded itself while the buffer was dirty',
+    );
+    expect(
+      (container.read(editorProvider) as EditorReady).source,
+      'half a sentence',
+    );
+  });
+
+  testWidgets('a write from elsewhere reaches a pane nobody has typed in', (
+    WidgetTester tester,
+  ) async {
+    // A conflict choice pressed in the preview, a replacement: the buffer
+    // changes before this pane sent anything. Taken for the pane's own echo,
+    // the pane kept the old text and the next keystroke put it back.
+    documents.content = '# As it was read\n';
+    await pumpEditor(tester, document: writing);
+
+    container.read(editorProvider.notifier).edit('# Written by the preview\n');
+    await settleTyping(tester);
+
+    expect(
+      tester.widget<CodeEditor>(find.byType(CodeEditor)).controller!.text,
+      '# Written by the preview\n',
     );
   });
 }
@@ -327,6 +372,13 @@ final class _Documents implements DocumentRepository {
       Success<DocumentEntity, DocumentFailure>(
         DocumentEntity(path: path, content: content),
       );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async {

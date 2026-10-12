@@ -1,7 +1,9 @@
 /// The undo the buttons outside the pane reach.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:re_editor/re_editor.dart';
 
 /// What `re_editor`'s own history can be asked, from outside the editor.
@@ -39,8 +41,8 @@ class EditorHistory extends ChangeNotifier {
 
   /// Gives [inside] back, if it is still the one being used.
   ///
-  /// **Only if it is still ours.** A mode change disposes one pane and mounts
-  /// another, and the order is not promised: a pane that cleared
+  /// **Only if it is still ours.** Another document disposes one pane and
+  /// mounts another, and the order is not promised: a pane that cleared
   /// unconditionally would take away the context its successor had already
   /// offered.
   ///
@@ -70,11 +72,95 @@ class EditorHistory extends ChangeNotifier {
   void _invoke(Intent intent) {
     final BuildContext? inside = _inside;
     // Deactivated between the offer and the press is ordinary: the pane goes
-    // away with a mode change and the button is still on screen.
+    // away with its document and the button is still on screen.
     if (inside == null || !inside.mounted) {
       return;
     }
     Actions.maybeInvoke(inside, intent);
+  }
+}
+
+/// ⌘Z and ⌘⇧Z (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y off macOS) while the source
+/// pane is off screen: the buttons' history, reached by the keyboard.
+///
+/// Only while [isActive] — with the pane on screen it answers the keys
+/// itself — and never from inside a text field, which keeps its own undo:
+/// a disabled action lets the key go on up to the field's.
+class EditorHistoryKeys extends StatelessWidget {
+  /// Hears the keys over [child] while [isActive].
+  const EditorHistoryKeys({
+    required this.isActive,
+    required this.child,
+    super.key,
+  });
+
+  /// Whether the source pane is off screen, so nothing else answers.
+  final bool isActive;
+
+  /// What the keys are heard from.
+  final Widget child;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<bool>('isActive', isActive));
+  }
+
+  static const _HistoryIntent _undo = _HistoryIntent(redo: false);
+  static const _HistoryIntent _redo = _HistoryIntent(redo: true);
+
+  @override
+  Widget build(BuildContext context) => Shortcuts(
+    shortcuts: defaultTargetPlatform == TargetPlatform.macOS
+        ? const <ShortcutActivator, Intent>{
+            SingleActivator(LogicalKeyboardKey.keyZ, meta: true): _undo,
+            SingleActivator(LogicalKeyboardKey.keyZ, meta: true, shift: true):
+                _redo,
+          }
+        : const <ShortcutActivator, Intent>{
+            SingleActivator(LogicalKeyboardKey.keyZ, control: true): _undo,
+            SingleActivator(
+              LogicalKeyboardKey.keyZ,
+              control: true,
+              shift: true,
+            ): _redo,
+            SingleActivator(LogicalKeyboardKey.keyY, control: true): _redo,
+          },
+    child: Actions(
+      actions: <Type, Action<Intent>>{
+        _HistoryIntent: _HistoryAction(
+          isActive: isActive,
+          history: EditorHistoryScope.read(context),
+        ),
+      },
+      child: child,
+    ),
+  );
+}
+
+class _HistoryIntent extends Intent {
+  const _HistoryIntent({required bool redo}) : _isRedo = redo;
+
+  final bool _isRedo;
+}
+
+class _HistoryAction extends Action<_HistoryIntent> {
+  _HistoryAction({required this._isActive, required this._history});
+
+  final bool _isActive;
+  final EditorHistory? _history;
+
+  @override
+  bool isEnabled(_HistoryIntent intent) =>
+      _isActive &&
+      (_history?.isReachable ?? false) &&
+      primaryFocus?.context?.findAncestorWidgetOfExactType<EditableText>() ==
+          null;
+
+  @override
+  Object? invoke(_HistoryIntent intent) {
+    intent._isRedo ? _history?.redo() : _history?.undo();
+    return null;
   }
 }
 

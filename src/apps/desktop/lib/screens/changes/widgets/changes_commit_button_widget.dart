@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/changes/changes_design.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -45,8 +46,17 @@ class ChangesCommitButtonWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
+    // The verb in progress on the button that was pressed, which keeps its
+    // fill: going quiet reads the same as a click that never landed
+    // (`docs/product/git-workflow/commit/confirming/doc.md`).
+    final bool isCommitting = ref.watch(
+      changesProvider.select(
+        (ChangesState state) => state is ChangesReady && state.isCommitting,
+      ),
+    );
+    final bool isFilled = canCommit || isCommitting;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: TomMetrics.padTight),
+      padding: const EdgeInsets.symmetric(horizontal: ChangesDesign.inset),
       child: SizedBox(
         width: double.infinity,
         height: ChangesDesign.buttonHeight,
@@ -57,8 +67,12 @@ class ChangesCommitButtonWidget extends ConsumerWidget {
           style: FilledButton.styleFrom(
             backgroundColor: colors.accent,
             foregroundColor: colors.surfaceRaised,
-            disabledBackgroundColor: colors.surfaceSunken,
-            disabledForegroundColor: colors.textMuted,
+            disabledBackgroundColor: isCommitting
+                ? colors.accent
+                : colors.control,
+            disabledForegroundColor: isCommitting
+                ? colors.surfaceRaised
+                : colors.textMuted,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(ChangesDesign.radius),
             ),
@@ -71,10 +85,28 @@ class ChangesCommitButtonWidget extends ConsumerWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          child: Text(
-            branch == null ? 'Commit' : 'Commit to ${branch!.value}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          // The check before the words, as every 1b board draws it.
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TomGlyphWidget(
+                glyph: TomGlyphEnum.check,
+                color: isFilled ? colors.surfaceRaised : colors.textMuted,
+                size: 11,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  isCommitting
+                      ? context.l10n.changesCommitting
+                      : branch == null
+                      ? context.l10n.changesCommit
+                      : context.l10n.changesCommitTo(branch!.value),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ),
       ),

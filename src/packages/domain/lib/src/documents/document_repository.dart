@@ -1,6 +1,8 @@
 /// What the application may ask of the documents in a space.
 library;
 
+import 'dart:typed_data';
+
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/src/documents/document_entity.dart';
 import 'package:tom_domain/src/documents/document_failure.dart';
@@ -20,6 +22,18 @@ abstract interface class DocumentRepository {
   Future<Result<DocumentEntity, DocumentFailure>> read(
     SpaceRelativePathValueObject path,
   );
+
+  /// The file at [path], byte for byte — for one that may not be text,
+  /// which [read] can only refuse.
+  Future<Result<Uint8List, DocumentFailure>> readBytes(
+    SpaceRelativePathValueObject path,
+  );
+
+  /// Creates [document] where its path says — **only if nothing is there**.
+  ///
+  /// `DocumentAlreadyExists` when the path is taken; nothing is ever
+  /// replaced, which is what separates this from [write].
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document);
 
   /// Writes [document] where its path says, creating or replacing the file.
   ///

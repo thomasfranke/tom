@@ -49,6 +49,7 @@ Engineering teams keep their documentation as markdown inside Git repositories, 
 4. **Local-first and offline-first.** No essential feature depends on the network. Sync is `git push/pull`.
 5. **A deliberately simple editor.** Source mode + preview. WYSIWYG is not a goal (not even later, barring overwhelming demand). GitHub built collaboration without a rich editor.
 6. **Open source (MIT) with a paid edition for convenience.** Individuals never pay; organizations pay for governance and comfort.
+7. **Everything TOM does to the repository is a command you can read.** The app runs the same `git` anyone would type and shows each command it ran — nothing happens to a repository that its owner cannot see and repeat by hand.
 
 ### The cost this accepts
 

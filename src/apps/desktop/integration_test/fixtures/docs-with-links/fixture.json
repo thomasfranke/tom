@@ -1,0 +1,6 @@
+{
+  "summary": "A docs folder whose roadmap links to its siblings by name",
+  "description": "The three answers a wikilink can get, in one sentence: [[setup]] resolves to one document, [[release-notes]] to none, and [[overview]] to two, because guides/ and reference/ both hold one. Everything committed, so whatever a scenario creates is the only change.",
+  "space": "docs",
+  "commit": "docs: link the roadmap"
+}

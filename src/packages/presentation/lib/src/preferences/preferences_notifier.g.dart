@@ -75,7 +75,7 @@ final class PreferencesNotifierProvider
 }
 
 String _$preferencesNotifierHash() =>
-    r'3019432ba6a6c072f30234cfa6f48fc05198fc5a';
+    r'27ce7e77bc8db924fd68d7a7139100ea066be2d1';
 
 /// What the machine remembers, and the one place it is changed.
 ///

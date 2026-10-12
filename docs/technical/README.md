@@ -12,7 +12,7 @@ below details one part of it.
 
 | | Answers |
 |---|---|
-| [`architecture.md`](architecture.md) | The layer graph: eight packages, who may depend on whom |
+| [`architecture.md`](architecture.md) | The layer graph: the packages, and who may depend on whom |
 | [`enforcement.md`](enforcement.md) | What makes a violation fail rather than be discouraged |
 | [`mobile.md`](mobile.md) | What changes when a second application arrives |
 | [`conventions/`](conventions/README.md) | The rules inside a package: naming, structure, errors across boundaries, external dependencies, the test layout |
@@ -27,6 +27,7 @@ below details one part of it.
 - **[`architecture.md`](architecture.md) and [`conventions/`](conventions/README.md) are normative** — binding on every change, not descriptive of the current one. Deviating requires a new entry in [`decisions/`](decisions/README.md) stating why, in the same change that deviates. Never a silent exception. Every other chapter describes current practice.
 - **A technical doc never states a product rule.** It links to the [`product/`](../product/README.md) chapter that owns it and explains the machinery underneath; when the two disagree, product states the intent and this is wrong.
 - **The canonical form of a rule is the dartdoc of the code that implements it.** These files state the rule, the code shows it — when those disagree the code is right and the doc is a bug.
+- **That rule is this chapter's only.** Which record wins depends on the chapter: here the code; in [`product/`](../product/README.md) the doc, and the code is the bug; in [`design/`](../design/README.md) the Penpot file, and its export is the record.
 - **Every folder's `README.md` is its index, and every file under it answers one question.** A file that grows a second subject is split, not sectioned — dartdoc points at `conventions/errors.md` expecting the whole file to be the rule it means.
 
 How any doc here is written is the `tom-docs` skill.

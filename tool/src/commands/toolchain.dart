@@ -9,7 +9,7 @@ import 'process.dart';
 
 /// Where the Flutter version is pinned: the single source of truth, read by
 /// the GitHub workflows through `flutter-version-file` and applied locally by
-/// `tom fvm`. Inside `src/` because that is the Flutter project root.
+/// `cli fvm`. Inside `src/` because that is the Flutter project root.
 const fvmrcPath = 'src/.fvmrc';
 
 /// Where the Dart SDK constraint is declared for the whole workspace.

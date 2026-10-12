@@ -11,6 +11,8 @@ The use case pattern captures unexpected exceptions and reports them. Calling a 
 3. **Real telemetry is explicitly opt-in:** if it ever exists, it is an alternative implementation enabled only by an active choice in settings, with a clear description of what is sent. Never in the initial MVP.
 4. Local crash reporting (a log file on the user's disk) is acceptable by default — the data does not leave the machine.
 
+**Revised:** TOM makes one network call of its own, and it is not telemetry — a GET of GitHub's latest release for the update check ([about](../../product/about/doc.md)). It runs when the person presses `Check for updates`, and at opening unless they unticked `Check for updates when TOM opens` — **on by default** (2026-10-11), a stored `false` respected; it is the one request that is not opt-in, because it carries nothing about the person. The request carries a `User-Agent: TOM` and an `Accept` header and nothing else — no identifier, no version, no data about the person or the machine (`DartIoHttpClientAppUpdatesImpl`). Everything else in this decision stands.
+
 ## Rationale
 - Positioning coherence: "your files, your machine" must hold for errors too.
 - Decision 7: observability is an external service → contract + isolated implementation.

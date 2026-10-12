@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/search/search_design.dart';
 import 'package:tom_desktop/screens/search/widgets/search_note_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -31,19 +32,20 @@ class SearchOccurrencesPanel extends ConsumerWidget {
     final String name =
         ref.watch(
           spaceSessionProvider.select(
-            (SpaceSessionState? session) => session?.openDocument?.name,
+            (SpaceSessionState? session) => session?.onScreen?.name,
           ),
         ) ??
         '';
+    final AppLocalizations l10n = context.l10n;
     if (ready == null || name.isEmpty) {
-      return const SearchNoteWidget('Open a document to search inside it.');
+      return SearchNoteWidget(l10n.searchOpenADocument);
     }
     if (ready.terms.trim().isEmpty) {
-      return const SearchNoteWidget('Type to search this document.');
+      return SearchNoteWidget(l10n.searchTypeToSearch);
     }
     final List<OccurrenceValueObject> found = ready.occurrences;
     if (found.isEmpty) {
-      return SearchNoteWidget('Nothing in $name says that.');
+      return SearchNoteWidget(l10n.searchNothingInDocument(name));
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,7 +63,7 @@ class SearchOccurrencesPanel extends ConsumerWidget {
               children: <Widget>[
                 Expanded(
                   child: Text(
-                    _counted(found.length, name),
+                    l10n.searchOccurrenceCount(found.length, name),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -95,10 +97,6 @@ class SearchOccurrencesPanel extends ConsumerWidget {
       ],
     );
   }
-
-  /// How many, and in what.
-  static String _counted(int found, String name) =>
-      found == 1 ? '1 occurrence in $name' : '$found occurrences in $name';
 }
 
 /// Replaces all of them, at the right of the count.
@@ -127,7 +125,7 @@ class _ReplaceAllWidget extends ConsumerWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        child: const Text('Replace all'),
+        child: Text(context.l10n.searchReplaceAll),
       ),
     );
   }
@@ -175,64 +173,73 @@ class _RowWidget extends ConsumerWidget {
       child: MouseRegion(
         onEnter: (PointerEnterEvent _) =>
             ref.read(searchProvider.notifier).focusOn(index),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: isCurrent ? colors.accentSoft : null,
-            borderRadius: BorderRadius.circular(SearchDesign.radius),
-          ),
-          child: SizedBox(
-            height: SearchDesign.rowHeight,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                SearchDesign.hitPad,
-                SearchDesign.rowTop,
-                SearchDesign.hitPad,
-                0,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        if (occurrence.heading.isNotEmpty) ...<Widget>[
-                          Text(
-                            occurrence.heading,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: SearchDesign.heading,
-                              height: 1.2,
-                              color: colors.textMuted,
+        // Going to it: the caret lands on the match and the pane scrolls
+        // there (`docs/product/search/in-the-document/doc.md`).
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => ref
+              .read(editorProvider.notifier)
+              .goTo(occurrence.start, occurrence.end),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: isCurrent ? colors.accentSoft : null,
+              borderRadius: BorderRadius.circular(SearchDesign.radius),
+            ),
+            child: SizedBox(
+              height: SearchDesign.rowHeight,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  SearchDesign.hitPad,
+                  SearchDesign.rowTop,
+                  SearchDesign.hitPad,
+                  0,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          if (occurrence.heading.isNotEmpty) ...<Widget>[
+                            Text(
+                              occurrence.heading,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: SearchDesign.heading,
+                                height: 1.2,
+                                color: colors.textMuted,
+                              ),
                             ),
+                            const SizedBox(height: SearchDesign.headingGap),
+                          ],
+                          _ExcerptWidget(
+                            occurrence: occurrence,
+                            replacement: replacement,
+                            isReplacing: isReplacing,
                           ),
-                          const SizedBox(height: SearchDesign.headingGap),
                         ],
-                        _ExcerptWidget(
-                          occurrence: occurrence,
-                          replacement: replacement,
-                          isReplacing: isReplacing,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  if (isReplacing && isCurrent) ...<Widget>[
-                    _ActionWidget(
-                      icon: Icons.swap_horiz,
-                      tooltip: 'Replace this one',
-                      onPressed: () => ref
-                          .read(searchProvider.notifier)
-                          .replaceOne(occurrence),
-                    ),
-                    _ActionWidget(
-                      icon: Icons.close,
-                      tooltip: 'Skip this one',
-                      onPressed: () =>
-                          ref.read(searchProvider.notifier).dismiss(occurrence),
-                    ),
+                    if (isReplacing && isCurrent) ...<Widget>[
+                      _ActionWidget(
+                        icon: TomGlyphEnum.replace,
+                        tooltip: context.l10n.searchReplaceThisOne,
+                        onPressed: () => ref
+                            .read(searchProvider.notifier)
+                            .replaceOne(occurrence),
+                      ),
+                      _ActionWidget(
+                        icon: TomGlyphEnum.close,
+                        tooltip: context.l10n.searchSkipThisOne,
+                        onPressed: () => ref
+                            .read(searchProvider.notifier)
+                            .dismiss(occurrence),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -311,7 +318,7 @@ class _ActionWidget extends StatelessWidget {
     required this.onPressed,
   });
 
-  final IconData icon;
+  final TomGlyphEnum icon;
   final String tooltip;
   final VoidCallback onPressed;
 
@@ -319,7 +326,7 @@ class _ActionWidget extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<IconData>('icon', icon))
+      ..add(EnumProperty<TomGlyphEnum>('icon', icon))
       ..add(StringProperty('tooltip', tooltip))
       ..add(ObjectFlagProperty<VoidCallback>.has('onPressed', onPressed));
   }
@@ -329,9 +336,11 @@ class _ActionWidget extends StatelessWidget {
     final TomColors colors = TomColors.of(context);
     return IconButton(
       onPressed: onPressed,
-      icon: Icon(icon),
-      iconSize: SearchDesign.rowAction,
-      color: colors.textMuted,
+      icon: TomGlyphWidget(
+        glyph: icon,
+        color: colors.textMuted,
+        size: SearchDesign.rowAction,
+      ),
       tooltip: tooltip,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints.tightFor(

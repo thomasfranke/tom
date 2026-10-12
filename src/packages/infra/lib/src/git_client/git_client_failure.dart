@@ -50,6 +50,40 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
     AppFailure? cause,
   }) = GitClientAuthenticationFailed;
 
+  /// The remote could not be reached at all: no route, no name, no answer
+  /// to the connection (`docs/product/git-workflow/push-pull/when-the-link-is-broken/doc.md`).
+  const factory GitClientFailure.networkUnavailable(
+    /// What git wrote to stderr, verbatim. For diagnostics — never parsed.
+    String stderr, {
+    AppFailure? cause,
+  }) = GitClientNetworkUnavailable;
+
+  /// There is no remote to talk to: none configured, or none for this
+  /// branch to push to.
+  const factory GitClientFailure.noRemote(
+    /// What git wrote to stderr, verbatim. For diagnostics — never parsed.
+    String stderr, {
+    AppFailure? cause,
+  }) = GitClientNoRemote;
+
+  /// A clone's address names no repository: nothing there, or a protocol
+  /// git does not speak.
+  ///
+  /// Apart from [GitClientNoRemote], whose words git also uses here, because
+  /// a clone has no remote to configure — the address itself is wrong.
+  const factory GitClientFailure.remoteNotFound(
+    /// What git wrote to stderr, verbatim. For diagnostics — never parsed.
+    String stderr, {
+    AppFailure? cause,
+  }) = GitClientRemoteNotFound;
+
+  /// The folder a clone was to fill already holds something.
+  const factory GitClientFailure.destinationTaken(
+    /// The absolute path the clone was asked to create.
+    String path, {
+    AppFailure? cause,
+  }) = GitClientDestinationTaken;
+
   /// The remote refused a push because it had moved on first.
   ///
   /// Its own variant because the product shows it as its own outcome
@@ -59,6 +93,24 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
     String stderr, {
     AppFailure? cause,
   }) = GitClientPushRejected;
+
+  /// The remote refused a push because it protects the branch.
+  ///
+  /// Its own variant because trying again answers the same for ever
+  /// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
+  const factory GitClientFailure.branchProtected(
+    /// What git wrote to stderr, verbatim. For diagnostics — never parsed.
+    String stderr, {
+    AppFailure? cause,
+  }) = GitClientBranchProtected;
+
+  /// A merge — a pull's second half — refused to start, because it would
+  /// overwrite changes nobody committed, tracked or not.
+  const factory GitClientFailure.localChangesOverwritten(
+    /// The paths git listed, relative to the repository root.
+    List<String> paths, {
+    AppFailure? cause,
+  }) = GitClientLocalChangesOverwritten;
 
   /// A command ran past the time it was allowed and was killed.
   ///
@@ -85,6 +137,27 @@ sealed class GitClientFailure with _$GitClientFailure implements AppFailure {
     String path, {
     AppFailure? cause,
   }) = GitClientPathNotInRevision;
+
+  /// Paths to be deleted as never committed are in `HEAD`.
+  ///
+  /// Nothing was deleted: the caller's reading of the repository was stale,
+  /// and a committed file is one git can put back instead.
+  const factory GitClientFailure.pathCommitted(
+    /// The ones `HEAD` holds, relative to the repository root.
+    List<String> paths, {
+    AppFailure? cause,
+  }) = GitClientPathCommitted;
+
+  /// The command was refused before it started: somebody said no at the
+  /// gate ([Decision 38](../../../../../../docs/technical/decisions/038-a-command-waits-at-a-gate-in-tom-core.md)).
+  ///
+  /// Not git's doing and not an error — nothing ran.
+  @Implements<CommandDenial>()
+  const factory GitClientFailure.commandDenied(
+    /// The command as it would have run, secrets taken out.
+    String command, {
+    AppFailure? cause,
+  }) = GitClientCommandDenied;
 
   /// A git command failed in a way the contract has no name for.
   ///

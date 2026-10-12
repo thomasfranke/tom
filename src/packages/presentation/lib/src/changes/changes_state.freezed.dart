@@ -125,12 +125,12 @@ return failed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( String message,  bool isBusy,  AppFailure? failure)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( String message,  String description,  bool isBusy,  bool isCommitting,  AppFailure? failure)?  ready,TResult Function( AppFailure failure)?  failed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case ChangesInitial() when initial != null:
 return initial();case ChangesLoading() when loading != null:
 return loading();case ChangesReady() when ready != null:
-return ready(_that.message,_that.isBusy,_that.failure);case ChangesFailed() when failed != null:
+return ready(_that.message,_that.description,_that.isBusy,_that.isCommitting,_that.failure);case ChangesFailed() when failed != null:
 return failed(_that.failure);case _:
   return orElse();
 
@@ -149,12 +149,12 @@ return failed(_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( String message,  bool isBusy,  AppFailure? failure)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( String message,  String description,  bool isBusy,  bool isCommitting,  AppFailure? failure)  ready,required TResult Function( AppFailure failure)  failed,}) {final _that = this;
 switch (_that) {
 case ChangesInitial():
 return initial();case ChangesLoading():
 return loading();case ChangesReady():
-return ready(_that.message,_that.isBusy,_that.failure);case ChangesFailed():
+return ready(_that.message,_that.description,_that.isBusy,_that.isCommitting,_that.failure);case ChangesFailed():
 return failed(_that.failure);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -169,12 +169,12 @@ return failed(_that.failure);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( String message,  bool isBusy,  AppFailure? failure)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( String message,  String description,  bool isBusy,  bool isCommitting,  AppFailure? failure)?  ready,TResult? Function( AppFailure failure)?  failed,}) {final _that = this;
 switch (_that) {
 case ChangesInitial() when initial != null:
 return initial();case ChangesLoading() when loading != null:
 return loading();case ChangesReady() when ready != null:
-return ready(_that.message,_that.isBusy,_that.failure);case ChangesFailed() when failed != null:
+return ready(_that.message,_that.description,_that.isBusy,_that.isCommitting,_that.failure);case ChangesFailed() when failed != null:
 return failed(_that.failure);case _:
   return null;
 
@@ -251,16 +251,23 @@ String toString() {
 
 
 class ChangesReady implements ChangesState {
-  const ChangesReady({this.message = '', this.isBusy = false, this.failure});
+  const ChangesReady({this.message = '', this.description = '', this.isBusy = false, this.isCommitting = false, this.failure});
   
 
 /// The commit message being written — a draft, so panel-local.
 @JsonKey() final  String message;
+/// The body under the summary, optional; a commit joins the two with a
+/// blank line, which is how git tells them apart.
+@JsonKey() final  String description;
 /// Whether a stage, an unstage or a commit is in flight.
 ///
 /// One flag for all three: git is serialized per space underneath, so a
 /// second operation would only queue behind the first.
 @JsonKey() final  bool isBusy;
+/// Whether the operation in flight is the commit: the one that dims the
+/// staged rows and says `Committing…`
+/// (`docs/product/git-workflow/commit/confirming/doc.md`).
+@JsonKey() final  bool isCommitting;
 /// Why the last operation did not land, or null when it did.
  final  AppFailure? failure;
 
@@ -274,16 +281,16 @@ $ChangesReadyCopyWith<ChangesReady> get copyWith => _$ChangesReadyCopyWithImpl<C
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChangesReady&&(identical(other.message, message) || other.message == message)&&(identical(other.isBusy, isBusy) || other.isBusy == isBusy)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChangesReady&&(identical(other.message, message) || other.message == message)&&(identical(other.description, description) || other.description == description)&&(identical(other.isBusy, isBusy) || other.isBusy == isBusy)&&(identical(other.isCommitting, isCommitting) || other.isCommitting == isCommitting)&&(identical(other.failure, failure) || other.failure == failure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,message,isBusy,failure);
+int get hashCode => Object.hash(runtimeType,message,description,isBusy,isCommitting,failure);
 
 @override
 String toString() {
-  return 'ChangesState.ready(message: $message, isBusy: $isBusy, failure: $failure)';
+  return 'ChangesState.ready(message: $message, description: $description, isBusy: $isBusy, isCommitting: $isCommitting, failure: $failure)';
 }
 
 
@@ -294,7 +301,7 @@ abstract mixin class $ChangesReadyCopyWith<$Res> implements $ChangesStateCopyWit
   factory $ChangesReadyCopyWith(ChangesReady value, $Res Function(ChangesReady) _then) = _$ChangesReadyCopyWithImpl;
 @useResult
 $Res call({
- String message, bool isBusy, AppFailure? failure
+ String message, String description, bool isBusy, bool isCommitting, AppFailure? failure
 });
 
 
@@ -311,10 +318,12 @@ class _$ChangesReadyCopyWithImpl<$Res>
 
 /// Create a copy of ChangesState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? message = null,Object? isBusy = null,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') $Res call({Object? message = null,Object? description = null,Object? isBusy = null,Object? isCommitting = null,Object? failure = freezed,}) {
   return _then(ChangesReady(
 message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,isBusy: null == isBusy ? _self.isBusy : isBusy // ignore: cast_nullable_to_non_nullable
+as bool,isCommitting: null == isCommitting ? _self.isCommitting : isCommitting // ignore: cast_nullable_to_non_nullable
 as bool,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as AppFailure?,
   ));

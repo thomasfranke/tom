@@ -2,6 +2,8 @@
 /// cannot produce every failure mode on demand.
 library;
 
+import 'dart:typed_data';
+
 import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
@@ -84,6 +86,46 @@ void main() {
 
       expect(client.shownRevision, 'HEAD~1');
       expect(client.shownPath, 'docs/guide.md');
+    });
+
+    test('bytesAt names a revision and a path, and decodes nothing', () async {
+      client.bytes = <int>[0xFF, 0x00, 0x41];
+
+      expect(
+        valueOf(
+          await repository.bytesAt(
+            revision: 'HEAD',
+            path: RepoRelativePathValueObject('assets/logo.png'),
+          ),
+        ),
+        <int>[0xFF, 0x00, 0x41],
+      );
+      expect(client.shownRevision, 'HEAD');
+      expect(client.shownPath, 'assets/logo.png');
+    });
+
+    test('stagedBytes asks the index, which has no revision', () async {
+      client.bytes = <int>[0x61, 0x0A];
+
+      expect(
+        valueOf(
+          await repository.stagedBytes(RepoRelativePathValueObject('new.txt')),
+        ),
+        <int>[0x61, 0x0A],
+      );
+      expect(client.calls, <String>['showStagedBytes']);
+      expect(client.shownPath, 'new.txt');
+    });
+
+    test('a path the index does not hold is no version, as at HEAD', () async {
+      client.failure = const GitClientPathNotInRevision('', 'new.txt');
+
+      expect(
+        failureOf(
+          await repository.stagedBytes(RepoRelativePathValueObject('new.txt')),
+        ),
+        isA<GitPathNotInRevision>(),
+      );
     });
 
     test('a message crosses untouched', () async {
@@ -231,6 +273,21 @@ void main() {
       );
     });
 
+    test('a pull refused over uncommitted work keeps the paths', () async {
+      client.failure = const GitClientLocalChangesOverwritten(<String>[
+        'docs/a.md',
+      ]);
+
+      expect(
+        failureOf(await repository.pull()),
+        isA<GitLocalChangesOverwritten>().having(
+          (GitLocalChangesOverwritten f) => f.paths,
+          'paths',
+          <String>['docs/a.md'],
+        ),
+      );
+    });
+
     test('a timeout is named and carries no command line', () async {
       expect(
         await translationOf(
@@ -238,6 +295,15 @@ void main() {
         ),
         isA<GitTimedOut>(),
       );
+    });
+
+    test('a refused command is a refusal, never the fallback', () async {
+      final AppFailure refused = await translationOf(
+        const GitClientCommandDenied('git push'),
+      );
+
+      expect(refused, isA<GitCommandDenied>());
+      expect(refused.isDenial, isTrue);
     });
 
     test('anything else lands on the fallback', () async {
@@ -341,6 +407,297 @@ void main() {
       expect(failureOf(await repository.abortMerge()), isA<GitNotInstalled>());
     });
   });
+
+  group('what a pull request proposes', () {
+    test('the base is read as origin has it when origin has it', () async {
+      client.existing = <String>{'origin/main'};
+
+      await repository.commitsSince(BranchNameValueObject('main'));
+      expect(client.logSince, 'origin/main');
+
+      await repository.changesSince(BranchNameValueObject('main'));
+      expect(client.diffBase, 'origin/main');
+    });
+
+    test('and as the local branch when origin has none', () async {
+      await repository.commitsSince(BranchNameValueObject('main'));
+
+      expect(client.logSince, 'main');
+    });
+
+    test('no address and no default branch are nulls, not failures', () async {
+      expect(valueOf(await repository.remoteAddress()), isNull);
+      expect(valueOf(await repository.defaultBranch()), isNull);
+    });
+
+    test('an address and a branch come back as they were printed', () async {
+      client.text = 'git@github.com:acme/docs.git';
+      expect(
+        valueOf(await repository.remoteAddress()),
+        'git@github.com:acme/docs.git',
+      );
+
+      client.text = 'main';
+      expect(
+        valueOf(await repository.defaultBranch()),
+        BranchNameValueObject('main'),
+      );
+    });
+
+    test('a fork point that is no sha is no shared history', () async {
+      expect(
+        valueOf(await repository.forkPoint(BranchNameValueObject('main'))),
+        isNull,
+      );
+
+      client.forkPoint = 'c' * 40;
+      expect(
+        valueOf(await repository.forkPoint(BranchNameValueObject('main'))),
+        CommitShaValueObject('c' * 40),
+      );
+    });
+
+    test('a failure on the way is git’s failure, translated', () async {
+      client.failure = const GitClientTimedOut('git', Duration.zero);
+
+      expect(
+        failureOf(await repository.changesSince(BranchNameValueObject('main'))),
+        isA<GitTimedOut>(),
+      );
+    });
+  });
+
+  group('what a pull brought', () {
+    test('head is the sha git printed', () async {
+      client.text = 'a' * 40;
+
+      expect(valueOf(await repository.head()), CommitShaValueObject('a' * 40));
+    });
+
+    test('head before the first commit is null', () async {
+      client.text = '';
+
+      expect(valueOf(await repository.head()), isNull);
+    });
+
+    test('counts against the sha, or everything without one', () async {
+      client.upstreamCount = 3;
+
+      expect(
+        valueOf(
+          await repository.upstreamCommitsSince(CommitShaValueObject('b' * 40)),
+        ),
+        3,
+      );
+      expect(client.countedSince, 'b' * 40);
+
+      await repository.upstreamCommitsSince(null);
+      expect(client.countedSince, '');
+    });
+  });
+
+  group('publishing and the git directory', () {
+    test('publish sends the branch as git spells it', () async {
+      await repository.publish(BranchNameValueObject('feat/notes'));
+
+      expect(client.published, 'feat/notes');
+    });
+
+    test('a publish with no remote is GitNoRemote', () async {
+      client.failure = const GitClientNoRemote('no origin');
+
+      expect(
+        failureOf(await repository.publish(BranchNameValueObject('main'))),
+        isA<GitNoRemote>(),
+      );
+    });
+
+    test('the git directory is passed through', () async {
+      client.text = '/code/app/.git';
+
+      expect(valueOf(await repository.gitDirectory()), '/code/app/.git');
+    });
+  });
+
+  group('the clone vocabulary', () {
+    test('an address with nothing there is GitRemoteNotFound', () async {
+      client.failure = const GitClientRemoteNotFound('does not exist');
+
+      expect(failureOf(await repository.pull()), isA<GitRemoteNotFound>());
+    });
+
+    test('a taken folder keeps its path', () async {
+      client.failure = const GitClientDestinationTaken('/tmp/docs');
+
+      final GitFailure failure = failureOf(await repository.pull());
+
+      expect(failure, isA<GitCloneDestinationTaken>());
+      expect((failure as GitCloneDestinationTaken).path, '/tmp/docs');
+    });
+  });
+
+  group('discarding everything', () {
+    test('asks the client to put the tracked files back', () async {
+      // `HEAD` names a commit: before the first one nothing is put back.
+      client.text = 'c' * 40;
+
+      await repository.discardAll();
+
+      expect(client.calls, contains('discardAll'));
+    });
+
+    test('before the first commit it asks for nothing to be written', () async {
+      client.text = '';
+
+      expect(failureOf(await repository.discardAll()), isA<GitNoCommitsYet>());
+      expect(client.calls, isNot(contains('discardAll')));
+    });
+
+    test('a refusal comes back in the product vocabulary', () async {
+      client.failure = const GitClientExecutableNotFound();
+
+      expect(failureOf(await repository.discardAll()), isA<GitNotInstalled>());
+    });
+  });
+
+  group('discarding one row', () {
+    final List<RepoRelativePathValueObject> paths =
+        <RepoRelativePathValueObject>[
+          RepoRelativePathValueObject('docs/new.md'),
+          RepoRelativePathValueObject('docs/old.md'),
+        ];
+
+    test('each kind reaches its own command, with every path', () async {
+      for (final (DiscardKindEnum kind, String call)
+          in const <(DiscardKindEnum, String)>[
+            (DiscardKindEnum.toStaged, 'discardUnstaged'),
+            (DiscardKindEnum.toLastCommit, 'discardSinceCommit'),
+            (DiscardKindEnum.delete, 'deleteUncommitted'),
+          ]) {
+        await repository.discard(kind, paths);
+
+        expect(client.calls.last, call);
+        expect(client.discarded, <String>['docs/new.md', 'docs/old.md']);
+      }
+    });
+
+    test('a file that turned out committed keeps its name', () async {
+      client.failure = const GitClientPathCommitted(<String>['docs/old.md']);
+
+      expect(
+        failureOf(await repository.discard(DiscardKindEnum.delete, paths)),
+        isA<GitPathCommitted>().having(
+          (GitPathCommitted f) => f.paths,
+          'paths',
+          <String>['docs/old.md'],
+        ),
+      );
+    });
+
+    test('a refusal comes back in the product vocabulary', () async {
+      client.failure = const GitClientExecutableNotFound();
+
+      expect(
+        failureOf(await repository.discard(DiscardKindEnum.delete, paths)),
+        isA<GitNotInstalled>(),
+      );
+    });
+  });
+
+  group('the branch a branch came from', () {
+    test('a recorded base reads back as a name', () async {
+      await repository.recordBase(
+        BranchNameValueObject('feat/notes'),
+        BranchNameValueObject('develop'),
+      );
+
+      expect(client.recordedBases, <String, String>{'feat/notes': 'develop'});
+      expect(
+        valueOf(
+          await repository.recordedBase(BranchNameValueObject('feat/notes')),
+        ),
+        BranchNameValueObject('develop'),
+      );
+    });
+
+    test('nothing recorded is null, not a failure', () async {
+      expect(
+        valueOf(await repository.recordedBase(BranchNameValueObject('main'))),
+        isNull,
+      );
+    });
+
+    test('a standing shares history unless HEAD is all ahead of it', () async {
+      client
+        ..headCommits = 3
+        ..text = <String>[
+          <String>['refs/heads/main', '', '0 2'].join(GitClient.unitSeparator),
+          <String>[
+            'refs/heads/gh-pages',
+            '',
+            '4 3',
+          ].join(GitClient.unitSeparator),
+        ].map((String r) => '$r${GitClient.recordSeparator}\n').join();
+
+      final List<BranchStandingValueObject> standings = valueOf(
+        await repository.standings(),
+      );
+
+      expect(
+        standings.map((BranchStandingValueObject it) => it.sharesHistory),
+        <bool>[true, false],
+      );
+    });
+
+    test('a refusal comes back in the product vocabulary', () async {
+      client.failure = const GitClientExecutableNotFound();
+
+      expect(failureOf(await repository.standings()), isA<GitNotInstalled>());
+      expect(
+        failureOf(
+          await repository.recordBase(
+            BranchNameValueObject('a'),
+            BranchNameValueObject('b'),
+          ),
+        ),
+        isA<GitNotInstalled>(),
+      );
+    });
+  });
+
+  group('who commits, and which account is used here', () {
+    test('both halves of the identity come back trimmed', () async {
+      client.text = 'Ada Lovelace${GitClient.unitSeparator}ada@example.com\n';
+
+      expect(
+        valueOf(await repository.commitIdentity()),
+        const CommitIdentityValueObject(
+          name: 'Ada Lovelace',
+          email: 'ada@example.com',
+        ),
+      );
+    });
+
+    test('a half git has nothing for is unset, not empty', () async {
+      client.text = GitClient.unitSeparator;
+
+      final CommitIdentityValueObject identity = valueOf(
+        await repository.commitIdentity(),
+      );
+
+      expect(identity.name, isNull);
+      expect(identity.email, isNull);
+      expect(identity.isIncomplete, isTrue);
+    });
+
+    test('a chosen account reads back, and none is null', () async {
+      expect(valueOf(await repository.chosenAccount()), isNull);
+
+      await repository.chooseAccount('octocat');
+
+      expect(valueOf(await repository.chosenAccount()), 'octocat');
+    });
+  });
 }
 
 /// A [GitClient] that records what it was asked and answers what it was told
@@ -348,6 +705,9 @@ void main() {
 final class _RecordingGitClient implements GitClient {
   /// What every reading command returns while [failure] is null.
   String text = '';
+
+  /// What the two byte-level reads return while [failure] is null.
+  List<int> bytes = <int>[];
 
   /// What every command fails with, or null to succeed.
   GitClientFailure? failure;
@@ -358,6 +718,7 @@ final class _RecordingGitClient implements GitClient {
   final List<String> calls = <String>[];
   String? logPath;
   int? logLimit;
+  String? logSince;
   List<String>? staged;
   List<String>? unstaged;
   String? message;
@@ -379,6 +740,10 @@ final class _RecordingGitClient implements GitClient {
       _answer<String>('repositoryRoot', text);
 
   @override
+  Future<Result<String, GitClientFailure>> version() async =>
+      _answer<String>('version', text);
+
+  @override
   Future<Result<String, GitClientFailure>> status() async =>
       _answer<String>('status', text);
 
@@ -386,9 +751,11 @@ final class _RecordingGitClient implements GitClient {
   Future<Result<String, GitClientFailure>> log({
     String? path,
     int? limit,
+    String? since,
   }) async {
     logPath = path;
     logLimit = limit;
+    logSince = since;
     return _answer<String>('log', text);
   }
 
@@ -404,6 +771,24 @@ final class _RecordingGitClient implements GitClient {
     shownRevision = revision;
     shownPath = path;
     return _answer<String>('show', text);
+  }
+
+  @override
+  Future<Result<Uint8List, GitClientFailure>> showBytes(
+    String revision,
+    String path,
+  ) async {
+    shownRevision = revision;
+    shownPath = path;
+    return _answer<Uint8List>('showBytes', Uint8List.fromList(bytes));
+  }
+
+  @override
+  Future<Result<Uint8List, GitClientFailure>> showStagedBytes(
+    String path,
+  ) async {
+    shownPath = path;
+    return _answer<Uint8List>('showStagedBytes', Uint8List.fromList(bytes));
   }
 
   @override
@@ -459,4 +844,164 @@ final class _RecordingGitClient implements GitClient {
   @override
   Future<Result<void, GitClientFailure>> abortMerge() async =>
       _answer<void>('abortMerge', null);
+
+  @override
+  Future<Result<void, GitClientFailure>> discardAll() async =>
+      _answer<void>('discardAll', null);
+
+  /// The paths the last discard of one row was asked for.
+  List<String>? discarded;
+
+  @override
+  Future<Result<void, GitClientFailure>> discardUnstaged(
+    List<String> paths,
+  ) async {
+    discarded = paths;
+    return _answer<void>('discardUnstaged', null);
+  }
+
+  @override
+  Future<Result<void, GitClientFailure>> discardSinceCommit(
+    List<String> paths,
+  ) async {
+    discarded = paths;
+    return _answer<void>('discardSinceCommit', null);
+  }
+
+  @override
+  Future<Result<void, GitClientFailure>> deleteUncommitted(
+    List<String> paths,
+  ) async {
+    discarded = paths;
+    return _answer<void>('deleteUncommitted', null);
+  }
+
+  /// What `diff --numstat` prints, apart from [text] because a proposal
+  /// reads both diffs in one call.
+  String numstat = '';
+
+  /// What `diff --name-status` prints.
+  String nameStatus = '';
+
+  /// The base both diffs were asked against.
+  String? diffBase;
+
+  @override
+  Future<Result<String, GitClientFailure>> diffNumstat(String base) async {
+    diffBase = base;
+    return _answer<String>('diffNumstat', numstat);
+  }
+
+  @override
+  Future<Result<String, GitClientFailure>> diffNameStatus(String base) async {
+    diffBase = base;
+    return _answer<String>('diffNameStatus', nameStatus);
+  }
+
+  /// What `merge-base` answers.
+  String forkPoint = '';
+
+  @override
+  Future<Result<String, GitClientFailure>> mergeBase(String revision) async =>
+      _answer<String>('mergeBase', forkPoint);
+
+  /// The revisions [resolves] says exist.
+  Set<String> existing = <String>{};
+
+  @override
+  Future<Result<bool, GitClientFailure>> resolves(String revision) async =>
+      _answer<bool>('resolves', existing.contains(revision));
+
+  @override
+  Future<Result<String, GitClientFailure>> remoteUrl() async =>
+      _answer<String>('remoteUrl', text);
+
+  @override
+  Future<Result<String, GitClientFailure>> defaultBranch() async =>
+      _answer<String>('defaultBranch', text);
+
+  @override
+  Future<Result<String, GitClientFailure>> currentBranch() async =>
+      _answer<String>('currentBranch', text);
+
+  /// What [upstreamCommitsSince] counts, and what it was asked about.
+  int upstreamCount = 0;
+  String? countedSince;
+
+  /// The branch [publish] was handed.
+  String? published;
+
+  @override
+  Future<Result<void, GitClientFailure>> clone(
+    String url, {
+    void Function(String line)? onProgress,
+  }) async => _answer<void>('clone', null);
+
+  @override
+  Future<Result<String, GitClientFailure>> head() async =>
+      _answer<String>('head', text);
+
+  @override
+  Future<Result<int, GitClientFailure>> upstreamCommitsSince(
+    String since,
+  ) async {
+    countedSince = since;
+    return _answer<int>('upstreamCommitsSince', upstreamCount);
+  }
+
+  @override
+  Future<Result<void, GitClientFailure>> publish(String branch) async {
+    published = branch;
+    return _answer<void>('publish', null);
+  }
+
+  @override
+  Future<Result<String, GitClientFailure>> gitDirectory() async =>
+      _answer<String>('gitDirectory', text);
+
+  /// How many commits [commitCount] says `HEAD` has.
+  int headCommits = 0;
+
+  /// What [recordBranchBase] was handed, as `branch → base`.
+  final Map<String, String> recordedBases = <String, String>{};
+
+  @override
+  Future<Result<String, GitClientFailure>> branchStandings() async =>
+      _answer<String>('branchStandings', text);
+
+  @override
+  Future<Result<int, GitClientFailure>> commitCount() async =>
+      _answer<int>('commitCount', headCommits);
+
+  @override
+  Future<Result<String, GitClientFailure>> branchBase(String branch) async =>
+      _answer<String>('branchBase', recordedBases[branch] ?? '');
+
+  @override
+  Future<Result<void, GitClientFailure>> recordBranchBase(
+    String branch,
+    String base,
+  ) async {
+    recordedBases[branch] = base;
+    return _answer<void>('recordBranchBase', null);
+  }
+
+  /// What [recordGithubAccount] was last handed.
+  String recordedAccount = '';
+
+  @override
+  Future<Result<String, GitClientFailure>> identity() async =>
+      _answer<String>('identity', text);
+
+  @override
+  Future<Result<String, GitClientFailure>> githubAccount() async =>
+      _answer<String>('githubAccount', recordedAccount);
+
+  @override
+  Future<Result<void, GitClientFailure>> recordGithubAccount(
+    String login,
+  ) async {
+    recordedAccount = login;
+    return _answer<void>('recordGithubAccount', null);
+  }
 }

@@ -21,8 +21,12 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
     String markdown,
   ) async {
     try {
-      final List<String> lines = markdown.split('\n');
-      final _Parsed parsed = _parseWithPositions(markdown);
+      // A line holding only a carriage return is not blank to the package, so
+      // a Windows document would lose the cuts at its blank lines. Lines are
+      // counted the same either way, so the spans still address the original.
+      final String text = markdown.replaceAll('\r\n', '\n');
+      final List<String> lines = text.split('\n');
+      final _Parsed parsed = _parseWithPositions(text);
       return Success<MarkdownOutlineDto, MarkdownParserFailure>(
         MarkdownOutlineDto(
           spans: List<MarkdownSpanDto>.unmodifiable(<MarkdownSpanDto>[
@@ -39,6 +43,9 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
           ]),
           linkDefinitions: _definitionsOf(parsed.linkReferences),
           footnotes: _footnotesOf(parsed, lines),
+          wikilinks: List<String>.unmodifiable(<String>[
+            for (final md.Node node in parsed.nodes) ..._wikilinksIn(node),
+          ]),
         ),
       );
     } on Object catch (error) {
@@ -85,6 +92,23 @@ final class MarkdownPackageParserImpl implements MarkdownParser {
       'hr' => MarkdownSpanKindEnum.rule,
       _ => MarkdownSpanKindEnum.html,
     };
+  }
+
+  /// What each wikilink under [node] holds between its brackets, depth first.
+  ///
+  /// The synthesised footnotes section is walked like any node, so a link in
+  /// a note's text is reported too.
+  static Iterable<String> _wikilinksIn(md.Node node) sync* {
+    if (node is! md.Element) {
+      return;
+    }
+    if (node.tag == _Wikilink.tag) {
+      yield node.textContent;
+      return;
+    }
+    for (final md.Node child in node.children ?? const <md.Node>[]) {
+      yield* _wikilinksIn(child);
+    }
   }
 
   /// Every footnote of the document, in citation order.
@@ -189,6 +213,9 @@ _Parsed _parseWithPositions(String markdown) {
     extensionSet: md.ExtensionSet.gitHubWeb,
     blockSyntaxes: syntaxes,
     withDefaultBlockSyntaxes: false,
+    // Ahead of the package's own, which is where it puts a caller's: at a
+    // `[[` this one is asked before the link syntax claims the bracket.
+    inlineSyntaxes: <md.InlineSyntax>[_Wikilink(), _LongRun()],
   );
   final List<md.Node> nodes = document.parseLines(markdown.split('\n'));
   // Read after the parse, because that is when the definitions have been
@@ -228,6 +255,45 @@ final class _Parsed {
 
   /// The footnote labels, in the order they were first cited.
   final List<String> footnoteLabels;
+}
+
+/// `[[…]]` inside prose, as an element of its own.
+///
+/// An inline syntax, so code is safe for free: a fence or an HTML block is
+/// never inline-parsed, and a code span consumes its backticks' run before
+/// this is asked about the bracket inside it.
+class _Wikilink extends md.InlineSyntax {
+  _Wikilink() : super(r'\[\[([^\[\]\n]+)\]\]', startCharacter: 0x5B);
+
+  /// The element's tag, which nothing outside this file ever sees.
+  static const String tag = 'wikilink';
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(md.Element.text(tag, match[1]!));
+    return true;
+  }
+}
+
+/// A long run of letters and digits, taken in chunks.
+///
+/// The package's own text syntax backtracks over the whole run from every
+/// position of it, so a run with no space in it costs the square of its
+/// length — 40,000 characters took 44 seconds. Chunks of a fixed size are
+/// matched in constant time, and what is left is short enough for the
+/// package to finish. A run this long is no address and no emoji, so no
+/// other syntax loses a start it needed.
+class _LongRun extends md.InlineSyntax {
+  _LongRun() : super('[A-Za-z0-9]{$chunk}');
+
+  /// How many characters one match takes.
+  static const int chunk = 200;
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(md.Text(match[0]!));
+    return true;
+  }
 }
 
 /// The block syntaxes the parser would have used, each recording where it

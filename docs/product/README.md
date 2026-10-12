@@ -7,17 +7,19 @@ maintained by stakeholders, and what an implementation is checked against.
 [`technical/`](../technical/README.md) is the *how*, and
 [`design/`](../design/README.md) what it looks like.
 
-| Group | Features |
+| Group | What it answers |
 |---|---|
-| [`home/`](home/README.md) | Opening a space, recent spaces, cloning, the brand block |
-| [`workspace/`](workspace/README.md) | Regions, columns, leaving a space, feedback |
-| [`navigation/`](navigation/README.md) | The file tree |
-| [`editor/`](editor/README.md) | Source mode, markdown preview, tabs, formatting shortcuts, the conflicted document |
-| [`git-workflow/`](git-workflow/README.md) | Commit, branch switch, file history, push/pull, opening a pull request |
-| [`diff/`](diff/README.md) | The rendered diff, and the branch/commit diff |
-| [`search/`](search/README.md) | Full-text search, finding in the open document, replacing |
-| [`preferences/`](preferences/README.md) | The popover, what it holds, and the JSON behind it |
-| [`wikilinks/`](wikilinks/doc.md) · [`export/`](export/doc.md) | Features with no natural group, directly under `product/` |
+| [`home/`](home/README.md) | The screen with no space open |
+| [`workspace/`](workspace/README.md) | How the window is laid out once a space is open |
+| [`navigation/`](navigation/README.md) | Finding a document in the space |
+| [`editor/`](editor/README.md) | Reading and writing a document |
+| [`git-workflow/`](git-workflow/README.md) | Everything done against the repository and its remote |
+| [`diff/`](diff/README.md) | What changed, drawn over the formatted document |
+| [`search/`](search/README.md) | Finding words, in the space and in the open document |
+| [`preferences/`](preferences/README.md) | The choices that belong to the machine |
+| [`about/`](about/doc.md) | Which TOM this is, and how it learns of a newer one |
+| [`wikilinks/`](wikilinks/doc.md) | Linking one document to another by name |
+| [`export/`](export/doc.md) | Getting a document out as PDF or HTML |
 
 How these files are shaped and written: [`conventions.md`](conventions.md).
 

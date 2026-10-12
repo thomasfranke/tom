@@ -18,6 +18,7 @@ import 'package:tom_ui/tom_ui.dart';
 void main() {
   late _Documents documents;
   late _Git git;
+  late _Desktop desktop;
   late ProviderContainer container;
 
   final SpaceEntity docs = SpaceEntity(
@@ -30,6 +31,7 @@ void main() {
   );
 
   setUp(() {
+    desktop = _Desktop();
     documents = _Documents();
     git = _Git(committed: () => documents.content);
     container = ProviderContainer(
@@ -59,6 +61,9 @@ void main() {
             ),
             observability: const _Silent(),
           ),
+        ),
+        openUrlProvider.overrideWithValue(
+          OpenUrlUseCase(desktop: desktop, observability: const _Silent()),
         ),
       ],
     );
@@ -214,6 +219,99 @@ void main() {
     expect(find.textContaining('Prose.', findRichText: true), findsOneWidget);
   });
 
+  group('the reading face', () {
+    const String everything =
+        '# Title\n\n## Second\n\nProse with *emphasis*, **strong** and '
+        '`inline`.[^n]\n\n- one\n- two\n\n> a quote\n\n'
+        '| a | b |\n|---|---|\n| c | d |\n\n'
+        '```\nlet fenced = 1;\n```\n\n[^n]: The note.\n';
+
+    /// Every run of text on screen with the family it resolves to, a style
+    /// that names none inheriting its parent's.
+    List<(String, String?)> runs(WidgetTester tester) {
+      final List<(String, String?)> found = <(String, String?)>[];
+      void walk(InlineSpan span, String? inherited) {
+        final String? family = span.style?.fontFamily ?? inherited;
+        if (span case TextSpan(:final String text) when text.isNotEmpty) {
+          found.add((text, family));
+        }
+        span.visitDirectChildren((InlineSpan child) {
+          walk(child, family);
+          return true;
+        });
+      }
+
+      for (final SelectableText it in tester.widgetList<SelectableText>(
+        find.byType(SelectableText),
+      )) {
+        walk(it.textSpan!, null);
+      }
+      return found;
+    }
+
+    for (final Brightness brightness in Brightness.values) {
+      testWidgets('prose, headings, lists, quotes, tables and notes are '
+          'Public Sans, code is Plex Mono, ${brightness.name}', (
+        WidgetTester tester,
+      ) async {
+        documents.content = everything;
+        tester.view
+          ..physicalSize = const Size(1440, 900)
+          ..devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        container.read(spaceSessionProvider.notifier)
+          ..open(docs)
+          ..show(writing);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: tomTheme(brightness),
+              home: const Scaffold(body: PreviewPanel()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        final List<(String, String?)> all = runs(tester);
+        const Set<String> code = <String>{'inline', 'let fenced'};
+        for (final (String text, String? family) in all) {
+          final bool isCode = code.any(text.contains);
+          expect(
+            family,
+            isCode ? TomFonts.mono : TomFonts.reading,
+            reason: '"$text" resolved to $family',
+          );
+        }
+        for (final String word in <String>[
+          'Title',
+          'Second',
+          'emphasis',
+          'strong',
+          'one',
+          'a quote',
+          'c',
+        ]) {
+          expect(
+            all.any(((String, String?) it) => it.$1.contains(word)),
+            isTrue,
+            reason: 'no run holds "$word"',
+          );
+        }
+        // The note is drawn beside its number, in the same face.
+        expect(
+          tester.widget<Text>(find.text('1.')).style?.fontFamily,
+          TomFonts.reading,
+        );
+      });
+    }
+
+    test('the family carries its package, or a style falls back silently', () {
+      expect(TomFonts.reading, 'packages/tom_ui/PublicSans');
+    });
+  });
+
   group('the rendered diff', () {
     /// The letters of every diff mark on screen, in order.
     List<String> marks(WidgetTester tester) => tester
@@ -268,7 +366,7 @@ void main() {
 
       await pumpPreview(tester, document: writing);
 
-      expect(marks(tester), <String>['R']);
+      expect(marks(tester), <String>['D']);
       expect(
         find.textContaining('The paragraph that went.', findRichText: true),
         findsOneWidget,
@@ -285,7 +383,7 @@ void main() {
 
       await pumpPreview(tester, document: writing);
 
-      expect(marks(tester), <String>['R']);
+      expect(marks(tester), <String>['D']);
       expect(
         _decorationsOf(tester, 'final int gone'),
         contains(TextDecoration.lineThrough),
@@ -311,7 +409,7 @@ void main() {
 
       await pumpPreview(tester, document: writing);
 
-      expect(marks(tester), <String>['R', 'A']);
+      expect(marks(tester), <String>['D', 'A']);
     });
 
     testWidgets('a document git has never seen is every block added', (
@@ -344,16 +442,15 @@ void main() {
 
   group('the reading measure', () {
     /// The width of the column the blocks are laid out in.
-    double measure(WidgetTester tester) => tester
-        .widget<SizedBox>(
-          find
-              .ancestor(
-                of: find.byType(ListView),
-                matching: find.byType(SizedBox),
-              )
-              .first,
-        )
-        .width!;
+    double measure(WidgetTester tester) =>
+        tester.getSize(find.byType(PreviewBlockWidget).first).width;
+
+    /// The column's left edge, and its right edge, in the pane.
+    (double, double) edges(WidgetTester tester) {
+      final Rect block = tester.getRect(find.byType(PreviewBlockWidget).first);
+      final Rect pane = tester.getRect(find.byType(PreviewPanel));
+      return (block.left - pane.left, pane.right - block.right);
+    }
 
     testWidgets('beside the source it is the companion measure', (
       WidgetTester tester,
@@ -362,8 +459,45 @@ void main() {
 
       await pumpPreview(tester, document: writing);
 
-      expect(measure(tester), PreviewDesign.measure + TomMetrics.pad * 2);
+      expect(measure(tester), PreviewDesign.measure);
+      // Hung from the pane's left: a column hugging the divider reads as a
+      // leftover.
+      expect(edges(tester).$1, TomMetrics.pad);
     });
+
+    testWidgets(
+      'the scrollbar runs down the pane\'s edge, not the column\'s',
+      (WidgetTester tester) async {
+        // Enough blocks to scroll, so the bar has a thumb to draw.
+        documents.content = List<String>.generate(
+          80,
+          (int i) => 'Paragraph $i.',
+        ).join('\n\n');
+        await pumpPreview(tester, document: writing);
+
+        for (final DocumentModeEnum mode in <DocumentModeEnum>[
+          DocumentModeEnum.split,
+          DocumentModeEnum.preview,
+        ]) {
+          container.read(spaceSessionProvider.notifier).look(mode);
+          await tester.pumpAndSettle();
+
+          final Rect pane = tester.getRect(find.byType(PreviewPanel));
+          // The list's own, the outermost: every selectable block has one too.
+          final Rect bar = tester.getRect(
+            find
+                .descendant(
+                  of: find.byType(ListView),
+                  matching: find.byType(Scrollbar),
+                )
+                .first,
+          );
+          expect(bar.right, pane.right, reason: '$mode');
+          expect(bar.left, pane.left, reason: '$mode');
+        }
+      },
+      variant: TargetPlatformVariant.only(TargetPlatform.macOS),
+    );
 
     testWidgets('with the pane to itself it is wider, and set larger', (
       WidgetTester tester,
@@ -377,10 +511,9 @@ void main() {
           .look(DocumentModeEnum.preview);
       await tester.pumpAndSettle();
 
-      expect(
-        measure(tester),
-        PreviewDesign.readingMeasure + TomMetrics.pad * 2,
-      );
+      expect(measure(tester), PreviewDesign.readingMeasure);
+      // Centred, with the pane to itself.
+      expect(edges(tester).$1, closeTo(edges(tester).$2, 0.5));
       expect(
         tester
             .widgetList<PreviewBlockWidget>(find.byType(PreviewBlockWidget))
@@ -457,6 +590,106 @@ void main() {
 
       expect(shown(), writing);
     });
+
+    testWidgets('to the web opens in the browser, and the document stays', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '[site](https://example.com/guide)\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('site', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(desktop.opened, <Uri>[Uri.parse('https://example.com/guide')]);
+      expect(shown(), writing);
+    });
+
+    testWidgets('inside a footnote opens like any other', (
+      WidgetTester tester,
+    ) async {
+      documents.content =
+          'A claim.[^a]\n\n[^a]: See [the guide](https://example.com/g).\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('the guide', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(desktop.opened, <Uri>[Uri.parse('https://example.com/g')]);
+    });
+
+    testWidgets('to an address opens the mail client', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '[write](mailto:docs@example.com)\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('write', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(desktop.opened, <Uri>[Uri.parse('mailto:docs@example.com')]);
+    });
+
+    testWidgets('with any other scheme is handed to nothing', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '[run](file:///etc/passwd)\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('run', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(desktop.opened, isEmpty);
+      expect(shown(), writing);
+    });
+
+    testWidgets('to a document never reaches the browser', (
+      WidgetTester tester,
+    ) async {
+      documents.content = '[about](../about.md)\n';
+
+      await pumpPreview(tester, document: writing);
+      await tester.tap(find.textContaining('about', findRichText: true));
+      await tester.pumpAndSettle();
+
+      expect(desktop.opened, isEmpty);
+    });
+  });
+
+  testWidgets('a click on an occurrence scrolls the preview to it and marks '
+      'the block, when only the preview is on screen', (
+    WidgetTester tester,
+  ) async {
+    // `docs/product/search/in-the-document/doc.md`, D35.
+    documents.content = <String>[
+      for (int n = 0; n < 60; n++) 'Paragraph number $n of the document.',
+    ].join('\n\n');
+    await pumpPreview(tester, document: writing);
+    container
+        .read(spaceSessionProvider.notifier)
+        .look(DocumentModeEnum.preview);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('number 55 ', findRichText: true), findsNothing);
+
+    final String source = documents.content;
+    final int at = source.indexOf('number 55 ');
+    container.read(editorProvider.notifier).goTo(at, at + 6);
+    await tester.pumpAndSettle();
+
+    final Finder block = find.textContaining('number 55 ', findRichText: true);
+    expect(block, findsOneWidget);
+    expect(tester.getTopLeft(block).dy, lessThan(800));
+    final TomColors colors = TomColors.of(tester.element(block));
+    expect(
+      find.ancestor(
+        of: block,
+        matching: find.byWidgetPredicate(
+          (Widget it) =>
+              it is DecoratedBox &&
+              (it.decoration as BoxDecoration).color == colors.accentSoft,
+        ),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('an image is looked for beside the document', (
@@ -498,6 +731,20 @@ Set<TextDecoration?> _decorationsOf(WidgetTester tester, String text) {
   return found;
 }
 
+/// The machine's desktop, remembering every address it was asked to open.
+final class _Desktop implements DesktopRepository {
+  final List<Uri> opened = <Uri>[];
+
+  @override
+  Future<Result<void, AppFailure>> openUrl(Uri address) async {
+    opened.add(address);
+    return const Success<void, AppFailure>(null);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 /// A repository answering with whatever content the test set.
 final class _Documents implements DocumentRepository {
   String content = '';
@@ -511,6 +758,13 @@ final class _Documents implements DocumentRepository {
       Success<DocumentEntity, DocumentFailure>(
         DocumentEntity(path: path, content: content),
       );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

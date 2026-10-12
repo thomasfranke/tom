@@ -122,6 +122,12 @@ final class _Spaces implements SpaceRepository {
   SpaceEntity? asked;
 
   @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
+
+  @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
       throw UnimplementedError();
 
@@ -136,6 +142,12 @@ final class _Spaces implements SpaceRepository {
 
 /// A repository that breaks its contract by throwing.
 final class _ThrowingSpaces implements SpaceRepository {
+  @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
+
   @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
       throw UnimplementedError();

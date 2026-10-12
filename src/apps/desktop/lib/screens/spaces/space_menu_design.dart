@@ -41,7 +41,7 @@ abstract final class SpaceMenuDesign {
   static const double rowRadius = 6;
 
   /// Either half of the breadcrumb, in the bar.
-  static const double crumb = 14;
+  static const double crumb = 13;
 
   /// The caption over the list.
   static const double caption = 10;
@@ -61,14 +61,18 @@ abstract final class SpaceMenuDesign {
   /// The mark on the space that is already open.
   static const double check = 11;
 
-  /// The hairline over `Close space`.
-  static const double divider = 1;
-
-  /// The list to that hairline, and the hairline to what is under it.
+  /// The question's bar to the words under it.
   static const double dividerGap = 10;
 
-  /// `Close space` itself.
-  static const double close = 13;
+  /// The home button's width: its glyph's own, so the ink starts where the
+  /// bar's inset ends, as the boards draw it.
+  ///
+  /// The glyph is at the set's default 14: Font Awesome's house is wider than
+  /// its em, so 14 draws the gear's 16-wide ink.
+  static const double homeWidth = 16;
+
+  /// Its gap to the breadcrumb.
+  static const double homeGap = 8;
 
   /// The rule over the unsaved question, in `modified`.
   static const double warningBar = 4;

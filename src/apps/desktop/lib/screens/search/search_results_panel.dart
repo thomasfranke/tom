@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/search/search_design.dart';
 import 'package:tom_desktop/screens/search/widgets/search_hit_widget.dart';
 import 'package:tom_desktop/screens/search/widgets/search_note_widget.dart';
@@ -51,7 +52,7 @@ class SearchResultsPanel extends ConsumerWidget {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      counted(hits.length),
+                      context.l10n.searchDocumentCount(hits.length),
                       style: TextStyle(
                         fontSize: SearchDesign.count,
                         height: 1.2,
@@ -62,25 +63,28 @@ class SearchResultsPanel extends ConsumerWidget {
                 ),
         ),
         const SizedBox(height: SearchDesign.countGap),
-        Expanded(child: _body(state, hits, spaceName, colors.border)),
+        Expanded(
+          child: _body(context.l10n, state, hits, spaceName, colors.border),
+        ),
       ],
     );
   }
 
   /// The list, or the sentence that stands in for it.
   static Widget _body(
+    AppLocalizations l10n,
     SearchState state,
     List<SearchHitValueObject> hits,
     String spaceName,
     Color border,
   ) => switch (state) {
-    SearchIdle() => const SearchNoteWidget('No space is open.'),
-    SearchIndexing() => const SearchNoteWidget('Reading the space…'),
+    SearchIdle() => SearchNoteWidget(l10n.commonNoSpaceOpen),
+    SearchIndexing() => SearchNoteWidget(l10n.searchReadingTheSpace),
     SearchFailed(failure: final AppFailure failure) => SearchNoteWidget(
-      _explain(failure),
+      _explain(l10n, failure),
     ),
-    SearchReady() when hits.isEmpty => const SearchNoteWidget(
-      'No document says that.',
+    SearchReady() when hits.isEmpty => SearchNoteWidget(
+      l10n.searchNoDocumentSaysThat,
     ),
     SearchReady(terms: final String terms) => ListView.separated(
       itemCount: hits.length,
@@ -95,18 +99,13 @@ class SearchResultsPanel extends ConsumerWidget {
     ),
   };
 
-  /// How many documents matched, counted in words rather than in a number
-  /// beside a plural that is wrong once.
-  static String counted(int hits) =>
-      hits == 1 ? '1 document' : '$hits documents';
-
   /// What to say about a space that could not be searched.
   ///
   /// A catch-all, because this switches over [AppFailure] itself and the
   /// column must say something whatever went wrong.
-  static String _explain(AppFailure failure) => switch (failure) {
-    SearchIndexCorrupted() =>
-      'The index could not be built — reopen the space to try again.',
-    _ => 'This space could not be searched.',
-  };
+  static String _explain(AppLocalizations l10n, AppFailure failure) =>
+      switch (failure) {
+        SearchIndexCorrupted() => l10n.searchIndexCorrupted,
+        _ => l10n.searchFailed,
+      };
 }

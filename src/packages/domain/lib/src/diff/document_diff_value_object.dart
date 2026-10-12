@@ -3,7 +3,10 @@ library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:tom_domain/src/diff/diff_block_value_object.dart';
+import 'package:tom_domain/src/documents/block_value_object.dart';
+import 'package:tom_domain/src/documents/footnote_value_object.dart';
 import 'package:tom_domain/src/documents/parsed_document_value_object.dart';
+import 'package:tom_domain/src/wikilinks/wikilink_value_object.dart';
 
 part 'document_diff_value_object.freezed.dart';
 
@@ -27,6 +30,25 @@ abstract class DocumentDiffValueObject with _$DocumentDiffValueObject {
     /// element-wise and copies nothing.
     required List<DiffBlockValueObject> blocks,
   }) = _DocumentDiffValueObject;
+
+  /// A document that is gone: [last], its last committed version, every
+  /// block removed and nothing after it
+  /// (`docs/product/git-workflow/commit/opening-a-change/doc.md`).
+  factory DocumentDiffValueObject.deleted(ParsedDocumentValueObject last) =>
+      DocumentDiffValueObject(
+        before: last,
+        after: last.copyWith(
+          document: last.document.copyWith(content: ''),
+          blocks: const <BlockValueObject>[],
+          linkDefinitions: '',
+          footnotes: const <FootnoteValueObject>[],
+          wikilinks: const <WikilinkValueObject>[],
+        ),
+        blocks: List<DiffBlockValueObject>.unmodifiable(<DiffBlockValueObject>[
+          for (final BlockValueObject block in last.blocks)
+            DiffBlockValueObject.removed(block),
+        ]),
+      );
 
   const DocumentDiffValueObject._();
 

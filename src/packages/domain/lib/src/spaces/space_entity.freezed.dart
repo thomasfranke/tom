@@ -15,8 +15,10 @@ T _$identity<T>(T value) => value;
 mixin _$SpaceEntity {
 
 /// Absolute path to the folder the user opened; the space's identity.
- String get root;/// Absolute path to the enclosing Git repository.
- String get repositoryRoot;/// What the space is called in the UI, by default [nameOfFolder].
+ String get root;/// Absolute path to the enclosing Git repository, or null for a folder
+/// git knows nothing about — which opens all the same
+/// (`docs/product/workspace/without-a-repository/doc.md`).
+ String? get repositoryRoot;/// What the space is called in the UI, by default [nameOfFolder].
  String get name;
 /// Create a copy of SpaceEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -48,7 +50,7 @@ abstract mixin class $SpaceEntityCopyWith<$Res>  {
   factory $SpaceEntityCopyWith(SpaceEntity value, $Res Function(SpaceEntity) _then) = _$SpaceEntityCopyWithImpl;
 @useResult
 $Res call({
- String root, String repositoryRoot, String name
+ String root, String? repositoryRoot, String name
 });
 
 
@@ -65,11 +67,11 @@ class _$SpaceEntityCopyWithImpl<$Res>
 
 /// Create a copy of SpaceEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? root = null,Object? repositoryRoot = null,Object? name = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? root = null,Object? repositoryRoot = freezed,Object? name = null,}) {
   return _then(_self.copyWith(
 root: null == root ? _self.root : root // ignore: cast_nullable_to_non_nullable
-as String,repositoryRoot: null == repositoryRoot ? _self.repositoryRoot : repositoryRoot // ignore: cast_nullable_to_non_nullable
-as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,repositoryRoot: freezed == repositoryRoot ? _self.repositoryRoot : repositoryRoot // ignore: cast_nullable_to_non_nullable
+as String?,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -155,7 +157,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String root,  String repositoryRoot,  String name)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String root,  String? repositoryRoot,  String name)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SpaceEntity() when $default != null:
 return $default(_that.root,_that.repositoryRoot,_that.name);case _:
@@ -176,7 +178,7 @@ return $default(_that.root,_that.repositoryRoot,_that.name);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String root,  String repositoryRoot,  String name)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String root,  String? repositoryRoot,  String name)  $default,) {final _that = this;
 switch (_that) {
 case _SpaceEntity():
 return $default(_that.root,_that.repositoryRoot,_that.name);case _:
@@ -196,7 +198,7 @@ return $default(_that.root,_that.repositoryRoot,_that.name);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String root,  String repositoryRoot,  String name)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String root,  String? repositoryRoot,  String name)?  $default,) {final _that = this;
 switch (_that) {
 case _SpaceEntity() when $default != null:
 return $default(_that.root,_that.repositoryRoot,_that.name);case _:
@@ -216,8 +218,10 @@ class _SpaceEntity extends SpaceEntity {
 
 /// Absolute path to the folder the user opened; the space's identity.
 @override final  String root;
-/// Absolute path to the enclosing Git repository.
-@override final  String repositoryRoot;
+/// Absolute path to the enclosing Git repository, or null for a folder
+/// git knows nothing about — which opens all the same
+/// (`docs/product/workspace/without-a-repository/doc.md`).
+@override final  String? repositoryRoot;
 /// What the space is called in the UI, by default [nameOfFolder].
 @override final  String name;
 
@@ -251,7 +255,7 @@ abstract mixin class _$SpaceEntityCopyWith<$Res> implements $SpaceEntityCopyWith
   factory _$SpaceEntityCopyWith(_SpaceEntity value, $Res Function(_SpaceEntity) _then) = __$SpaceEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String root, String repositoryRoot, String name
+ String root, String? repositoryRoot, String name
 });
 
 
@@ -268,11 +272,11 @@ class __$SpaceEntityCopyWithImpl<$Res>
 
 /// Create a copy of SpaceEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? root = null,Object? repositoryRoot = null,Object? name = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? root = null,Object? repositoryRoot = freezed,Object? name = null,}) {
   return _then(_SpaceEntity(
 root: null == root ? _self.root : root // ignore: cast_nullable_to_non_nullable
-as String,repositoryRoot: null == repositoryRoot ? _self.repositoryRoot : repositoryRoot // ignore: cast_nullable_to_non_nullable
-as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,repositoryRoot: freezed == repositoryRoot ? _self.repositoryRoot : repositoryRoot // ignore: cast_nullable_to_non_nullable
+as String?,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

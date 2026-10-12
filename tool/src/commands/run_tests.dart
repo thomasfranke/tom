@@ -370,9 +370,12 @@ Future<bool> _runOne(
           case 'error':
             final id = event['testID'] as int?;
             if (id != null) {
+              // The first line alone was a failure with no `Actual:` — a
+              // matcher mismatch is at least two, `Expected:` and `Actual:`.
               testError[id] = (event['error'] as String? ?? '')
                   .split('\n')
-                  .first;
+                  .take(4)
+                  .join('\n');
             }
           case 'testDone':
             final id = event['testID'] as int;

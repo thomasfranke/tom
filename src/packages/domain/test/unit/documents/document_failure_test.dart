@@ -13,6 +13,8 @@ void main() {
       DocumentOperationFailed(path: final String path) => 'Failed: $path',
       DocumentExternalChangeConflict(path: final String path) =>
         'Conflict: $path',
+      DocumentAlreadyExists(path: final String path) => 'Taken: $path',
+      DocumentInvalidName(path: final String path) => 'Invalid: $path',
     };
 
     test('every variant has a headline, with no default branch', () {
@@ -36,6 +38,11 @@ void main() {
         headline(const DocumentOperationFailed('notes/a.md')),
         'Failed: notes/a.md',
       );
+      expect(
+        headline(const DocumentAlreadyExists('notes/a.md')),
+        'Taken: notes/a.md',
+      );
+      expect(headline(const DocumentInvalidName('a/b')), 'Invalid: a/b');
     });
   });
 

@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 /// Home's status bar, saying the one thing there is to say with nothing
@@ -15,16 +16,13 @@ class HomeStatusStripWidget extends StatelessWidget {
     final TomColors colors = TomColors.of(context);
     return TomBarWidget(
       height: TomMetrics.statusBar,
-      rule: TomBarEdgeEnum.top,
       child: Align(
         alignment: Alignment.centerLeft,
         child: Padding(
-          padding: const EdgeInsets.only(
-            left: TomMetrics.pad + TomMetrics.chromeInset,
-          ),
+          padding: const EdgeInsets.only(left: TomMetrics.barEdge),
           child: Text(
-            'no space open',
-            style: TextStyle(fontSize: 11, color: colors.textMuted),
+            context.l10n.commonNoSpaceOpenStatus,
+            style: TextStyle(fontSize: 11, color: colors.textSecondary),
           ),
         ),
       ),

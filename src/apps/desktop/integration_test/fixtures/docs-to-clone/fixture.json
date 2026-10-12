@@ -1,0 +1,6 @@
+{
+  "summary": "A repository only reachable by its address",
+  "description": "What cloning by URL starts from: a repository pushed once to a bare beside it, so the bare is a real remote with a history and nothing else on the machine has to be cloned. The scenario pastes the bare's path as the address; to git a path is as much an address as GitHub, with no network and no credentials.",
+  "commit": "docs: the handbook's first page",
+  "remote": {}
+}

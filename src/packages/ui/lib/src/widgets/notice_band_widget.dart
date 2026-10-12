@@ -7,45 +7,56 @@ import 'package:tom_ui/src/theme/tom_metrics.dart';
 
 /// The notice band of
 /// [components](../../../../../../docs/design/components/controls.md): a
-/// sentence at the left, one action at the right, on a tinted strip the width
-/// of the document area.
+/// sentence, then one action, on a tinted strip as wide as the document.
 ///
-/// A colour and a sentence rather than a meaning, the way the diff mark takes
-/// its letter, so a refusal, a failure and a confirmation are one component
-/// instead of three. **One action**: a band with two is a dialog that forgot
-/// to be one (`docs/product/workspace/feedback/doc.md`).
+/// A colour and a sentence rather than a meaning, so a refusal, a failure
+/// and a confirmation are one component. **One action**: two is a dialog
+/// that forgot to be one (`docs/product/workspace/feedback/doc.md`) — bar a
+/// file changed under unsaved edits, where [alternative] keeps things as
+/// they are, and a git failure, where it shows the command that failed.
 ///
-/// The fill is the only thing drawn — the boards carry no rule around the
-/// band, and the divider above it is the mode bar's own.
+/// Drawn to `git-pull/pull-worked`: the fill, a bar of [ink] at the left
+/// edge and no outline; the action is an outline in [ink] on the band itself.
 class NoticeBandWidget extends StatelessWidget {
   /// Creates the band.
   const NoticeBandWidget({
     required this.sentence,
     required this.ink,
     required this.fill,
-    required this.raised,
     this.action,
     this.onAction,
+    this.alternative,
+    this.onAlternative,
     super.key,
   });
 
-  /// The action's pill, and how far its right edge sits from the band's.
-  static const double _actionWidth = 96;
-  static const double _actionHeight = 24;
-  static const double _actionInset = 24;
+  /// Between the alternative's pill and the action's.
+  static const double actionGap = 8;
+
+  /// The bar at the band's left edge, the band's full height.
+  static const double barWidth = 3;
+
+  /// The action's pill, its top six below the band's.
+  static const double actionHeight = 24;
+
+  /// The room each side of the action's label, so the pill follows the word.
+  static const double actionPadding = 14;
+
+  /// How far the pill's right edge sits from the band's.
+  static const double actionInset = 13;
+
+  /// Where the sentence starts after the bar: 19 from the band's edge.
+  static const double _sentenceGap = 16;
+  static const double _actionRadius = 6;
 
   /// What happened, in the product's words.
   final String sentence;
 
-  /// The role's colour, for the sentence and the action.
+  /// The role's colour, for the bar, the sentence and the action.
   final Color ink;
 
   /// The role's soft colour, filling the strip.
   final Color fill;
-
-  /// What the action's pill is filled with — the raised surface, so it reads
-  /// as a control sitting on the band rather than a word on it.
-  final Color raised;
 
   /// The one thing to do about it, or null when there is nothing to offer.
   final String? action;
@@ -54,6 +65,12 @@ class NoticeBandWidget extends StatelessWidget {
   /// what a band says while git is already working.
   final VoidCallback? onAction;
 
+  /// A second pill before [action], or null for the usual one.
+  final String? alternative;
+
+  /// What [alternative] does.
+  final VoidCallback? onAlternative;
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -61,8 +78,11 @@ class NoticeBandWidget extends StatelessWidget {
       ..add(StringProperty('sentence', sentence))
       ..add(ColorProperty('ink', ink))
       ..add(ColorProperty('fill', fill))
-      ..add(ColorProperty('raised', raised))
       ..add(StringProperty('action', action))
+      ..add(StringProperty('alternative', alternative))
+      ..add(
+        ObjectFlagProperty<VoidCallback?>.has('onAlternative', onAlternative),
+      )
       ..add(
         FlagProperty(
           'onAction',
@@ -76,51 +96,105 @@ class NoticeBandWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ColoredBox(
     color: fill,
-    child: SizedBox(
-      height: TomMetrics.noticeBand,
-      child: Row(
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: TomMetrics.noticeBand),
+      child: Stack(
         children: <Widget>[
-          const SizedBox(width: TomMetrics.barInset),
-          Expanded(
-            child: Text(
-              sentence,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 13, height: 1.4, color: ink),
+          // A sentence too long for the row wraps and the band grows; the
+          // pills stay on its first line, top-aligned (the maintainer's call,
+          // 2026-10-09: a shorter sentence cannot fit every window).
+          Padding(
+            padding: const EdgeInsets.only(
+              left: barWidth + _sentenceGap,
+              right: actionInset,
             ),
-          ),
-          if (action != null) ...<Widget>[
-            const SizedBox(width: TomMetrics.barInset),
-            SizedBox(
-              width: _actionWidth,
-              height: _actionHeight,
-              child: OutlinedButton(
-                onPressed: onAction,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: ink,
-                  disabledForegroundColor: ink.withValues(alpha: 0.4),
-                  backgroundColor: raised,
-                  side: BorderSide(color: ink),
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(TomMetrics.radius),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: _sentenceTop),
+                    child: Text(
+                      sentence,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        height: _lineHeight,
+                        fontWeight: FontWeight.w500,
+                        color: ink,
+                      ),
                     ),
                   ),
-                  textStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
                 ),
-                child: Text(action!),
-              ),
+                if (alternative case final String label) ...<Widget>[
+                  const SizedBox(width: _sentenceGap),
+                  _placed(_pill(label, onAlternative)),
+                ],
+                if (action case final String label) ...<Widget>[
+                  SizedBox(
+                    width: alternative == null ? _sentenceGap : actionGap,
+                  ),
+                  _placed(_pill(label, onAction)),
+                ],
+              ],
             ),
-          ],
-          const SizedBox(width: _actionInset),
+          ),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: barWidth,
+            child: ColoredBox(color: ink),
+          ),
         ],
       ),
     ),
   );
+
+  /// The sentence's line height, as a multiple of its size.
+  static const double _lineHeight = 1.3;
+
+  /// Above and below the sentence, so one line sits centred in the band.
+  static const double _sentenceTop =
+      (TomMetrics.noticeBand - 12.5 * _lineHeight) / 2;
+
+  /// A pill on the band's first line, wherever the sentence ends.
+  Widget _placed(Widget pill) => Padding(
+    padding: const EdgeInsets.only(
+      top: (TomMetrics.noticeBand - actionHeight) / 2,
+    ),
+    child: SizedBox(height: actionHeight, child: pill),
+  );
+
+  /// The pill, as wide as its label: transparent, so the band shows through.
+  Widget _pill(String label, VoidCallback? onPressed) {
+    final Color faded = ink.withValues(alpha: 0.4);
+    return OutlinedButton(
+      onPressed: onPressed,
+      style:
+          OutlinedButton.styleFrom(
+            foregroundColor: ink,
+            disabledForegroundColor: faded,
+            backgroundColor: Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: actionPadding),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.standard,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(_actionRadius)),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 12,
+              height: 1.3,
+              fontWeight: FontWeight.w600,
+            ),
+          ).copyWith(
+            side: WidgetStateProperty.resolveWith(
+              (Set<WidgetState> states) => BorderSide(
+                color: states.contains(WidgetState.disabled) ? faded : ink,
+              ),
+            ),
+          ),
+      child: Text(label, maxLines: 1),
+    );
+  }
 }

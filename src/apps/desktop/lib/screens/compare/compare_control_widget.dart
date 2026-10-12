@@ -1,175 +1,124 @@
-/// What the document is compared against, and the surface that changes it.
+/// What the document is compared against, and the chip that turns the marks
+/// on and off.
 library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/compare/compare_design.dart';
-import 'package:tom_desktop/screens/compare/widgets/compare_popover_widget.dart';
-import 'package:tom_desktop/screens/history/history_words.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The base of the comparison, said where the diff is read.
+/// The `Diff` chip, and the base named beside it.
 ///
-/// A popover anchored to its trigger, the pattern the branch switcher set
-/// ([Decision 6](../../../../../../docs/technical/decisions/006-no-navigation-package.md)).
-/// **The base is the space's, not the document's** — it lives on the session
-/// and outlives whatever is open, so clicking the next file keeps the
-/// comparison (`docs/product/diff/branch-diff/doc.md`). What is scoped to one
-/// file is where the diff is *drawn*; the control draws nothing with no
-/// document open because there is nothing on screen to measure.
-class CompareControlWidget extends ConsumerStatefulWidget {
-  /// Creates the control.
-  const CompareControlWidget({super.key});
+/// **A press only turns the marks off and on**: the base is nobody's choice,
+/// it is the branch the checked-out one came from
+/// (`docs/product/diff/rendered-diff/turning-it-off/doc.md`). Nothing is drawn
+/// with no document open, no repository, a text file or a deleted one.
+class CompareControlWidget extends ConsumerWidget {
+  /// Creates the control, the base's name given at most [labelRoom].
+  const CompareControlWidget({this.labelRoom = double.infinity, super.key});
 
-  @override
-  ConsumerState<CompareControlWidget> createState() =>
-      _CompareControlWidgetState();
-}
+  /// The least a name is worth drawing in.
+  static const double _leastLabel = 48;
 
-class _CompareControlWidgetState extends ConsumerState<CompareControlWidget> {
-  final OverlayPortalController _portal = OverlayPortalController();
-  final LayerLink _link = LayerLink();
-
-  /// Puts the surface away, and tells the notifier it went.
-  void _close() {
-    if (_portal.isShowing) {
-      _portal.hide();
-      ref.read(compareProvider.notifier).dismiss();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // The surface goes away when the base actually changed, which is the one
-    // thing it was opened to do.
-    ref.listen<RevisionValueObject?>(
-      spaceSessionProvider.select(
-        (SpaceSessionState? session) => session?.comparingAgainst,
-      ),
-      (RevisionValueObject? before, RevisionValueObject? after) {
-        if (before != after) {
-          _close();
-        }
-      },
-    );
-    final ({bool hasDocument, RevisionValueObject? base, bool marking})
-    showing = ref.watch(
-      spaceSessionProvider.select(
-        (SpaceSessionState? session) => (
-          hasDocument: session?.openDocument != null,
-          base: session?.comparingAgainst,
-          marking: session?.showingDiff ?? true,
-        ),
-      ),
-    );
-    if (!showing.hasDocument) {
-      return const SizedBox.shrink();
-    }
-    return CompositedTransformTarget(
-      link: _link,
-      child: OverlayPortal(
-        controller: _portal,
-        overlayChildBuilder: (BuildContext context) => Positioned(
-          width: CompareDesign.popoverWidth,
-          child: CompositedTransformFollower(
-            link: _link,
-            // Hung from the control's right edge, because the control sits at
-            // the right of the bar and a popover anchored left would run off
-            // the window on a narrow one.
-            targetAnchor: Alignment.bottomRight,
-            followerAnchor: Alignment.topRight,
-            offset: const Offset(0, CompareDesign.popoverTop),
-            child: ComparePopoverWidget(onDismissed: _close),
-          ),
-        ),
-        child: _TriggerWidget(
-          base: showing.base,
-          isMarking: showing.marking,
-          onPressed: _portal.toggle,
-        ),
-      ),
-    );
-  }
-}
-
-/// The control in the bar: what is being compared against, or the offer to.
-class _TriggerWidget extends StatelessWidget {
-  const _TriggerWidget({
-    required this.base,
-    required this.isMarking,
-    required this.onPressed,
-  });
-
-  final RevisionValueObject? base;
-
-  /// Whether the preview is drawing what changed.
-  final bool isMarking;
-
-  final VoidCallback onPressed;
+  /// How wide the base's name beside the chip may be; under the least a name
+  /// can be read in, it is not drawn and the chip's tooltip carries it.
+  final double labelRoom;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties
-      ..add(DiagnosticsProperty<RevisionValueObject?>('base', base))
-      ..add(DiagnosticsProperty<bool>('isMarking', isMarking))
-      ..add(ObjectFlagProperty<VoidCallback>.has('onPressed', onPressed));
+    properties.add(DoubleProperty('labelRoom', labelRoom));
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ({bool hasMarks, BranchRefValueObject? base, bool marking}) showing =
+        ref.watch(
+          spaceSessionProvider.select(
+            (SpaceSessionState? session) => (
+              // No repository, nothing to compare with: the chip goes too
+              // (`docs/product/workspace/without-a-repository/doc.md`).
+              // A text file's marks are not the chip's to turn off: they are
+              // all its tab has to say (`commit/opening-a-change/doc.md`).
+              hasMarks:
+                  session?.onScreen != null &&
+                  session!.space.hasRepository &&
+                  !session.isSourceOnly &&
+                  !_isGone(session),
+              // The branch alone: the fork point under it is the preview's.
+              base: session?.comparingAgainst?.branch,
+              marking: session?.showingDiff ?? true,
+            ),
+          ),
+        );
+    if (!showing.hasMarks) {
+      return const SizedBox.shrink();
+    }
     final TomColors colors = TomColors.of(context);
+    final bool marking = showing.marking;
     // The base is named beside the chip, not inside it: the chip is 62 points
     // wide and a branch name is not
     // (`design/screens/desktop/git-diff/comparing-dark.svg`).
-    // The chip is lit while the marks are being drawn, and the name beside it
-    // only while there is a base to name.
-    final bool chosen = base != null;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        if (chosen && isMarking) ...<Widget>[
-          // Flexible so the ellipsis it asks for can actually happen: in a
-          // row that sizes to its children, a name simply grows.
-          Flexible(
+        if (showing.base != null &&
+            marking &&
+            labelRoom - CompareDesign.chipGap >= _leastLabel) ...<Widget>[
+          // Bounded by what the bar says is left, so a long name ends in an
+          // ellipsis instead of pushing the row off the island.
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: labelRoom - CompareDesign.chipGap,
+            ),
             child: Text(
-              compareLabelOf(base),
+              compareLabelOf(context.l10n, showing.base),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: CompareDesign.label,
                 height: 1.4,
                 fontWeight: FontWeight.w600,
-                color: colors.added,
+                color: colors.accent,
               ),
             ),
           ),
           const SizedBox(width: CompareDesign.chipGap),
         ],
-        SizedBox(
-          width: CompareDesign.chipWidth,
-          height: CompareDesign.chipHeight,
-          child: Material(
-            color: isMarking ? colors.addedSoft : Colors.transparent,
-            shape: RoundedRectangleBorder(
-              side: BorderSide(
-                color: isMarking ? colors.added : colors.borderStrong,
+        // The name in the tooltip as well: the 1b row rarely has room for it
+        // beside the chip, and the board draws the chip alone.
+        // On, a chosen control (`accent_soft`, `accent`); off, a control at
+        // rest (`border_strong`, `text_secondary`) — never `text_muted`,
+        // which reads as unavailable on a chip that can always be pressed.
+        Tooltip(
+          message: compareLabelOf(context.l10n, showing.base),
+          child: SizedBox(
+            width: CompareDesign.chipWidth,
+            height: CompareDesign.chipHeight,
+            child: Material(
+              color: marking ? colors.accentSoft : Colors.transparent,
+              shape: RoundedRectangleBorder(
+                side: BorderSide(
+                  color: marking ? colors.accent : colors.borderStrong,
+                ),
+                borderRadius: BorderRadius.circular(CompareDesign.chipRadius),
               ),
-              borderRadius: BorderRadius.circular(CompareDesign.chipRadius),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: onPressed,
-              child: Center(
-                child: Text(
-                  'Diff',
-                  style: TextStyle(
-                    fontSize: CompareDesign.label,
-                    height: 1.4,
-                    color: isMarking ? colors.added : colors.textMuted,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: ref.read(spaceSessionProvider.notifier).toggleDiff,
+                child: Center(
+                  child: Text(
+                    context.l10n.compareDiff,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
+                      color: marking ? colors.accent : colors.textSecondary,
+                    ),
                   ),
                 ),
               ),
@@ -181,15 +130,23 @@ class _TriggerWidget extends StatelessWidget {
   }
 }
 
-/// What the control says: the base it is on, or the offer to pick one.
+/// Whether git reports the document on screen deleted: turning its marks off
+/// would leave an empty page, since every block of it is the removal.
 ///
-/// A branch by name and a commit by its abbreviated sha and age, which is
-/// how the history panel names one — the same fact should read the same way
-/// in both places.
-String compareLabelOf(RevisionValueObject? base) => switch (base) {
-  null => 'Compare against…',
-  RevisionBranch(:final BranchEntity branch) =>
-    'Compared to ${branch.name.value}',
-  RevisionCommit(:final CommitEntity commit) =>
-    'Compared to ${commit.sha.short} · ${whenInWords(commit.date)}',
-};
+/// Git's reading, as the strip's `(deleted)` reads it, rather than the
+/// editor's, so the chip never makes a buffer exist.
+bool _isGone(SpaceSessionState session) =>
+    session.git?.entries.any(
+      (StatusEntryValueObject entry) =>
+          entry.state == FileStateEnum.deleted &&
+          DocumentTab.of(session.space, entry.path) == session.onScreen,
+    ) ??
+    false;
+
+/// What the control says the document is compared against: the branch it
+/// came from by the name git resolves, or the last commit.
+String compareLabelOf(AppLocalizations l10n, BranchRefValueObject? base) =>
+    switch (base) {
+      null => l10n.compareToLastCommit,
+      final BranchRefValueObject branch => l10n.compareTo(branch.spec),
+    };

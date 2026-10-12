@@ -9,7 +9,7 @@ library;
 /// record, and this class is a transcription of it.
 abstract final class TomMetrics {
   /// Height of the bar above everything: space name and global actions.
-  static const double topBar = 52;
+  static const double topBar = 40;
 
   /// Height of the bar below everything: branch, status, counts.
   static const double statusBar = 32;
@@ -36,19 +36,24 @@ abstract final class TomMetrics {
   /// The reader drags it, so this is a starting point rather than a constant
   /// (`docs/product/workspace/regions/doc.md`) — 220 is where the tree reads
   /// well, and search results are why somebody widens it.
-  static const double explorer = 220;
+  static const double explorer = 256;
 
-  /// Width of the git panel.
-  static const double git = 280;
+  /// The width the git column opens at; the reader drags it too.
+  static const double git = 282;
 
-  /// Between two of the window's containers, and how far each runs past the
-  /// window's own edges and under its bars.
+  /// Between two of the window's columns, and between a column and the
+  /// window's side.
   ///
-  /// The columns are containers separated by gutters rather than one surface
-  /// cut by hairlines: nothing frames the window, and the only line left on
-  /// screen is the one inside a gutter
-  /// (`docs/design/screens/measurements.md`).
-  static const double gutter = 8;
+  /// The columns are islands on the window rather than one surface cut by
+  /// hairlines: each has its own edge and fill, and they run from the top bar
+  /// to the status bar (`docs/design/visual-language/rationale.md`).
+  static const double gutter = 6;
+
+  /// The corner radius of a column.
+  ///
+  /// A step above [radius] because a column is a surface and not a control,
+  /// and the two read as different things at the same radius.
+  static const double radiusIsland = 10;
 
   /// The least height a stacked panel is given before the column scrolls.
   ///
@@ -62,15 +67,12 @@ abstract final class TomMetrics {
   /// Panel edge to a control that spans the panel.
   static const double padTight = 16;
 
-  /// How much further in than the panels the chrome's own text sits.
-  ///
-  /// Both bars and Home's status line share it, so the space name and the
-  /// status read as one column down the left edge.
-  static const double chromeInset = 4;
+  /// A bar's edge to the first and last thing written on it.
+  static const double barEdge = 16;
 
   /// The square a diff mark is drawn in, one component for the changes
   /// column and the rendered diff (`docs/design/components/README.md`).
-  static const double mark = 20;
+  static const double mark = 16;
 
   /// The corner radius of a mark, a checkbox, a tab indicator.
   static const double radiusTight = 4;

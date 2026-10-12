@@ -8,47 +8,41 @@ part of 'changes_notifier.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Stages, unstages and commits, and writes what git says into the session.
+/// Stages, unstages and commits, and holds the git column's draft on top of
+/// what [GitReadingNotifier] reads.
 ///
 /// It re-reads rather than patches: nothing can predict what git will say
 /// after an operation (a deleted file staged, an editor saving underneath,
-/// a rebase in another terminal), so every one ends in `status()` again.
+/// a rebase in another terminal), so every one ends in a reading again.
 ///
-/// **Kept alive because it is the app's one reader of git.** The shell
-/// builds the git column under `if (showingAside)` and Riverpod disposes a
-/// notifier nobody listens to, so without this a space opened with the
-/// column shut would have no git reading at all. It also keeps the commit
-/// message being written; `build` still watches the open space, so leaving
+/// **Kept alive for the commit message being written**, which outlives the
+/// column being put away; `build` still watches the open space, so leaving
 /// one clears the draft — the case where dropping it is right.
 
 @ProviderFor(ChangesNotifier)
 final changesProvider = ChangesNotifierProvider._();
 
-/// Stages, unstages and commits, and writes what git says into the session.
+/// Stages, unstages and commits, and holds the git column's draft on top of
+/// what [GitReadingNotifier] reads.
 ///
 /// It re-reads rather than patches: nothing can predict what git will say
 /// after an operation (a deleted file staged, an editor saving underneath,
-/// a rebase in another terminal), so every one ends in `status()` again.
+/// a rebase in another terminal), so every one ends in a reading again.
 ///
-/// **Kept alive because it is the app's one reader of git.** The shell
-/// builds the git column under `if (showingAside)` and Riverpod disposes a
-/// notifier nobody listens to, so without this a space opened with the
-/// column shut would have no git reading at all. It also keeps the commit
-/// message being written; `build` still watches the open space, so leaving
+/// **Kept alive for the commit message being written**, which outlives the
+/// column being put away; `build` still watches the open space, so leaving
 /// one clears the draft — the case where dropping it is right.
 final class ChangesNotifierProvider
     extends $NotifierProvider<ChangesNotifier, ChangesState> {
-  /// Stages, unstages and commits, and writes what git says into the session.
+  /// Stages, unstages and commits, and holds the git column's draft on top of
+  /// what [GitReadingNotifier] reads.
   ///
   /// It re-reads rather than patches: nothing can predict what git will say
   /// after an operation (a deleted file staged, an editor saving underneath,
-  /// a rebase in another terminal), so every one ends in `status()` again.
+  /// a rebase in another terminal), so every one ends in a reading again.
   ///
-  /// **Kept alive because it is the app's one reader of git.** The shell
-  /// builds the git column under `if (showingAside)` and Riverpod disposes a
-  /// notifier nobody listens to, so without this a space opened with the
-  /// column shut would have no git reading at all. It also keeps the commit
-  /// message being written; `build` still watches the open space, so leaving
+  /// **Kept alive for the commit message being written**, which outlives the
+  /// column being put away; `build` still watches the open space, so leaving
   /// one clears the draft — the case where dropping it is right.
   ChangesNotifierProvider._()
     : super(
@@ -77,19 +71,17 @@ final class ChangesNotifierProvider
   }
 }
 
-String _$changesNotifierHash() => r'6c3cafef21d907723c2d34b5b522ee692d449017';
+String _$changesNotifierHash() => r'3f739830018c47d6e90485088597469f61d9e7a4';
 
-/// Stages, unstages and commits, and writes what git says into the session.
+/// Stages, unstages and commits, and holds the git column's draft on top of
+/// what [GitReadingNotifier] reads.
 ///
 /// It re-reads rather than patches: nothing can predict what git will say
 /// after an operation (a deleted file staged, an editor saving underneath,
-/// a rebase in another terminal), so every one ends in `status()` again.
+/// a rebase in another terminal), so every one ends in a reading again.
 ///
-/// **Kept alive because it is the app's one reader of git.** The shell
-/// builds the git column under `if (showingAside)` and Riverpod disposes a
-/// notifier nobody listens to, so without this a space opened with the
-/// column shut would have no git reading at all. It also keeps the commit
-/// message being written; `build` still watches the open space, so leaving
+/// **Kept alive for the commit message being written**, which outlives the
+/// column being put away; `build` still watches the open space, so leaving
 /// one clears the draft — the case where dropping it is right.
 
 abstract class _$ChangesNotifier extends $Notifier<ChangesState> {

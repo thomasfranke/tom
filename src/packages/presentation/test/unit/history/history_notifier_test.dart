@@ -78,6 +78,20 @@ void main() {
     expect(state(), isA<HistoryIdle>());
   });
 
+  test('a folder with no repository has no history to ask for', () async {
+    container
+      ..listen<HistoryState>(historyProvider, (_, _) {})
+      ..read(
+        spaceSessionProvider.notifier,
+      ).open(SpaceEntity(root: '/notes', repositoryRoot: null, name: 'notes'));
+    container.read(spaceSessionProvider.notifier).show(index);
+    await Future<void>.delayed(Duration.zero);
+    await notifier().refresh();
+
+    expect(git.asked, isEmpty);
+    expect(state(), isA<HistoryIdle>());
+  });
+
   test('opening a document asks about that document', () async {
     await open(document: writing);
 
@@ -113,6 +127,27 @@ void main() {
     await open(document: writing);
 
     expect(state(), isA<HistoryFailed>());
+  });
+
+  test('a reading the person refused keeps the list that was there', () async {
+    await open(document: writing);
+    git.answer = const Failure<List<CommitEntity>, GitFailure>(
+      GitCommandDenied(),
+    );
+
+    await notifier().refresh();
+
+    expect((state() as HistoryReady).commits, hasLength(2));
+  });
+
+  test('refused the first time, there is no list and no failure', () async {
+    git.answer = const Failure<List<CommitEntity>, GitFailure>(
+      GitCommandDenied(),
+    );
+
+    await open(document: writing);
+
+    expect(state(), isA<HistoryIdle>());
   });
 
   group('opening a version', () {

@@ -13,27 +13,15 @@ abstract final class EditorDesign {
   /// (`docs/design/screens/divergences.md`).
   static const double bodyTop = 8;
 
-  /// Pane edge to the line-number column.
-  ///
-  /// What the gutter holds is the letter of a changed block, the way the
-  /// preview's does (`docs/product/diff/rendered-diff/how-it-is-drawn/doc.md`);
-  /// the source pane does not draw it yet, and the room is the board's either
-  /// way (`design/screens/desktop/git-diff/comparing-dark.svg`).
-  static const double gutter = 56;
-
-  /// Pane edge to the left of a gutter mark.
-  ///
-  /// The boards draw the letter itself at 18; the mark is a twenty square and
-  /// sits centred on it
-  /// (`design/screens/desktop/git-diff/comparing-light.svg`).
-  static const double markLeft = 12;
+  /// Pane edge to the left of a gutter mark, a `TomMetrics.mark` outline
+  /// (`design/screens/desktop/git-conflict/conflict-in-source-dark.svg`).
+  static const double markLeft = 5;
 
   /// Pane edge to the tint band behind a changed block.
   ///
-  /// It starts **before** the line numbers and runs under them, which is
-  /// what the diff boards draw — `git-conflict/` puts it at 80 instead, and
-  /// the maintainer settled on 44
-  /// (`design/screens/desktop/git-diff/comparing-light.svg`).
+  /// Between the numbers and the text: the diff boards start it at 2 and
+  /// `git-conflict/` at 44, and the maintainer settled on 44
+  /// (`design/screens/desktop/git-conflict/conflict-in-source-dark.svg`).
   static const double bandLeft = 44;
 
   /// The bar in the role's own ink, at the band's left edge.
@@ -50,11 +38,13 @@ abstract final class EditorDesign {
   ///
   /// Fixed rather than derived from the digit count, because the boards put
   /// the first character of source at one place on every screen and a
-  /// document reaching line 100 must not move it.
-  static const double numbers = 78;
+  /// document reaching line 100 must not move it
+  /// (`design/screens/desktop/editor/merged-rows-dark.svg`: 300 from 268).
+  static const double numbers = 32;
 
-  /// The line-number column to the first character of source.
-  static const double numbersToCode = 10;
+  /// The line-number column to the first character of source, which the
+  /// boards draw at 50 from the pane's edge.
+  static const double numbersToCode = 18;
 
   /// A line number, smaller than the source it counts.
   static const double lineNumber = 11;
@@ -70,4 +60,13 @@ abstract final class EditorDesign {
 
   /// Line height of source as a multiple of [code].
   static const double codeHeight = linePitch / code;
+
+  /// The conflict's three choices, sans and smaller than the source
+  /// (`design/screens/desktop/git-conflict/conflict-in-source-light.svg`).
+  static const double lens = 11;
+
+  /// The end of the `<<<<<<<` line to the first choice: two columns of
+  /// source, so the choices read as following the marker rather than as
+  /// part of it.
+  static const double lensGap = 15;
 }

@@ -18,6 +18,10 @@ permissions:
 
 jobs:
   cla:
+    # The name is the status check a pull request is required to pass, beside
+    # `Pull Request Checks` and `Build (macOS)`; without one it reads as the
+    # job's key.
+    name: CLA
     runs-on: ubuntu-latest
     # Only react to the acceptance phrase, never to unrelated PR comments.
     if: (github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA') || github.event_name == 'pull_request_target'

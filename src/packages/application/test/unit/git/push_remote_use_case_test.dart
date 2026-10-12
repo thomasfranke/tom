@@ -67,9 +67,48 @@ void main() {
     );
     expect(observability.captured.single.layer, 'application');
   });
+
+  group('a branch that tracks nothing', () {
+    test('is published under its own name, not pushed', () async {
+      git.upstream = null;
+
+      final Result<void, AppFailure> result = await pushing().push(docs);
+
+      expect(result, isA<Success<void, AppFailure>>());
+      expect(git.published, <BranchNameValueObject>[
+        BranchNameValueObject('feat/notes'),
+      ]);
+      expect(git.pushed, 0);
+    });
+
+    test('a detached HEAD is left to git to refuse', () async {
+      git
+        ..upstream = null
+        ..detached = true;
+
+      await pushing().push(docs);
+
+      expect(git.published, isEmpty);
+      expect(git.pushed, 1);
+    });
+  });
+
+  test('a status git will not give stops the push before it starts', () async {
+    git.statusFailure = const GitNotARepository('/code/app');
+
+    final Result<void, AppFailure> result = await pushing().push(docs);
+
+    expect(
+      (result as Failure<void, AppFailure>).failure,
+      const GitNotARepository('/code/app'),
+    );
+    expect(git.pushed, 0);
+    expect(git.published, isEmpty);
+  });
 }
 
-/// Git, answering `push` and refusing every other question.
+/// Git, answering `status`, `push` and `publish` and refusing every other
+/// question.
 ///
 /// The rest is left to `noSuchMethod`, which throws, so a use case that
 /// called one fails loudly rather than passing quietly.
@@ -77,6 +116,30 @@ final class _Git implements GitRepository {
   Result<void, GitFailure>? answer;
   bool throws = false;
   int pushed = 0;
+  final List<BranchNameValueObject> published = <BranchNameValueObject>[];
+
+  /// What the status says the branch tracks; null is nothing.
+  BranchNameValueObject? upstream = BranchNameValueObject('origin/feat/notes');
+  bool detached = false;
+  GitFailure? statusFailure;
+
+  @override
+  Future<Result<GitStatusValueObject, GitFailure>> status() async =>
+      switch (statusFailure) {
+        final GitFailure failure => Failure<GitStatusValueObject, GitFailure>(
+          failure,
+        ),
+        null => Success<GitStatusValueObject, GitFailure>(
+          GitStatusValueObject(
+            branch: detached ? null : BranchNameValueObject('feat/notes'),
+            upstream: upstream,
+            ahead: 1,
+            behind: 0,
+            entries: const <StatusEntryValueObject>[],
+            isDetached: detached,
+          ),
+        ),
+      };
 
   @override
   Future<Result<void, GitFailure>> push() async {
@@ -84,6 +147,12 @@ final class _Git implements GitRepository {
     return throws
         ? throw StateError('git fell over')
         : (answer ?? const Success<void, GitFailure>(null));
+  }
+
+  @override
+  Future<Result<void, GitFailure>> publish(BranchNameValueObject branch) async {
+    published.add(branch);
+    return answer ?? const Success<void, GitFailure>(null);
   }
 
   @override

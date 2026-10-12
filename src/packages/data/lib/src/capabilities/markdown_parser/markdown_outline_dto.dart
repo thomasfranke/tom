@@ -30,5 +30,12 @@ abstract class MarkdownOutlineDto with _$MarkdownOutlineDto {
     /// cited in, across the whole text
     /// ([Decision 31](../../../../../../../docs/technical/decisions/031-where-a-footnotes-text-goes.md)).
     @Default(<MarkdownFootnoteDto>[]) List<MarkdownFootnoteDto> footnotes,
+
+    /// What sits between each `[[` and `]]` of the text, in document order,
+    /// never one inside code.
+    ///
+    /// The raw words and nothing more: what they mean — target, anchor,
+    /// label — is the domain's to read, so a second parser owes only this.
+    @Default(<String>[]) List<String> wikilinks,
   }) = _MarkdownOutlineDto;
 }

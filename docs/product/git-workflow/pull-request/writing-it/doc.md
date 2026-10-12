@@ -2,7 +2,7 @@
 
 The page that takes the editor, and what is in the draft before anybody types.
 
-**Status:** Planned · Milestone M3
+**Status:** Shipped · Milestone M3
 
 ## Rules
 
@@ -14,7 +14,7 @@ The page that takes the editor, and what is in the draft before anybody types.
 
 ## Mocks
 
-- **writing a pull request** — [light](../../../../design/screens/desktop/git-pull-request/writing-a-pull-request-light.svg) · [dark](../../../../design/screens/desktop/git-pull-request/writing-a-pull-request-dark.svg).
+- **writing a pull request** — the page with the whole editor, the status row where the tabs were, and the branch's own column. [light](../../../../design/screens/desktop/git-pull-request/writing-a-pull-request-light.svg) · [dark](../../../../design/screens/desktop/git-pull-request/writing-a-pull-request-dark.svg).
 
 ---
 

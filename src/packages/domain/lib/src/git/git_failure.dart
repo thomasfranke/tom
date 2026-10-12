@@ -49,9 +49,42 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
     AppFailure? cause,
   }) = GitConflictMarkersPresent;
 
+  /// The machine's git is older than the product works on.
+  ///
+  /// Its own outcome because Home says so in the product's words, and
+  /// choosing another folder would not help
+  /// (`docs/product/home/opening-a-space/doc.md`).
+  const factory GitFailure.tooOld(
+    /// The release this machine has, as `2.39.2`.
+    String found, {
+    AppFailure? cause,
+  }) = GitTooOld;
+
   /// The remote refused the credentials, or asked for some TOM cannot supply.
   const factory GitFailure.authenticationFailed({AppFailure? cause}) =
       GitAuthenticationFailed;
+
+  /// The remote could not be reached: the network, not the repository
+  /// (`docs/product/git-workflow/push-pull/when-the-link-is-broken/doc.md`).
+  const factory GitFailure.networkUnavailable({AppFailure? cause}) =
+      GitNetworkUnavailable;
+
+  /// There is no remote to talk to.
+  const factory GitFailure.noRemote({AppFailure? cause}) = GitNoRemote;
+
+  /// The address names no repository git can clone: a typo, a repository
+  /// that is gone, or a protocol git does not speak
+  /// (`docs/product/home/cloning/doc.md`).
+  const factory GitFailure.remoteNotFound({AppFailure? cause}) =
+      GitRemoteNotFound;
+
+  /// The folder a clone was to fill already holds something, and git never
+  /// clones over it.
+  const factory GitFailure.cloneDestinationTaken(
+    /// The absolute path the clone was asked to create.
+    String path, {
+    AppFailure? cause,
+  }) = GitCloneDestinationTaken;
 
   /// HEAD points at a commit rather than a branch.
   ///
@@ -64,6 +97,45 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
   /// Its own outcome because pulling is the way out
   /// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
   const factory GitFailure.pushRejected({AppFailure? cause}) = GitPushRejected;
+
+  /// The remote refused a push because it protects the branch.
+  ///
+  /// Its own outcome because neither pulling nor trying again is the way in:
+  /// a pull request is
+  /// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
+  const factory GitFailure.branchProtected({AppFailure? cause}) =
+      GitBranchProtected;
+
+  /// Git refused to pull before starting, because what it brings would
+  /// overwrite work that was never committed.
+  ///
+  /// Its own outcome because committing is the way out
+  /// (`docs/product/git-workflow/push-pull/when-it-fails/doc.md`).
+  const factory GitFailure.localChangesOverwritten(
+    /// The files at stake, relative to the repository root.
+    List<String> paths, {
+    AppFailure? cause,
+  }) = GitLocalChangesOverwritten;
+
+  /// The branch has no commit yet, and the action needs one to go back to.
+  ///
+  /// This product's refusal, not git's: `Discard all changes` before the
+  /// first commit would empty the index and then fail, half done
+  /// (`docs/product/git-workflow/git-menu/doc.md`).
+  const factory GitFailure.noCommitsYet({AppFailure? cause}) = GitNoCommitsYet;
+
+  /// A file to be deleted as *never committed* is in the last commit after
+  /// all — the list it was pressed in had gone stale.
+  ///
+  /// Refused rather than deleted: what git has can be put back, and that is
+  /// a different action with a different question
+  /// (`docs/product/git-workflow/commit/the-changes-list/doc.md`).
+  const factory GitFailure.pathCommitted(
+    /// The files that turned out to be committed, relative to the
+    /// repository root.
+    List<String> paths, {
+    AppFailure? cause,
+  }) = GitPathCommitted;
 
   /// A git command ran past the time it was allowed and was killed.
   ///
@@ -81,6 +153,15 @@ sealed class GitFailure with _$GitFailure implements AppFailure {
     String path, {
     AppFailure? cause,
   }) = GitPathNotInRevision;
+
+  /// The person refused the command before it ran
+  /// (`docs/product/git-workflow/approvals/doc.md`).
+  ///
+  /// **Never worded as an error**: nothing went wrong, so whoever gets it
+  /// stops quietly, and a refused read leaves the last reading on screen.
+  @Implements<CommandDenial>()
+  const factory GitFailure.commandDenied({AppFailure? cause}) =
+      GitCommandDenied;
 
   /// Git failed in a way the product has no vocabulary for.
   ///

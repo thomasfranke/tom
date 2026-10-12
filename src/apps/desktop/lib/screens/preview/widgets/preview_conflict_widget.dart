@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -88,6 +89,7 @@ class PreviewConflictWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TomColors colors = TomColors.of(context);
+    final AppLocalizations l10n = context.l10n;
     // Laid out like every other block, marked or not, so a conflict does not
     // shorten the line and rag the column.
     return Row(
@@ -112,7 +114,7 @@ class PreviewConflictWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 const SizedBox(height: labelTop),
-                _label(colors, 'Current Change'),
+                _label(colors, l10n.conflictCurrentChange),
                 const SizedBox(height: labelGap),
                 _side(colors, region.current),
                 const SizedBox(height: sideGap),
@@ -120,11 +122,11 @@ class PreviewConflictWidget extends StatelessWidget {
                 // ink as their labels: one more thing saying they are two.
                 Container(height: 1, color: colors.modified),
                 const SizedBox(height: sideGap),
-                _label(colors, 'Incoming Change'),
+                _label(colors, l10n.conflictIncomingChange),
                 const SizedBox(height: labelGap),
                 _side(colors, region.incoming),
                 const SizedBox(height: sideGap + labelGap),
-                _actions(colors),
+                _actions(colors, l10n),
               ],
             ),
           ),
@@ -151,6 +153,7 @@ class PreviewConflictWidget extends StatelessWidget {
   Widget _side(TomColors colors, String text) => Text(
     text,
     style: TextStyle(
+      fontFamily: TomFonts.reading,
       fontSize: body,
       height: PreviewDesign.bodyHeight,
       color: colors.textPrimary,
@@ -167,23 +170,23 @@ class PreviewConflictWidget extends StatelessWidget {
   /// a split pane has with both columns open. Wrapping keeps the board's
   /// line where there is room for it and moves the third down where there is
   /// not, which beats a button somebody cannot reach.
-  Widget _actions(TomColors colors) => Wrap(
+  Widget _actions(TomColors colors, AppLocalizations l10n) => Wrap(
     spacing: actionGap,
     runSpacing: actionGap,
     children: <Widget>[
       _act(
         colors,
-        'Accept Current Change',
+        l10n.conflictAcceptCurrent,
         ConflictChoiceEnum.current,
         currentWidth,
       ),
       _act(
         colors,
-        'Accept Incoming Change',
+        l10n.conflictAcceptIncoming,
         ConflictChoiceEnum.incoming,
         incomingWidth,
       ),
-      _act(colors, 'Accept Both Changes', ConflictChoiceEnum.both, bothWidth),
+      _act(colors, l10n.conflictAcceptBoth, ConflictChoiceEnum.both, bothWidth),
     ],
   );
 
@@ -195,14 +198,15 @@ class PreviewConflictWidget extends StatelessWidget {
     ConflictChoiceEnum choice,
     double width,
   ) => SizedBox(
-    width: width,
     height: actionHeight,
+    // The board's width is a floor, not a ceiling: VS Code's Portuguese
+    // ("Aceitar Alteração de Entrada") is longer than any English label.
     child: OutlinedButton(
       onPressed: () => onChoose(choice),
       style: OutlinedButton.styleFrom(
         foregroundColor: colors.modified,
         side: BorderSide(color: colors.modified),
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         minimumSize: Size(width, actionHeight),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(TomMetrics.radius),
@@ -212,7 +216,7 @@ class PreviewConflictWidget extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-      child: Text(text),
+      child: Text(text, maxLines: 1, softWrap: false),
     ),
   );
 }

@@ -7,11 +7,16 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
+import 'package:tom_presentation/src/commands/command_action_enum.dart';
+import 'package:tom_presentation/src/commands/command_scope.dart';
+import 'package:tom_presentation/src/commands/git_asks_first.dart';
+import 'package:tom_presentation/src/commands/opening_plan_notifier.dart';
 import 'package:tom_presentation/src/editor/editor_notifier.dart';
 import 'package:tom_presentation/src/home/home_providers.dart';
 import 'package:tom_presentation/src/spaces/space_departure.dart';
 import 'package:tom_presentation/src/spaces/space_menu_state.dart';
 import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
+import 'package:tom_presentation/src/spaces/window_closer.dart';
 
 part 'space_menu_notifier.g.dart';
 
@@ -50,8 +55,8 @@ class SpaceMenuNotifier extends _$SpaceMenuNotifier {
           value: final List<RecentSpaceEntity> spaces,
         ) =>
           List<RecentSpaceEntity>.unmodifiable(spaces),
-        // A list that cannot be read is an empty list: `Close space` is the
-        // point of this menu and it works without one.
+        // A list that cannot be read is an empty list: the way out is the
+        // home button beside the breadcrumb, and it works without one.
         Failure<List<RecentSpaceEntity>, AppFailure>() =>
           const <RecentSpaceEntity>[],
       },
@@ -67,7 +72,7 @@ class SpaceMenuNotifier extends _$SpaceMenuNotifier {
   /// standing behind a surface nobody can see — the same rule the branch
   /// switcher follows.
   void dismiss() =>
-      state = state.copyWith(isShowing: false, pending: null, failure: null);
+      state = state.copyWith(isShowing: false, pending: null, unopened: null);
 
   /// Goes to [space], asking first if that would lose unsaved work.
   Future<void> switchTo(RecentSpaceEntity space) async {
@@ -78,18 +83,28 @@ class SpaceMenuNotifier extends _$SpaceMenuNotifier {
   }
 
   /// Leaves for the opening screen, asking first for the same reason.
+  ///
+  /// Pressed from the home button beside the breadcrumb, with the menu
+  /// closed: the question it may raise is still the menu's, so the control
+  /// opens the surface for it.
   Future<void> close() => _leave(const SpaceDeparture.closing());
+
+  /// Closes the window, asking first for the same reason: the window's own
+  /// close and the system's quit both end here
+  /// (`docs/product/editor/tabs/doc.md`).
+  Future<void> quit() => _leave(const SpaceDeparture.quitting());
 
   /// Saves what is open, then goes where the question was about.
   Future<void> saveAndLeave() async {
     if (state.pending case final SpaceDeparture departure) {
-      await ref.read(editorProvider.notifier).save();
+      // Every tab's, not only the one on screen (`editor/tabs/doc.md`).
+      await ref.read(editorProvider.notifier).saveAll();
       if (!ref.mounted) {
         return;
       }
       // A save that did not take leaves the buffer dirty, and leaving now
       // would lose exactly what the question was asked to protect.
-      if (ref.read(editorProvider).isDirty) {
+      if (ref.read(editorProvider.notifier).hasUnsaved) {
         return;
       }
       await _depart(departure);
@@ -109,20 +124,34 @@ class SpaceMenuNotifier extends _$SpaceMenuNotifier {
 
   /// Asks about the buffer first, and departs when there is nothing to ask.
   Future<void> _leave(SpaceDeparture departure) async {
-    if (ref.read(editorProvider).isDirty) {
-      state = state.copyWith(pending: departure, failure: null);
+    if (ref.read(editorProvider.notifier).hasUnsaved) {
+      state = state.copyWith(pending: departure, unopened: null);
       return;
     }
     await _depart(departure);
   }
 
-  /// Does what was decided, whichever of the two it is.
+  /// Does what was decided, whichever of the three it is.
   Future<void> _depart(SpaceDeparture departure) => switch (departure) {
     SpaceDepartureClosing() => _close(),
+    SpaceDepartureQuitting() => _quit(),
     SpaceDepartureSwitching(space: final RecentSpaceEntity space) => _open(
       space,
     ),
   };
+
+  /// Closes the space, then the window.
+  ///
+  /// The space first, so the buffers are gone by the time the system asks
+  /// the app whether it may exit — an edit somebody chose to discard must
+  /// not raise the question a second time.
+  Future<void> _quit() async {
+    final WindowCloser closeWindow = ref.read(windowCloserProvider);
+    if (ref.read(spaceSessionProvider) != null) {
+      await _close();
+    }
+    await closeWindow();
+  }
 
   /// Leaves the space, which puts Home back on the window.
   Future<void> _close() async {
@@ -136,9 +165,19 @@ class SpaceMenuNotifier extends _$SpaceMenuNotifier {
   /// Home and has no screen to refuse on, so the row says so and the window
   /// does not move.
   Future<void> _open(RecentSpaceEntity space) async {
-    state = state.copyWith(isBusy: true, pending: null, failure: null);
-    final Result<SpaceEntity, AppFailure> opened = await openSpace.open(
-      space.root,
+    state = state.copyWith(isBusy: true, pending: null, unopened: null);
+    final bool deferred = await gitAsksFirst(ref);
+    if (!ref.mounted) {
+      return;
+    }
+    // One plan with the first reading the space makes once it is open.
+    final CommandScope plan = CommandScope.start(
+      CommandActionEnum.readRepository,
+    );
+    final Result<SpaceEntity, AppFailure> opened = await plan.within(
+      () => deferred
+          ? openSpace.openFolder(space.root)
+          : openSpace.open(space.root),
     );
     if (!ref.mounted) {
       return;
@@ -146,12 +185,15 @@ class SpaceMenuNotifier extends _$SpaceMenuNotifier {
     switch (opened) {
       case Success<SpaceEntity, AppFailure>(value: final SpaceEntity it):
         state = state.copyWith(isBusy: false, isShowing: false);
-        ref.read(spaceSessionProvider.notifier).open(it);
+        ref.read(openingPlanProvider.notifier).handed = plan;
+        ref.read(spaceSessionProvider.notifier).open(it, locating: deferred);
+      // Refused, the window stays where it is and the row says nothing.
+      case Failure<SpaceEntity, AppFailure>(
+        failure: AppFailure(isDenial: true),
+      ):
+        state = state.copyWith(isBusy: false);
       case Failure<SpaceEntity, AppFailure>():
-        state = state.copyWith(
-          isBusy: false,
-          failure: '${space.name} could not be opened — has it moved?',
-        );
+        state = state.copyWith(isBusy: false, unopened: space);
     }
   }
 }

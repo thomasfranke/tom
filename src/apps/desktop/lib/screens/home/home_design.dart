@@ -1,8 +1,6 @@
 /// What the design fixes about Home.
 library;
 
-import 'package:tom_ui/tom_ui.dart';
-
 /// The numbers of `docs/design/screens/desktop/home/`, a 1440×900 window;
 /// when the code and the board disagree the board is right.
 ///
@@ -25,10 +23,6 @@ abstract final class HomeDesign {
   /// library carries (`docs/design/components/controls.md`).
   static const double glyphToLabel = 10;
 
-  /// The gutter that keeps the column centred despite the milestone chip,
-  /// which the design hangs outside the column.
-  static const double chipGutter = 30 + TomMetrics.padTight;
-
   /// One row of the recent list.
   static const double row = 60;
 
@@ -50,8 +44,40 @@ abstract final class HomeDesign {
   /// The gap between the two controls.
   static const double chooseToClone = 12;
 
-  /// Controls to the recent list's caption.
+  /// Controls to the recent list's caption; the clone's note lives inside
+  /// it, so the list never moves (`clone-from-url`, `cloning`).
   static const double cloneToRecent = 38;
+
+  /// The `Clone` button beside the address.
+  static const double cloneButton = 88;
+
+  /// The address to `Clone`.
+  static const double fieldToClone = 12;
+
+  /// The address's edge to its text.
+  static const double fieldInset = 16;
+
+  /// The address's outline while it has the keyboard or was refused; at
+  /// rest it is a hairline.
+  static const double fieldStroke = 1.5;
+
+  /// The size of the address and of `Clone`.
+  static const double fieldText = 13.5;
+
+  /// The controls to the hint or the refusal under them.
+  static const double controlsToNote = 8;
+
+  /// The controls to the progress track.
+  static const double controlsToTrack = 6;
+
+  /// The progress track, three points tall.
+  static const double track = 3;
+
+  /// The track to git's phase under it.
+  static const double trackToPhase = 5;
+
+  /// The size of every line under the controls.
+  static const double note = 11.5;
 
   /// Caption to the card under it.
   static const double recentToCard = 8;

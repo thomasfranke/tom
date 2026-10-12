@@ -1,6 +1,6 @@
 # Decision 30 — Export renders what the preview draws, through one capability
 
-**Status:** proposed — **draft, not accepted.** The licences below were read from pub.dev and are current; what is still the maintainer's is the second question at the foot.
+**Status:** accepted (2026-10-08). The licences below were read from pub.dev; the two questions at the foot — where the control lives, and whether a PDF paginates — were settled with the board, in the revision at the foot.
 
 ## Context
 
@@ -51,6 +51,8 @@ tom_infra/lib/src/document_exporter/
 **Where the control lives.** The document's own row is full — seventeen formatting buttons, the modes and the `Diff` chip — and the top bar carries no action on a file. A menu is the obvious answer and the app has no menus, so adding one is a shape decision rather than a placement.
 
 **Whether a PDF paginates or scrolls.** `pdf`'s `MultiPage` breaks a document into pages, which is right for printing and wrong for a document somebody reads on a screen; a single long page is the opposite trade. This is settled when the surface is designed, because the answer depends on what the export is for.
+
+**Revised (2026-10-08), the maintainer's answer to both:** the control is a **menu on the tab** — a right click offers `Export as PDF…` and `Export as HTML…` above `Close tab` — and **a PDF is paginated**, A4 through `MultiPage`. The board is `editor-links-export/exporting-from-the-tab` and `editor-links-export/exported`; the rules are in [export](../../product/export/doc.md). The faces reach the PDF through the composition root, which reads them from the asset bundle on the first export.
 
 ## Revisit when
 

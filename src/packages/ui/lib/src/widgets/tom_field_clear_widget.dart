@@ -4,6 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tom_ui/src/theme/tom_colors.dart';
+import 'package:tom_ui/src/widgets/tom_glyph_widget.dart';
 
 /// The `Field clear` component: a 16-point disc in `text_muted` with the
 /// close glyph knocked out of it
@@ -41,7 +42,13 @@ class TomFieldClearWidget extends StatelessWidget {
           color: colors.textMuted,
           shape: BoxShape.circle,
         ),
-        child: Icon(Icons.close, size: glyph, color: on),
+        child: Center(
+          child: TomGlyphWidget(
+            glyph: TomGlyphEnum.close,
+            color: on,
+            size: glyph,
+          ),
+        ),
       ),
     );
   }

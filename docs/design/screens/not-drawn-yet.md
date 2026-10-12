@@ -1,22 +1,23 @@
 # Not drawn yet
 
-What has no board, and why. Saying so is honest; a board that no longer matches
-what shipped is not.
+What has no board in the Penpot file, and why. Saying so is honest; a board
+that no longer matches what shipped is not.
+
+A board that is drawn is exported, and is in [`desktop/`](desktop/) — what the
+file still owes is the [Penpot backlog](../penpot-backlog.md).
 
 | | Why |
 |---|---|
 | **Mobile** | A `mobile/` folder appears when Phase 3 does. Drawn from the job, not from the desktop layout — [Decision 8](../../technical/decisions/008-monorepo-with-pure-dart-core.md) says *panels do not become screens* — and waiting on the two questions the [roadmap](../../roadmap.md#phases) names |
-| **"YOUR COMMITS" under a rejection** | Phase 2; it needs `history()` |
-| **A pull that succeeded** | M1. The band that says how many commits arrived — the one half of push/pull with no board. The request *in flight* has two, `pulling` and `pushing` ([while a request runs](../../product/git-workflow/push-pull/while-a-request-runs/doc.md)) |
-| ~~**The diff turned off**~~ | Closed by deletion. Every screen that is not about the diff already draws the chip off, so a board of its own said nothing the other seventy-six do not ([turning it off](../../product/diff/rendered-diff/turning-it-off/doc.md)) |
-| **Resolving a whole list of documents at once** · section blame | Post-MVP; neither constrains the M0 layout |
-| **A wikilink** · resolved, missing and ambiguous | **M3, and it blocks the feature.** [Decision 28](../../technical/decisions/028-a-wikilink-resolves-by-name-inside-the-space.md) settled what a link resolves to and gave it three outcomes; the product rule that an unresolved one is *visibly distinguished* has nothing to read until they are drawn. The `[[` autocomplete is undrawn with them |
-| **An export, and where it is asked for** | **M3, and it blocks the feature.** [Decision 30](../../technical/decisions/030-export-renders-the-preview-not-the-file.md) settles the capability and the package in draft; what has no board is the control, the choice of format and whatever a long export says while it runs. The document's own row is already full |
-| **The formatting bar's `⋯`, and the strip it opens** | **Built ahead of its board**, on the maintainer's answer to the row being 34 points too narrow with the git column open: the last group collapses into one button rather than scrolling out of reach. What needs drawing is that button in both states, the strip under it, and `icons/more.svg` — and the eight boards whose bar the maintainer has now revoked, which draw all seventeen *over* the mode control ([formatting shortcuts](../../product/editor/formatting-shortcuts/doc.md)) |
-| **The site in light** | Only the dark board exists — the site does not follow the reader's system setting ([site/](../site/README.md)) |
-| **`preferences.json` open in the editor** | M3. The button that opens it is drawn; the tab it produces is not. Source only, from outside the tree ([where it is stored](../../product/preferences/where-it-is-stored/doc.md)) |
-| ~~**A theme toggle on Home**~~ | Closed. Home carries the [preferences](../../product/preferences/the-popover/doc.md) button, and the theme is inside it — the language is chosen before a space is open, so the bar needs it there |
+| **"YOUR COMMITS" under a rejection** | Phase 2, by the [roadmap](../../roadmap.md)'s own words |
+| **Resolving a whole list of documents at once** · section blame · several spaces open · themes | Post-MVP; none constrains today's layout |
+| **A rebase, a cherry-pick or a revert stopped half way** | Only a merge is recognised for now, so there is no state to draw |
+| **A command palette** | After the MVP. `⌘K` is the search box's, so a palette does not get that key by default |
+| **A selection toolbar in the source pane** | Not decided: the editor package ships none, and whether one is drawn or the [formatting bar](../../product/editor/formatting-shortcuts/doc.md) is all there will be is the maintainer's call ([roadmap](../../roadmap.md)) |
+| **The site in light** | By decision: the site does not follow the reader's system setting, and its picture of the app becomes a real screenshot at launch rather than a redrawn board ([site/](../site/README.md)) |
+| **The diff turned off** | By decision: every screen that is not about the diff already draws the chip off, so a board of its own would say nothing the others do not ([turning it off](../../product/diff/rendered-diff/turning-it-off/doc.md)) |
+| **Closing the window with unsaved tabs** | No board of its own, by the rule that a screen is drawn once: it raises the popover `Leaving with unsaved work — the question` already draws, with one sentence changed, and that row's notes say so ([leaving a space](../../product/workspace/leaving-a-space/doc.md)) |
 
 ---
 
-*See also: [screens/](README.md) · [roadmap.md](../../roadmap.md)*
+*See also: [screens/](README.md) · [penpot-backlog.md](../penpot-backlog.md) · [roadmap.md](../../roadmap.md)*

@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tom_application/tom_application.dart';
-import 'package:tom_core/tom_core.dart';
 import 'package:tom_desktop/screens/compare/compare_control_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
 void main() {
-  late _Git git;
   late ProviderContainer container;
 
   final SpaceEntity docs = SpaceEntity(
@@ -22,77 +17,59 @@ void main() {
   final SpaceRelativePathValueObject index = SpaceRelativePathValueObject(
     'index.md',
   );
-
-  BranchEntity branch(String name, {bool isCurrent = false}) =>
-      BranchEntity(name: BranchNameValueObject(name), isCurrent: isCurrent);
-
-  CommitEntity commit(String sha, String subject) => CommitEntity(
-    sha: CommitShaValueObject(sha.padRight(40, '0')),
-    author: const AuthorValueObject(name: 'Thomas Franke', email: 'a@b.test'),
-    date: CommitDateValueObject(
-      utc: DateTime.now().toUtc().subtract(const Duration(days: 3)),
-      offset: Duration.zero,
-    ),
-    subject: subject,
-    body: '',
+  final BranchRefValueObject develop = BranchRefValueObject(
+    name: BranchNameValueObject('develop'),
   );
 
   setUp(() {
-    git = _Git()
-      ..reportedBranches = <BranchEntity>[
-        branch('main', isCurrent: true),
-        branch('feat/rendered-diff'),
-      ]
-      ..reportedCommits = <CommitEntity>[
-        commit('aaa1', 'docs: fix a typo in the index'),
-      ];
-    container = ProviderContainer(
-      overrides: <Override>[
-        listBranchesProvider.overrideWithValue(
-          ListBranchesUseCase(
-            gitFor: (SpaceEntity space) => git,
-            observability: const _Silent(),
-          ),
-        ),
-        readFileHistoryProvider.overrideWithValue(
-          ReadFileHistoryUseCase(
-            gitFor: (SpaceEntity space) => git,
-            observability: const _Silent(),
-          ),
-        ),
-      ],
-    );
+    container = ProviderContainer();
     addTearDown(container.dispose);
   });
 
-  /// Mounts the control in a bar, with [document] open when one is given.
+  /// Mounts the control at the right of a bar, with [document] open when one
+  /// is given and [base] as what the session compares against.
   Future<void> pumpControl(
     WidgetTester tester, {
     SpaceRelativePathValueObject? document,
+    BranchRefValueObject? base,
+    double labelRoom = double.infinity,
+    SpaceEntity? space,
   }) async {
     tester.view
       ..physicalSize = const Size(1280, 800)
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    container.read(spaceSessionProvider.notifier).open(docs);
+    final SpaceSessionNotifier session = container.read(
+      spaceSessionProvider.notifier,
+    )..open(space ?? docs);
     if (document != null) {
-      container.read(spaceSessionProvider.notifier).show(document);
+      session.show(document);
     }
+    session.compare(
+      base == null
+          ? null
+          : DiffBaseValueObject(
+              branch: base,
+              forkPoint: CommitShaValueObject(
+                'abc1234def5678901234567890abcdef12345678',
+              ),
+            ),
+    );
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
           theme: tomTheme(Brightness.light),
-          // At the right of the bar, where the real one sits: the popover
-          // hangs from the control's right edge, so a control mounted at the
-          // left would put it off the window.
-          home: const Scaffold(
+          home: Scaffold(
             body: Column(
               children: <Widget>[
                 SizedBox(
                   height: TomMetrics.modeBar,
                   child: Row(
-                    children: <Widget>[Spacer(), CompareControlWidget()],
+                    children: <Widget>[
+                      const Spacer(),
+                      CompareControlWidget(labelRoom: labelRoom),
+                    ],
                   ),
                 ),
               ],
@@ -104,274 +81,201 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Opens the popover.
-  Future<void> openIt(WidgetTester tester) async {
+  Future<void> press(WidgetTester tester) async {
     await tester.tap(find.text('Diff'));
     await tester.pumpAndSettle();
   }
 
-  RevisionValueObject? base() =>
-      container.read(spaceSessionProvider)?.comparingAgainst;
+  bool showing() => container.read(spaceSessionProvider)!.showingDiff;
 
   testWidgets('nothing is drawn with no document open', (
     WidgetTester tester,
   ) async {
-    // A base belongs to a document, because the comparison is scoped to one
-    // file — there is nothing to compare before one is chosen.
     await pumpControl(tester);
 
     expect(find.text('Diff'), findsNothing);
   });
 
-  testWidgets('with a document open it offers to compare', (
+  testWidgets('nor in a folder with no repository, document or not', (
+    WidgetTester tester,
+  ) async {
+    // Nothing committed to compare with
+    // (`docs/product/workspace/without-a-repository/doc.md`).
+    await pumpControl(
+      tester,
+      document: index,
+      space: SpaceEntity(root: '/notes', repositoryRoot: null, name: 'notes'),
+    );
+
+    expect(find.text('Diff'), findsNothing);
+  });
+
+  testWidgets('nor over a file that is not markdown', (
+    WidgetTester tester,
+  ) async {
+    // Its line marks are all the tab has to say
+    // (`git-workflow/commit/opening-a-change/doc.md`).
+    await pumpControl(
+      tester,
+      document: SpaceRelativePathValueObject('mkdocs.yml'),
+    );
+
+    expect(find.text('Diff'), findsNothing);
+  });
+
+  testWidgets('nor over a document git reports deleted', (
+    WidgetTester tester,
+  ) async {
+    // Turning its marks off would leave an empty page.
+    await pumpControl(tester, document: index);
+    expect(find.text('Diff'), findsOneWidget);
+
+    container
+        .read(spaceSessionProvider.notifier)
+        .observe(
+          GitStatusValueObject(
+            branch: BranchNameValueObject('main'),
+            upstream: null,
+            ahead: 0,
+            behind: 0,
+            entries: <StatusEntryValueObject>[
+              StatusEntryValueObject(
+                path: RepoRelativePathValueObject('docs/index.md'),
+                state: FileStateEnum.deleted,
+                isStaged: false,
+              ),
+            ],
+            isDetached: false,
+          ),
+        );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Diff'), findsNothing);
+  });
+
+  testWidgets('with a document open the chip is there, and on', (
     WidgetTester tester,
   ) async {
     await pumpControl(tester, document: index);
 
     expect(find.text('Diff'), findsOneWidget);
+    expect(showing(), isTrue);
   });
 
-  testWidgets('it lists the branches and the document\'s commits', (
+  testWidgets('a press turns the marks off, and the next turns them on', (
+    WidgetTester tester,
+  ) async {
+    // The maintainer's call, 2026-10-08: the chip only switches the marks;
+    // what they are measured against is nobody's choice.
+    await pumpControl(tester, document: index);
+
+    await press(tester);
+    expect(showing(), isFalse);
+
+    await press(tester);
+    expect(showing(), isTrue);
+  });
+
+  testWidgets('a press opens nothing', (WidgetTester tester) async {
+    await pumpControl(tester, document: index, base: develop);
+
+    await press(tester);
+
+    // What the popover used to hold: a filter, and the branches by name.
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('develop'), findsNothing);
+    expect(find.text('Stop marking what changed'), findsNothing);
+  });
+
+  testWidgets('on, the chip is a chosen control; off, one at rest', (
+    WidgetTester tester,
+  ) async {
+    // `accent` when on, never `added`; off is Rest, not Disabled, because the
+    // chip can always be pressed.
+    const TomColors colors = TomColors.light;
+    Material chip() => tester.widget<Material>(
+      find
+          .ancestor(of: find.text('Diff'), matching: find.byType(Material))
+          .first,
+    );
+    Color outline() => (chip().shape! as RoundedRectangleBorder).side.color;
+    Color? label() => tester.widget<Text>(find.text('Diff')).style?.color;
+    await pumpControl(tester, document: index);
+
+    expect(chip().color, colors.accentSoft);
+    expect(outline(), colors.accent);
+    expect(label(), colors.accent);
+
+    await press(tester);
+
+    expect(chip().color, Colors.transparent);
+    expect(outline(), colors.borderStrong);
+    expect(label(), colors.textSecondary);
+  });
+
+  testWidgets('the branch it came from is named beside the chip', (
+    WidgetTester tester,
+  ) async {
+    await pumpControl(tester, document: index, base: develop);
+
+    expect(find.text('Compared to develop'), findsOneWidget);
+  });
+
+  testWidgets('a remote\'s copy is named as git resolves it', (
+    WidgetTester tester,
+  ) async {
+    await pumpControl(
+      tester,
+      document: index,
+      base: BranchRefValueObject(
+        name: BranchNameValueObject('develop'),
+        remote: 'origin',
+      ),
+    );
+
+    expect(find.text('Compared to origin/develop'), findsOneWidget);
+  });
+
+  testWidgets('against the last commit nothing is named, the tooltip says', (
     WidgetTester tester,
   ) async {
     await pumpControl(tester, document: index);
 
-    await openIt(tester);
-
-    expect(find.text('main'), findsOneWidget);
-    expect(find.text('feat/rendered-diff'), findsOneWidget);
-    expect(find.text('docs: fix a typo in the index'), findsOneWidget);
-  });
-
-  testWidgets('a commit says which one, whose and how old', (
-    WidgetTester tester,
-  ) async {
-    // The same three facts the history panel shows, so the same commit reads
-    // the same way in both places.
-    await pumpControl(tester, document: index);
-
-    await openIt(tester);
-
-    expect(find.text('aaa1000 · Thomas Franke · 3 days ago'), findsOneWidget);
-  });
-
-  testWidgets('choosing a branch says so on the control', (
-    WidgetTester tester,
-  ) async {
-    await pumpControl(tester, document: index);
-    await openIt(tester);
-
-    await tester.tap(find.text('feat/rendered-diff'));
-    await tester.pumpAndSettle();
-
-    expect(base(), RevisionValueObject.branch(branch('feat/rendered-diff')));
-    expect(find.text('Compared to feat/rendered-diff'), findsOneWidget);
-  });
-
-  testWidgets('choosing a commit names it by its sha and its age', (
-    WidgetTester tester,
-  ) async {
-    await pumpControl(tester, document: index);
-    await openIt(tester);
-
-    await tester.tap(find.text('docs: fix a typo in the index'));
-    await tester.pumpAndSettle();
-
-    expect(base(), isA<RevisionCommit>());
-    expect(find.text('Compared to aaa1000 · 3 days ago'), findsOneWidget);
-  });
-
-  testWidgets('the surface closes when the base actually changed', (
-    WidgetTester tester,
-  ) async {
-    await pumpControl(tester, document: index);
-    await openIt(tester);
-
-    await tester.tap(find.text('main'));
-    await tester.pumpAndSettle();
-
+    expect(find.textContaining('Compared to'), findsNothing);
     expect(
-      find.text('Filter branches and commits'),
-      findsNothing,
-      reason: 'the popover is still open after the base changed',
+      tester.widget<Tooltip>(find.byType(Tooltip)).message,
+      'Compared to the last commit',
     );
   });
 
-  testWidgets('the filter narrows both lists at once', (
+  testWidgets('with the marks off the base is not named, and is kept', (
     WidgetTester tester,
   ) async {
-    await pumpControl(tester, document: index);
-    await openIt(tester);
+    // Off is a reading position, not a comparison
+    // (`diff/rendered-diff/turning-it-off/doc.md`).
+    await pumpControl(tester, document: index, base: develop);
 
-    await tester.enterText(find.byType(TextField), 'feat');
-    await tester.pumpAndSettle();
+    await press(tester);
 
-    expect(find.text('feat/rendered-diff'), findsOneWidget);
-    expect(find.text('main'), findsNothing);
-    expect(find.text('docs: fix a typo in the index'), findsNothing);
+    expect(find.text('Compared to develop'), findsNothing);
+    expect(
+      container.read(spaceSessionProvider)?.comparingAgainst?.branch,
+      develop,
+    );
+
+    await press(tester);
+    expect(find.text('Compared to develop'), findsOneWidget);
   });
 
-  testWidgets('an empty list with nothing typed is still being read', (
+  testWidgets('with no room for a name, only the tooltip carries it', (
     WidgetTester tester,
   ) async {
-    // A repository always has a branch, so nothing at all means the lists
-    // have not arrived — which is different news from a filter that matched
-    // none of them, and saying the wrong one is what the e2e run caught.
-    git
-      ..reportedBranches = <BranchEntity>[]
-      ..reportedCommits = <CommitEntity>[];
-    await pumpControl(tester, document: index);
+    await pumpControl(tester, document: index, base: develop, labelRoom: 0);
 
-    await openIt(tester);
-
-    expect(find.text('Asking git…'), findsOneWidget);
-    expect(find.text('Nothing by that name.'), findsNothing);
+    expect(find.text('Compared to develop'), findsNothing);
+    expect(
+      tester.widget<Tooltip>(find.byType(Tooltip)).message,
+      'Compared to develop',
+    );
   });
-
-  testWidgets('a filter matching nothing says so', (WidgetTester tester) async {
-    await pumpControl(tester, document: index);
-    await openIt(tester);
-
-    await tester.enterText(find.byType(TextField), 'nothing by this name');
-    await tester.pumpAndSettle();
-
-    expect(find.text('Nothing by that name.'), findsOneWidget);
-  });
-
-  testWidgets('the way back is offered only once there is a base', (
-    WidgetTester tester,
-  ) async {
-    await pumpControl(tester, document: index);
-    await openIt(tester);
-    expect(find.text('Compare against the last commit'), findsNothing);
-
-    await tester.tap(find.text('main'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Diff'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Compare against the last commit'), findsOneWidget);
-  });
-
-  testWidgets('taking it back returns to the default comparison', (
-    WidgetTester tester,
-  ) async {
-    await pumpControl(tester, document: index);
-    await openIt(tester);
-    await tester.tap(find.text('main'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Diff'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Compare against the last commit'));
-    await tester.pumpAndSettle();
-
-    expect(base(), isNull);
-    expect(find.text('Diff'), findsOneWidget);
-  });
-
-  group('turning the marks off', () {
-    testWidgets('a space opens with them on', (WidgetTester tester) async {
-      await pumpControl(tester, document: index);
-
-      expect(container.read(spaceSessionProvider)?.showingDiff, isTrue);
-    });
-
-    testWidgets('the row switches them off, and back on', (
-      WidgetTester tester,
-    ) async {
-      await pumpControl(tester, document: index);
-      await openIt(tester);
-
-      await tester.tap(find.text('Stop marking what changed'));
-      await tester.pumpAndSettle();
-      expect(container.read(spaceSessionProvider)?.showingDiff, isFalse);
-
-      await openIt(tester);
-      await tester.tap(find.text('Mark what changed'));
-      await tester.pumpAndSettle();
-      expect(container.read(spaceSessionProvider)?.showingDiff, isTrue);
-    });
-
-    testWidgets('the base is kept, so turning them on compares the same', (
-      WidgetTester tester,
-    ) async {
-      // Off is a reading position, not a comparison
-      // (`diff/rendered-diff/turning-it-off/doc.md`).
-      await pumpControl(tester, document: index);
-      await openIt(tester);
-      await tester.tap(find.text('main'));
-      await tester.pumpAndSettle();
-
-      await openIt(tester);
-      await tester.tap(find.text('Stop marking what changed'));
-      await tester.pumpAndSettle();
-
-      expect(base(), isNotNull, reason: 'the base outlives the marks');
-    });
-
-    testWidgets('with them off the base is not named beside the chip', (
-      WidgetTester tester,
-    ) async {
-      await pumpControl(tester, document: index);
-      await openIt(tester);
-      await tester.tap(find.text('main'));
-      await tester.pumpAndSettle();
-      expect(find.text('Compared to main'), findsOneWidget);
-
-      await openIt(tester);
-      await tester.tap(find.text('Stop marking what changed'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Compared to main'), findsNothing);
-      expect(find.text('Diff'), findsOneWidget, reason: 'the chip stays');
-    });
-  });
-
-  testWidgets('Escape closes it and keeps nothing', (
-    WidgetTester tester,
-  ) async {
-    await pumpControl(tester, document: index);
-    await openIt(tester);
-    await tester.enterText(find.byType(TextField), 'feat');
-    await tester.pumpAndSettle();
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Filter branches and commits'), findsNothing);
-    await openIt(tester);
-    expect(find.text('main'), findsOneWidget);
-  });
-}
-
-/// Git, answering with whatever the test said the repository holds.
-final class _Git implements GitRepository {
-  List<BranchEntity> reportedBranches = <BranchEntity>[];
-  List<CommitEntity> reportedCommits = <CommitEntity>[];
-
-  @override
-  Future<Result<List<BranchEntity>, GitFailure>> branches() async =>
-      Success<List<BranchEntity>, GitFailure>(reportedBranches);
-
-  @override
-  Future<Result<List<CommitEntity>, GitFailure>> history({
-    RepoRelativePathValueObject? path,
-    int? limit,
-  }) async => Success<List<CommitEntity>, GitFailure>(reportedCommits);
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-/// The no-op observability, which is also the shipping default.
-final class _Silent implements Observability {
-  const _Silent();
-
-  @override
-  Future<void> capture(
-    Object error,
-    StackTrace stackTrace, {
-    required String layer,
-  }) async {}
 }

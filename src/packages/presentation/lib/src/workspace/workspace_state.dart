@@ -32,11 +32,27 @@ abstract class WorkspaceState with _$WorkspaceState {
     /// (`docs/product/workspace/regions/doc.md`).
     double? explorerWidth,
 
+    /// How wide the right column is, or null for the width it opens at —
+    /// dragged from its own divider, the same way as the left one.
+    double? asideWidth,
+
     /// Which of the right column's panels is showing, by the id the module
     /// registered it under; null means the first one.
     ///
     /// The column's own state, not the document's — opening another file
     /// does not change it.
     String? asidePanel,
+
+    /// Whether the panel under the document is on screen — closed until
+    /// somebody opens it, and never opened by the app itself
+    /// (`docs/product/workspace/commands/doc.md`).
+    @Default(false) bool showingBottom,
+
+    /// Which of its tabs is showing, by id; null means the first one.
+    String? bottomPanel,
+
+    /// How tall the panel under the document is, or null for the height it
+    /// opens at — dragged from the gutter above it, as the columns are.
+    double? bottomHeight,
   }) = _WorkspaceState;
 }

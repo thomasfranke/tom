@@ -12,7 +12,7 @@ part of 'branches_notifier.dart';
 ///
 /// A switch rewrites the working tree, so it ends by re-reading the status,
 /// the folder and the open buffer, in that order. It reads no git status of
-/// its own — [ChangesNotifier] does, so the window keeps one source.
+/// its own — [GitReadingNotifier] does, so the window keeps one source.
 
 @ProviderFor(BranchesNotifier)
 final branchesProvider = BranchesNotifierProvider._();
@@ -21,14 +21,14 @@ final branchesProvider = BranchesNotifierProvider._();
 ///
 /// A switch rewrites the working tree, so it ends by re-reading the status,
 /// the folder and the open buffer, in that order. It reads no git status of
-/// its own — [ChangesNotifier] does, so the window keeps one source.
+/// its own — [GitReadingNotifier] does, so the window keeps one source.
 final class BranchesNotifierProvider
     extends $NotifierProvider<BranchesNotifier, BranchesState> {
   /// Switches branches, starts them, and refuses to lose work doing either.
   ///
   /// A switch rewrites the working tree, so it ends by re-reading the status,
   /// the folder and the open buffer, in that order. It reads no git status of
-  /// its own — [ChangesNotifier] does, so the window keeps one source.
+  /// its own — [GitReadingNotifier] does, so the window keeps one source.
   BranchesNotifierProvider._()
     : super(
         from: null,
@@ -56,13 +56,13 @@ final class BranchesNotifierProvider
   }
 }
 
-String _$branchesNotifierHash() => r'c719bb64885a43568685bcabb9803bc2a06f1444';
+String _$branchesNotifierHash() => r'651c91763e81b7bcb44086e5841baf4eb08c7aa4';
 
 /// Switches branches, starts them, and refuses to lose work doing either.
 ///
 /// A switch rewrites the working tree, so it ends by re-reading the status,
 /// the folder and the open buffer, in that order. It reads no git status of
-/// its own — [ChangesNotifier] does, so the window keeps one source.
+/// its own — [GitReadingNotifier] does, so the window keeps one source.
 
 abstract class _$BranchesNotifier extends $Notifier<BranchesState> {
   BranchesState build();

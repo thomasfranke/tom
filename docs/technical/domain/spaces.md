@@ -2,21 +2,20 @@
 
 ## `SpaceEntity`
 
-A local folder the user opened. The unit of everything: git queue, watcher,
-search index and session are all scoped per space
+A local folder the user opened. The unit of everything: git, the search index
+and the session are all scoped per space
 ([Decision 9](../decisions/009-space-session-is-single-source-of-truth.md)).
 
 | Field | Type | Notes |
 |---|---|---|
 | `root` | path | Absolute path to the folder the user opened; the identity of the space |
-| `repositoryRoot` | path | Absolute path to the enclosing Git repository — equal to `root` when the repository itself was opened, an ancestor when a subfolder was |
+| `repositoryRoot` | path, nullable | Absolute path to the enclosing Git repository — equal to `root` when the repository itself was opened, an ancestor when a subfolder was, and null for a folder outside any repository (`hasRepository` is the gate) |
 | `name` | string | Derived from the folder name unless configured otherwise |
 
 The two paths are separate because most teams keep `docs/` inside the
 repository that holds the code. Git commands run against `repositoryRoot` and
-report paths relative to it; navigation, search and the watcher stay within
-`root`. Retrofitting this would touch git, the watcher, the index and wikilink
-resolution at once.
+report paths relative to it; navigation and search stay within `root`.
+Retrofitting this would touch git, the index and wikilink resolution at once.
 
 The two halves of that split, as types, are [`paths.md`](paths.md).
 

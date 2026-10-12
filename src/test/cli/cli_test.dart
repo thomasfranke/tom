@@ -1,4 +1,4 @@
-/// Black-box tests for `tom`, run as a process and asserted on what comes
+/// Black-box tests for `cli`, run as a process and asserted on what comes
 /// back, because `tool/` has no pubspec and so no test/ of its own.
 library;
 
@@ -67,7 +67,7 @@ void main() {
   group('e2e', () {
     test('a flag on its own is not a scenario name', () {
       // Taking `--watch` out can leave no name, and no name is the same
-      // request as `tom e2e`: a listing, not a scenario called ''.
+      // request as `cli e2e`: a listing, not a scenario called ''.
       final ProcessResult result = _tom(<String>['e2e', '--watch']);
 
       expect(result.exitCode, 0);
@@ -103,6 +103,10 @@ void main() {
       }
     });
 
+    test('says which git it found, against the oldest the app works on', () {
+      expect(result.stdout, contains('2.41.0 or newer'));
+    });
+
     test('leaves the platform toolchains to flutter doctor', () {
       expect(result.stdout, contains('flutter doctor'));
     });
@@ -111,7 +115,7 @@ void main() {
 
 /// Every command the CLI answers to, hidden ones included.
 ///
-/// Spelled out rather than read from `tool/tom.dart`: a list derived from
+/// Spelled out rather than read from `tool/cli.dart`: a list derived from
 /// the thing under test agrees with it by construction and proves nothing.
 const List<String> _everyCommand = <String>[
   'analyze',
@@ -122,8 +126,11 @@ const List<String> _everyCommand = <String>[
   'coverage',
   'coverage-gate',
   'doctor',
+  'e2e',
   'format',
   'fvm',
+  'release',
+  'rules',
   'run',
   'setup',
   'test',
@@ -135,7 +142,7 @@ const List<String> _everyCommand = <String>[
 /// the SDK running these tests is the one running what they spawn.
 ProcessResult _tom(List<String> arguments) => Process.runSync(
   Platform.resolvedExecutable,
-  <String>['run', 'tool/tom.dart', ...arguments],
+  <String>['run', 'tool/cli.dart', ...arguments],
   workingDirectory: _repositoryRoot.path,
 );
 

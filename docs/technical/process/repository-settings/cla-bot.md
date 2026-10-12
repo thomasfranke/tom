@@ -10,10 +10,10 @@ the self-hosted `contributor-assistant/github-action`.
 
 ## Setup, in order
 
-1. ~~Create the signatures branch.~~ Done — the orphan branch `cla-signatures` holds `signatures/v1/cla.json`. **It still needs pushing.**
-2. ~~Fill in the repository URL.~~ Done — the workflow derives it from `${{ github.repository }}`, so renaming the repo or moving it to an organization leaves no broken links.
+1. **The signatures branch** — done: the orphan branch `cla-signatures` holds `signatures/v1/cla.json`, and is on the remote.
+2. **The repository URL** — done: the workflow derives it from `${{ github.repository }}`, so renaming the repo or moving it to an organization leaves no broken links.
 3. **Leave workflow permissions read-only** at the repository level; the workflow declares its own `permissions:` block, which is how it gets write access without loosening the global default. Confirm this holds after the first run — an organization-level policy can cap it.
-4. **Add `license/cla` to the required status checks** on `main` once it has run and the check name exists. Blocked until the repository is public ([protection.md](protection.md)). Until then the bot comments but does not block, which is the failure mode that lets an unsigned contribution merge.
+4. **Add `CLA` — the job's name — to the required status checks** on `main` once it has run and the check name exists. Blocked until the repository is public ([protection.md](protection.md)). Until then the bot comments but does not block, which is the failure mode that lets an unsigned contribution merge.
 5. **Test from a second account**, against a fork. The maintainer's own PRs never exercise the unsigned path.
 
 **Timing matters.** A contribution merged before the bot is live is MIT-only and

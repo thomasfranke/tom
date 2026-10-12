@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/screens/changes/changes_design.dart';
+import 'package:tom_desktop/screens/file_tree/file_tree_design.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_panel.dart';
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_body_widget.dart';
+import 'package:tom_desktop/screens/file_tree/widgets/file_tree_draft_widget.dart';
 import 'package:tom_desktop/widgets/file_state_mark_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
+
+/// No pull request on offer: the row it would draw has tests of its own.
+final class _NoPullRequest extends PullRequestNotifier {
+  @override
+  PullRequestState build() => const PullRequestState();
+}
 
 void main() {
   late _Spaces spaces;
@@ -43,6 +53,7 @@ void main() {
     // is still scheduling its disposal, a timer the test framework fails on.
     container = ProviderContainer(
       overrides: <Override>[
+        pullRequestProvider.overrideWith(_NoPullRequest.new),
         listSpaceEntriesProvider.overrideWithValue(
           ListSpaceEntriesUseCase(
             spaces: spaces,
@@ -55,6 +66,16 @@ void main() {
             documentsFor: _documentsFor,
             observability: _Silent(),
           ),
+        ),
+        createDocumentProvider.overrideWithValue(
+          const CreateDocumentUseCase(
+            documentsFor: _documentsFor,
+            observability: _Silent(),
+          ),
+        ),
+        gitReadingProvider.overrideWith(_Reading.new),
+        createFolderProvider.overrideWithValue(
+          CreateFolderUseCase(spaces: spaces, observability: const _Silent()),
         ),
         // The box above the tree is the search's, and a space that opens
         // builds its index.
@@ -178,10 +199,13 @@ void main() {
 
       await pumpPanel(tester, space: docs);
 
-      expect(tester.getTopLeft(find.text('guides')).dx, TomMetrics.pad);
+      expect(
+        tester.getTopLeft(find.text('guides')).dx,
+        FileTreeDesign.labelLeft,
+      );
       expect(
         tester.getTopLeft(find.text('writing.md')).dx,
-        TomMetrics.pad + 16,
+        FileTreeDesign.labelLeft + FileTreeDesign.indent,
       );
     });
 
@@ -190,8 +214,7 @@ void main() {
     ) async {
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
 
-      /// Which way the tree's own chevron is pointing — the column carries a
-      /// second one, left of the search box, which opens the replace field.
+      /// Which way the tree's own chevron is pointing.
       bool pointsDown() => tester
           .widget<TomChevronWidget>(
             find.descendant(
@@ -210,6 +233,32 @@ void main() {
       expect(pointsDown(), isFalse);
       expect(find.text('writing.md'), findsNothing);
     });
+
+    for (final Brightness brightness in Brightness.values) {
+      testWidgets('a folder’s glyph wears the palette’s accent_muted, in '
+          '${brightness.name}', (WidgetTester tester) async {
+        spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(
+          held,
+        );
+
+        await pumpPanel(tester, space: docs, brightness: brightness);
+
+        final TomColors colors = brightness == Brightness.dark
+            ? TomColors.dark
+            : TomColors.light;
+        final Iterable<TomGlyphWidget> folders = tester
+            .widgetList<TomGlyphWidget>(find.byType(TomGlyphWidget))
+            .where(
+              (TomGlyphWidget g) =>
+                  g.glyph == TomGlyphEnum.folder ||
+                  g.glyph == TomGlyphEnum.folderOpen,
+            );
+        expect(folders, isNotEmpty);
+        for (final TomGlyphWidget glyph in folders) {
+          expect(glyph.color, colors.accentMuted);
+        }
+      });
+    }
 
     testWidgets('a folder opens again on a second click', (
       WidgetTester tester,
@@ -239,9 +288,11 @@ void main() {
       final TomColors colors = TomColors.of(
         tester.element(find.byType(FileTreePanel)),
       );
-      expect(styleOf(tester, 'index.md').color, colors.accent);
+      // Said by the weight and the row's accent bar, not by the name's
+      // colour: on a 1b board the open name stays `text_primary`.
+      expect(styleOf(tester, 'index.md').color, colors.textPrimary);
       expect(styleOf(tester, 'index.md').fontWeight, FontWeight.w600);
-      expect(styleOf(tester, 'guides').color, isNot(colors.accent));
+      expect(styleOf(tester, 'guides').fontWeight, isNot(FontWeight.w600));
     });
 
     testWidgets('a document with unsaved edits is marked, and only it', (
@@ -334,11 +385,11 @@ void main() {
       expect(find.byType(FileStateMarkWidget), findsNothing);
     });
 
-    testWidgets('a file the editor cannot open is muted and does not react', (
+    testWidgets('a file that is not markdown is muted, and still opens', (
       WidgetTester tester,
     ) async {
-      // Muted and without a hover: a row that answers a click with nothing
-      // reads as the app being broken.
+      // Dimmer so the documents stand out, but every file answers a press
+      // (`docs/product/navigation/file-tree/what-is-shown/doc.md`).
       spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
       await pumpPanel(tester, space: docs);
       final TomColors colors = TomColors.of(
@@ -351,7 +402,7 @@ void main() {
           of: find.text('logo.svg'),
           matching: find.byType(InkWell),
         ),
-        findsNothing,
+        findsOneWidget,
       );
       expect(
         find.ancestor(
@@ -437,6 +488,287 @@ void main() {
     });
   });
 
+  group('a new document', () {
+    /// The field the `+` puts in the tree.
+    Finder field() => find.descendant(
+      of: find.byType(FileTreeDraftWidget),
+      matching: find.byType(TextField),
+    );
+
+    /// Presses the `+`.
+    Future<void> pressPlus(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('New document'));
+      await tester.pumpAndSettle();
+    }
+
+    /// Types [name] into the field and presses Enter.
+    Future<void> name(WidgetTester tester, String name) async {
+      await tester.enterText(field(), name);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the + sits at the caption\'s right, where the board has it', (
+      WidgetTester tester,
+    ) async {
+      await pumpPanel(tester, space: docs);
+
+      expect(
+        tester.getCenter(find.byTooltip('New document')).dx,
+        TomMetrics.explorer - FileTreeDesign.newCentreRight,
+      );
+    });
+
+    testWidgets('the name field is 26 tall, its row\'s height, and ends 7 '
+        'short of the column', (WidgetTester tester) async {
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+
+      await pressPlus(tester);
+
+      final Rect box = tester.getRect(find.byType(TomFieldBoxWidget).last);
+      expect(box.height, 26);
+      expect(TomMetrics.explorer - box.right, 7);
+    });
+
+    testWidgets('the + asks for a name in the tree, untitled.md selected', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+
+      await pressPlus(tester);
+
+      final TextField typed = tester.widget<TextField>(field());
+      expect(typed.controller!.text, 'untitled.md');
+      expect(
+        typed.controller!.selection,
+        const TextSelection(baseOffset: 0, extentOffset: 8),
+      );
+      // Nothing is open, so it goes at the space's root, first.
+      expect(
+        tester.getTopLeft(find.byType(FileTreeDraftWidget)).dy,
+        lessThan(tester.getTopLeft(find.text('guides')).dy),
+      );
+    });
+
+    testWidgets('it goes into the open document\'s folder, one level in', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+      container
+          .read(spaceSessionProvider.notifier)
+          .show(SpaceRelativePathValueObject('guides/writing.md'));
+
+      await pressPlus(tester);
+
+      final double top = tester.getTopLeft(find.byType(FileTreeDraftWidget)).dy;
+      expect(top, greaterThan(tester.getTopLeft(find.text('guides')).dy));
+      expect(top, lessThan(tester.getTopLeft(find.text('writing.md')).dy));
+      // The board's 22 back from where a row at that depth starts its name.
+      expect(
+        tester.getTopLeft(find.byType(TomFieldBoxWidget).last).dx,
+        FileTreeDesign.labelLeft +
+            FileTreeDesign.indent -
+            FileTreeDesign.draftInset,
+      );
+    });
+
+    testWidgets('Enter creates the document and opens it in source', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+      await pressPlus(tester);
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(
+        <SpaceEntryValueObject>[
+          ...held,
+          entry('ideas.md', SpaceEntryTypeEnum.file),
+        ],
+      );
+
+      await name(tester, 'ideas');
+
+      expect(find.byType(FileTreeDraftWidget), findsNothing);
+      expect(find.text('ideas.md'), findsOneWidget);
+      final SpaceSessionState session = container.read(spaceSessionProvider)!;
+      expect(session.openDocument, SpaceRelativePathValueObject('ideas.md'));
+      expect(session.mode, DocumentModeEnum.source);
+    });
+
+    testWidgets('a taken name keeps the row, outlined as refused', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+      await pressPlus(tester);
+
+      await name(tester, 'index');
+
+      expect(find.byType(FileTreeDraftWidget), findsOneWidget);
+      expect(
+        tester.widget<TomFieldBoxWidget>(find.byType(TomFieldBoxWidget).last),
+        isA<TomFieldBoxWidget>().having(
+          (TomFieldBoxWidget box) => box.isRefused,
+          'isRefused',
+          isTrue,
+        ),
+      );
+      expect(container.read(spaceSessionProvider)?.openDocument, isNull);
+    });
+
+    testWidgets('Escape takes the row away and creates nothing', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+      await pressPlus(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FileTreeDraftWidget), findsNothing);
+    });
+
+    testWidgets('the + is the tree\'s, so a search takes it away', (
+      WidgetTester tester,
+    ) async {
+      await pumpPanel(tester, space: docs);
+
+      await tester.enterText(find.byType(TextField), 'rendered');
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('New document'), findsNothing);
+    });
+  });
+
+  group('the explorer menu', () {
+    Future<void> openMenu(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('Explorer menu'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the ⋮ offers four things, in three groups', (
+      WidgetTester tester,
+    ) async {
+      await pumpPanel(tester, space: docs);
+
+      await openMenu(tester);
+
+      expect(find.text('New folder'), findsOneWidget);
+      expect(find.text('Collapse all'), findsOneWidget);
+      expect(find.text('Reload'), findsOneWidget);
+      expect(find.textContaining(RegExp('Reveal in|Show in')), findsOneWidget);
+    });
+
+    testWidgets('the ⋮ sits as far in as the git column\'s, the + 26 before', (
+      WidgetTester tester,
+    ) async {
+      // One number for both columns, the maintainer's call of 2026-10-08.
+      await pumpPanel(tester, space: docs);
+
+      final double menu = tester.getCenter(find.byTooltip('Explorer menu')).dx;
+      expect(menu, TomMetrics.explorer - ChangesDesign.menuCentreRight);
+      expect(tester.getCenter(find.byTooltip('New document')).dx, menu - 26);
+    });
+
+    testWidgets('it hangs from the ⋮, its right edge past the glyph, straight '
+        'under the button', (WidgetTester tester) async {
+      await pumpPanel(tester, space: docs);
+
+      await openMenu(tester);
+
+      // 4.5 past the centre puts the edge at 251 on `explorer-menu`, and no
+      // drop puts its rules on whole pixels (110 and 179 there).
+      expect(
+        tester.getTopRight(find.byType(TomMenuWidget)).dx,
+        tester.getCenter(find.byTooltip('Explorer menu')).dx + 4.5,
+      );
+      expect(
+        tester.getTopRight(find.byType(TomMenuWidget)).dy,
+        tester.getRect(find.byTooltip('Explorer menu')).bottom,
+      );
+      expect(
+        tester.getSize(find.byType(TomMenuWidget)).width,
+        FileTreeDesign.menuWidth,
+      );
+    });
+
+    testWidgets('Escape closes it, and so does a choice', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+      await openMenu(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.byType(TomMenuWidget), findsNothing);
+
+      await openMenu(tester);
+      await tester.tap(find.text('Collapse all'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TomMenuWidget), findsNothing);
+      expect(find.text('writing.md'), findsNothing);
+    });
+
+    testWidgets('New folder asks for a name in the tree, with a folder', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+      await openMenu(tester);
+
+      await tester.tap(find.text('New folder'));
+      await tester.pumpAndSettle();
+
+      final FileTreeDraftWidget draft = tester.widget(
+        find.byType(FileTreeDraftWidget),
+      );
+      expect(draft.isFolder, isTrue);
+      expect(
+        tester
+            .widget<TextField>(
+              find.descendant(
+                of: find.byType(FileTreeDraftWidget),
+                matching: find.byType(TextField),
+              ),
+            )
+            .controller!
+            .text,
+        'untitled',
+      );
+    });
+
+    testWidgets('a folder name already taken is refused in place', (
+      WidgetTester tester,
+    ) async {
+      spaces.answer = Success<List<SpaceEntryValueObject>, SpaceFailure>(held);
+      await pumpPanel(tester, space: docs);
+      await openMenu(tester);
+      await tester.tap(find.text('New folder'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(FileTreeDraftWidget),
+          matching: find.byType(TextField),
+        ),
+        'guides',
+      );
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<TomFieldBoxWidget>(find.byType(TomFieldBoxWidget).last)
+            .isRefused,
+        isTrue,
+      );
+    });
+  });
+
   group('both modes', () {
     testWidgets('a row takes its colour from the mode it is drawn in', (
       WidgetTester tester,
@@ -465,6 +797,15 @@ final class _Spaces implements SpaceRepository {
 
   /// Whether it breaks its contract instead of answering.
   bool throws = false;
+
+  /// Creates any folder but `guides`, which the space already holds.
+  @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => path.value == 'guides'
+      ? const Failure<void, SpaceFailure>(SpaceEntryExists('guides'))
+      : const Success<void, SpaceFailure>(null);
 
   @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
@@ -524,9 +865,28 @@ final class _Documents implements DocumentRepository {
     DocumentEntity(path: path, content: ''),
   );
 
+  /// Creates anything but `index.md`, which the space already holds.
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      document.path.value == 'index.md'
+      ? const Failure<void, DocumentFailure>(DocumentAlreadyExists('index.md'))
+      : const Success<void, DocumentFailure>(null);
+
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
       const Success<void, DocumentFailure>(null);
+}
+
+/// The git reading, which this panel only asks to re-read.
+final class _Reading extends GitReadingNotifier {
+  @override
+  GitReadingState build() => const GitReadingState.initial();
+
+  @override
+  Future<void> refresh() async {}
 }
 
 /// The no-op observability, which is also the shipping default.

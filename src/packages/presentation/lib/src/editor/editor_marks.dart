@@ -9,6 +9,7 @@ import 'package:tom_presentation/src/editor/editor_mark_enum.dart';
 import 'package:tom_presentation/src/editor/editor_mark_span.dart';
 import 'package:tom_presentation/src/editor/editor_notifier.dart';
 import 'package:tom_presentation/src/editor/editor_state.dart';
+import 'package:tom_presentation/src/editor/line_diff_notifier.dart';
 import 'package:tom_presentation/src/preview/preview_notifier.dart';
 import 'package:tom_presentation/src/preview/preview_state.dart';
 import 'package:tom_presentation/src/spaces/space_session.dart';
@@ -117,6 +118,44 @@ final class EditorMarks {
     return spans.isEmpty ? const EditorMarks.none() : EditorMarks._(spans);
   }
 
+  /// Every run [diff] calls changed — the same letters, bands and seams a
+  /// block's diff draws, a line being the unit for a file with no page.
+  factory EditorMarks.ofLines(LineDiffValueObject diff) => diff.isUnchanged
+      ? const EditorMarks.none()
+      : EditorMarks._(<EditorMarkSpan>[
+          for (final LineRunValueObject run in diff.runs)
+            switch (run) {
+              LineRunAdded(:final int from, :final int to) =>
+                EditorMarkSpan.block(
+                  from: from,
+                  to: to,
+                  mark: EditorMarkEnum.added,
+                ),
+              LineRunModified(:final int from, :final int to) =>
+                EditorMarkSpan.block(
+                  from: from,
+                  to: to,
+                  mark: EditorMarkEnum.modified,
+                ),
+              LineRunRemoved(:final int at) => EditorMarkSpan.seam(at),
+            },
+        ]);
+
+  /// Every line of [source] removed: a deleted file's last version, in the
+  /// source pane (`docs/product/git-workflow/commit/opening-a-change/doc.md`).
+  factory EditorMarks.ofDeleted(String source) {
+    final int lines = LineDifferService.linesOf(source).length;
+    return lines == 0
+        ? const EditorMarks.none()
+        : EditorMarks._(<EditorMarkSpan>[
+            EditorMarkSpan.block(
+              from: 0,
+              to: lines - 1,
+              mark: EditorMarkEnum.removed,
+            ),
+          ]);
+  }
+
   /// Every stretch, in the order the document has them.
   final List<EditorMarkSpan> spans;
 
@@ -177,15 +216,18 @@ final class EditorMarks {
 /// document is conflicted, so a `<<<<<<<` typed into a document *about*
 /// merging stays text (`docs/product/editor/conflicted-document/doc.md`).
 ///
-/// The diff is the preview's, not a second comparison: one reading, both
-/// panes — which is also why the marks are absent in source-only mode, where
-/// there is no preview and the product asks for them in split.
+/// A document's diff is the preview's, not a second comparison: one reading,
+/// both panes. A file that is not markdown has no preview, so its lines are
+/// compared on their own ([LineDiffNotifier]).
 @riverpod
 EditorMarks editorMarks(Ref ref) {
   final bool conflicted = ref.watch(
     spaceSessionProvider.select(
+      // A pull request draft is never the conflicted document under it.
       (SpaceSessionState? session) =>
-          session?.isConflicted(session.openDocument) ?? false,
+          session != null &&
+          session.pullRequest == null &&
+          session.isConflicted(session.openDocument),
     ),
   );
   if (conflicted) {
@@ -197,11 +239,39 @@ EditorMarks editorMarks(Ref ref) {
       const ConflictScannerService().scan(source),
     );
   }
-  final DocumentDiffValueObject? diff = ref.watch(
-    previewProvider.select(_diffOf),
-  );
-  return diff == null ? const EditorMarks.none() : EditorMarks.ofDiff(diff);
+  // A deleted file is all removed, a binary one holds no lines, and a text
+  // file has no preview to take a diff from: its lines are compared instead.
+  final _Holding holding = ref.watch(editorProvider.select(_holdingOf));
+  switch (holding) {
+    case _Holding.deleted:
+      return EditorMarks.ofDeleted(ref.watch(editorProvider.select(_sourceOf)));
+    case _Holding.nothing:
+      return const EditorMarks.none();
+    case _Holding.text:
+      final LineDiffValueObject? lines = ref.watch(lineDiffProvider);
+      return lines == null
+          ? const EditorMarks.none()
+          : EditorMarks.ofLines(lines);
+    case _Holding.document:
+      final DocumentDiffValueObject? diff = ref.watch(
+        previewProvider.select(_diffOf),
+      );
+      return diff == null ? const EditorMarks.none() : EditorMarks.ofDiff(diff);
+  }
 }
+
+/// Where a buffer's marks come from.
+enum _Holding { document, text, deleted, nothing }
+
+/// Where [state]'s marks come from: the preview for a document — or no
+/// buffer, whose preview has none — the line diff for other text.
+_Holding _holdingOf(EditorState state) => switch (state) {
+  EditorReady(isBinary: true) ||
+  EditorReady(isPreferences: true) => _Holding.nothing,
+  EditorReady(isDeleted: true) => _Holding.deleted,
+  EditorReady(isRendered: false) => _Holding.text,
+  _ => _Holding.document,
+};
 
 /// What the editor is holding, or nothing when no document is open.
 String _sourceOf(EditorState state) => switch (state) {

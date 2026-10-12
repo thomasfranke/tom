@@ -56,7 +56,7 @@ final class HistoryNotifierProvider
   }
 }
 
-String _$historyNotifierHash() => r'eeca63687c31107263fe6c246f1679e7e0fde5d2';
+String _$historyNotifierHash() => r'524dc5339100d9b0f393c9cfb7453ef979e3ac3f';
 
 /// Lists what touched the open document, and opens one of those versions.
 ///

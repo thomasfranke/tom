@@ -21,7 +21,41 @@ final class PullRemoteUseCase with UseCase {
   @override
   final Observability observability;
 
-  /// Brings [space]'s remote commits into the current branch.
-  Future<Result<void, AppFailure>> pull(SpaceEntity space) =>
-      guard(() => gitFor(space).pull());
+  /// Brings [space]'s remote commits into the current branch, answering how
+  /// many arrived — 0 when it was already level
+  /// (`docs/product/git-workflow/push-pull/when-it-works/doc.md`).
+  ///
+  /// The count is read around the pull, each reading guarded on its own: a
+  /// count git cannot give is null, never a failure, because the pull has
+  /// already landed on disk and saying it failed would be the lie.
+  Future<Result<int?, AppFailure>> pull(SpaceEntity space) => guard(() async {
+    final GitRepository git = gitFor(space);
+    switch (await git.remoteAddress()) {
+      case Failure<String?, GitFailure>(failure: final GitFailure failure):
+        return Failure<int?, AppFailure>(failure);
+      case Success<String?, GitFailure>(value: null):
+        return const Failure<int?, AppFailure>(GitNoRemote());
+      case Success<String?, GitFailure>():
+    }
+    final Result<CommitShaValueObject?, AppFailure> before = await guard(
+      git.head,
+    );
+    final Result<void, GitFailure> pulled = await git.pull();
+    if (pulled case Failure<void, GitFailure>(
+      failure: final GitFailure failure,
+    )) {
+      return Failure<int?, AppFailure>(failure);
+    }
+    if (before case Success<CommitShaValueObject?, AppFailure>(
+      value: final CommitShaValueObject? since,
+    )) {
+      final Result<int, AppFailure> arrived = await guard(
+        () => git.upstreamCommitsSince(since),
+      );
+      if (arrived case Success<int, AppFailure>(value: final int count)) {
+        return Success<int?, AppFailure>(count);
+      }
+    }
+    return const Success<int?, AppFailure>(null);
+  });
 }

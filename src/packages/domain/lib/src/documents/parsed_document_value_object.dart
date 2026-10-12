@@ -5,6 +5,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:tom_domain/src/documents/block_value_object.dart';
 import 'package:tom_domain/src/documents/document_entity.dart';
 import 'package:tom_domain/src/documents/footnote_value_object.dart';
+import 'package:tom_domain/src/wikilinks/wikilink_value_object.dart';
 
 part 'parsed_document_value_object.freezed.dart';
 
@@ -39,5 +40,12 @@ abstract class ParsedDocumentValueObject with _$ParsedDocumentValueObject {
     /// text at the foot — and drawing needs the parts apart
     /// ([Decision 31](../../../../../../docs/technical/decisions/031-where-a-footnotes-text-goes.md)).
     @Default(<FootnoteValueObject>[]) List<FootnoteValueObject> footnotes,
+
+    /// Every wikilink, in document order and repeats kept, outside code.
+    ///
+    /// Carried by the document rather than found again by whoever draws it,
+    /// because telling a `[[` in prose from one in a code span is a parse
+    /// ([Decision 28](../../../../../../docs/technical/decisions/028-a-wikilink-resolves-by-name-inside-the-space.md)).
+    @Default(<WikilinkValueObject>[]) List<WikilinkValueObject> wikilinks,
   }) = _ParsedDocumentValueObject;
 }

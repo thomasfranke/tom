@@ -81,6 +81,35 @@ void main() {
     );
   });
 
+  test('a file the status calls new is not asked about at all', () async {
+    final Result<DocumentDiffValueObject, AppFailure> result = await diffing()
+        .diff(
+          space: docs,
+          after: documentOf(<String>['one']),
+          status: GitStatusValueObject(
+            branch: null,
+            upstream: null,
+            ahead: 0,
+            behind: 0,
+            isDetached: false,
+            entries: <StatusEntryValueObject>[
+              StatusEntryValueObject(
+                path: RepoRelativePathValueObject('docs/guides/writing.md'),
+                state: FileStateEnum.untracked,
+                isStaged: false,
+              ),
+            ],
+          ),
+        );
+
+    expect(git.path, isNull, reason: 'git was never asked');
+    expect(blocks.documents.single.content, '');
+    expect(
+      (result as Success<DocumentDiffValueObject, AppFailure>).value.blocks,
+      everyElement(isA<DiffBlockAdded>()),
+    );
+  });
+
   test('any other git failure is reported as itself', () async {
     git.answer = const Failure<String, GitFailure>(GitNotInstalled());
 

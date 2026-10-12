@@ -1,12 +1,17 @@
 name: CI
 
-# Level one of the two described in docs/technical/process/ci.md:
-# format, analyze, a from-scratch codegen run (fails on drift between
-# committed .g.dart/.freezed.dart and what build_runner actually produces),
-# the architecture test, dart test on the six pure packages and flutter test
-# on the app, plus the coverage gate. Required to merge. The tag-triggered
-# build/sign/package pipeline is level two and lives in its own workflow,
-# added when there is something to sign.
+# Level one of the two described in docs/technical/process/ci.md: the steps of
+# `tom verify`, in its order — format, analyze, rules, a from-scratch codegen
+# run (fails on drift between committed .g.dart/.freezed.dart and what
+# build_runner actually produces), every test, the coverage gate — and then a
+# macOS release compile. The tag-triggered build/sign/package pipeline is
+# level two and lives in its own workflow, added when there is something to
+# sign.
+#
+# The job names are the required status checks, `Pull Request Checks` and
+# `Build (macOS)`, beside `CLA` from cla.yml
+# (docs/technical/process/repository-settings/). Renaming a job here
+# un-requires it on GitHub without a word.
 
 on:
   pull_request:
@@ -14,14 +19,14 @@ on:
   push:
     branches: [main]
 
-# Read-only by default (docs/technical/process/repository-settings.md); this workflow
+# Read-only by default (docs/technical/process/repository-settings/README.md); this workflow
 # never needs to write anything.
 permissions:
   contents: read
 
 jobs:
-  verify:
-    name: Verify
+  checks:
+    name: Pull Request Checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +41,13 @@ jobs:
       - name: Enable desktop platforms
         run: flutter config --enable-windows-desktop --enable-macos-desktop --enable-linux-desktop
 
+      # What the linux desktop target needs to build and to open a window —
+      # xvfb included, for the headless end-to-end step below.
+      - name: Linux desktop build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev xvfb
+
       - name: Resolve the workspace
         run: make setup
 
@@ -45,6 +57,13 @@ jobs:
       - name: Analyze
         run: make analyze
 
+      # What the analyzer cannot see: naming, the shape of the data and infra
+      # packages, the comment ceiling, and every relative link in the docs.
+      # Through the CLI, as the codegen gate is — a rule file added to the
+      # catalogue is run here the day it lands.
+      - name: Rules
+        run: dart run tool/cli.dart rules
+
       # These two used to be fifty lines of inlined bash, because the
       # dashboards behind them redraw with ANSI cursor moves that a CI log
       # prints as new lines instead of overwriting. They now detect the
@@ -52,18 +71,48 @@ jobs:
       # output, so CI runs exactly what a developer runs — one implementation,
       # and the one exercised locally every day.
       - name: Codegen — regenerate from scratch, fail on drift
-        run: dart run tool/tom.dart codegen-gate
+        run: dart run tool/cli.dart codegen-gate
 
-      - name: Test — architecture, the six packages, the apps
-        run: make flutter-test
+      # Split from one step into the four `make flutter-test-*` targets below:
+      # a failure now points straight at architecture, a package, an app or
+      # the CLI, instead of one combined log for all of them.
+      - name: Test — architecture
+        run: make flutter-test-arch
+
+      - name: Test — packages
+        run: make flutter-test-packages
+
+      - name: Test — apps
+        run: make flutter-test-app
+
+      - name: Test — CLI
+        run: make flutter-test-cli
 
       - name: Coverage gate
         run: make coverage-gate
 
+      # Execution only — headless under Xvfb, since the linux target still
+      # opens a real window. No frame is written (TOM_E2E_NO_FRAMES): CI asks
+      # for the exit code, not the evidence a person reviewing a run reads
+      # (docs/technical/conventions/testing.md).
+      - name: End-to-end (headless, Linux)
+        run: xvfb-run -a dart run tool/cli.dart e2e all --ci
+
+      # The transcript of a failure, --ci's one piece of evidence (no frame,
+      # no video): kept past the runner's own lifetime, since nothing else
+      # downloads it.
+      - name: Upload e2e evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-evidence
+          path: .e2e-evidence/
+          if-no-files-found: ignore
+
   build-macos:
     name: Build (macOS)
     runs-on: macos-latest
-    needs: verify
+    needs: checks
     steps:
       - uses: actions/checkout@v4
 

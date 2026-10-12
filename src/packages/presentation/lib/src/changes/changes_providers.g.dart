@@ -175,18 +175,16 @@ String _$commitChangesHash() => r'cd422c8e224175f2390d4198fbc40be95fbd1ca8';
 
 /// Whether a pull stopped mid-merge, read from git rather than remembered.
 ///
-/// Here rather than beside the pull that caused it: the changes panel is
-/// what draws the count still to resolve and what starts its message box
-/// from git's own draft.
+/// Here rather than beside the pull that caused it: it is read with the
+/// status, by `GitReadingNotifier`, after everything that writes.
 
 @ProviderFor(readMergeState)
 final readMergeStateProvider = ReadMergeStateProvider._();
 
 /// Whether a pull stopped mid-merge, read from git rather than remembered.
 ///
-/// Here rather than beside the pull that caused it: the changes panel is
-/// what draws the count still to resolve and what starts its message box
-/// from git's own draft.
+/// Here rather than beside the pull that caused it: it is read with the
+/// status, by `GitReadingNotifier`, after everything that writes.
 
 final class ReadMergeStateProvider
     extends
@@ -198,9 +196,8 @@ final class ReadMergeStateProvider
     with $Provider<ReadMergeStateUseCase> {
   /// Whether a pull stopped mid-merge, read from git rather than remembered.
   ///
-  /// Here rather than beside the pull that caused it: the changes panel is
-  /// what draws the count still to resolve and what starts its message box
-  /// from git's own draft.
+  /// Here rather than beside the pull that caused it: it is read with the
+  /// status, by `GitReadingNotifier`, after everything that writes.
   ReadMergeStateProvider._()
     : super(
         from: null,
@@ -236,3 +233,165 @@ final class ReadMergeStateProvider
 }
 
 String _$readMergeStateHash() => r'1fb62834a02c25bba49993df486f0fd58ec4bdbb';
+
+/// Puts every tracked file back as the last commit has it, from the git
+/// column's menu.
+
+@ProviderFor(discardAllChanges)
+final discardAllChangesProvider = DiscardAllChangesProvider._();
+
+/// Puts every tracked file back as the last commit has it, from the git
+/// column's menu.
+
+final class DiscardAllChangesProvider
+    extends
+        $FunctionalProvider<
+          DiscardAllChangesUseCase,
+          DiscardAllChangesUseCase,
+          DiscardAllChangesUseCase
+        >
+    with $Provider<DiscardAllChangesUseCase> {
+  /// Puts every tracked file back as the last commit has it, from the git
+  /// column's menu.
+  DiscardAllChangesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'discardAllChangesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$discardAllChangesHash();
+
+  @$internal
+  @override
+  $ProviderElement<DiscardAllChangesUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DiscardAllChangesUseCase create(Ref ref) {
+    return discardAllChanges(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DiscardAllChangesUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DiscardAllChangesUseCase>(value),
+    );
+  }
+}
+
+String _$discardAllChangesHash() => r'747ed8ab9dfd948ca0e20e2f057b2637c3df9b6c';
+
+/// Puts one file of the changes list back, from the ↶ at the end of its row.
+
+@ProviderFor(discardChange)
+final discardChangeProvider = DiscardChangeProvider._();
+
+/// Puts one file of the changes list back, from the ↶ at the end of its row.
+
+final class DiscardChangeProvider
+    extends
+        $FunctionalProvider<
+          DiscardChangeUseCase,
+          DiscardChangeUseCase,
+          DiscardChangeUseCase
+        >
+    with $Provider<DiscardChangeUseCase> {
+  /// Puts one file of the changes list back, from the ↶ at the end of its row.
+  DiscardChangeProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'discardChangeProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$discardChangeHash();
+
+  @$internal
+  @override
+  $ProviderElement<DiscardChangeUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DiscardChangeUseCase create(Ref ref) {
+    return discardChange(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DiscardChangeUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DiscardChangeUseCase>(value),
+    );
+  }
+}
+
+String _$discardChangeHash() => r'3ee734c4490e4ac77a334c58429bad6a266d462c';
+
+/// Opens the platform's terminal at the repository's root, from the git
+/// column's menu (`docs/product/git-workflow/git-menu/doc.md`).
+
+@ProviderFor(openTerminal)
+final openTerminalProvider = OpenTerminalProvider._();
+
+/// Opens the platform's terminal at the repository's root, from the git
+/// column's menu (`docs/product/git-workflow/git-menu/doc.md`).
+
+final class OpenTerminalProvider
+    extends
+        $FunctionalProvider<
+          OpenTerminalUseCase,
+          OpenTerminalUseCase,
+          OpenTerminalUseCase
+        >
+    with $Provider<OpenTerminalUseCase> {
+  /// Opens the platform's terminal at the repository's root, from the git
+  /// column's menu (`docs/product/git-workflow/git-menu/doc.md`).
+  OpenTerminalProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'openTerminalProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$openTerminalHash();
+
+  @$internal
+  @override
+  $ProviderElement<OpenTerminalUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  OpenTerminalUseCase create(Ref ref) {
+    return openTerminal(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(OpenTerminalUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<OpenTerminalUseCase>(value),
+    );
+  }
+}
+
+String _$openTerminalHash() => r'dfa941c72df1a6b580bd91c797e051676610c90c';

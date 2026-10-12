@@ -87,9 +87,45 @@ final class MenuItem<T> {
   final _Kind _kind;
 
   bool get _selectable => _kind == _Kind.item || _kind == _Kind.back;
+
+  /// Whether this row is an entry of a list — chosen or listed disabled —
+  /// rather than a rule, a section heading or the way back.
+  bool get isEntry => _kind == _Kind.item || _kind == _Kind.disabled;
 }
 
 enum _Kind { item, rule, back, section, disabled }
+
+/// What a label is sorted by: its words before any ` — gloss`, lower case,
+/// with a leading symbol ignored, so `Last` comes before `Last coverage`.
+String menuSortKey(String label) {
+  final head = label.split(' — ').first.toLowerCase();
+  return head.replaceFirst(RegExp(r'^[^a-z0-9]+'), '');
+}
+
+/// [items] with its entries in alphabetical order by [menuSortKey].
+List<MenuItem<T>> sortedByLabel<T>(Iterable<MenuItem<T>> items) =>
+    items.toList()
+      ..sort((a, b) => menuSortKey(a.label).compareTo(menuSortKey(b.label)));
+
+/// The runs of entries in [items] — what lies between two rules, sections or
+/// the way back — each as its labels in the order shown.
+///
+/// A run is the unit of alphabetical order: a rule or a heading starts a new
+/// list, so `All of them` above a rule is a run of one.
+List<List<String>> entryRuns<T>(List<MenuItem<T>> items) {
+  final runs = <List<String>>[];
+  var open = false;
+  for (final item in items) {
+    if (!item.isEntry) {
+      open = false;
+      continue;
+    }
+    if (!open) runs.add(<String>[]);
+    runs.last.add(item.label);
+    open = true;
+  }
+  return runs;
+}
 
 /// Presents [items] and returns the value the user chose, or `null` if they
 /// backed out with `← Back`, Esc, `q` or Ctrl-C.
@@ -166,7 +202,7 @@ Future<T?> showMenu<T>(
 }
 
 /// One frame as a list of rendered lines, so the caller can rewind by exactly
-/// that many on the next. Public so `tom --preview` can render one without a
+/// that many on the next. Public so `cli --preview` can render one without a
 /// terminal.
 List<String> composeFrame<T>({
   required String title,

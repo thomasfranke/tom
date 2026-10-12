@@ -2,6 +2,7 @@
 
     python3 docs/design/tools/brand.py                 # -> ../brand/*.svg, the masters and the sheet
     python3 docs/design/tools/brand.py --rasters DIR   # + PNG 16–1024, .icns, .ico
+    python3 docs/design/tools/brand.py --linux         # only the Linux hicolor set, from the committed masters
 
 Same contract as palette.py: the repository holds the decision, and a file is
 regenerated rather than edited. Every colour is a role from palette.py, and the
@@ -92,9 +93,17 @@ ICON_TRUNK_W = 24          # 38 × 0.6, rounded to the grid
 # carry the colour. Neither has an outline: macOS 26 renders a legacy icon in
 # its own dark treatment, which keeps a drawn edge and drops the tile under it,
 # so the edge arrives as a bright ring around a plate that is no longer cream.
+#
+# The tile is `surface_raised`, not `surface`: the warm palette took the window
+# to #E8E6E1, and a grey plate is not the cream the mark was drawn on.
+#
+# `dark` is the dark-mode icon: the cream mark in the dark roles, the plate the
+# dark islands are made of and the page in the dark accent — what a dock in
+# dark mode shows, and the mark beside the dark wordmark.
 COLOURWAYS = {
-    "cream": dict(tile=LIGHT["surface"], page=LIGHT["accent"]),
-    "sage": dict(tile=LIGHT["accent"], page=LIGHT["surface"]),
+    "cream": dict(tile=LIGHT["surface_raised"], page=LIGHT["accent"]),
+    "sage": dict(tile=LIGHT["accent"], page=LIGHT["surface_raised"]),
+    "dark": dict(tile=DARK["surface_raised"], page=DARK["accent"]),
 }
 
 
@@ -135,9 +144,10 @@ def _nested(svg, x, y, w, h):
     return f'<svg x="{x}" y="{y}" width="{w}" height="{h}" viewBox="{vb}">{_inner(svg)}</svg>'
 
 
-def lockup(mode, colourway="cream"):
+def lockup(mode, colourway=None):
     letter, accent = (LIGHT["text_primary"], LIGHT["accent"]) if mode == "light" \
         else (DARK["text_primary"], DARK["accent"])
+    colourway = colourway or ("cream" if mode == "light" else "dark")
     k = LOCKUP_CAP / CAP
     w, h = round(WORDMARK_W * k, 2), round(WORDMARK_H * k, 2)
     total_w = round(LOCKUP_ICON + LOCKUP_GAP + w, 2)
@@ -168,9 +178,16 @@ def sheet():
     # dark half
     cells.append(f'<rect x="0" y="300" width="1200" height="300" fill="{DARK["surface"]}"/>')
     cells.append(_nested(lockup("dark"), 40, 340, 427, 128))
-    cells.append(_nested(lockup("dark", "sage"), 560, 340, 427, 128))
+    x = 560
+    for px in (256, 64, 32, 16):
+        cells.append(_nested(icon("dark"), x, 340 + 256 - px, px, px))
+        x += px + 20
+    x = 960
+    for px in (64, 32, 16):
+        cells.append(_nested(icon("sage"), x, 340 + 256 - px, px, px))
+        x += px + 20
     cells.append(f'<text x="40" y="540" font-family="IBM Plex Sans, Helvetica, Arial" font-size="13" '
-                 f'fill="{DARK["text_muted"]}">dark: the wordmark in the dark roles · the icon in either colourway</text>')
+                 f'fill="{DARK["text_muted"]}">lockup · icon (dark) 256 / 64 / 32 / 16 · icon (sage) 64 / 32 / 16</text>')
     return ('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">'
             + "".join(cells) + "</svg>")
 
@@ -180,6 +197,7 @@ def masters():
     return {
         "tom-icon.svg": icon("cream"),
         "tom-icon-sage.svg": icon("sage"),
+        "tom-icon-dark.svg": icon("dark"),
         "tom-wordmark-light.svg": wordmark(LIGHT["text_primary"], LIGHT["accent"]),
         "tom-wordmark-dark.svg": wordmark(DARK["text_primary"], DARK["accent"]),
         "tom-lockup-light.svg": lockup("light"),
@@ -217,7 +235,7 @@ def write_rasters(out):
     if not shutil.which("rsvg-convert"):
         sys.exit("rasters need rsvg-convert (brew install librsvg)")
     os.makedirs(out, exist_ok=True)
-    for stem in ("tom-icon", "tom-icon-sage"):
+    for stem in ("tom-icon", "tom-icon-sage", "tom-icon-dark"):
         src = os.path.join(BRAND_DIR, f"{stem}.svg")
         for px in (16, 24, 32, 48, 64, 128, 256, 512, 1024):
             _png(src, os.path.join(out, f"{stem}-{px}.png"), px)
@@ -240,12 +258,120 @@ def write_rasters(out):
             _png(src, os.path.join(out, f"tom-{kind}-{mode}@2x.png"), w1 * 2)
 
 
+# ── The Linux icon: the freedesktop hicolor layout ───────────────────────
+# The cream colourway at the sizes a launcher and a window ask for, as
+# `hicolor/<n>x<n>/apps/tom.png` — what an AppImage and a .desktop file expect.
+LINUX_ICONS = os.path.join(DESIGN, "..", "..", "src", "apps", "desktop", "linux", "icons")
+LINUX_SIZES = (16, 24, 32, 48, 64, 128, 256, 512)
+
+
+def write_linux_icons(out=LINUX_ICONS):
+    if not shutil.which("rsvg-convert"):
+        sys.exit("the Linux icons need rsvg-convert (brew install librsvg)")
+    src = os.path.join(BRAND_DIR, "tom-icon.svg")
+    for px in LINUX_SIZES:
+        folder = os.path.join(out, "hicolor", f"{px}x{px}", "apps")
+        os.makedirs(folder, exist_ok=True)
+        _png(src, os.path.join(folder, "tom.png"), px)
+
+
+# ── The macOS icon: an Icon Composer bundle ──────────────────────────────
+# macOS 26 draws an app icon in light, dark and tinted from one `.icon`; an
+# asset catalog's appearance variants are ignored for the mac idiom. Icon
+# Composer fills each layer's *geometry*, so a stroke drawn over `fill="none"`
+# comes out a solid disc — the cut-outs are written here as filled outlines,
+# from the same numbers the icon above strokes.
+RUNNER_ICON = os.path.join(DESIGN, "..", "..", "src", "apps", "desktop", "macos", "Runner", "AppIcon.icon")
+
+
+def _srgb(hex_colour):
+    r, g, b = (int(hex_colour[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    return f"srgb:{r:.5f},{g:.5f},{b:.5f},1.00000"
+
+
+def icon_composer():
+    """`AppIcon.icon` as {relative path: text}: the tile, the page, the marks."""
+    n = ICON_NODE
+    outer, inner = n["r"] + n["w"] / 2, n["r"] - n["w"] / 2
+    reach = ICON_TRUNK_W / 2
+    top_end = n["cy"] - outer + 4
+    bottom_start = n["cy"] + outer - 4
+    svg = lambda body: (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {TILE} {TILE}" '
+                        f'width="1024" height="1024">{body}</svg>\n')
+    def drawing(role):
+        ink, accent = role["surface_raised"], role["accent"]
+        page = svg(f'<path d="{PAGE}" fill="{accent}"/>')
+        marks = svg(
+            # The crease: 20 wide on 304 down to 148, then along 148 to 398.
+            f'<rect x="294" y="54" width="20" height="104" fill="{ink}"/>'
+            f'<rect x="294" y="138" width="104" height="20" fill="{ink}"/>'
+            # The trunk, round-capped, above and below the ring.
+            f'<rect x="{n["cx"] - reach}" y="{64 - reach}" width="{ICON_TRUNK_W}" '
+            f'height="{top_end - 64 + 2 * reach}" rx="{reach}" fill="{ink}"/>'
+            f'<rect x="{n["cx"] - reach}" y="{bottom_start - reach}" width="{ICON_TRUNK_W}" '
+            f'height="{448 - bottom_start + 2 * reach}" rx="{reach}" fill="{ink}"/>'
+            # The ring, as an annulus.
+            f'<path fill="{ink}" fill-rule="evenodd" d="M {n["cx"]} {n["cy"] - outer} '
+            f'A {outer} {outer} 0 1 1 {n["cx"] - 0.01} {n["cy"] - outer} Z '
+            f'M {n["cx"]} {n["cy"] - inner} A {inner} {inner} 0 1 0 {n["cx"] + 0.01} {n["cy"] - inner} Z"/>'
+        )
+        return page, marks
+
+    page, marks = drawing(LIGHT)
+    page_dark, marks_dark = drawing(DARK)
+
+    def fill(light, dark):
+        return [{"value": {"solid": _srgb(light)}},
+                {"appearance": "dark", "value": {"solid": _srgb(dark)}}]
+
+    def layer(name, dark):
+        # `image-name-specializations` is read by Icon Composer but dropped by `actool`, which
+        # then compiles one drawing for every appearance; hiding a layer per appearance survives.
+        file = f"{name}-dark" if dark else name
+        return {"image-name": f"{file}.svg", "name": file,
+                "hidden-specializations": [{"value": dark}, {"appearance": "dark", "value": not dark}]}
+
+    tile = (LIGHT["surface_raised"], DARK["surface_raised"])
+    spec = {
+        "fill-specializations": fill(*tile),
+        "groups": [{
+            "layers": [
+                layer("marks", False), layer("marks", True),
+                layer("page", False), layer("page", True),
+            ],
+            "shadow": {"kind": "none", "opacity": 0},
+            "translucency": {"enabled": False, "value": 0},
+        }],
+        "supported-platforms": {"squares": ["macOS"]},
+    }
+    import json
+    return {"icon.json": json.dumps(spec, indent=2) + "\n",
+            "Assets/page.svg": page, "Assets/marks.svg": marks,
+            "Assets/page-dark.svg": page_dark, "Assets/marks-dark.svg": marks_dark}
+
+
+def write_icon_composer(out=RUNNER_ICON):
+    for name, text in icon_composer().items():
+        path = os.path.join(out, name)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--rasters", metavar="DIR", help="also write PNG sets, .icns and .ico into DIR")
+    ap.add_argument("--linux", action="store_true",
+                    help="write only the Linux hicolor PNG set into src/apps/desktop/linux/icons, nothing else")
     args = ap.parse_args(argv)
+    if args.linux:
+        write_linux_icons()
+        print(f"Linux icons -> {os.path.relpath(LINUX_ICONS)}")
+        return
     write_masters()
     print(f"{len(masters())} masters -> {os.path.relpath(BRAND_DIR)}  ·  sheet -> {os.path.relpath(os.path.join(BRAND_DIR, 'brand.svg'))}")
+    write_icon_composer()
+    print(f"macOS icon -> {os.path.relpath(RUNNER_ICON)}")
     if args.rasters:
         write_rasters(args.rasters)
         print(f"rasters -> {args.rasters}")

@@ -1,0 +1,6 @@
+{
+  "summary": "A docs folder whose index links by name",
+  "description": "One document linking three ways: [[setup]] resolves to one document, [[release-notes]] to none, and [[guide]] to two — guides/guide.md and reference/guide.md — and [[setup#Troubleshooting]] to the heading near the end of a setup.md longer than the window, which reaches the same heading from its own top with [[#Troubleshooting]]. Committed and clean, so nothing but the links is on screen.",
+  "space": "docs",
+  "commit": "docs: the handbook and its links"
+}

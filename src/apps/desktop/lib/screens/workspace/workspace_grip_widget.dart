@@ -1,4 +1,4 @@
-/// What sits in a gutter: the one line left on screen, and the grip on it.
+/// What sits in a gutter: the strip that widens a column.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -8,74 +8,48 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// The gutter between two containers: a hairline at its far edge, the
-/// [TomColumnGripWidget] on it, and the whole strip grabbable.
+/// The gutter beside a column, grabbable along its whole height.
 ///
-/// **A width nobody can see is a width nobody drags**, which is why the dots
-/// are drawn rather than the hairline thickened: the line is the boards' and
-/// what is grabbed is the strip it sits in
-/// (`docs/design/components/controls.md`).
+/// **Nothing is drawn on it**: the islands' own edges say where a column
+/// ends, and the cursor says the gutter can be dragged — every 1b board
+/// leaves the gutter empty (`docs/design/screens/divergences.md`).
 ///
-/// A gutter whose column is closed keeps both, at the window's edge, because
-/// the way to bring the column back must not close with it.
+/// A gutter whose column is closed stays at the window's edge, because the
+/// way to bring the column back must not close with it.
 class WorkspaceGripWidget extends ConsumerWidget {
-  /// Creates the gutter for a column currently [width] wide.
-  ///
-  /// [isDraggable] is false for a column whose width is not the reader's
-  /// yet: the line is still drawn, the dots are not.
+  /// Creates the gutter for the column at [edge], currently [width] wide.
   const WorkspaceGripWidget({
     required this.width,
-    this.isDraggable = true,
+    this.edge = TomColumnEdgeEnum.left,
+    this.isOpen = true,
     super.key,
   });
+
+  /// Whether the column is on screen; a drag on a closed one opens it.
+  final bool isOpen;
 
   /// The column's width now; a drag moves from here.
   final double width;
 
-  /// Whether dragging this gutter does anything.
-  final bool isDraggable;
+  /// Which column it widens: the left one grows as the pointer moves right,
+  /// the right one as it moves left.
+  final TomColumnEdgeEnum edge;
 
   /// The gutter's own width, which is also what can be grabbed.
   static const double grip = TomMetrics.gutter;
-
-  /// The hairline's offset inside the gutter — its far edge.
-  static const double rule = grip - 1;
-
-  /// The dots' offset inside the gutter.
-  static const double dots = 3;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
       ..add(DoubleProperty('width', width))
-      ..add(DiagnosticsProperty<bool>('isDraggable', isDraggable));
+      ..add(DiagnosticsProperty<bool>('isOpen', isOpen))
+      ..add(EnumProperty<TomColumnEdgeEnum>('edge', edge));
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final TomColors colors = TomColors.of(context);
-    final Widget drawn = Stack(
-      children: <Widget>[
-        Positioned(
-          left: rule,
-          top: 0,
-          bottom: 0,
-          width: 1,
-          child: ColoredBox(color: colors.border),
-        ),
-        if (isDraggable)
-          const Positioned(
-            left: dots,
-            top: 0,
-            bottom: 0,
-            child: Center(child: TomColumnGripWidget()),
-          ),
-      ],
-    );
-    if (!isDraggable) {
-      return SizedBox(width: grip, child: drawn);
-    }
+    final WorkspaceNotifier workspace = ref.read(workspaceProvider.notifier);
     return MouseRegion(
       cursor: SystemMouseCursors.resizeLeftRight,
       child: GestureDetector(
@@ -84,10 +58,21 @@ class WorkspaceGripWidget extends ConsumerWidget {
         // was recognised: the default swallows the touch slop, and a rule
         // that trails the pointer by eighteen points never catches up.
         dragStartBehavior: DragStartBehavior.down,
-        onHorizontalDragUpdate: (DragUpdateDetails drag) => ref
-            .read(workspaceProvider.notifier)
-            .widenExplorer(width + drag.delta.dx),
-        child: SizedBox(width: grip, child: drawn),
+        onHorizontalDragUpdate: (DragUpdateDetails drag) {
+          final bool right = edge == TomColumnEdgeEnum.right;
+          // A closed column's gutter opens it, and only a drag towards the
+          // room the column would take: the other way there is nothing to do.
+          if (!isOpen) {
+            if (right ? drag.delta.dx < 0 : drag.delta.dx > 0) {
+              right ? workspace.openAside() : workspace.openExplorer();
+            }
+            return;
+          }
+          right
+              ? workspace.widenAside(width - drag.delta.dx)
+              : workspace.widenExplorer(width + drag.delta.dx);
+        },
+        child: const SizedBox(width: grip),
       ),
     );
   }

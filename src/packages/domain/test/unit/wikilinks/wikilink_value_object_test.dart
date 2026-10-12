@@ -41,7 +41,61 @@ void main() {
     test('nothing to look up is null, not an empty link', () {
       expect(WikilinkValueObject.tryParse(''), isNull);
       expect(WikilinkValueObject.tryParse('   '), isNull);
-      expect(WikilinkValueObject.tryParse('#anchor-only'), isNull);
+      expect(WikilinkValueObject.tryParse('#'), isNull);
+      expect(WikilinkValueObject.tryParse('|label-only'), isNull);
+      expect(WikilinkValueObject.tryParse(' # |label'), isNull);
+    });
+
+    test('an anchor alone is a heading of the document it is in', () {
+      final WikilinkValueObject link = WikilinkValueObject.tryParse(
+        '#Troubleshooting',
+      )!;
+
+      expect(link.target, '');
+      expect(link.anchor, 'Troubleshooting');
+      expect(link.isWithinDocument, isTrue);
+    });
+
+    test('a link to a document is not within one', () {
+      expect(
+        WikilinkValueObject.tryParse('setup#Install')!.isWithinDocument,
+        isFalse,
+      );
+    });
+  });
+
+  group('the words it is shown as', () {
+    String shown(String inner) => WikilinkValueObject.tryParse(inner)!.shownAs;
+
+    test('the label first, then the document, then the heading', () {
+      expect(shown('setup#Install|how to install'), 'how to install');
+      expect(shown('setup#Install'), 'setup');
+      expect(shown('#Install'), 'Install');
+    });
+
+    test('what follows the first bar is the label, trimmed', () {
+      final WikilinkValueObject link = WikilinkValueObject.tryParse(
+        'architecture | the graph ',
+      )!;
+
+      expect(link.target, 'architecture');
+      expect(link.anchor, isNull);
+      expect(link.label, 'the graph');
+    });
+
+    test('the bar is split first, so a hash in the label is the label', () {
+      final WikilinkValueObject link = WikilinkValueObject.tryParse(
+        'doc#top|see #1',
+      )!;
+
+      expect(link.target, 'doc');
+      expect(link.anchor, 'top');
+      expect(link.label, 'see #1');
+    });
+
+    test('an empty label is no label', () {
+      expect(WikilinkValueObject.tryParse('doc|')!.label, isNull);
+      expect(WikilinkValueObject.tryParse('doc')!.label, isNull);
     });
   });
 

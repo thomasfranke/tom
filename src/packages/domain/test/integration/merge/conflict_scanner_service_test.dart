@@ -156,6 +156,100 @@ void main() {
     expect(status.stdout.toString().trim(), isEmpty);
   });
 
+  // Somebody's own `merge.conflictStyle`: git then writes a fourth marker
+  // line, `|||||||`, and the text both sides started from under it.
+  for (final String style in const <String>['diff3', 'zdiff3']) {
+    group('with merge.conflictStyle=$style', () {
+      late String conflicted;
+
+      setUp(() {
+        git(<String>['config', 'merge.conflictStyle', style]);
+        conflicted = conflictOn(
+          base: '# Guide\n\nOriginal line.\n',
+          onMain: '# Guide\n\nOur line.\n',
+          onOther: '# Guide\n\nTheir line.\n',
+        );
+      });
+
+      test('git writes the base section, and the region leaves it out', () {
+        expect(conflicted, contains('\n||||||| '));
+        expect(conflicted, contains('Original line.'));
+
+        final ConflictRegionValueObject region = scanner
+            .scan(conflicted)
+            .single;
+
+        expect(region.current.trim(), 'Our line.');
+        expect(region.incoming.trim(), 'Their line.');
+        expect(region.currentLabel, 'HEAD');
+        expect(region.incomingLabel, 'other');
+      });
+
+      for (final ConflictChoiceEnum choice in ConflictChoiceEnum.values) {
+        test('resolved as ${choice.name}, neither a marker nor the base '
+            'text reaches the commit', () {
+          final String resolved = scanner.resolve(
+            conflicted,
+            scanner.scan(conflicted).single,
+            choice,
+          );
+          write('guide.md', resolved);
+
+          expect(resolved, isNot(contains('|||||||')));
+          expect(resolved, isNot(contains('Original line.')));
+          expect(scanner.holdsMarker(resolved), isFalse);
+
+          git(<String>['add', 'guide.md']);
+          git(<String>['commit', '--quiet', '-m', 'merge other']);
+          final ProcessResult committed = Process.runSync(
+            'git',
+            <String>['show', 'HEAD:guide.md'],
+            workingDirectory: repoPath,
+            environment: const <String, String>{'LC_ALL': 'C'},
+          );
+          expect(committed.stdout.toString(), resolved);
+        });
+      }
+
+      test('a region with one line deleted by hand still holds a marker', () {
+        final String halfResolved = conflicted
+            .split('\n')
+            .where((String line) => !line.startsWith('<<<<<<<'))
+            .join('\n');
+
+        expect(scanner.scan(halfResolved), isEmpty);
+        expect(scanner.holdsMarker(halfResolved), isTrue);
+      });
+    });
+  }
+
+  test('each line git wrote is a marker on its own, once the rest is '
+      'deleted', () {
+    final String conflicted = conflictOn(
+      base: '# Guide\n\nOriginal line.\n',
+      onMain: '# Guide\n\nOur line.\n',
+      onOther: '# Guide\n\nTheir line.\n',
+    );
+    final List<String> lines = conflicted.split('\n');
+
+    for (final String marker in const <String>[
+      '<<<<<<<',
+      '=======',
+      '>>>>>>>',
+    ]) {
+      final String onlyThatOne = lines
+          .where(
+            (String line) =>
+                line.startsWith(marker) ||
+                !RegExp('^(<<<<<<<|=======|>>>>>>>)').hasMatch(line),
+          )
+          .join('\n');
+
+      expect(scanner.scan(onlyThatOne), isEmpty, reason: marker);
+      expect(scanner.holdsMarker(onlyThatOne), isTrue, reason: marker);
+    }
+  });
+
   test('git reports the conflicted path the way the guard expects', () {
     conflictOn(
       base: '# Guide\n\nOriginal line.\n',

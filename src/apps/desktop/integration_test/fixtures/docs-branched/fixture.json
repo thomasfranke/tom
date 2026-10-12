@@ -1,0 +1,43 @@
+{
+  "summary": "A docs folder with a feature branch started from develop, which was started from main and moved on after",
+  "description": "What the automatic base exists for. `develop` comes off `main` and rewrites the writing guide; `feat/glossary` comes off `develop`, adds a glossary and rewrites the index; then `develop` moves on and rewrites the process document, which the feature never touched. Both branches were started by plain git, so nothing recorded where they came from and the app has to deduce it. Two documents carry the proof on `feat/glossary`: the guide is the same as on `develop` and different on `main`, so it is marked only if the wrong branch was chosen; the process document differs from `develop`'s tip, so it is marked only if the diff were read at the tip instead of where the feature left `develop`. The repository is left on `main`, which compares against the last commit.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "branches": [
+    {
+      "name": "develop",
+      "commits": [
+        {
+          "message": "docs: rewrite the guide on develop",
+          "write": {
+            "docs/guides/writing.md": "# Writing\n\nThe guide, as develop rewrote it.\n"
+          }
+        }
+      ]
+    },
+    {
+      "name": "feat/glossary",
+      "from": "develop",
+      "commits": [
+        {
+          "message": "docs: start the glossary",
+          "write": {
+            "docs/glossary.md": "# Glossary\n\nThis document exists only on feat/glossary.\n",
+            "docs/index.md": "# Documentation\n\nThe index, as the glossary branch rewrote it.\n"
+          }
+        }
+      ]
+    },
+    {
+      "name": "develop",
+      "commits": [
+        {
+          "message": "docs: change the process after the glossary was cut",
+          "write": {
+            "docs/process.md": "# Process\n\nThe process, as develop changed it later.\n"
+          }
+        }
+      ]
+    }
+  ]
+}

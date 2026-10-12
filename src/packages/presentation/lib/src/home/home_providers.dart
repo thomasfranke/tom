@@ -26,6 +26,16 @@ ListRecentSpacesUseCase listRecentSpaces(Ref ref) =>
 ForgetRecentSpaceUseCase forgetRecentSpace(Ref ref) =>
     throw StateError(_notWired('forgetRecentSpaceProvider'));
 
+/// Clones a repository by URL and opens it as a space.
+@riverpod
+CloneRepositoryUseCase cloneRepository(Ref ref) =>
+    throw StateError(_notWired('cloneRepositoryProvider'));
+
+/// Reads the branch a recent space was left on.
+@riverpod
+ReadRecentBranchUseCase readRecentBranch(Ref ref) =>
+    throw StateError(_notWired('readRecentBranchProvider'));
+
 String _notWired(String name) =>
     '$name has no default. The composition root overrides it — see '
     'runTom() in tom_desktop.';

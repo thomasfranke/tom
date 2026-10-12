@@ -347,6 +347,53 @@ void main() {
     );
   });
 
+  test('every shared component has its row in the control table', () {
+    // The table is what a review holds a control to, so a widget in the
+    // shared package it does not name is one nobody can be held to — and a
+    // row naming a widget that is gone is a row about nothing.
+    final Directory widgets = Directory(
+      '${workspace.path}/packages/ui/lib/src/widgets',
+    );
+    final File table = File(
+      '${workspace.parent.path}/docs/design/components/controls.md',
+    );
+    final String rows = table.readAsStringSync();
+    final RegExp component = RegExp(
+      r'^(?:final |abstract |sealed )?class ([A-Z]\w*Widget)\b',
+      multiLine: true,
+    );
+    final Set<String> built = <String>{
+      for (final File file in dartFilesUnder(widgets))
+        for (final RegExpMatch match in component.allMatches(
+          file.readAsStringSync(),
+        ))
+          match.group(1)!,
+    };
+    // The table names the applications' own widgets too; only a name shaped
+    // like this package's is asked to exist here.
+    final Set<String> named = <String>{
+      for (final RegExpMatch match in RegExp(
+        r'`((?:Tom|Notice|Diff|Commit)\w*Widget)`',
+      ).allMatches(rows))
+        match.group(1)!,
+    };
+
+    expect(
+      built.difference(named),
+      isEmpty,
+      reason:
+          'A component in packages/ui has no row in '
+          'docs/design/components/controls.md. Give it one, or delete it.',
+    );
+    expect(
+      named.difference(built),
+      isEmpty,
+      reason:
+          'docs/design/components/controls.md names a widget that does not '
+          'exist. Correct the row, or delete it.',
+    );
+  });
+
   // The naming and shape rules live in `tom rules`
   // (`tool/src/commands/rules.dart`); this file is about the graph.
 

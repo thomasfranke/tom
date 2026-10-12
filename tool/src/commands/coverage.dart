@@ -1,4 +1,4 @@
-// `tom coverage` — the HTML report, and the threshold gate.
+// `cli coverage` — the HTML report, and the threshold gate.
 library;
 
 import 'dart:io';
@@ -7,14 +7,16 @@ import '../theme/theme.dart';
 import 'process.dart';
 import 'tests.dart';
 
-/// Fails if any gated package is under the line-coverage threshold; which
-/// packages are gated is coverage_gate.dart's to say.
-Future<int> runCoverageGate({int? threshold}) async {
+/// Fails if any gated package is under the line-coverage threshold, counting
+/// only unit tests unless [kind] says `all`; which packages are gated is
+/// coverage_gate.dart's to say, and none is excepted.
+Future<int> runCoverageGate({int? threshold, String? kind}) async {
   announce('Coverage gate');
   return dart([
     'run',
     'tool/src/commands/coverage_gate.dart',
     if (threshold != null) '--threshold=$threshold',
+    if (kind != null) '--kind=$kind',
   ]);
 }
 
@@ -26,7 +28,7 @@ Future<int> runCoverageGate({int? threshold}) async {
 Future<int> runCoverageReport({List<String> targets = allTargets}) async {
   final unknown = targets.where((t) => !directoryFor(t).existsSync()).toList();
   if (unknown.isNotEmpty) {
-    stderr.writeln('tom: no such package "${unknown.first}"');
+    stderr.writeln('cli: no such package "${unknown.first}"');
     return 66; // EX_NOINPUT
   }
 
@@ -46,7 +48,7 @@ Future<int> runCoverageReport({List<String> targets = allTargets}) async {
 
   if (lcov.isEmpty) {
     stderr.writeln(
-      'tom: nothing was measured — none of those packages has tests yet',
+      'cli: nothing was measured — none of those packages has tests yet',
     );
     return 66;
   }
@@ -68,7 +70,7 @@ Future<int> runCoverageReport({List<String> targets = allTargets}) async {
   ]);
   if (generated != 0) {
     stderr.writeln(
-      'tom: genhtml failed or is not installed — it ships with lcov. '
+      'cli: genhtml failed or is not installed — it ships with lcov. '
       'The raw data is still beside each package, in coverage/lcov.info',
     );
     return generated;

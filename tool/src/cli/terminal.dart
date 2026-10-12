@@ -82,7 +82,7 @@ final class Terminal {
   /// Swaps in the alternate screen buffer, cleared, cursor at the top left.
   ///
   /// Paired with [leaveFullScreen] around navigation only: output printed
-  /// inside the buffer is discarded on the way out, so `tom test` would leave
+  /// inside the buffer is discarded on the way out, so `cli test` would leave
   /// nothing behind. Idempotent, and a no-op when not [interactive].
   void enterFullScreen() {
     if (!_interactive || _fullScreen) return;

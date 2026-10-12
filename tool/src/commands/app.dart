@@ -1,4 +1,4 @@
-// `tom build` and `tom run` — the desktop app itself.
+// `cli build` and `cli run` — the desktop app itself.
 library;
 
 import 'dart:io';
@@ -21,7 +21,7 @@ Future<int> runBuild({String? platform}) async {
   final target = platform ?? hostPlatform;
   if (target == null) {
     stderr.writeln(
-      'tom: ${Platform.operatingSystem} builds no desktop target — '
+      'cli:${Platform.operatingSystem} builds no desktop target — '
       'pass macos, linux or windows explicitly',
     );
     return 64; // EX_USAGE
@@ -38,7 +38,7 @@ Future<int> runApp({String? device, List<String> flags = const []}) async {
   final target = device ?? hostPlatform;
   if (target == null) {
     stderr.writeln(
-      'tom: ${Platform.operatingSystem} runs no desktop target — '
+      'cli:${Platform.operatingSystem} runs no desktop target — '
       'pass macos, linux or windows explicitly',
     );
     return 64;

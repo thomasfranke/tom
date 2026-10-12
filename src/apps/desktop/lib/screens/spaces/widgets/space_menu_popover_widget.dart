@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/spaces/space_menu_design.dart';
 import 'package:tom_desktop/screens/spaces/widgets/space_menu_row_widget.dart';
 import 'package:tom_desktop/screens/spaces/widgets/space_menu_unsaved_widget.dart';
@@ -12,10 +13,11 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// Recent spaces with `Close space` at the foot, or the question about the
-/// buffer first (`docs/product/workspace/leaving-a-space/doc.md`).
+/// Recent spaces, or the question about the buffer first
+/// (`docs/product/workspace/leaving-a-space/doc.md`).
 ///
-/// Two faces, one surface, and which is drawn is the state's to say. Closing
+/// Two faces, one surface, and which is drawn is the state's to say — the
+/// home button beside the breadcrumb raises the question here too. Closing
 /// it is *stay*: no departure is left standing behind a surface nobody sees.
 class SpaceMenuPopoverWidget extends ConsumerWidget {
   /// Creates the surface, calling [onDismissed] when it should go away.
@@ -88,7 +90,7 @@ class _ContentsWidget extends ConsumerWidget {
               SpaceMenuDesign.captionGap,
             ),
             child: Text(
-              'RECENT SPACES',
+              context.l10n.spacesRecentSpaces,
               style: TextStyle(
                 fontSize: SpaceMenuDesign.caption,
                 height: 1.4,
@@ -107,11 +109,11 @@ class _ContentsWidget extends ConsumerWidget {
         ],
         // Said where the row that failed is, because the space on screen
         // never closed and there is no other surface to say it on.
-        if (state.failure case final String failure)
+        if (state.unopened case final RecentSpaceEntity unopened)
           Padding(
             padding: const EdgeInsets.all(SpaceMenuDesign.rowPad),
             child: Text(
-              failure,
+              context.l10n.spacesUnopened(unopened.name),
               style: TextStyle(
                 fontSize: SpaceMenuDesign.path,
                 height: 1.4,
@@ -119,42 +121,7 @@ class _ContentsWidget extends ConsumerWidget {
               ),
             ),
           ),
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: SpaceMenuDesign.dividerGap,
-          ),
-          child: Divider(height: SpaceMenuDesign.divider, color: colors.border),
-        ),
-        const _CloseWidget(),
       ],
-    );
-  }
-}
-
-/// The way out, at the foot of the menu.
-class _CloseWidget extends ConsumerWidget {
-  const _CloseWidget();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final TomColors colors = TomColors.of(context);
-    return SpaceMenuTapWidget(
-      onTap: ref.read(spaceMenuProvider.notifier).close,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SpaceMenuDesign.rowPad,
-          vertical: 6,
-        ),
-        child: Text(
-          'Close space',
-          style: TextStyle(
-            fontSize: SpaceMenuDesign.close,
-            height: 1.4,
-            fontWeight: FontWeight.w500,
-            color: colors.textPrimary,
-          ),
-        ),
-      ),
     );
   }
 }

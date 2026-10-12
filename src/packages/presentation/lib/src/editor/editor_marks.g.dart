@@ -16,9 +16,9 @@ part of 'editor_marks.dart';
 /// document is conflicted, so a `<<<<<<<` typed into a document *about*
 /// merging stays text (`docs/product/editor/conflicted-document/doc.md`).
 ///
-/// The diff is the preview's, not a second comparison: one reading, both
-/// panes — which is also why the marks are absent in source-only mode, where
-/// there is no preview and the product asks for them in split.
+/// A document's diff is the preview's, not a second comparison: one reading,
+/// both panes. A file that is not markdown has no preview, so its lines are
+/// compared on their own ([LineDiffNotifier]).
 
 @ProviderFor(editorMarks)
 final editorMarksProvider = EditorMarksProvider._();
@@ -31,9 +31,9 @@ final editorMarksProvider = EditorMarksProvider._();
 /// document is conflicted, so a `<<<<<<<` typed into a document *about*
 /// merging stays text (`docs/product/editor/conflicted-document/doc.md`).
 ///
-/// The diff is the preview's, not a second comparison: one reading, both
-/// panes — which is also why the marks are absent in source-only mode, where
-/// there is no preview and the product asks for them in split.
+/// A document's diff is the preview's, not a second comparison: one reading,
+/// both panes. A file that is not markdown has no preview, so its lines are
+/// compared on their own ([LineDiffNotifier]).
 
 final class EditorMarksProvider
     extends $FunctionalProvider<EditorMarks, EditorMarks, EditorMarks>
@@ -46,9 +46,9 @@ final class EditorMarksProvider
   /// document is conflicted, so a `<<<<<<<` typed into a document *about*
   /// merging stays text (`docs/product/editor/conflicted-document/doc.md`).
   ///
-  /// The diff is the preview's, not a second comparison: one reading, both
-  /// panes — which is also why the marks are absent in source-only mode, where
-  /// there is no preview and the product asks for them in split.
+  /// A document's diff is the preview's, not a second comparison: one reading,
+  /// both panes. A file that is not markdown has no preview, so its lines are
+  /// compared on their own ([LineDiffNotifier]).
   EditorMarksProvider._()
     : super(
         from: null,
@@ -82,4 +82,4 @@ final class EditorMarksProvider
   }
 }
 
-String _$editorMarksHash() => r'd107d91cab159cf8df4fd0ec3196714941c1e3b0';
+String _$editorMarksHash() => r'bdcd08f0efb622c088fc046b589ed36b2893c965';

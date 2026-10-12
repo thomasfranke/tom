@@ -11,6 +11,9 @@ import 'package:tom_core/tom_core.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/src/file_tree/file_tree_providers.dart';
 import 'package:tom_presentation/src/file_tree/file_tree_state.dart';
+import 'package:tom_presentation/src/search/search_notifier.dart';
+import 'package:tom_presentation/src/spaces/document_mode_enum.dart';
+import 'package:tom_presentation/src/spaces/git_reading_notifier.dart';
 import 'package:tom_presentation/src/spaces/space_session.dart';
 import 'package:tom_presentation/src/spaces/space_session_notifier.dart';
 
@@ -27,6 +30,16 @@ class FileTreeNotifier extends _$FileTreeNotifier {
   /// Reads what the space holds.
   ListSpaceEntriesUseCase get listSpaceEntries =>
       ref.read(listSpaceEntriesProvider);
+
+  /// Creates a document where the `+` was pressed.
+  CreateDocumentUseCase get createDocumentUseCase =>
+      ref.read(createDocumentProvider);
+
+  /// Creates a folder where `New folder` asked.
+  CreateFolderUseCase get createFolderUseCase => ref.read(createFolderProvider);
+
+  /// Shows a folder in the file manager.
+  RevealFolderUseCase get revealFolderUseCase => ref.read(revealFolderProvider);
 
   @override
   FileTreeState build() {
@@ -59,18 +72,206 @@ class FileTreeNotifier extends _$FileTreeNotifier {
 
   /// Opens or closes [entry] — whichever clicking its row means.
   ///
-  /// A folder toggles, a markdown file becomes the open document, anything
-  /// else does nothing
+  /// A folder toggles, a file becomes the open document — markdown as a
+  /// document, any other in a text tab, as the changes list opens it — and a
+  /// symbolic link does nothing, since the tree never follows one
   /// (`docs/product/navigation/file-tree/what-is-shown/doc.md`).
   void activate(SpaceEntryValueObject entry) {
-    if (entry.type == SpaceEntryTypeEnum.directory) {
-      _toggle(entry.path);
-      return;
-    }
-    if (entry.isDocument) {
-      ref.read(spaceSessionProvider.notifier).show(entry.path);
+    switch (entry.type) {
+      case SpaceEntryTypeEnum.directory:
+        _toggle(entry.path);
+      case SpaceEntryTypeEnum.file:
+        ref.read(spaceSessionProvider.notifier).show(entry.path);
+      case SpaceEntryTypeEnum.link:
+        break;
     }
   }
+
+  /// Asks for a new document's name, in the open document's folder — or at
+  /// the space's root with nothing open — opening that folder if it was
+  /// closed, so the row being typed in is on screen.
+  void startNewDocument() => _startDraft(isFolder: false);
+
+  /// Asks for a new folder's name, where a new document would go
+  /// (`docs/product/navigation/file-tree/explorer-menu/doc.md`).
+  void startNewFolder() => _startDraft(isFolder: true);
+
+  /// Takes the row away and creates nothing — Escape, or a click elsewhere.
+  void cancelDraft() {
+    if (state case final FileTreeReady ready) {
+      state = ready.copyWith(draft: null);
+    }
+  }
+
+  /// Creates [typed] where the draft is; a refusal stays on the row, in
+  /// place.
+  ///
+  /// A document is opened in source mode and git is asked again for its
+  /// `N`; a folder is only re-read, since git does not see an empty one.
+  Future<void> submitDraft(String typed) async {
+    final SpaceEntity? space = ref.read(spaceSessionProvider)?.space;
+    final FileTreeState now = state;
+    if (space == null || now is! FileTreeReady || now.draft == null) {
+      return;
+    }
+    final NewEntryDraft draft = now.draft!;
+    // Read before the first await: after it, this notifier may be gone.
+    final GitReadingNotifier git = ref.read(gitReadingProvider.notifier);
+    final SpaceSessionNotifier session = ref.read(
+      spaceSessionProvider.notifier,
+    );
+    final Result<SpaceRelativePathValueObject, AppFailure> created =
+        draft.isFolder
+        ? await createFolderUseCase.create(space, draft.folder, typed)
+        : await createDocumentUseCase.create(space, draft.folder, typed);
+    if (!ref.mounted) {
+      return;
+    }
+    switch (created) {
+      case Success<SpaceRelativePathValueObject, AppFailure>(
+        value: final SpaceRelativePathValueObject path,
+      ):
+        if (draft.isFolder) {
+          await _load(space);
+          return;
+        }
+        await _openCreated(space, path, session, git);
+      case Failure<SpaceRelativePathValueObject, AppFailure>(
+        failure: final AppFailure why,
+      ):
+        if (state case final FileTreeReady ready) {
+          state = ready.copyWith(draft: draft.copyWith(refused: why));
+        }
+    }
+  }
+
+  /// Creates [typed] in [folder] — the root when null — with no row typed
+  /// in, as a missing wikilink's `Create it` asks; answers whether it was.
+  ///
+  /// What happens next is the `+`'s: opened in source, the tree re-read and
+  /// git asked again (`docs/product/wikilinks/doc.md`).
+  Future<bool> createDocument(
+    SpaceRelativePathValueObject? folder,
+    String typed,
+  ) async {
+    final SpaceEntity? space = ref.read(spaceSessionProvider)?.space;
+    if (space == null) {
+      return false;
+    }
+    // Read before the first await: after it, this notifier may be gone.
+    final GitReadingNotifier git = ref.read(gitReadingProvider.notifier);
+    final SpaceSessionNotifier session = ref.read(
+      spaceSessionProvider.notifier,
+    );
+    final Result<SpaceRelativePathValueObject, AppFailure> created =
+        await createDocumentUseCase.create(space, folder, typed);
+    if (!ref.mounted) {
+      return false;
+    }
+    switch (created) {
+      case Success<SpaceRelativePathValueObject, AppFailure>(
+        value: final SpaceRelativePathValueObject path,
+      ):
+        await _openCreated(space, path, session, git);
+        return true;
+      case Failure<SpaceRelativePathValueObject, AppFailure>():
+        return false;
+    }
+  }
+
+  /// Opens the document just created at [path] in source, and reads the
+  /// folder and git again so it carries its `N` at once.
+  Future<void> _openCreated(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+    SpaceSessionNotifier session,
+    GitReadingNotifier git,
+  ) async {
+    session
+      ..show(path)
+      ..look(DocumentModeEnum.source);
+    await Future.wait(<Future<void>>[_load(space), git.refresh()]);
+  }
+
+  /// The menu's `Reload`: the folder read again, and git with it, so a file
+  /// that arrived from outside carries its mark like any other — and the
+  /// search index, so it can be found.
+  Future<void> reload() async {
+    final GitReadingNotifier git = ref.read(gitReadingProvider.notifier);
+    await Future.wait(<Future<void>>[
+      refresh(),
+      git.refresh(),
+      // Only when the search exists: asking for it here would build an index
+      // nobody has looked at.
+      if (ref.exists(searchProvider))
+        ref.read(searchProvider.notifier).reindex(),
+    ]);
+  }
+
+  /// Closes every folder but the ones the open document is in, because a
+  /// tree that hides what is on screen has lost its reader.
+  void collapseAll() {
+    if (state case final FileTreeReady ready) {
+      final SpaceRelativePathValueObject? folder = _folderOf(
+        ref.read(spaceSessionProvider)?.openDocument,
+      );
+      state = ready.copyWith(
+        collapsed: Set<SpaceRelativePathValueObject>.unmodifiable(
+          <SpaceRelativePathValueObject>{
+            for (final SpaceEntryValueObject entry in ready.entries)
+              if (entry.type == SpaceEntryTypeEnum.directory &&
+                  (folder == null || !_contains(entry.path, folder)))
+                entry.path,
+          },
+        ),
+      );
+    }
+  }
+
+  /// Shows the space's folder — not the repository's — in the platform's
+  /// file manager.
+  Future<void> revealSpace() async {
+    final SpaceEntity? space = ref.read(spaceSessionProvider)?.space;
+    if (space != null) {
+      await revealFolderUseCase.reveal(space.root);
+    }
+  }
+
+  void _startDraft({required bool isFolder}) {
+    if (state case final FileTreeReady ready) {
+      final SpaceRelativePathValueObject? folder = _folderOf(
+        ref.read(spaceSessionProvider)?.openDocument,
+      );
+      state = ready.copyWith(
+        collapsed: Set<SpaceRelativePathValueObject>.unmodifiable(
+          ready.collapsed.where(
+            (SpaceRelativePathValueObject closed) =>
+                folder == null || !_contains(closed, folder),
+          ),
+        ),
+        draft: NewEntryDraft(folder: folder, isFolder: isFolder),
+      );
+    }
+  }
+
+  /// The folder [document] is in; null at the root or with nothing open.
+  static SpaceRelativePathValueObject? _folderOf(
+    SpaceRelativePathValueObject? document,
+  ) {
+    final String? path = document?.value;
+    if (path == null || !path.contains('/')) {
+      return null;
+    }
+    return SpaceRelativePathValueObject(
+      path.substring(0, path.lastIndexOf('/')),
+    );
+  }
+
+  /// Whether [folder] is [ancestor] or somewhere inside it.
+  static bool _contains(
+    SpaceRelativePathValueObject ancestor,
+    SpaceRelativePathValueObject folder,
+  ) => folder == ancestor || folder.value.startsWith('${ancestor.value}/');
 
   /// Reads [space] and shows what it holds.
   Future<void> _load(SpaceEntity space) async {
@@ -80,13 +281,19 @@ class FileTreeNotifier extends _$FileTreeNotifier {
     if (!ref.mounted) {
       return;
     }
+    // A re-read keeps the folders the reader closed; a first read has none.
+    final Set<SpaceRelativePathValueObject> collapsed = switch (state) {
+      FileTreeReady(:final Set<SpaceRelativePathValueObject> collapsed) =>
+        collapsed,
+      _ => const <SpaceRelativePathValueObject>{},
+    };
     state = switch (listed) {
       Success<List<SpaceEntryValueObject>, AppFailure>(
         value: final List<SpaceEntryValueObject> entries,
       ) =>
         FileTreeState.ready(
           entries: List<SpaceEntryValueObject>.unmodifiable(entries),
-          collapsed: const <SpaceRelativePathValueObject>{},
+          collapsed: collapsed,
         ),
       Failure<List<SpaceEntryValueObject>, AppFailure>(
         failure: final AppFailure failure,
@@ -98,16 +305,12 @@ class FileTreeNotifier extends _$FileTreeNotifier {
   /// Closes [folder] if it is open, opens it if it is closed; nothing before
   /// the space has been read.
   void _toggle(SpaceRelativePathValueObject folder) {
-    if (state case FileTreeReady(
-      entries: final List<SpaceEntryValueObject> entries,
-      collapsed: final Set<SpaceRelativePathValueObject> collapsed,
-    )) {
-      final Set<SpaceRelativePathValueObject> next = collapsed.toSet();
+    if (state case final FileTreeReady ready) {
+      final Set<SpaceRelativePathValueObject> next = ready.collapsed.toSet();
       if (!next.remove(folder)) {
         next.add(folder);
       }
-      state = FileTreeState.ready(
-        entries: entries,
+      state = ready.copyWith(
         collapsed: Set<SpaceRelativePathValueObject>.unmodifiable(next),
       );
     }

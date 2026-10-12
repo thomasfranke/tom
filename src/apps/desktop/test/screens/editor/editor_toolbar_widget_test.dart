@@ -10,7 +10,26 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
+// What happens under the bar in preview — the source pane kept unseen, undo
+// through it — is `test/screens/shell/shell_region_widget_test.dart`'s.
 void main() {
+  test(
+    'the cell is the board’s 28 with its ink, on the same pitch as ever',
+    () {
+      // The cells touch, so the centres sit where the 24-cell, 4-gap bar put
+      // them: the x every board draws the buttons at.
+      expect(TomToolbarButtonWidget.size, 28);
+      expect(TomToolbarButtonWidget.glyphBox, 22);
+      expect(EditorToolbarWidget.between, 0);
+      final List<ToolbarEntry> first = EditorToolbarWidget.groups.first;
+      expect(EditorToolbarWidget.widthOfGroup(first), first.length * 28);
+      // First centre: inset 8 + 14 = 22, as 10 + 12 was.
+      expect(EditorToolbarWidget.inset + TomToolbarButtonWidget.size / 2, 22);
+      // Every group boundary moved by nothing: 6 + 1 + 3 = 10 = 8 + 1 + 5 - 4.
+      expect(EditorToolbarWidget.betweenGroups, 10);
+    },
+  );
+
   late _Documents documents;
   late _Preferences preferences;
   late ProviderContainer container;
@@ -46,6 +65,12 @@ void main() {
         ),
         saveDocumentProvider.overrideWithValue(
           SaveDocumentUseCase(
+            documentsFor: (SpaceEntity space) => documents,
+            observability: const _Silent(),
+          ),
+        ),
+        readPreferencesFileProvider.overrideWithValue(
+          ReadDocumentUseCase(
             documentsFor: (SpaceEntity space) => documents,
             observability: const _Silent(),
           ),
@@ -107,6 +132,22 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  /// The button whose tooltip is [word].
+  TomToolbarButtonWidget buttonFor(WidgetTester tester, String word) =>
+      tester.widget(
+        find
+            .ancestor(
+              of: find.byTooltip(word),
+              matching: find.byType(TomToolbarButtonWidget),
+            )
+            .first,
+      );
+
+  /// The fifteen formatting buttons, past undo and redo.
+  Iterable<TomToolbarButtonWidget> formatting(WidgetTester tester) => tester
+      .widgetList<TomToolbarButtonWidget>(find.byType(TomToolbarButtonWidget))
+      .skip(2);
 
   testWidgets('there is a button for everything the preview renders', (
     WidgetTester tester,
@@ -183,6 +224,28 @@ void main() {
     );
   });
 
+  testWidgets('the preferences file dims the fifteen formatting buttons', (
+    WidgetTester tester,
+  ) async {
+    // JSON takes no markdown (`preferences/where-it-is-stored/doc.md`).
+    documents.content = '{}\n';
+    await pumpBar(tester);
+    container
+        .read(spaceSessionProvider.notifier)
+        .openPreferencesFile(SpaceRelativePathValueObject('preferences.json'));
+    await tester.pumpAndSettle();
+    expect(container.read(editorProvider), isA<EditorReady>());
+
+    final Iterable<TomToolbarButtonWidget> buttons = tester
+        .widgetList<TomToolbarButtonWidget>(
+          find.byType(TomToolbarButtonWidget),
+        );
+    expect(buttons, hasLength(17));
+    for (final TomToolbarButtonWidget button in buttons.skip(2)) {
+      expect(button.onPressed, isNull, reason: button.tooltip);
+    }
+  });
+
   testWidgets('undo and redo answer to the history, not to the document', (
     WidgetTester tester,
   ) async {
@@ -232,16 +295,153 @@ void main() {
     }
   });
 
-  testWidgets('bold and italic are letters, because a letter is the icon', (
-    WidgetTester tester,
-  ) async {
-    documents.content = 'a\n';
+  group('a change that is not a document', () {
+    /// Mounts the bar with a reachable history over [state].
+    Future<void> pumpHolding(WidgetTester tester, EditorState state) async {
+      documents.content = 'a word here\n';
+      final EditorHistory history = EditorHistory();
+      addTearDown(history.dispose);
+      await pumpBar(tester, history: history);
+      history.offer(tester.element(find.byType(EditorToolbarWidget)));
+      container.read(editorProvider.notifier).state = state;
+      await tester.pumpAndSettle();
+    }
 
-    await pumpBar(tester);
+    testWidgets('a text file dims formatting and keeps undo and redo', (
+      WidgetTester tester,
+    ) async {
+      // Typed into and saved like any tab, but it takes no markdown.
+      await pumpHolding(
+        tester,
+        EditorState.ready(
+          saved: DocumentEntity(
+            path: SpaceRelativePathValueObject('mkdocs.yml'),
+            content: 'site_name: docs\n',
+          ),
+          source: 'site_name: docs\n',
+        ),
+      );
 
-    expect(find.text('B'), findsOneWidget);
-    expect(find.text('I'), findsOneWidget);
+      for (final TomToolbarButtonWidget button in formatting(tester)) {
+        expect(button.onPressed, isNull, reason: button.tooltip);
+      }
+      expect(buttonFor(tester, 'Undo').onPressed, isNotNull);
+      expect(buttonFor(tester, 'Redo').onPressed, isNotNull);
+    });
+
+    testWidgets('a deleted document dims all seventeen', (
+      WidgetTester tester,
+    ) async {
+      // Its last version is read-only: nothing to format, nothing to undo.
+      await pumpHolding(
+        tester,
+        EditorState.ready(
+          saved: DocumentEntity(path: writing, content: '# Writing\n'),
+          source: '# Writing\n',
+          isDeleted: true,
+        ),
+      );
+
+      for (final TomToolbarButtonWidget button
+          in tester.widgetList<TomToolbarButtonWidget>(
+            find.byType(TomToolbarButtonWidget),
+          )) {
+        expect(button.onPressed, isNull, reason: button.tooltip);
+      }
+    });
   });
+
+  group('the mode decides whether there is a caret to format at', () {
+    for (final DocumentModeEnum mode in <DocumentModeEnum>[
+      DocumentModeEnum.source,
+      DocumentModeEnum.split,
+    ]) {
+      testWidgets('in ${mode.name} the formatting buttons act', (
+        WidgetTester tester,
+      ) async {
+        documents.content = 'a word here\n';
+        await pumpBar(tester);
+        container.read(spaceSessionProvider.notifier).look(mode);
+        await tester.pumpAndSettle();
+
+        for (final TomToolbarButtonWidget button in formatting(tester)) {
+          expect(button.onPressed, isNotNull, reason: button.tooltip);
+        }
+      });
+    }
+
+    testWidgets('in preview the fifteen are dim, and undo and redo are not', (
+      WidgetTester tester,
+    ) async {
+      // No caret, so formatting has nothing to act on; the history acts on
+      // the buffer (`editor/formatting-shortcuts/doc.md`, last rule).
+      documents.content = 'a word here\n';
+      final EditorHistory history = EditorHistory();
+      addTearDown(history.dispose);
+      await pumpBar(tester, history: history);
+      history.offer(tester.element(find.byType(EditorToolbarWidget)));
+      container
+          .read(spaceSessionProvider.notifier)
+          .look(DocumentModeEnum.preview);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TomToolbarButtonWidget), findsNWidgets(17));
+      for (final TomToolbarButtonWidget button in formatting(tester)) {
+        expect(button.onPressed, isNull, reason: button.tooltip);
+      }
+      expect(buttonFor(tester, 'Undo').onPressed, isNotNull);
+      expect(buttonFor(tester, 'Redo').onPressed, isNotNull);
+    });
+
+    testWidgets('a version being read dims them too', (
+      WidgetTester tester,
+    ) async {
+      // The past is drawn as preview whatever the chosen mode.
+      documents.content = 'a word here\n';
+      await pumpBar(tester);
+      container
+          .read(spaceSessionProvider.notifier)
+          .read(
+            CommitEntity(
+              sha: CommitShaValueObject('a' * 40),
+              author: const AuthorValueObject(
+                name: 'Ana',
+                email: 'ana@example.com',
+              ),
+              date: CommitDateValueObject(
+                utc: DateTime.utc(2026, 10),
+                offset: Duration.zero,
+              ),
+              subject: 'Write the guide',
+              body: '',
+            ),
+          );
+      await tester.pumpAndSettle();
+
+      for (final TomToolbarButtonWidget button in formatting(tester)) {
+        expect(button.onPressed, isNull, reason: button.tooltip);
+      }
+    });
+  });
+
+  testWidgets(
+    'bold and italic are outlines of the same set as their neighbours',
+    (WidgetTester tester) async {
+      documents.content = 'a\n';
+
+      await pumpBar(tester);
+
+      final Iterable<TomGlyphEnum> drawn = tester
+          .widgetList<TomToolbarButtonWidget>(
+            find.byType(TomToolbarButtonWidget),
+          )
+          .map((TomToolbarButtonWidget it) => it.glyph);
+      expect(
+        drawn,
+        containsAll(<TomGlyphEnum>[TomGlyphEnum.bold, TomGlyphEnum.italic]),
+      );
+    },
+  );
 }
 
 /// A repository answering with whatever content the test set.
@@ -255,6 +455,13 @@ final class _Documents implements DocumentRepository {
   ) async => Success<DocumentEntity, DocumentFailure>(
     DocumentEntity(path: path, content: content),
   );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async {

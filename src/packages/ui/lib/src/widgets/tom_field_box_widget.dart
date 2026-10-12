@@ -20,8 +20,12 @@ class TomFieldBoxWidget extends StatelessWidget {
     required this.fill,
     required this.radius,
     this.isFocused = false,
+    this.isRefused = false,
     super.key,
   });
+
+  /// Whether what it holds was refused; outlined `removed`, focus or not.
+  final bool isRefused;
 
   /// What is inside: the field, and whatever sits beside it.
   final Widget child;
@@ -45,6 +49,7 @@ class TomFieldBoxWidget extends StatelessWidget {
       ..add(DoubleProperty('height', height))
       ..add(ColorProperty('fill', fill))
       ..add(DiagnosticsProperty<bool>('isFocused', isFocused))
+      ..add(DiagnosticsProperty<bool>('isRefused', isRefused))
       ..add(DoubleProperty('radius', radius));
   }
 
@@ -60,7 +65,13 @@ class TomFieldBoxWidget extends StatelessWidget {
           // A hairline either way: this is the column's small field, not the
           // 56-point `Text field`, so focus does not take that one's two
           // points — which at this height reads as an error.
-          border: Border.all(color: isFocused ? colors.accent : colors.border),
+          border: Border.all(
+            color: switch ((isRefused, isFocused)) {
+              (true, _) => colors.removed,
+              (false, true) => colors.accent,
+              (false, false) => colors.border,
+            },
+          ),
         ),
         child: child,
       ),

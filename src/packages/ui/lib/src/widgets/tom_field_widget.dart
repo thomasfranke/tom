@@ -18,9 +18,22 @@ class TomFieldWidget extends StatelessWidget {
     required this.fontSize,
     this.focusNode,
     this.onChanged,
+    this.onSubmit,
     this.pad = 12,
+    this.fontWeight = FontWeight.w400,
+    this.autofocus = false,
     super.key,
   });
+
+  /// Called on Enter. **The field keeps the keyboard**, so a refusal can be
+  /// corrected where it was typed.
+  final VoidCallback? onSubmit;
+
+  /// The weight of what is typed; the hint keeps the regular cut.
+  final FontWeight fontWeight;
+
+  /// Whether it takes the keyboard as soon as it is built.
+  final bool autofocus;
 
   /// What it holds, and who else can read it.
   final TextEditingController controller;
@@ -47,6 +60,9 @@ class TomFieldWidget extends StatelessWidget {
       ..add(StringProperty('hint', hint))
       ..add(DoubleProperty('fontSize', fontSize))
       ..add(DoubleProperty('pad', pad))
+      ..add(DiagnosticsProperty<FontWeight>('fontWeight', fontWeight))
+      ..add(DiagnosticsProperty<bool>('autofocus', autofocus))
+      ..add(ObjectFlagProperty<VoidCallback?>.has('onSubmit', onSubmit))
       ..add(
         DiagnosticsProperty<TextEditingController>('controller', controller),
       )
@@ -66,9 +82,16 @@ class TomFieldWidget extends StatelessWidget {
           controller: controller,
           focusNode: focusNode,
           onChanged: onChanged,
+          // Given, Flutter's own unfocus-on-done is replaced by it.
+          onEditingComplete: onSubmit,
+          autofocus: autofocus,
           cursorColor: colors.accent,
           cursorWidth: 1,
-          style: TextStyle(fontSize: fontSize, color: colors.textPrimary),
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: colors.textPrimary,
+          ),
           decoration: InputDecoration.collapsed(
             hintText: hint,
             hintStyle: TextStyle(fontSize: fontSize, color: colors.textMuted),

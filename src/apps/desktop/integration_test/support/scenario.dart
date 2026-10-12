@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'e2e_module_impl.dart';
 import 'evidence.dart';
 import 'fixture.dart';
 import 'robot.dart';
@@ -50,6 +51,9 @@ void scenario(
   required String describe,
   required List<Step> steps,
   String group = 'Home',
+  // Read from the source by the CLI, which lists the scenario under it and
+  // checks the file sits in the folder of that menu.
+  String? submenu,
 }) {
   // A real event loop: under `flutter test` alone the clock is fake, and real
   // file I/O and `Process.run` never complete.
@@ -75,6 +79,31 @@ void scenario(
     final File store = File(settingsPath);
     if (store.existsSync()) {
       store.deleteSync();
+    }
+    // And the addresses the last run "opened", for the same reason.
+    final File opened = File(E2eModuleImpl.openedPath(settingsPath));
+    if (opened.existsSync()) {
+      opened.deleteSync();
+    }
+    // And the folders it "revealed" and the terminals it "started".
+    final File asked = File(E2eModuleImpl.desktopAskedPath(settingsPath));
+    if (asked.existsSync()) {
+      asked.deleteSync();
+    }
+    // And what the save dialog was told to answer.
+    final File answer = File(E2eModuleImpl.saveAnswerPath(settingsPath));
+    if (answer.existsSync()) {
+      answer.deleteSync();
+    }
+    // And the record of the window having been closed.
+    final File closed = File(E2eModuleImpl.closedPath(settingsPath));
+    if (closed.existsSync()) {
+      closed.deleteSync();
+    }
+    // And the pull request the run's `gh` opened last time.
+    final Directory github = Directory(E2eModuleImpl.githubPath(settingsPath));
+    if (github.existsSync()) {
+      github.deleteSync(recursive: true);
     }
     final Evidence evidence = Evidence(name, group: group, tester: tester);
     final TomRobot robot = TomRobot(
@@ -121,6 +150,7 @@ void scenario(
     _report(<String, Object?>{
       'event': 'finished',
       'steps': steps.length,
+      'frames': evidence.written,
       'elapsedMs': watch.elapsedMilliseconds,
     });
   });

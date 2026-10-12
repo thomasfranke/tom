@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tom_ui/src/theme/tom_colors.dart';
 import 'package:tom_ui/src/theme/tom_metrics.dart';
+import 'package:tom_ui/src/widgets/tom_glyph_widget.dart';
 
 /// The `Checkbox` component as the boards draw it
 /// ([controls](../../../../../../docs/design/components/controls.md)).
@@ -36,7 +37,7 @@ class TomCheckWidget extends StatelessWidget {
   final Alignment alignment;
 
   /// The box itself.
-  static const double box = 15;
+  static const double box = 14;
 
   /// What can be clicked, centred on it: a fifteen-point target is a target
   /// somebody misses.
@@ -65,17 +66,21 @@ class TomCheckWidget extends StatelessWidget {
             dimension: box,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: isChecked ? colors.accent : colors.surfaceRaised,
+                color: isChecked ? colors.accent : null,
                 borderRadius: BorderRadius.circular(TomMetrics.radiusTight),
                 border: isChecked
                     ? null
                     : Border.all(color: colors.borderStrong),
               ),
               child: isChecked
-                  ? Icon(
-                      Icons.check,
-                      size: box - 3,
-                      color: colors.surfaceRaised,
+                  ? Center(
+                      child: TomGlyphWidget(
+                        glyph: TomGlyphEnum.check,
+                        // The solid face's tick fills its box edge to edge,
+                        // so it is set well inside the square.
+                        size: box * 0.625,
+                        color: colors.surfaceRaised,
+                      ),
                     )
                   : null,
             ),

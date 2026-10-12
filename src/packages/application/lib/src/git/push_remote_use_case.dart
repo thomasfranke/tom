@@ -21,6 +21,28 @@ final class PushRemoteUseCase with UseCase {
   final Observability observability;
 
   /// Publishes [space]'s current branch.
-  Future<Result<void, AppFailure>> push(SpaceEntity space) =>
-      guard(() => gitFor(space).push());
+  ///
+  /// **A branch that tracks nothing is published to `origin` and tracked
+  /// from then on**, read from the status first: a plain push of a new
+  /// branch is refused by a default git, and somebody who made the branch
+  /// here has no terminal to set its upstream from.
+  Future<Result<void, AppFailure>> push(SpaceEntity space) => guard(() async {
+    final GitRepository git = gitFor(space);
+    final Result<GitStatusValueObject, GitFailure> reading = await git.status();
+    return switch (reading) {
+      Failure<GitStatusValueObject, GitFailure>(
+        failure: final GitFailure failure,
+      ) =>
+        Failure<void, GitFailure>(failure),
+      Success<GitStatusValueObject, GitFailure>(
+        value: GitStatusValueObject(
+          upstream: null,
+          branch: final BranchNameValueObject branch,
+        ),
+      ) =>
+        await git.publish(branch),
+      // Tracked, or detached — which a plain push refuses in git's words.
+      Success<GitStatusValueObject, GitFailure>() => await git.push(),
+    };
+  });
 }

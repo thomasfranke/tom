@@ -8,7 +8,7 @@ part of 'workspace_notifier.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The two column toggles at the right of the top bar, and the right
+/// The three panel toggles at the right of the top bar, and the right
 /// column's switch (`docs/product/workspace/columns/doc.md`).
 ///
 /// Kept alive because the columns are read above the shell: a provider
@@ -18,7 +18,7 @@ part of 'workspace_notifier.dart';
 @ProviderFor(WorkspaceNotifier)
 final workspaceProvider = WorkspaceNotifierProvider._();
 
-/// The two column toggles at the right of the top bar, and the right
+/// The three panel toggles at the right of the top bar, and the right
 /// column's switch (`docs/product/workspace/columns/doc.md`).
 ///
 /// Kept alive because the columns are read above the shell: a provider
@@ -26,7 +26,7 @@ final workspaceProvider = WorkspaceNotifierProvider._();
 /// the choice would go with it.
 final class WorkspaceNotifierProvider
     extends $NotifierProvider<WorkspaceNotifier, WorkspaceState> {
-  /// The two column toggles at the right of the top bar, and the right
+  /// The three panel toggles at the right of the top bar, and the right
   /// column's switch (`docs/product/workspace/columns/doc.md`).
   ///
   /// Kept alive because the columns are read above the shell: a provider
@@ -59,9 +59,9 @@ final class WorkspaceNotifierProvider
   }
 }
 
-String _$workspaceNotifierHash() => r'9bf0cae48fb4079f9c15a296fe16b98024769ac0';
+String _$workspaceNotifierHash() => r'a9c0bcfdb552b37d2c5e8654fda00390b8626b77';
 
-/// The two column toggles at the right of the top bar, and the right
+/// The three panel toggles at the right of the top bar, and the right
 /// column's switch (`docs/product/workspace/columns/doc.md`).
 ///
 /// Kept alive because the columns are read above the shell: a provider

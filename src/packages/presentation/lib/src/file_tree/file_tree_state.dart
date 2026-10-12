@@ -30,6 +30,10 @@ sealed class FileTreeState with _$FileTreeState {
     /// The folders the user has closed — closed rather than open, so a
     /// space opens showing what it holds.
     required Set<SpaceRelativePathValueObject> collapsed,
+
+    /// A document or folder being named in the tree, or null when none is
+    /// (`docs/product/navigation/file-tree/new-document/doc.md`).
+    NewEntryDraft? draft,
   }) = FileTreeReady;
 
   /// The space's folder could not be read at all; a folder inside it that
@@ -37,8 +41,51 @@ sealed class FileTreeState with _$FileTreeState {
   const factory FileTreeState.failed(AppFailure failure) = FileTreeFailed;
 }
 
+/// A new entry's name, asked for in the tree rather than in a dialog.
+@freezed
+abstract class NewEntryDraft with _$NewEntryDraft {
+  /// Creates the draft for an entry inside [folder].
+  const factory NewEntryDraft({
+    /// The folder the entry goes into; null for the space's root.
+    SpaceRelativePathValueObject? folder,
+
+    /// Whether a folder is being named — the menu's `New folder` — rather
+    /// than a document.
+    @Default(false) bool isFolder,
+
+    /// Why the last name typed was refused, or null before one was.
+    ///
+    /// Kept on the draft so the row stays where it is and says so in place.
+    AppFailure? refused,
+  }) = _NewEntryDraft;
+}
+
 /// What the panel draws: the entries minus what a closed folder hides.
 extension FileTreeRows on FileTreeReady {
+  /// Where the draft's row goes among [rows]: under its folder's row, before
+  /// whatever the folder already holds — or first, at the root. Null with no
+  /// draft.
+  int? get draftIndex {
+    final NewEntryDraft? asked = draft;
+    if (asked == null) {
+      return null;
+    }
+    final SpaceRelativePathValueObject? folder = asked.folder;
+    if (folder == null) {
+      return 0;
+    }
+    final int at = rows.indexWhere(
+      (FileTreeRow row) => row.entry.path == folder,
+    );
+    return at < 0 ? 0 : at + 1;
+  }
+
+  /// How deep the draft's row sits, which is one below its folder.
+  int get draftDepth {
+    final SpaceRelativePathValueObject? folder = draft?.folder;
+    return folder == null ? 0 : '/'.allMatches(folder.value).length + 1;
+  }
+
   /// The visible rows, with what git says about each.
   ///
   /// The marks are derived here rather than stored, because what git said

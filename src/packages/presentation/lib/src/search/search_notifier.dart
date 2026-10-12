@@ -248,6 +248,30 @@ class SearchNotifier extends _$SearchNotifier {
   void open(SearchHitValueObject hit) =>
       ref.read(spaceSessionProvider.notifier).show(hit.path);
 
+  /// Reads the folder into the index again, for when it changed under the
+  /// app — the tree's `Reload` (`docs/product/navigation/file-tree/doc.md`).
+  ///
+  /// What is typed and the scope stay: only the answer is asked again.
+  Future<void> reindex() async {
+    final SpaceEntity? space = ref.read(spaceSessionProvider)?.space;
+    if (space == null || state is SearchIdle) {
+      return;
+    }
+    final Result<void, AppFailure> indexed = await indexSpace.index(space);
+    if (!ref.mounted) {
+      return;
+    }
+    switch (indexed) {
+      case Success<void, AppFailure>():
+        if (state is! SearchReady) {
+          state = SearchState.ready(terms: state.terms);
+        }
+        await _search(state.terms);
+      case Failure<void, AppFailure>(failure: final AppFailure failure):
+        state = SearchState.failed(failure, terms: state.terms);
+    }
+  }
+
   /// Reads every document of [space] into a fresh index.
   Future<void> _index(SpaceEntity space) async {
     final Result<void, AppFailure> indexed = await indexSpace.index(space);
@@ -317,6 +341,14 @@ class SearchNotifier extends _$SearchNotifier {
 
   /// The document the editor last read or wrote, or null when none is open.
   static DocumentEntity? _savedOf(EditorState state) => switch (state) {
+    // A pull request draft is not in the space, so it is not in its index;
+    // nor is the preferences file, a changed file outside the space, a file
+    // that is not markdown, or a deleted document's last version.
+    EditorReady(isDraft: true) ||
+    EditorReady(isPreferences: true) ||
+    EditorReady(isOutside: true) ||
+    EditorReady(isDeleted: true) ||
+    EditorReady(isRendered: false) => null,
     EditorReady(saved: final DocumentEntity document) => document,
     _ => null,
   };

@@ -8,18 +8,21 @@ per-block selection. Rendering the document as one opaque widget tree would make
 the rendered diff impossible to express, and would have to be undone at M2.
 
 - Inline markdown *inside* a block is delegated to the `markdown` package, where CommonMark's real complexity lives. The app owns block-level layout only.
+- **The parser takes a long run of letters and digits in 200-character chunks** (`_LongRun`, ahead of the package's `TextSyntax`, which backtracks over the whole run from every position) — a run with no space parses in constant steps per chunk; an e-mail or `www` start inside a run that long is split.
+- **Line endings are normalised before the parse** (`\r\n` to `\n`), and the block reader and the line differ strip the carriage return from what they compare — a document with Windows endings has the blocks of its LF twin; `DocumentEntity.content` itself is never rewritten.
 - A document that matches its base is drawn as a document. When a diff arrives, the column is the **diff's** sequence rather than the document's, because a removed block is in no file on disk and has to be drawn where it used to be.
 - The preview renders the buffer, then asks what changed against its base and says so on the state it has already published — so the document is on screen while the comparison, a git process, is still being made.
 
 ## What the base is, is the session's answer
 
-`HEAD` unless somebody chose a branch or a commit
-([the product rule](../../product/diff/branch-diff/doc.md); the type is
-[`RevisionValueObject`](../domain/git.md)), and nothing at all for a version
-opened from the history that nobody asked to compare.
+Where the checked-out branch left the one it came from, or `HEAD` on that
+branch itself ([the product rule](../../product/diff/branch-diff/doc.md); the
+type is [`DiffBaseValueObject`](../domain/git.md)), and nothing at all for a
+version opened from the history. The document is read at the fork point; the
+bar names the branch.
 
+- `DiffBaseNotifier` writes it from the session's git reading — so a switch made in a terminal is followed like one made here. Another branch is read whole; any other reading only asks the fork point again, which a merge or a pull can move. It is kept alive and made to exist by the shell, beside `GitReadingNotifier`, whose reading it follows.
 - The preview **listens** to that answer rather than watching it: another base is the same text with other marks, so nothing is parsed again and the pane is never sent back to "reading it".
-- What offers the choice reads no git of its own — the branches are the switcher's reading, the commits the history panel's, which is what keeps one answer to "which revisions are there".
 
 ## Document-scope constructs, measured
 

@@ -1,4 +1,4 @@
-// `tom setup`, `tom clean` and `tom fvm` — the workspace itself, rather than
+// `cli setup`, `cli clean` and `cli fvm` — the workspace itself, rather than
 // the code in it.
 library;
 
@@ -17,7 +17,7 @@ Future<int> runSetup() async {
 /// Clears build artifacts from [targets], then resolves again.
 ///
 /// All eight by default, because a pure Dart layer's `.dart_tool` is the
-/// cache `tom codegen hard` does not clear. `flutter clean` rather than a
+/// cache `cli codegen hard` does not clear. `flutter clean` rather than a
 /// delete, since it leaves the root's `package_config.json` for [runSetup];
 /// `coverage/` stays because the gate reuses it; and the resolve is not
 /// optional, since without it the workspace cannot build.
@@ -35,12 +35,12 @@ Future<int> runClean({List<String> targets = allTargets}) async {
 }
 
 /// Pins the Flutter version this workspace is built against, taken from
-/// [fvmrcPath] rather than passed in: CI, VS Code, `tom doctor` and `tom
+/// [fvmrcPath] rather than passed in: CI, VS Code, `cli doctor` and `cli
 /// updates` all read that file.
 Future<int> runFvm() async {
   final version = pinnedFlutterVersion();
   if (version == null) {
-    stderr.writeln('tom: could not read the Flutter version from $fvmrcPath');
+    stderr.writeln('cli: could not read the Flutter version from $fvmrcPath');
     return 66; // EX_NOINPUT
   }
 

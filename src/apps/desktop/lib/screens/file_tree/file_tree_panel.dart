@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tom_desktop/screens/file_tree/file_tree_design.dart';
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_body_widget.dart';
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_caption_widget.dart';
+import 'package:tom_desktop/screens/pull_request/pull_request_row_widget.dart';
 import 'package:tom_desktop/screens/search/search_boxes.dart';
 import 'package:tom_desktop/screens/search/search_design.dart';
 import 'package:tom_desktop/screens/search/search_occurrences_panel.dart';
@@ -88,8 +89,23 @@ class FileTreePanel extends ConsumerWidget {
         // Three bodies, one column: the tree when nothing is asked, and one
         // answer per scope when something is.
         Expanded(
-          child: switch ((searching, scope)) {
-            (false, _) => FileTreeBodyWidget(state: state, changes: changes),
+          // `This file` answers even with an empty box: its column says to
+          // type (`docs/product/search/in-the-document/doc.md`).
+          child: switch ((
+            searching || scope == SearchScopeEnum.thisFile,
+            scope,
+          )) {
+            // The pull request sits at the top of the tree, never of the
+            // results (`git-workflow/pull-request/the-control/doc.md`).
+            (false, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                const PullRequestRowWidget(),
+                Expanded(
+                  child: FileTreeBodyWidget(state: state, changes: changes),
+                ),
+              ],
+            ),
             (true, SearchScopeEnum.thisFile) => const SearchOccurrencesPanel(),
             (true, SearchScopeEnum.wholeSpace) => const SearchResultsPanel(),
           },

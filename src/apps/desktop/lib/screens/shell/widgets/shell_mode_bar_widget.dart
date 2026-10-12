@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/compare/compare_control_widget.dart';
 import 'package:tom_desktop/screens/compare/compare_design.dart';
 import 'package:tom_desktop/screens/editor/editor_toolbar_widget.dart';
@@ -15,11 +16,12 @@ import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
-/// Source · Split · Preview, and whether the buffer has reached the disk.
+/// The row above the document: the formatting tools, whether the buffer has
+/// reached the disk, and the `Diff` chip.
 ///
-/// Chrome, not a panel: it decides which panels the document region draws
-/// and still names none, because what it writes is the mode and the
-/// descriptor says which panels that includes.
+/// Chrome, not a panel. The modes it used to carry are the top bar's now
+/// ([ShellModeControlWidget]); what is left is anchored to the pane at both
+/// ends, because every one of it is about the document under it.
 class ShellModeBarWidget extends ConsumerWidget {
   /// Creates the bar, inset by the columns beside it.
   const ShellModeBarWidget({
@@ -39,35 +41,25 @@ class ShellModeBarWidget extends ConsumerWidget {
   final double rightInset;
 
   /// Left edge to the first thing in the bar, and the gap between two of them.
-  static const double _inset = 28;
-  static const double _gap = 32;
+  static const double _inset = 16;
+  static const double _gap = 16;
 
-  /// The mode control to the `Diff` chip, which `screens/measurements.md`
-  /// fixes at 24 with the chip 9 from the document's right edge.
-  static const double _chipGap = 24;
-
-  /// The chip's right edge to the document container's.
+  /// The chip's right edge to the document island's.
   ///
-  /// Nine, not the window's padding: both ends of this row are measured from
-  /// the pane, so they travel when a column opens
-  /// (`docs/design/screens/measurements.md`).
-  static const double _chipInset = 9;
+  /// Measured from the pane, not the window: both ends of this row travel
+  /// when a column opens (`docs/design/screens/measurements.md`).
+  static const double _chipInset = 12;
 
   /// The dot that says the buffer and the file disagree.
   static const double _dot = 8;
 
   /// What the row keeps for itself at the right, whatever is in it.
   ///
-  /// The two gaps, the modes, the chip and its inset — the **chip's own
-  /// label is not in it**, because what the tools are given must not change
-  /// when somebody picks a branch to compare against.
+  /// The two gaps, the chip and its inset — the **chip's own label is not in
+  /// it**, because what the tools are given must not change when a switch
+  /// brings a base to name.
   static const double _rightMinimum =
-      _gap +
-      _gap +
-      ShellModeControlWidget.trackWidth +
-      _chipGap +
-      CompareDesign.chipWidth +
-      _chipInset;
+      _gap + _gap + CompareDesign.chipWidth + _chipInset;
 
   /// What the tools are given, which is never more than they need.
   ///
@@ -78,6 +70,11 @@ class ShellModeBarWidget extends ConsumerWidget {
     0,
     math.min(EditorToolbarWidget.widthOfAll, row - _rightMinimum - _dot),
   );
+
+  /// What is left for the base's name beside the chip: the row less the
+  /// tools, the fixed right group and the unsaved dot.
+  static double _labelRoom(double row) =>
+      row - _toolsRoom(row) - _rightMinimum - _dot;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -97,26 +94,24 @@ class ShellModeBarWidget extends ConsumerWidget {
     if (reading != null) {
       return _VersionBarWidget(commit: reading);
     }
-    // A sunken strip, not the page: every board draws the row above the
-    // document `surface_sunken` over the document container's width, which
-    // is what makes the toolbar's raised tiles read as buttons.
+    // On the island itself: the 1b toolbar is flat glyphs, and a hairline
+    // under the row is all that separates it from the document.
     return _StripWidget(
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints row) => Row(
           children: <Widget>[
             // **Measured, not flexed.** The tools' shape must not answer to
-            // what shares the row with them: an `Unsaved` that appeared on
-            // the first keystroke was taking seventy points off the bar and
-            // collapsing a whole group with it
+            // what shares the row with them: a word that appeared beside
+            // them was taking seventy points off the bar and collapsing a
+            // whole group with it
             // (`docs/product/editor/formatting-shortcuts/doc.md`).
             SizedBox(
               width: _toolsRoom(row.maxWidth),
               child: const EditorToolbarWidget(),
             ),
             const SizedBox(width: _gap),
-            // Between the two ends rather than at the right: the boards put
-            // this on the tab, and there are no tabs yet — at the right it
-            // would take the chip off the pane's edge.
+            // Between the two ends rather than at the right, where it would
+            // take the chip off the pane's edge.
             //
             // **The slack lives here**, which is what keeps the right group
             // flush right, lets the word go when the row is short, and
@@ -131,13 +126,12 @@ class ShellModeBarWidget extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: _gap),
-            // **Both ends are anchored to the pane, not to the window.** The
-            // modes used to be centred on the window; a centred control in a
-            // full row is one the buttons run into
-            // (`docs/product/workspace/columns/doc.md`).
-            const ShellModeControlWidget(),
-            const SizedBox(width: _chipGap),
-            const CompareControlWidget(),
+            // **Both ends are anchored to the pane, not to the window**: the
+            // tools at its left edge, the chip at its right. The modes left
+            // this row for the top bar (`docs/product/workspace/columns/doc.md`).
+            // The base's name gets what the row has left, so it ends in an
+            // ellipsis instead of pushing the row off the island.
+            CompareControlWidget(labelRoom: _labelRoom(row.maxWidth)),
             const SizedBox(width: _chipInset),
           ],
         ),
@@ -146,7 +140,7 @@ class ShellModeBarWidget extends ConsumerWidget {
   }
 }
 
-/// The row's own surface: sunken, the document area's width, 36 tall.
+/// The row's own surface: the island's, the document area's width, 36 tall.
 class _StripWidget extends StatelessWidget {
   const _StripWidget({required this.child});
 
@@ -155,7 +149,7 @@ class _StripWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox(
     height: TomMetrics.modeBar,
-    child: ColoredBox(color: TomColors.of(context).surfaceSunken, child: child),
+    child: ColoredBox(color: TomColors.of(context).surfaceRaised, child: child),
   );
 }
 
@@ -184,10 +178,11 @@ class _VersionBarWidget extends ConsumerWidget {
           const SizedBox(width: ShellModeBarWidget._inset),
           Expanded(
             child: Text(
-              'Reading '
-              '${commit.sha.short} · '
-              '${commit.author.name} · '
-              '${whenInWords(commit.date)}',
+              context.l10n.shellReadingVersion(
+                commit.sha.short,
+                commit.author.name,
+                whenInWords(context.l10n, commit.date),
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -198,9 +193,11 @@ class _VersionBarWidget extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: ShellModeBarWidget._gap),
-          // Offered over a version too: comparing two commits is the same
-          // question asked from the past (`docs/product/diff/branch-diff/doc.md`).
-          const CompareControlWidget(),
+          // The chip stays, because it is the space's switch and the boards
+          // draw it here; the base is not named, because a version is the
+          // past and is compared against nothing
+          // (`docs/product/diff/rendered-diff/what-is-compared/doc.md`).
+          const CompareControlWidget(labelRoom: 0),
           const SizedBox(width: ShellModeBarWidget._gap),
           TextButton(
             onPressed: () => ref.read(historyProvider.notifier).closeVersion(),
@@ -211,7 +208,7 @@ class _VersionBarWidget extends ConsumerWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            child: const Text('Back to now'),
+            child: Text(context.l10n.shellBackToNow),
           ),
           const SizedBox(width: TomMetrics.pad),
         ],
@@ -220,29 +217,26 @@ class _VersionBarWidget extends ConsumerWidget {
   }
 }
 
-/// The gap between the buffer and the file, named where the editing happens.
+/// A save that was refused, named where the editing happens.
 ///
-/// Absent while the two agree, because a mark always there is never read.
+/// Nothing for an edit that is only unwritten: the tab's dot says that, and
+/// a refusal is the one thing a dot cannot say
+/// (`docs/product/editor/source-mode/doc.md`).
 class _UnsavedMarkWidget extends ConsumerWidget {
   const _UnsavedMarkWidget();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ({bool isDirty, bool refused}) mark = ref.watch(
+    final bool refused = ref.watch(
       editorProvider.select(
-        (EditorState state) => (
-          isDirty: state.isDirty,
-          refused: state is EditorReady && state.saveFailure != null,
-        ),
+        (EditorState state) =>
+            state is EditorReady && state.saveFailure != null,
       ),
     );
-    if (!mark.isDirty && !mark.refused) {
+    if (!refused) {
       return const SizedBox.shrink();
     }
-    final TomColors colors = TomColors.of(context);
-    // A refused save is different news from an unwritten edit: the first
-    // needs doing something about.
-    final Color colour = mark.refused ? colors.removed : colors.modified;
+    final Color colour = TomColors.of(context).removed;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -254,11 +248,10 @@ class _UnsavedMarkWidget extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 8),
-        // The word is what goes first when the row is short: the dot is the
-        // mark and the status bar already says it in full.
+        // The word is what goes first when the row is short.
         Flexible(
           child: Text(
-            mark.refused ? 'Not saved' : 'Unsaved',
+            context.l10n.shellNotSaved,
             maxLines: 1,
             overflow: TextOverflow.clip,
             softWrap: false,

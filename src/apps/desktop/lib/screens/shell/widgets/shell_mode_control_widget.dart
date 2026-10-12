@@ -4,6 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
 
@@ -12,7 +13,7 @@ import 'package:tom_ui/tom_ui.dart';
 /// A `Segmented · 3` from the library
 /// (`docs/design/components/controls.md`): a sunken track with the chosen
 /// segment raised out of it. Every number here is measured off
-/// `design/screens/desktop/workspace/shell-dark.svg`.
+/// `design/screens/desktop/workspace-shell/shell-dark.svg`.
 class ShellModeControlWidget extends ConsumerWidget {
   /// Creates the control.
   const ShellModeControlWidget({super.key});
@@ -41,22 +42,42 @@ class ShellModeControlWidget extends ConsumerWidget {
     final DocumentModeEnum mode =
         ref.watch(
           spaceSessionProvider.select(
-            (SpaceSessionState? session) => session?.mode,
+            (SpaceSessionState? session) => session?.drawnMode,
           ),
         ) ??
         DocumentModeEnum.split;
+    // A file that is not markdown has no page to render, so the two modes
+    // that render are drawn unavailable while it is on screen; a binary file
+    // has no text either, so no mode is chosen and none is offered
+    // (`docs/product/git-workflow/commit/opening-a-change/doc.md`).
+    final bool sourceOnly = ref.watch(
+      spaceSessionProvider.select(
+        (SpaceSessionState? session) => session?.isSourceOnly ?? false,
+      ),
+    );
+    final bool binary = ref.watch(
+      editorProvider.select(
+        (EditorState editor) => editor is EditorReady && editor.isBinary,
+      ),
+    );
     return SizedBox(
       width: trackWidth,
       height: trackHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: colors.surfaceSunken,
+          border: Border.all(color: colors.border),
           borderRadius: BorderRadius.circular(trackRadius),
         ),
         child: Row(
           children: <Widget>[
             for (final DocumentModeEnum each in DocumentModeEnum.values)
-              _SegmentWidget(mode: each, isChosen: each == mode),
+              _SegmentWidget(
+                mode: each,
+                isChosen: !binary && each == mode,
+                isAvailable:
+                    !binary && (!sourceOnly || each == DocumentModeEnum.source),
+              ),
           ],
         ),
       ),
@@ -66,17 +87,23 @@ class ShellModeControlWidget extends ConsumerWidget {
 
 /// One of the three, raised when it is the mode the window is in.
 class _SegmentWidget extends ConsumerWidget {
-  const _SegmentWidget({required this.mode, required this.isChosen});
+  const _SegmentWidget({
+    required this.mode,
+    required this.isChosen,
+    required this.isAvailable,
+  });
 
   final DocumentModeEnum mode;
   final bool isChosen;
+  final bool isAvailable;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
       ..add(EnumProperty<DocumentModeEnum>('mode', mode))
-      ..add(DiagnosticsProperty<bool>('isChosen', isChosen));
+      ..add(DiagnosticsProperty<bool>('isChosen', isChosen))
+      ..add(DiagnosticsProperty<bool>('isAvailable', isAvailable));
   }
 
   @override
@@ -88,8 +115,11 @@ class _SegmentWidget extends ConsumerWidget {
       child: Semantics(
         button: true,
         selected: isChosen,
+        enabled: isAvailable,
         child: InkWell(
-          onTap: () => ref.read(spaceSessionProvider.notifier).look(mode),
+          onTap: isAvailable
+              ? () => ref.read(spaceSessionProvider.notifier).look(mode)
+              : null,
           borderRadius: BorderRadius.circular(
             ShellModeControlWidget.tileRadius,
           ),
@@ -97,19 +127,25 @@ class _SegmentWidget extends ConsumerWidget {
             padding: const EdgeInsets.all(ShellModeControlWidget.tileInset),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: isChosen ? colors.surfaceRaised : Colors.transparent,
+                color: isChosen ? colors.control : Colors.transparent,
                 borderRadius: BorderRadius.circular(
                   ShellModeControlWidget.tileRadius,
                 ),
               ),
               child: Center(
                 child: Text(
-                  _labels[mode]!,
+                  _labelOf(context.l10n, mode),
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     height: 1.4,
-                    fontWeight: isChosen ? FontWeight.w600 : FontWeight.w400,
-                    color: isChosen ? colors.textPrimary : colors.textSecondary,
+                    fontWeight: isChosen
+                        ? TomFonts.segmentChosen
+                        : TomFonts.segmentRest,
+                    color: isChosen
+                        ? colors.textPrimary
+                        : isAvailable
+                        ? colors.textSecondary
+                        : colors.textMuted,
                   ),
                 ),
               ),
@@ -122,8 +158,8 @@ class _SegmentWidget extends ConsumerWidget {
 }
 
 /// What each mode is called on screen.
-const Map<DocumentModeEnum, String> _labels = <DocumentModeEnum, String>{
-  DocumentModeEnum.source: 'Source',
-  DocumentModeEnum.split: 'Split',
-  DocumentModeEnum.preview: 'Preview',
+String _labelOf(AppLocalizations l10n, DocumentModeEnum mode) => switch (mode) {
+  DocumentModeEnum.source => l10n.modeSource,
+  DocumentModeEnum.split => l10n.modeSplit,
+  DocumentModeEnum.preview => l10n.modePreview,
 };

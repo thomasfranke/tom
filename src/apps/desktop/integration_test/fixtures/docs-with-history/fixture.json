@@ -27,6 +27,24 @@
       "write": {
         "docs/index.md": "# Documentation\n\nThe index, as the working copy has it.\n"
       }
+    },
+    {
+      "message": "docs: write the overview",
+      "write": {
+        "docs/overview.md": "# Overview\n\nA page that will be renamed, so its history must go on under the new name.\nIt has two lines, which is plenty for git to know it again.\n"
+      }
+    },
+    {
+      "message": "docs: rename the overview to the summary",
+      "rename": {
+        "docs/overview.md": "docs/summary.md"
+      }
+    },
+    {
+      "message": "docs: extend the summary",
+      "write": {
+        "docs/summary.md": "# Overview\n\nA page that will be renamed, so its history must go on under the new name.\nIt has two lines, which is plenty for git to know it again.\n\nAnd a third paragraph, written after the rename.\n"
+      }
     }
   ]
 }

@@ -1,0 +1,12 @@
+# The interface's words: English is the template every key is written in
+# first, and each other language is one ARB file beside it (Decision 34).
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-dir: lib/l10n/generated
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+# English first, so a machine speaking neither language falls back to it.
+preferred-supported-locales: [en]
+# The keys a translation is still missing, listed rather than left to fall
+# back to English unseen.
+untranslated-messages-file: build/untranslated-messages.json

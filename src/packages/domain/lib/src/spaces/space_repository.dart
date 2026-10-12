@@ -2,6 +2,7 @@
 library;
 
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_domain/src/paths/space_relative_path_value_object.dart';
 import 'package:tom_domain/src/spaces/space_entity.dart';
 import 'package:tom_domain/src/spaces/space_entry_value_object.dart';
 import 'package:tom_domain/src/spaces/space_failure.dart';
@@ -16,11 +17,11 @@ abstract interface class SpaceRepository {
   /// Opens [folder] as a space, finding the repository that encloses it
   /// (`docs/product/home/opening-a-space/doc.md`).
   ///
+  /// A folder nothing encloses opens with no `repositoryRoot`, never as a
+  /// failure (`docs/product/workspace/without-a-repository/doc.md`).
   /// `SpaceFolderMissing` when nothing is at [folder], which Home offers to
-  /// forget; `GitNotARepository` when nothing encloses it, which is explained
-  /// and never worked around, since **TOM does not create a repository on
-  /// the user's behalf**. [AppFailure] because opening asks the disk *and*
-  /// git, and Home switches over both vocabularies.
+  /// forget. [AppFailure] because opening asks the disk *and* git, and Home
+  /// switches over both vocabularies.
   Future<Result<SpaceEntity, AppFailure>> open(String folder);
 
   /// Everything [space] holds, depth first and **folders before files at
@@ -35,5 +36,15 @@ abstract interface class SpaceRepository {
   /// `SpaceEntryValueObject.isDocument` answers what the editor opens.
   Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
     SpaceEntity space,
+  );
+
+  /// Makes an empty folder at [path] inside [space]
+  /// (`docs/product/navigation/file-tree/explorer-menu/doc.md`).
+  ///
+  /// `SpaceEntryExists` when anything already has that name: a folder is
+  /// never reused, and a file is never shadowed.
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
   );
 }

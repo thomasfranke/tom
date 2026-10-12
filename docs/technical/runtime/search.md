@@ -12,9 +12,10 @@ also the runtime form of the project's own rule that files are the truth
 It is taken literally: the table lives **in memory**, one per open space, and
 is filled when the space opens. A copy on disk would be written and never
 read, since the rebuild happens anyway — and a database that does not outlive
-the session cannot go stale, cannot be half-written and has no schema to
-migrate. What it costs is the reading of every document once per session,
+the session cannot go stale and has no schema to migrate. What it costs is the reading of every document once per session,
 which is the same walk the file tree already does.
+
+- **A refill and a single filing each run in one transaction** (`replaceAll`, `put`: `BEGIN … COMMIT`, rolled back on any failure), so a write that fails part of the way leaves the index as it was, never half of the space.
 
 Between rebuilds only one thing keeps it current: a document saved in TOM is
 filed again under its own path. Nothing watches the folder ([Decision

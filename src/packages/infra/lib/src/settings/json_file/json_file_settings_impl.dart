@@ -29,17 +29,11 @@ final class JsonFileSettingsImpl implements Settings {
   final String path;
 
   @override
-  Future<Result<String?, SettingsFailure>> read(String key) async =>
-      (await _load()).map((Map<String, Object?> all) {
-        // Anything but a string was not written by this store and counts as
-        // nothing stored; a cast would throw out of a contract that promises
-        // not to.
-        final Object? stored = all[key];
-        return stored is String ? stored : null;
-      });
+  Future<Result<Object?, SettingsFailure>> read(String key) async =>
+      (await _load()).map((Map<String, Object?>? all) => all?[key]);
 
   @override
-  Future<Result<void, SettingsFailure>> write(String key, String value) =>
+  Future<Result<void, SettingsFailure>> write(String key, Object? value) =>
       _mutate((Map<String, Object?> all) => all[key] = value);
 
   @override
@@ -47,29 +41,46 @@ final class JsonFileSettingsImpl implements Settings {
       _mutate((Map<String, Object?> all) => all.remove(key));
 
   /// Applies [change] to the stored object and writes it back.
+  ///
+  /// **A file that is not a JSON object is never written over**: it can be
+  /// opened and saved by hand, so what is in it is somebody's typing, and
+  /// the next write of an unrelated key must not delete it. The write fails
+  /// instead, which costs a choice between runs and never the text.
   Future<Result<void, SettingsFailure>> _mutate(
     void Function(Map<String, Object?>) change,
   ) async {
-    final Result<Map<String, Object?>, SettingsFailure> stored = await _load();
-    if (stored case Failure<Map<String, Object?>, SettingsFailure>(
-      failure: final SettingsFailure failure,
-    )) {
-      return Failure<void, SettingsFailure>(failure);
+    final Result<Map<String, Object?>?, SettingsFailure> stored = await _load();
+    final Map<String, Object?>? all;
+    switch (stored) {
+      case Failure<Map<String, Object?>?, SettingsFailure>(
+        failure: final SettingsFailure failure,
+      ):
+        return Failure<void, SettingsFailure>(failure);
+      case Success<Map<String, Object?>?, SettingsFailure>(
+        value: final Map<String, Object?>? value,
+      ):
+        all = value;
     }
-    final Map<String, Object?> all =
-        (stored as Success<Map<String, Object?>, SettingsFailure>).value;
+    if (all == null) {
+      return Failure<void, SettingsFailure>(
+        SettingsUnavailable('$path is not a JSON object; it is left as it is'),
+      );
+    }
     change(all);
-    return filesystem
-        .writeFile(path, const JsonEncoder.withIndent('  ').convert(all))
-        .mapFailure(_asSettingsFailure);
+    final String text;
+    try {
+      text = const JsonEncoder.withIndent('  ').convert(all);
+    } on JsonUnsupportedObjectError catch (error) {
+      return Failure<void, SettingsFailure>(
+        SettingsUnavailable('not a JSON value: ${error.unsupportedObject}'),
+      );
+    }
+    return filesystem.writeFile(path, text).mapFailure(_asSettingsFailure);
   }
 
-  /// The stored object, or an empty one.
-  ///
-  /// A file not there yet is the first run, and a file that is not a JSON
-  /// object is treated the same way rather than refusing to start over a
-  /// hand-edited preferences file.
-  Future<Result<Map<String, Object?>, SettingsFailure>> _load() async {
+  /// The stored object — empty on a first run — or null when the file holds
+  /// something that is not a JSON object.
+  Future<Result<Map<String, Object?>?, SettingsFailure>> _load() async {
     final Result<String, FilesystemFailure> text = await filesystem.readFile(
       path,
     );
@@ -80,29 +91,56 @@ final class JsonFileSettingsImpl implements Settings {
         // Not const: a const map is unmodifiable, and this one is about to be
         // written into.
         // ignore: prefer_const_constructors
-        return Success<Map<String, Object?>, SettingsFailure>(
+        return Success<Map<String, Object?>?, SettingsFailure>(
           <String, Object?>{},
         );
       case Failure<String, FilesystemFailure>(
         failure: final FilesystemFailure failure,
       ):
-        return Failure<Map<String, Object?>, SettingsFailure>(
+        return Failure<Map<String, Object?>?, SettingsFailure>(
           _asSettingsFailure(failure),
         );
       case Success<String, FilesystemFailure>(value: final String content):
-        return Success<Map<String, Object?>, SettingsFailure>(_decode(content));
+        return Success<Map<String, Object?>?, SettingsFailure>(
+          _decode(content),
+        );
     }
   }
 
-  /// [content] as a JSON object, or an empty one if it is not.
-  static Map<String, Object?> _decode(String content) {
-    try {
-      final Object? decoded = jsonDecode(content);
-      return decoded is Map<String, Object?>
-          ? Map<String, Object?>.of(decoded)
-          : <String, Object?>{};
-    } on FormatException {
+  /// [content] as a JSON object, an empty one for an empty file, or null.
+  static Map<String, Object?>? _decode(String content) {
+    if (content.trim().isEmpty) {
       return <String, Object?>{};
+    }
+    final Object? decoded = _tryDecode(content);
+    if (decoded is! Map<String, Object?>) {
+      return null;
+    }
+    return <String, Object?>{
+      for (final MapEntry<String, Object?> entry in decoded.entries)
+        entry.key: _upgraded(entry.value),
+    };
+  }
+
+  /// [value], or what it holds when it is a string holding a JSON object or
+  /// list — the shape this store wrote before values were JSON, read as what
+  /// it holds so the next write puts the whole file in today's shape.
+  static Object? _upgraded(Object? value) {
+    if (value is String) {
+      final Object? held = _tryDecode(value);
+      if (held is Map || held is List) {
+        return held;
+      }
+    }
+    return value;
+  }
+
+  /// [text] as JSON, or null when it is not.
+  static Object? _tryDecode(String text) {
+    try {
+      return jsonDecode(text);
+    } on FormatException {
+      return null;
     }
   }
 
@@ -115,6 +153,7 @@ final class JsonFileSettingsImpl implements Settings {
       switch (failure) {
         FilesystemEntryNotFound() ||
         FilesystemAccessDenied() ||
+        FilesystemAlreadyExists() ||
         FilesystemNotUtf8() ||
         FilesystemOperationFailed() => SettingsUnavailable(
           failure.toString(),

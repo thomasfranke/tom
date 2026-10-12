@@ -2,8 +2,6 @@
 /// list survives a text someone else wrote.
 library;
 
-import 'dart:convert';
-
 import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
@@ -122,13 +120,13 @@ void main() {
     });
 
     test('a JSON object rather than a list is empty too', () async {
-      settings.values['spaces.recent'] = '{"root": "/a"}';
+      settings.values['spaces.recent'] = <String, Object?>{'root': '/a'};
 
       expect(valueOf(await repository.list()), isEmpty);
     });
 
     test('one bad row does not cost the good ones', () async {
-      settings.values['spaces.recent'] = jsonEncode(<Object?>[
+      settings.values['spaces.recent'] = <Object?>[
         <String, Object?>{
           'root': '/a',
           'name': 'a',
@@ -141,13 +139,13 @@ void main() {
           'name': 'good',
           'lastOpened': '2026-09-01T00:00:00Z',
         },
-      ]);
+      ];
 
       expect(await roots(), <String>['/good']);
     });
 
     test('rows out of order are sorted, newest first', () async {
-      settings.values['spaces.recent'] = jsonEncode(<Object?>[
+      settings.values['spaces.recent'] = <Object?>[
         <String, Object?>{
           'root': '/older',
           'name': 'older',
@@ -158,7 +156,7 @@ void main() {
           'name': 'newer',
           'lastOpened': '2026-09-01T00:00:00Z',
         },
-      ]);
+      ];
 
       expect(await roots(), <String>['/newer', '/older']);
     });
@@ -208,16 +206,16 @@ final class _Observability implements Observability {
 
 /// A [Settings] that keeps values in a map, and can be made to fail.
 final class _Settings implements Settings {
-  final Map<String, String> values = <String, String>{};
+  final Map<String, Object?> values = <String, Object?>{};
   bool broken = false;
 
   @override
-  Future<Result<String?, SettingsFailure>> read(String key) async => broken
-      ? const Failure<String?, SettingsFailure>(SettingsUnavailable('broken'))
-      : Success<String?, SettingsFailure>(values[key]);
+  Future<Result<Object?, SettingsFailure>> read(String key) async => broken
+      ? const Failure<Object?, SettingsFailure>(SettingsUnavailable('broken'))
+      : Success<Object?, SettingsFailure>(values[key]);
 
   @override
-  Future<Result<void, SettingsFailure>> write(String key, String value) async {
+  Future<Result<void, SettingsFailure>> write(String key, Object? value) async {
     if (broken) {
       return const Failure<void, SettingsFailure>(
         SettingsUnavailable('broken'),

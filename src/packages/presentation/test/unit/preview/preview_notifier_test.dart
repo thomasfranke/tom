@@ -46,6 +46,12 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        readPreferencesFileProvider.overrideWithValue(
+          ReadDocumentUseCase(
+            documentsFor: (SpaceEntity space) => documents,
+            observability: const _Silent(),
+          ),
+        ),
         splitDocumentProvider.overrideWithValue(
           SplitDocumentUseCase(blocks: blocks, observability: const _Silent()),
         ),
@@ -123,6 +129,224 @@ void main() {
 
     expect(rendered(), '# writing.md\n');
     expect(documents.asked, <SpaceRelativePathValueObject>[writing]);
+  });
+
+  test('a document the status calls new is diffed with git unasked', () async {
+    start();
+    show(docs, writing);
+    container
+        .read(spaceSessionProvider.notifier)
+        .observe(
+          GitStatusValueObject(
+            branch: null,
+            upstream: null,
+            ahead: 0,
+            behind: 0,
+            isDetached: false,
+            entries: <StatusEntryValueObject>[
+              StatusEntryValueObject(
+                path: RepoRelativePathValueObject('docs/guides/writing.md'),
+                state: FileStateEnum.untracked,
+                isStaged: false,
+              ),
+            ],
+          ),
+        );
+    await settle();
+    await settle();
+
+    expect(container.read(previewProvider), isA<PreviewReady>());
+    expect(git.revisionsAsked, isEmpty);
+  });
+
+  test('the preferences file is neither rendered nor diffed', () async {
+    // JSON in no repository: a diff would mark every line added
+    // (`docs/product/preferences/where-it-is-stored/doc.md`).
+    container.listen<EditorState>(editorProvider, (_, _) {});
+    start();
+    show(docs, writing);
+    await settle();
+    blocks.asked.clear();
+
+    container
+        .read(spaceSessionProvider.notifier)
+        .openPreferencesFile(SpaceRelativePathValueObject('preferences.json'));
+    await settle();
+    await settle();
+
+    expect(container.read(editorProvider), isA<EditorReady>());
+    expect(container.read(previewProvider), isA<PreviewEmpty>());
+    expect(blocks.asked, isEmpty);
+    expect(container.read(editorMarksProvider), const EditorMarks.none());
+  });
+
+  test('a pull request draft is rendered and never diffed', () async {
+    // It has no committed version: a diff would mark every line added, as
+    // the preferences file's did (Decision 33).
+    final _HeldEditor editor = _HeldEditor();
+    final ProviderContainer drafts = ProviderContainer(
+      overrides: <Override>[
+        editorProvider.overrideWith(() => editor),
+        splitDocumentProvider.overrideWithValue(
+          SplitDocumentUseCase(blocks: blocks, observability: const _Silent()),
+        ),
+        readVersionProvider.overrideWithValue(
+          ReadVersionUseCase(
+            gitFor: (SpaceEntity space) => git,
+            observability: const _Silent(),
+          ),
+        ),
+        diffDocumentProvider.overrideWithValue(
+          DiffDocumentUseCase(
+            gitFor: (SpaceEntity space) => git,
+            blocks: committed,
+            differ: BlockDifferService(aligner: aligner),
+            observability: const _Silent(),
+          ),
+        ),
+      ],
+    );
+    addTearDown(drafts.dispose);
+    drafts.listen<PreviewState>(previewProvider, (_, _) {});
+    drafts.read(spaceSessionProvider.notifier)
+      ..open(docs)
+      ..proposeBranch(
+        BranchNameValueObject('feat/proposal'),
+        BranchNameValueObject('main'),
+      );
+    final SpaceRelativePathValueObject draft = SpaceRelativePathValueObject(
+      'feat/proposal.md',
+    );
+
+    editor.state = EditorState.ready(
+      saved: DocumentEntity(path: draft, content: '# Proposal\n'),
+      source: '# Proposal\n',
+      isDraft: true,
+    );
+    await settle();
+    await settle();
+
+    final PreviewState preview = drafts.read(previewProvider);
+    expect(preview, isA<PreviewReady>());
+    expect((preview as PreviewReady).diff, isNull);
+    expect(git.revisionsAsked, isEmpty);
+    expect(drafts.read(editorMarksProvider), const EditorMarks.none());
+  });
+
+  test('a folder with no repository is rendered and never diffed', () async {
+    // Nothing committed to compare with, and git is never asked
+    // (`docs/product/workspace/without-a-repository/doc.md`).
+    final _HeldEditor editor = _HeldEditor();
+    final ProviderContainer loose = ProviderContainer(
+      overrides: <Override>[
+        editorProvider.overrideWith(() => editor),
+        splitDocumentProvider.overrideWithValue(
+          SplitDocumentUseCase(blocks: blocks, observability: const _Silent()),
+        ),
+        diffDocumentProvider.overrideWithValue(
+          DiffDocumentUseCase(
+            gitFor: (SpaceEntity space) => git,
+            blocks: committed,
+            differ: BlockDifferService(aligner: aligner),
+            observability: const _Silent(),
+          ),
+        ),
+      ],
+    );
+    addTearDown(loose.dispose);
+    loose.listen<PreviewState>(previewProvider, (_, _) {});
+    loose.read(spaceSessionProvider.notifier)
+      ..open(SpaceEntity(root: '/notes', repositoryRoot: null, name: 'notes'))
+      ..show(writing);
+
+    editor.state = EditorState.ready(
+      saved: DocumentEntity(path: writing, content: '# Writing\n'),
+      source: '# Writing\n',
+    );
+    await settle();
+    await settle();
+
+    final PreviewState preview = loose.read(previewProvider);
+    expect(preview, isA<PreviewReady>());
+    expect((preview as PreviewReady).diff, isNull);
+    expect(git.revisionsAsked, isEmpty);
+    expect(loose.read(editorMarksProvider), const EditorMarks.none());
+  });
+
+  group('a changed file opened from the list', () {
+    late _HeldEditor editor;
+    late ProviderContainer held;
+
+    setUp(() {
+      editor = _HeldEditor();
+      held = ProviderContainer(
+        overrides: <Override>[
+          editorProvider.overrideWith(() => editor),
+          splitDocumentProvider.overrideWithValue(
+            SplitDocumentUseCase(
+              blocks: blocks,
+              observability: const _Silent(),
+            ),
+          ),
+          diffDocumentProvider.overrideWithValue(
+            DiffDocumentUseCase(
+              gitFor: (SpaceEntity space) => git,
+              blocks: committed,
+              differ: BlockDifferService(aligner: aligner),
+              observability: const _Silent(),
+            ),
+          ),
+        ],
+      );
+      addTearDown(held.dispose);
+      held.listen<PreviewState>(previewProvider, (_, _) {});
+      held.read(spaceSessionProvider.notifier)
+        ..open(docs)
+        ..show(writing);
+    });
+
+    test('a deleted document is every block removed, git never asked, '
+        'whatever the chip says', () async {
+      held.read(spaceSessionProvider.notifier).decorate(showing: false);
+      editor.state = EditorState.ready(
+        saved: DocumentEntity(path: writing, content: '# Gone\n'),
+        source: '# Gone\n',
+        isDeleted: true,
+      );
+      await settle();
+      await settle();
+
+      final PreviewReady preview = held.read(previewProvider) as PreviewReady;
+      expect(preview.document.document.content, '# Gone\n');
+      expect(preview.diff?.blocks, everyElement(isA<DiffBlockRemoved>()));
+      expect(preview.diff?.blocks, isNotEmpty);
+      expect(git.revisionsAsked, isEmpty);
+    });
+
+    test('a text file is not rendered', () async {
+      editor.state = EditorState.ready(
+        saved: DocumentEntity(
+          path: SpaceRelativePathValueObject('site.yaml'),
+          content: 'a: 1\n',
+        ),
+        source: 'a: 1\n',
+      );
+      await settle();
+
+      expect(held.read(previewProvider), isA<PreviewEmpty>());
+      expect(blocks.asked, isEmpty);
+    });
+
+    test('a binary file is not rendered, even named .md', () async {
+      editor.state = EditorState.ready(
+        saved: DocumentEntity(path: writing, content: ''),
+        source: '',
+        isBinary: true,
+      );
+      await settle();
+
+      expect(held.read(previewProvider), isA<PreviewEmpty>());
+    });
   });
 
   test('choosing another document renders that one', () async {
@@ -312,6 +536,22 @@ void main() {
       expect(rendered(), '# second\n');
     });
 
+    test('a caret moved before the wait is over still lets it land', () async {
+      // A formatting press rewrites the text and the pane hands the
+      // selection back straight after: a move that cancelled the pending
+      // parse left the preview showing the text before the press.
+      start();
+      show(docs, writing);
+      await settle();
+
+      container.read(editorProvider.notifier)
+        ..edit('# typed\n')
+        ..select(2, 2);
+      await settleTyping();
+
+      expect(rendered(), '# typed\n');
+    });
+
     test('saving redraws nothing, because nothing changed', () async {
       start();
       show(docs, writing);
@@ -378,6 +618,39 @@ void main() {
         isA<GitPathNotInRevision>(),
       );
     });
+
+    test('one the person refused to read goes back to the working copy, '
+        'and says nothing', () async {
+      start();
+      show(docs, writing);
+      await settle();
+      git.answer = const Failure<String, GitFailure>(GitCommandDenied());
+
+      container
+          .read(spaceSessionProvider.notifier)
+          .read(
+            CommitEntity(
+              sha: CommitShaValueObject(
+                'abc1234def5678901234567890abcdef12345678',
+              ),
+              subject: 'An earlier pass',
+              body: '',
+              author: const AuthorValueObject(
+                name: 'Test',
+                email: 'test@example.com',
+              ),
+              date: CommitDateValueObject(
+                utc: DateTime.utc(2026),
+                offset: Duration.zero,
+              ),
+            ),
+          );
+      await settle();
+      await settle();
+
+      expect(container.read(spaceSessionProvider)?.readingVersion, isNull);
+      expect(container.read(previewProvider), isNot(isA<PreviewFailed>()));
+    });
   });
 
   group('the rendered diff', () {
@@ -436,6 +709,31 @@ void main() {
       expect(diff.after.document.content, '# Typed\n');
     });
 
+    test('typing does not ask git for the base again', () async {
+      // In Manual and Semi-automatic every `git show` is a row waiting for
+      // an answer (Decision 38): the base is read once and kept.
+      git.content = '# Committed\n';
+      start();
+      show(docs, writing);
+      await settle();
+      await settle();
+      expect(git.revisionsAsked, hasLength(1));
+
+      container.read(editorProvider.notifier).edit('# a\n');
+      await settleTyping();
+      await settle();
+      container.read(editorProvider.notifier).edit('# ab\n');
+      await settleTyping();
+      await settle();
+
+      expect(diffOf()?.after.document.content, '# ab\n');
+      expect(
+        git.revisionsAsked,
+        hasLength(1),
+        reason: 'git asked while typing',
+      );
+    });
+
     test('a comparison git refused leaves the document on screen', () async {
       git.answer = const Failure<String, GitFailure>(GitNotInstalled());
       start();
@@ -447,55 +745,55 @@ void main() {
       expect(diffOf(), isNull);
     });
 
-    test('the base is HEAD until somebody asks for another', () async {
+    test('the base is HEAD until one is read', () async {
       start();
       show(docs, writing);
       await settle();
       await settle();
 
       expect(git.revisionsAsked, <String>['HEAD']);
+      expect(git.pathsAsked, <RepoRelativePathValueObject>[
+        RepoRelativePathValueObject('docs/guides/writing.md'),
+      ]);
     });
 
-    test('another base is read from that revision instead', () async {
-      // The whole item: the same comparison, against something else
+    test('a changed file outside the space is compared by git\'s own path, '
+        'not as a document of the space', () async {
+      start();
+      show(docs, null);
+      container
+          .read(spaceSessionProvider.notifier)
+          .showOutside(RepoRelativePathValueObject('README.md'));
+      await settle();
+      await settle();
+      await settle();
+
+      expect(rendered(), '# README.md\n');
+      expect(git.pathsAsked, <RepoRelativePathValueObject>[
+        RepoRelativePathValueObject('README.md'),
+      ]);
+      expect(diffOf(), isNotNull);
+    });
+
+    test('a base is read where the branch left it, never at its tip', () async {
+      // The whole item: the same comparison, against what the branch started
+      // from — what the base did since is not this branch's change
       // (`docs/product/diff/branch-diff/doc.md`).
-      git.perRevision['feat/rendered-diff'] = '# On the branch\n';
+      git
+        ..perRevision[_develop.forkPoint.value] = '# Where it left\n'
+        ..perRevision['develop'] = '# Develop moved on\n';
       start();
       show(docs, writing);
       await settle();
       await settle();
 
-      container
-          .read(spaceSessionProvider.notifier)
-          .compare(
-            RevisionValueObject.branch(
-              BranchEntity(
-                name: BranchNameValueObject('feat/rendered-diff'),
-                isCurrent: false,
-              ),
-            ),
-          );
+      container.read(spaceSessionProvider.notifier).compare(_develop);
       await settle();
       await settle();
 
-      expect(git.revisionsAsked.last, 'feat/rendered-diff');
-      expect(diffOf()!.before.document.content, '# On the branch\n');
+      expect(git.revisionsAsked.last, _develop.forkPoint.value);
+      expect(diffOf()!.before.document.content, '# Where it left\n');
       expect(diffOf()!.after.document.content, '# writing.md\n');
-    });
-
-    test('a commit is a base by its full sha', () async {
-      start();
-      show(docs, writing);
-      await settle();
-      await settle();
-
-      container
-          .read(spaceSessionProvider.notifier)
-          .compare(RevisionValueObject.commit(_earlier));
-      await settle();
-      await settle();
-
-      expect(git.revisionsAsked.last, _earlier.sha.value);
     });
 
     test('the text stays on screen while the new base is read', () async {
@@ -507,9 +805,7 @@ void main() {
       await settle();
       final int parses = blocks.asked.length;
 
-      container
-          .read(spaceSessionProvider.notifier)
-          .compare(RevisionValueObject.commit(_earlier));
+      container.read(spaceSessionProvider.notifier).compare(_develop);
 
       expect(container.read(previewProvider), isA<PreviewReady>());
       await settle();
@@ -522,14 +818,14 @@ void main() {
       );
     });
 
-    test('taking the base back compares against HEAD again', () async {
+    test('no base any more compares against HEAD again', () async {
+      // Switched onto the branch the base was: there is nothing to have
+      // come from.
       start();
       show(docs, writing);
       await settle();
       await settle();
-      container
-          .read(spaceSessionProvider.notifier)
-          .compare(RevisionValueObject.commit(_earlier));
+      container.read(spaceSessionProvider.notifier).compare(_develop);
       await settle();
       await settle();
 
@@ -607,9 +903,7 @@ void main() {
       show(docs, writing);
       await settle();
       await settle();
-      container
-          .read(spaceSessionProvider.notifier)
-          .compare(RevisionValueObject.commit(_earlier));
+      container.read(spaceSessionProvider.notifier).compare(_develop);
       await settle();
       await settle();
       final String chosen = git.revisionsAsked.last;
@@ -625,19 +919,19 @@ void main() {
       expect(git.revisionsAsked.last, chosen, reason: 'the base was forgotten');
     });
 
-    test('a version being read is compared when a base was chosen', () async {
-      // Two commits, which is the other half of this item: the past is
-      // compared only when somebody asks.
+    test('a version being read is not compared, base or not', () async {
+      // The past is shown as it was: the base measures the working copy,
+      // and nothing is being changed against a commit.
       start();
       show(docs, writing);
       await settle();
       container.read(spaceSessionProvider.notifier)
-        ..compare(RevisionValueObject.commit(_earlier))
+        ..compare(_develop)
         ..read(_earlier);
       await settle();
       await settle();
 
-      expect(diffOf(), isNotNull);
+      expect(diffOf(), isNull);
     });
 
     test('a version being read is not compared against anything', () async {
@@ -693,6 +987,13 @@ final class _Documents implements DocumentRepository {
           DocumentEntity(path: path, content: '# ${path.name}\n'),
         );
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
@@ -758,7 +1059,13 @@ GitStatusValueObject _conflictedOn(SpaceRelativePathValueObject path) =>
       isDetached: false,
     );
 
-/// A commit to compare against, and to open as a version.
+/// The branch the checked-out one came from, and where it left it.
+final DiffBaseValueObject _develop = DiffBaseValueObject(
+  branch: BranchRefValueObject(name: BranchNameValueObject('develop')),
+  forkPoint: CommitShaValueObject('f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0'),
+);
+
+/// A commit to open as a version.
 final CommitEntity _earlier = CommitEntity(
   sha: CommitShaValueObject('abc1234def5678901234567890abcdef12345678'),
   author: const AuthorValueObject(name: 'Test', email: 'test@example.com'),
@@ -767,6 +1074,12 @@ final CommitEntity _earlier = CommitEntity(
   body: '',
 );
 
+/// An editor that holds whatever the test puts in it.
+final class _HeldEditor extends EditorNotifier {
+  @override
+  EditorState build() => const EditorState.empty();
+}
+
 /// Git, answering with whatever the test says the revision holds.
 final class _Git implements GitRepository {
   String content = '';
@@ -774,6 +1087,10 @@ final class _Git implements GitRepository {
 
   /// What it was asked to read, and at which revision.
   final List<String> revisionsAsked = <String>[];
+
+  /// The paths it was asked to read, as git names them.
+  final List<RepoRelativePathValueObject> pathsAsked =
+      <RepoRelativePathValueObject>[];
 
   /// What a named revision holds, when a test set it apart from [content].
   final Map<String, String> perRevision = <String, String>{};
@@ -784,6 +1101,7 @@ final class _Git implements GitRepository {
     required RepoRelativePathValueObject path,
   }) async {
     revisionsAsked.add(revision);
+    pathsAsked.add(path);
     return answer ??
         Success<String, GitFailure>(perRevision[revision] ?? content);
   }

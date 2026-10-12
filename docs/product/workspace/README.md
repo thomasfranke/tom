@@ -3,22 +3,19 @@
 How the app sits on screen once a space is open: the columns, the document area
 and the status bar, all present at once.
 
-**Status:** Planned · Milestone M0
+**Status:** Shipped · Milestones M0–M3
 
 | | |
 |---|---|
-| [`regions/`](regions/doc.md) | The four regions, what each column is for, and how a panel is added |
-| [`columns/`](columns/doc.md) | Hiding a column, the toggles, the preferences button, the git switch |
-| [`leaving-a-space/`](leaving-a-space/doc.md) | The breadcrumb menu, closing, switching, and the unsaved question |
+| [`regions/`](regions/doc.md) | The regions, what each column is for, and how a panel is added |
+| [`columns/`](columns/doc.md) | Hiding a column, the toggles, the modes, the git switch |
+| [`status-bar/`](status-bar/doc.md) | The strip at the foot of the window: git at the left, the open document at the right |
+| [`leaving-a-space/`](leaving-a-space/doc.md) | The home button, the breadcrumb menu, and the unsaved question |
 | [`feedback/`](feedback/doc.md) | What the app says while it works and when it finishes |
 | [`without-a-repository/`](without-a-repository/doc.md) | The folder git knows nothing about, and what the right column says instead |
-
-## Mocks
-
-- **shell** — the columns and the document area, drawn with the right column closed. [light](../../design/screens/desktop/workspace/shell-light.svg) · [dark](../../design/screens/desktop/workspace/shell-dark.svg).
-- **committing** — all four regions at once, which is what the git column looks like open. [light](../../design/screens/desktop/git-commit/committing-light.svg) · [dark](../../design/screens/desktop/git-commit/committing-dark.svg).
-- **closing the space** — the breadcrumb's menu, recent spaces above and **Close space** at the foot. [light](../../design/screens/desktop/workspace/closing-the-space-light.svg) · [dark](../../design/screens/desktop/workspace/closing-the-space-dark.svg).
-- **closing with unsaved work** — the same menu, with the question. [light](../../design/screens/desktop/workspace/closing-the-space-unsaved-work-light.svg) · [dark](../../design/screens/desktop/workspace/closing-the-space-unsaved-work-dark.svg).
+| [`the-account/`](the-account/doc.md) | Who commits, the GitHub login the computer holds, and what it may do here |
+| [`commands/`](commands/doc.md) | Every command TOM runs, as it ran it, in a panel under the document |
+| [`terminal/`](terminal/doc.md) | The person's own shell, at the repository's root, in the same panel's second tab |
 
 ---
 

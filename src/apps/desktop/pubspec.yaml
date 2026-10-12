@@ -27,6 +27,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Material's own words in the two languages, and the delegates the
+  # generated `AppLocalizations` installs beside them (Decision 34).
+  flutter_localizations:
+    sdk: flutter
+
   # Renders the inline content *inside* a block. Block-level layout and the
   # container around each block are ours, which is what the rendered diff
   # needs (docs/technical/runtime/preview.md).
@@ -37,6 +42,11 @@ dependencies:
   # Pinned exactly because `riverpod_annotation` pins the runtime it
   # generates against: the pair moves together or not at all.
   flutter_riverpod: 3.2.1
+
+  # The plurals and placeholders the generated `AppLocalizations` formats
+  # with. The version is whatever `flutter_localizations` pins, which is why
+  # it is not pinned here.
+  intl: any
 
   # Not a second parser: it is the type `flutter_markdown_plus` takes its
   # extension points in, the way `re_highlight` is the type its highlighter
@@ -88,6 +98,11 @@ dependencies:
   # (docs/product/workspace/regions/doc.md).
   window_manager: ^0.5.2
 
+  # The Terminal tab's emulator and its widget: escape sequences, the
+  # screen buffer and the drawing. MIT, as are its own dependencies bar
+  # `quiver` (Apache-2.0) and `convert` (BSD-3-Clause) (Decision 37).
+  xterm: ^4.0.0
+
 dev_dependencies:
   # Codegen for the providers below. Pinned exactly, like every other
   # generator here: a build tool that moves on its own produces a diff
@@ -109,4 +124,7 @@ dev_dependencies:
 
 
 flutter:
+  # Runs `flutter gen-l10n` on every `pub get`, so `AppLocalizations` cannot
+  # drift from the ARB files it is generated from (l10n.yaml).
+  generate: true
   uses-material-design: true

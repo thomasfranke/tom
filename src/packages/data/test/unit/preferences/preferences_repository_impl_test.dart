@@ -24,11 +24,37 @@ void main() {
       theme: ThemeChoiceEnum.dark,
       language: LanguageEnum.portuguese,
       showingFormattingBar: false,
+      gitApprovals: GitApprovalModeEnum.manual,
     );
 
     await repository.write(chosen);
 
     expect(await repository.read(), chosen);
+  });
+
+  test('who approves git is stored by name, like the theme', () async {
+    await repository.write(
+      const PreferencesValueObject(gitApprovals: GitApprovalModeEnum.semi),
+    );
+
+    expect(
+      settings.stored[PreferencesDataSource.key],
+      containsPair('gitApprovals', 'semi'),
+    );
+  });
+
+  test('a mode nobody can read asks nobody, silently', () async {
+    for (final Object? unreadable in <Object?>['strict', 3, null, true]) {
+      settings.stored[PreferencesDataSource.key] = <String, Object?>{
+        'theme': 'dark',
+        'gitApprovals': unreadable,
+      };
+
+      final PreferencesValueObject read = await repository.read();
+
+      expect(read.gitApprovals, GitApprovalModeEnum.automatic);
+      expect(read.theme, ThemeChoiceEnum.dark);
+    }
   });
 
   test('it is one JSON object, in names a reader can follow', () async {
@@ -38,32 +64,52 @@ void main() {
       const PreferencesValueObject(theme: ThemeChoiceEnum.light),
     );
 
+    // An object, never JSON escaped inside a string: what the tab shows is
+    // what a person would write.
     expect(
       settings.stored[PreferencesDataSource.key],
-      contains('"theme":"light"'),
+      containsPair('theme', 'light'),
     );
   });
 
   test('a key the file does not carry is the default, silently', () async {
-    settings.stored[PreferencesDataSource.key] = '{"theme":"dark"}';
+    settings.stored[PreferencesDataSource.key] = <String, Object?>{
+      'theme': 'dark',
+    };
 
     final PreferencesValueObject read = await repository.read();
 
     expect(read.theme, ThemeChoiceEnum.dark);
-    expect(read.language, LanguageEnum.english);
+    expect(read.language, LanguageEnum.system);
     expect(read.showingFormattingBar, isTrue);
+  });
+
+  test('a language this build no longer offers reads as System', () async {
+    // Español and Deutsch were offered before any translation existed.
+    settings.stored[PreferencesDataSource.key] = <String, Object?>{
+      'theme': 'dark',
+      'language': 'german',
+    };
+
+    final PreferencesValueObject read = await repository.read();
+
+    expect(read.theme, ThemeChoiceEnum.dark);
+    expect(read.language, LanguageEnum.system);
   });
 
   test('a value the app cannot use falls back rather than refusing', () async {
     // Editing the file by hand is supported, not protected.
-    settings.stored[PreferencesDataSource.key] =
-        '{"theme":"sepia","language":42,"showingFormattingBar":"yes"}';
+    settings.stored[PreferencesDataSource.key] = <String, Object?>{
+      'theme': 'sepia',
+      'language': 42,
+      'showingFormattingBar': 'yes',
+    };
 
     expect(await repository.read(), PreferencesValueObject.defaults);
   });
 
-  test('a file that is not JSON at all is the defaults too', () async {
-    settings.stored[PreferencesDataSource.key] = 'not json {';
+  test('a value that is not an object is the defaults too', () async {
+    settings.stored[PreferencesDataSource.key] = 'not an object';
 
     expect(await repository.read(), PreferencesValueObject.defaults);
   });
@@ -88,16 +134,16 @@ void main() {
 
 /// A settings store in memory, refusing everything when a test says so.
 final class _Settings implements Settings {
-  final Map<String, String> stored = <String, String>{};
+  final Map<String, Object?> stored = <String, Object?>{};
   bool refuses = false;
 
   @override
-  Future<Result<String?, SettingsFailure>> read(String key) async => refuses
-      ? const Failure<String?, SettingsFailure>(SettingsUnavailable('no store'))
-      : Success<String?, SettingsFailure>(stored[key]);
+  Future<Result<Object?, SettingsFailure>> read(String key) async => refuses
+      ? const Failure<Object?, SettingsFailure>(SettingsUnavailable('no store'))
+      : Success<Object?, SettingsFailure>(stored[key]);
 
   @override
-  Future<Result<void, SettingsFailure>> write(String key, String value) async {
+  Future<Result<void, SettingsFailure>> write(String key, Object? value) async {
     if (refuses) {
       return const Failure<void, SettingsFailure>(
         SettingsUnavailable('no store'),

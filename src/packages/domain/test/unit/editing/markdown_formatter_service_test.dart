@@ -125,10 +125,76 @@ void main() {
       },
     );
 
-    test('a heading, a task and an alert are the same shape', () {
+    test('a heading and a task are the same shape', () {
       expect(apply('|a|', FormatCommandEnum.heading).text, '# a');
       expect(apply('|a|', FormatCommandEnum.taskList).text, '- [ ] a');
-      expect(apply('|a|', FormatCommandEnum.alert).text, '> [!NOTE] a');
+    });
+  });
+
+  group('an alert', () {
+    test('on an empty line: the marker alone, then a quoted line with the '
+        'caret on it', () {
+      // The marker shares no line with the text, or the whole thing reads
+      // as a quote saying "[!NOTE]".
+      final FormattedSourceValueObject result = apply(
+        'above\n\n|',
+        FormatCommandEnum.alert,
+      );
+
+      expect(result.text, 'above\n\n> [!NOTE]\n> ');
+      expect(result.isCaret, isTrue);
+      expect(result.start, result.text.length);
+    });
+
+    test('on a line of prose: the line becomes the note under the marker, '
+        'and the caret stays in its words', () {
+      final FormattedSourceValueObject result = apply(
+        'The first| words matter.',
+        FormatCommandEnum.alert,
+      );
+
+      expect(result.text, '> [!NOTE]\n> The first words matter.');
+      expect(result.isCaret, isTrue);
+      expect(result.text.substring(0, result.start), '> [!NOTE]\n> The first');
+    });
+
+    test('over several lines: one marker, every line quoted, the lines '
+        'left selected', () {
+      final FormattedSourceValueObject result = apply(
+        'o|ne\ntw|o\nthree',
+        FormatCommandEnum.alert,
+      );
+
+      expect(result.text, '> [!NOTE]\n> one\n> two\nthree');
+      expect(result.text.substring(result.start, result.end), '> one\n> two');
+    });
+
+    test('pressed again inside one, it takes the marker and the quote off', () {
+      final FormattedSourceValueObject result = apply(
+        'above\n\n> [!NOTE]\n> o|ne\n> two\n\nbelow',
+        FormatCommandEnum.alert,
+      );
+
+      expect(result.text, 'above\n\none\ntwo\n\nbelow');
+      expect(result.text.substring(result.start, result.end), 'one\ntwo');
+    });
+
+    test('pressed again on the marker line itself, the same', () {
+      expect(apply('> [!NO|TE]\n> one', FormatCommandEnum.alert).text, 'one');
+    });
+
+    test('an alert of another kind is still an alert to take off', () {
+      expect(
+        apply('> [!WARNING]\n> o|ne', FormatCommandEnum.alert).text,
+        'one',
+      );
+    });
+
+    test('a plain quote is not an alert: it gets the marker', () {
+      expect(
+        apply('> o|ne', FormatCommandEnum.alert).text,
+        '> [!NOTE]\n> > one',
+      );
     });
   });
 

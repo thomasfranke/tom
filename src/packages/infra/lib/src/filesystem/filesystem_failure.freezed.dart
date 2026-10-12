@@ -88,12 +88,13 @@ extension FilesystemFailurePatterns on FilesystemFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FilesystemEntryNotFound value)?  entryNotFound,TResult Function( FilesystemAccessDenied value)?  accessDenied,TResult Function( FilesystemNotUtf8 value)?  notUtf8,TResult Function( FilesystemOperationFailed value)?  operationFailed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FilesystemEntryNotFound value)?  entryNotFound,TResult Function( FilesystemAccessDenied value)?  accessDenied,TResult Function( FilesystemAlreadyExists value)?  alreadyExists,TResult Function( FilesystemNotUtf8 value)?  notUtf8,TResult Function( FilesystemOperationFailed value)?  operationFailed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
 return entryNotFound(_that);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that);case FilesystemNotUtf8() when notUtf8 != null:
+return accessDenied(_that);case FilesystemAlreadyExists() when alreadyExists != null:
+return alreadyExists(_that);case FilesystemNotUtf8() when notUtf8 != null:
 return notUtf8(_that);case FilesystemOperationFailed() when operationFailed != null:
 return operationFailed(_that);case _:
   return orElse();
@@ -113,12 +114,13 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FilesystemEntryNotFound value)  entryNotFound,required TResult Function( FilesystemAccessDenied value)  accessDenied,required TResult Function( FilesystemNotUtf8 value)  notUtf8,required TResult Function( FilesystemOperationFailed value)  operationFailed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FilesystemEntryNotFound value)  entryNotFound,required TResult Function( FilesystemAccessDenied value)  accessDenied,required TResult Function( FilesystemAlreadyExists value)  alreadyExists,required TResult Function( FilesystemNotUtf8 value)  notUtf8,required TResult Function( FilesystemOperationFailed value)  operationFailed,}){
 final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound():
 return entryNotFound(_that);case FilesystemAccessDenied():
-return accessDenied(_that);case FilesystemNotUtf8():
+return accessDenied(_that);case FilesystemAlreadyExists():
+return alreadyExists(_that);case FilesystemNotUtf8():
 return notUtf8(_that);case FilesystemOperationFailed():
 return operationFailed(_that);}
 }
@@ -134,12 +136,13 @@ return operationFailed(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FilesystemEntryNotFound value)?  entryNotFound,TResult? Function( FilesystemAccessDenied value)?  accessDenied,TResult? Function( FilesystemNotUtf8 value)?  notUtf8,TResult? Function( FilesystemOperationFailed value)?  operationFailed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FilesystemEntryNotFound value)?  entryNotFound,TResult? Function( FilesystemAccessDenied value)?  accessDenied,TResult? Function( FilesystemAlreadyExists value)?  alreadyExists,TResult? Function( FilesystemNotUtf8 value)?  notUtf8,TResult? Function( FilesystemOperationFailed value)?  operationFailed,}){
 final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
 return entryNotFound(_that);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that);case FilesystemNotUtf8() when notUtf8 != null:
+return accessDenied(_that);case FilesystemAlreadyExists() when alreadyExists != null:
+return alreadyExists(_that);case FilesystemNotUtf8() when notUtf8 != null:
 return notUtf8(_that);case FilesystemOperationFailed() when operationFailed != null:
 return operationFailed(_that);case _:
   return null;
@@ -158,11 +161,12 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  AppFailure? cause)?  entryNotFound,TResult Function( String path,  AppFailure? cause)?  accessDenied,TResult Function( String path,  AppFailure? cause)?  notUtf8,TResult Function( String path,  String description,  AppFailure? cause)?  operationFailed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  AppFailure? cause)?  entryNotFound,TResult Function( String path,  AppFailure? cause)?  accessDenied,TResult Function( String path,  AppFailure? cause)?  alreadyExists,TResult Function( String path,  AppFailure? cause)?  notUtf8,TResult Function( String path,  String description,  AppFailure? cause)?  operationFailed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
 return entryNotFound(_that.path,_that.cause);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that.path,_that.cause);case FilesystemNotUtf8() when notUtf8 != null:
+return accessDenied(_that.path,_that.cause);case FilesystemAlreadyExists() when alreadyExists != null:
+return alreadyExists(_that.path,_that.cause);case FilesystemNotUtf8() when notUtf8 != null:
 return notUtf8(_that.path,_that.cause);case FilesystemOperationFailed() when operationFailed != null:
 return operationFailed(_that.path,_that.description,_that.cause);case _:
   return orElse();
@@ -182,11 +186,12 @@ return operationFailed(_that.path,_that.description,_that.cause);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  AppFailure? cause)  entryNotFound,required TResult Function( String path,  AppFailure? cause)  accessDenied,required TResult Function( String path,  AppFailure? cause)  notUtf8,required TResult Function( String path,  String description,  AppFailure? cause)  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  AppFailure? cause)  entryNotFound,required TResult Function( String path,  AppFailure? cause)  accessDenied,required TResult Function( String path,  AppFailure? cause)  alreadyExists,required TResult Function( String path,  AppFailure? cause)  notUtf8,required TResult Function( String path,  String description,  AppFailure? cause)  operationFailed,}) {final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound():
 return entryNotFound(_that.path,_that.cause);case FilesystemAccessDenied():
-return accessDenied(_that.path,_that.cause);case FilesystemNotUtf8():
+return accessDenied(_that.path,_that.cause);case FilesystemAlreadyExists():
+return alreadyExists(_that.path,_that.cause);case FilesystemNotUtf8():
 return notUtf8(_that.path,_that.cause);case FilesystemOperationFailed():
 return operationFailed(_that.path,_that.description,_that.cause);}
 }
@@ -202,11 +207,12 @@ return operationFailed(_that.path,_that.description,_that.cause);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  AppFailure? cause)?  entryNotFound,TResult? Function( String path,  AppFailure? cause)?  accessDenied,TResult? Function( String path,  AppFailure? cause)?  notUtf8,TResult? Function( String path,  String description,  AppFailure? cause)?  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  AppFailure? cause)?  entryNotFound,TResult? Function( String path,  AppFailure? cause)?  accessDenied,TResult? Function( String path,  AppFailure? cause)?  alreadyExists,TResult? Function( String path,  AppFailure? cause)?  notUtf8,TResult? Function( String path,  String description,  AppFailure? cause)?  operationFailed,}) {final _that = this;
 switch (_that) {
 case FilesystemEntryNotFound() when entryNotFound != null:
 return entryNotFound(_that.path,_that.cause);case FilesystemAccessDenied() when accessDenied != null:
-return accessDenied(_that.path,_that.cause);case FilesystemNotUtf8() when notUtf8 != null:
+return accessDenied(_that.path,_that.cause);case FilesystemAlreadyExists() when alreadyExists != null:
+return alreadyExists(_that.path,_that.cause);case FilesystemNotUtf8() when notUtf8 != null:
 return notUtf8(_that.path,_that.cause);case FilesystemOperationFailed() when operationFailed != null:
 return operationFailed(_that.path,_that.description,_that.cause);case _:
   return null;
@@ -345,6 +351,75 @@ class _$FilesystemAccessDeniedCopyWithImpl<$Res>
 /// with the given fields replaced by the non-null parameter values.
 @override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
   return _then(FilesystemAccessDenied(
+null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class FilesystemAlreadyExists implements FilesystemFailure {
+  const FilesystemAlreadyExists(this.path, {this.cause});
+  
+
+/// The path that was taken.
+@override final  String path;
+@override final  AppFailure? cause;
+
+/// Create a copy of FilesystemFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$FilesystemAlreadyExistsCopyWith<FilesystemAlreadyExists> get copyWith => _$FilesystemAlreadyExistsCopyWithImpl<FilesystemAlreadyExists>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FilesystemAlreadyExists&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,path,cause);
+
+@override
+String toString() {
+  return 'FilesystemFailure.alreadyExists(path: $path, cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $FilesystemAlreadyExistsCopyWith<$Res> implements $FilesystemFailureCopyWith<$Res> {
+  factory $FilesystemAlreadyExistsCopyWith(FilesystemAlreadyExists value, $Res Function(FilesystemAlreadyExists) _then) = _$FilesystemAlreadyExistsCopyWithImpl;
+@override @useResult
+$Res call({
+ String path, AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$FilesystemAlreadyExistsCopyWithImpl<$Res>
+    implements $FilesystemAlreadyExistsCopyWith<$Res> {
+  _$FilesystemAlreadyExistsCopyWithImpl(this._self, this._then);
+
+  final FilesystemAlreadyExists _self;
+  final $Res Function(FilesystemAlreadyExists) _then;
+
+/// Create a copy of FilesystemFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
+  return _then(FilesystemAlreadyExists(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
 as AppFailure?,

@@ -1,4 +1,4 @@
-// `tom test` — the suite, or one kind of it, over one package or all.
+// `cli test` — the suite, or one kind of it, over one package or all.
 library;
 
 import 'process.dart';
@@ -15,7 +15,7 @@ const arch = 'arch';
 ///
 /// A kind is a path, not a naming convention, which keeps the menu and the
 /// filesystem from drifting apart. End-to-end is not one: it drives the app
-/// on a device, and is its own command (`tom e2e`).
+/// on a device, and is its own command (`cli e2e`).
 const testKinds = {'unit', 'integration'};
 
 /// Runs the suite, or one [kind] of it: a target without that folder is
@@ -27,16 +27,30 @@ Future<int> runTests({
   String? kind,
   List<String> targets = allTargets,
   bool coverage = true,
+}) => dart([
+  'run',
+  _runner,
+  ...testRunArguments(kind: kind, targets: targets, coverage: coverage),
+]);
+
+/// What the dashboard is asked to run for [kind] over [targets].
+///
+/// The whole run — no kind, every target — is the one that also asks about
+/// the graph before the packages and about the CLI after the apps: neither is
+/// a package, so a narrowed run is not asking about either.
+List<String> testRunArguments({
+  required List<String> targets,
+  String? kind,
+  bool coverage = true,
 }) {
-  final arguments = [
-    'run',
-    _runner,
+  final whole = kind == null && targets.length == allTargets.length;
+  return [
     if (coverage) '--coverage',
-    if (kind == null && targets.length == allTargets.length) arch,
+    if (whole) arch,
     for (final target in targets)
       if (kind == null) target else '$target=test/$kind',
+    if (whole) cli,
   ];
-  return dart(arguments);
 }
 
 /// Runs only the architecture assertions: the fastest answer to "did I just
@@ -81,7 +95,7 @@ Future<int> runLastTests({int? count, bool coverage = true}) => dart([
 /// The argument that selects the CLI's own tests.
 const cli = 'cli';
 
-/// Runs the tests for `tom` itself.
+/// Runs the tests for `cli` itself.
 ///
 /// They live in `src/test/cli/`, because `tool/` holds no pubspec: a tool
 /// that resolves the workspace cannot depend on it being resolved, so it can

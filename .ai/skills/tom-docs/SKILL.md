@@ -11,7 +11,7 @@ them is that way. No preamble, no transition, no recap.
 
 The rule is easy to agree with and hard to keep. The leaf files in this
 repository hold it — [`product/export/doc.md`](../../../docs/product/export/doc.md)
-is 101 words and complete — while the files that introduce them drifted into
+is a screenful of rules and complete — while the files that introduce them drifted into
 explaining themselves. Prose is what a doc grows when nobody names the shape it
 was supposed to have. So what follows is the shape.
 
@@ -86,7 +86,7 @@ of the three it is before touching it:
 - *Prose* — cut it. A rule with its reason after the em dash says in one line
   what a paragraph says in five, and a paragraph that is not a rule earns at
   most three lines.
-- *One subject with many facets* — leave it. `the-controls/doc.md` is 488 words
+- *One subject with many facets* — leave it. `the-controls/doc.md` is long
   because three buttons have that many rules between them, and splitting the
   count off the button it sits inside would make a reader open two files to
   learn one control.
@@ -109,8 +109,15 @@ nothing is left behind as a stub that says "moved".
 
 Two lines are never crossed: a technical doc never states a product rule, and a
 product doc never names a class. When product and technical disagree, product
-states the intent and technical is wrong. When a doc and the code disagree, the
-code is right and the doc is a bug.
+states the intent and technical is wrong.
+
+**Which record wins when a doc and the code disagree depends on the chapter:**
+
+| Chapter | The truth is | So |
+|---|---|---|
+| `product/` | the `doc.md` | the code is the bug — flag it; moving the doc instead is the maintainer's call |
+| `technical/` | the code, whose dartdoc is canonical | the doc is the bug — correct it |
+| `design/` | the Penpot file; the export is the record of it | nothing under `design/` that was exported is edited by hand |
 
 ## Indexes
 
@@ -137,9 +144,13 @@ summary. A child that cannot be described in one line is two children.
 ## The human gate
 
 `AGENTS.md` names one checkpoint and this is it: **a doc never merges on agent
-approval alone.** Draft it, say plainly what changed, and stop. A delta that is
-written but not blessed goes under *Doc deltas waiting on the human gate* in
-`AGENTS.md` — that list is the handoff, not a backlog.
+approval alone.** Draft it, say plainly what changed, and stop — the diff the
+maintainer reads is the handoff.
+
+- **A revoked rule is deleted, not struck through.** The history of a doc is
+  git's; a line kept under `~~` is a rule a reader has to decide not to follow.
+- **A page of the Penpot file is cited by its name, never by its number** — the
+  number is the page's place in the file and moves when a page is added.
 
 ## A real trim, three times
 
@@ -197,7 +208,7 @@ Two rules, two reasons, four lines:
   named in `product/README.md`, not a licence to write prose instead.
 - A paragraph worth deleting is often a decision nobody recorded. Check
   `decisions/` first, and open one if it is missing.
-- A `doc.md` that has outgrown the signal is a folder waiting to happen. `product/workspace/` was 786 words of four subjects wearing one `#`; it is now `regions/`, `columns/`, `leaving-a-space/` and `feedback/` under a `README.md`. Splitting is not done when the files exist — the nine inbound links, four of them dartdoc, move in the same commit.
+- A `doc.md` that has outgrown the signal is a folder waiting to happen. `product/workspace/` was four subjects wearing one `#`; it became `regions/`, `columns/`, `leaving-a-space/` and `feedback/` under a `README.md`. Splitting is not done when the files exist — the inbound links, dartdoc among them, move in the same commit.
 
 ---
 

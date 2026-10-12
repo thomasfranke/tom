@@ -4,6 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/history/history_design.dart';
 import 'package:tom_desktop/screens/history/history_words.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -65,7 +66,7 @@ class HistoryEntryWidget extends ConsumerWidget {
                         // An amended commit can have an empty subject, and a
                         // blank row does not look clickable.
                         commit.subject.isEmpty
-                            ? '(no message)'
+                            ? context.l10n.historyNoMessage
                             : commit.subject,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -80,7 +81,7 @@ class HistoryEntryWidget extends ConsumerWidget {
                       ),
                       const SizedBox(height: HistoryDesign.metaGap),
                       Text(
-                        _meta,
+                        _meta(context.l10n),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -101,9 +102,9 @@ class HistoryEntryWidget extends ConsumerWidget {
   }
 
   /// The second line: which commit, whose, and how old.
-  String get _meta => <String>[
+  String _meta(AppLocalizations l10n) => <String>[
     commit.sha.short,
     commit.author.name,
-    whenInWords(commit.date),
+    whenInWords(l10n, commit.date),
   ].join(' · ');
 }

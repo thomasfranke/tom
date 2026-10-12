@@ -17,6 +17,7 @@ Iterable<Offence> implementationsSaySo(Directory root) sync* {
     for (final match in fulfils.allMatches(file.readAsStringSync())) {
       final name = match.group(1)!;
       if (match.group(2) == 'AppFailure' || name.startsWith('_')) continue;
+      if (fulfilsUnderItsOwnName.contains(name)) continue;
       if (name.endsWith('Impl') && file.path.endsWith('_impl.dart')) continue;
       yield (
         rule: 'an implementation says so, in the class and in the file',
@@ -28,6 +29,11 @@ Iterable<Offence> implementationsSaySo(Directory root) sync* {
     }
   }
 }
+
+/// The classes that fulfil a contract and keep the name of what they are
+/// first. `CommandsNotifier` is the panel's notifier before it is the port
+/// the capabilities write to, and a notifier is found by that suffix.
+const fulfilsUnderItsOwnName = <String>{'CommandsNotifier'};
 
 /// Every variant of a failure hierarchy carries the hierarchy's prefix: the
 /// variants are top-level classes Freezed generates, so two hierarchies

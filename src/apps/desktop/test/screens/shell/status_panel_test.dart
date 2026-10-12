@@ -1,6 +1,3 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
@@ -29,6 +26,12 @@ void main() {
     container = ProviderContainer(
       overrides: <Override>[
         readDocumentProvider.overrideWithValue(
+          const ReadDocumentUseCase(
+            documentsFor: _documentsFor,
+            observability: _Silent(),
+          ),
+        ),
+        readPreferencesFileProvider.overrideWithValue(
           const ReadDocumentUseCase(
             documentsFor: _documentsFor,
             observability: _Silent(),
@@ -66,64 +69,11 @@ void main() {
     expect(find.text('no space open'), findsOneWidget);
   });
 
-  testWidgets('with a space open it says where it is', (
+  testWidgets('the space and the document are left to the bar and the tab', (
     WidgetTester tester,
   ) async {
-    await pumpStatus(
-      tester,
-      space: SpaceEntity(
-        root: '/code/app/docs',
-        repositoryRoot: '/code/app',
-        name: 'docs',
-      ),
-    );
-
-    expect(find.text('/code/app/docs'), findsOneWidget);
-    expect(find.text('no space open'), findsNothing);
-  });
-
-  testWidgets('a space under the home folder is written with a tilde', (
-    WidgetTester tester,
-  ) async {
-    // An absolute path under a home folder is mostly the home folder.
-    final String home =
-        Platform.environment['HOME'] ??
-        Platform.environment['USERPROFILE'] ??
-        '';
-    await pumpStatus(
-      tester,
-      space: SpaceEntity(
-        root: '$home/dev/tom/docs',
-        repositoryRoot: '$home/dev/tom',
-        name: 'docs',
-      ),
-    );
-
-    expect(
-      find.text(home.isEmpty ? '/dev/tom/docs' : '~/dev/tom/docs'),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('no document is named until one is open', (
-    WidgetTester tester,
-  ) async {
-    await pumpStatus(
-      tester,
-      space: SpaceEntity(
-        root: '/code/app/docs',
-        repositoryRoot: '/code/app',
-        name: 'docs',
-      ),
-    );
-
-    expect(find.text('guides/writing.md'), findsNothing);
-  });
-
-  testWidgets('the open document is named by its path in the space', (
-    WidgetTester tester,
-  ) async {
-    // The path, not the name: two `index.md` in two folders are a real thing.
+    // The breadcrumb names the space and the tab the document, so the strip
+    // says neither (`docs/design/screens/not-drawn-yet.md`).
     await pumpStatus(
       tester,
       space: SpaceEntity(
@@ -134,13 +84,70 @@ void main() {
       document: 'guides/writing.md',
     );
 
-    expect(find.text('guides/writing.md'), findsOneWidget);
+    expect(find.textContaining('/code/app'), findsNothing);
+    expect(find.textContaining('writing.md'), findsNothing);
+    expect(find.text('no space open'), findsNothing);
   });
 
-  testWidgets('an unsaved document says so, and how to fix it', (
+  testWidgets('no document, nothing at the right', (WidgetTester tester) async {
+    await pumpStatus(
+      tester,
+      space: SpaceEntity(
+        root: '/code/app/docs',
+        repositoryRoot: '/code/app',
+        name: 'docs',
+      ),
+    );
+
+    expect(find.text('UTF-8'), findsNothing);
+    expect(find.text('Saved'), findsNothing);
+  });
+
+  testWidgets(
+    'an open document says where the caret is, and that it is saved',
+    (WidgetTester tester) async {
+      await pumpStatus(
+        tester,
+        space: SpaceEntity(
+          root: '/code/app/docs',
+          repositoryRoot: '/code/app',
+          name: 'docs',
+        ),
+        document: 'guides/writing.md',
+      );
+
+      expect(find.text('Ln 1, Col 1'), findsOneWidget);
+      expect(find.text('UTF-8'), findsOneWidget);
+      expect(find.text('Markdown'), findsOneWidget);
+      expect(find.text('Saved'), findsOneWidget);
+    },
+  );
+
+  testWidgets('the preferences file is JSON, not Markdown', (
     WidgetTester tester,
   ) async {
-    // Said in words here, with a dot on the mode bar: work is never lost
+    await pumpStatus(
+      tester,
+      space: SpaceEntity(
+        root: '/code/app/docs',
+        repositoryRoot: '/code/app',
+        name: 'docs',
+      ),
+    );
+
+    container
+        .read(spaceSessionProvider.notifier)
+        .openPreferencesFile(SpaceRelativePathValueObject('preferences.json'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('JSON'), findsOneWidget);
+    expect(find.text('Markdown'), findsNothing);
+  });
+
+  testWidgets('an unsaved document says so, in place of saved', (
+    WidgetTester tester,
+  ) async {
+    // Said in words here, with a dot above the document: work is never lost
     // quietly.
     await pumpStatus(
       tester,
@@ -155,15 +162,102 @@ void main() {
     container.read(editorProvider.notifier).edit('# changed\n');
     await tester.pumpAndSettle();
 
-    expect(find.text('guides/writing.md — unsaved'), findsOneWidget);
-    expect(
-      find.text(
-        defaultTargetPlatform == TargetPlatform.macOS
-            ? '⌘S to save'
-            : 'Ctrl+S to save',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('Unsaved'), findsOneWidget);
+    expect(find.text('Saved'), findsNothing);
+  });
+
+  group('a change that is not a document', () {
+    /// Mounts the bar over an editor holding [state].
+    Future<void> pumpHolding(WidgetTester tester, EditorState state) async {
+      container = ProviderContainer(
+        overrides: <Override>[
+          editorProvider.overrideWith(() => _Holding(state)),
+        ],
+      );
+      addTearDown(container.dispose);
+      container
+          .read(spaceSessionProvider.notifier)
+          .open(
+            SpaceEntity(
+              root: '/code/app/docs',
+              repositoryRoot: '/code/app',
+              name: 'docs',
+            ),
+          );
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: tomTheme(Brightness.light),
+            home: const Scaffold(body: StatusPanel()),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    EditorState holding(String path, {bool deleted = false}) =>
+        EditorState.ready(
+          saved: DocumentEntity(
+            path: SpaceRelativePathValueObject(path),
+            content: 'site_name: docs\n',
+          ),
+          source: 'site_name: docs\n',
+          isDeleted: deleted,
+        );
+
+    testWidgets('the kind is named from the extension', (
+      WidgetTester tester,
+    ) async {
+      await pumpHolding(tester, holding('mkdocs.yml'));
+
+      expect(find.text('YAML'), findsOneWidget);
+      expect(find.text('Markdown'), findsNothing);
+      expect(find.text('Saved'), findsOneWidget);
+    });
+
+    testWidgets('a file of no kind TOM names is plain text', (
+      WidgetTester tester,
+    ) async {
+      await pumpHolding(tester, holding('LICENSE'));
+
+      expect(find.text('Plain text'), findsOneWidget);
+    });
+
+    testWidgets('a deleted file is read-only, not saved', (
+      WidgetTester tester,
+    ) async {
+      await pumpHolding(tester, holding('docs.yml', deleted: true));
+
+      expect(find.text('Read-only'), findsOneWidget);
+      expect(find.text('Saved'), findsNothing);
+      // No check beside it: the check would say the file is on disk.
+      expect(find.byType(TomGlyphWidget), findsNothing);
+      expect(find.text('Ln 1, Col 1'), findsOneWidget);
+      expect(find.text('UTF-8'), findsOneWidget);
+    });
+
+    testWidgets('a binary file names no line, no encoding, and its kind', (
+      WidgetTester tester,
+    ) async {
+      await pumpHolding(
+        tester,
+        EditorState.ready(
+          saved: DocumentEntity(
+            path: SpaceRelativePathValueObject('logo.png'),
+            content: '',
+          ),
+          source: '',
+          isBinary: true,
+        ),
+      );
+
+      expect(find.text('Binary'), findsOneWidget);
+      expect(find.text('Read-only'), findsOneWidget);
+      expect(find.textContaining('Ln '), findsNothing);
+      expect(find.text('UTF-8'), findsNothing);
+      expect(find.text('Plain text'), findsNothing);
+    });
   });
 
   group('what git says', () {
@@ -209,22 +303,26 @@ void main() {
       expect(find.text('3 changes'), findsOneWidget);
     });
 
-    testWidgets('ahead and behind are each said only when there is one', (
+    testWidgets('ahead and behind are both said, as numbers', (
       WidgetTester tester,
     ) async {
+      // Both always, as every 1b board draws them: a zero beside the arrow
+      // is the answer to "is there anything to pull".
       await pumpWith(tester, _status(branch: 'main', ahead: 2));
 
-      expect(find.text('2 ahead'), findsOneWidget);
-      expect(find.textContaining('behind'), findsNothing);
+      expect(find.text('2'), findsOneWidget);
+      expect(find.text('0'), findsOneWidget);
     });
 
-    testWidgets('a detached HEAD is named, not left blank', (
+    testWidgets('a repository on no branch says so, in the product\'s words', (
       WidgetTester tester,
     ) async {
-      // A state to get out of, not a missing value.
+      // A state to get out of, not a missing value — and never git's
+      // `detached` (`docs/product/workspace/status-bar/doc.md`).
       await pumpWith(tester, _status(isDetached: true));
 
-      expect(find.text('detached HEAD'), findsOneWidget);
+      expect(find.text('Not on a branch'), findsOneWidget);
+      expect(find.textContaining('etached'), findsNothing);
     });
   });
 }
@@ -252,6 +350,16 @@ GitStatusValueObject _status({
   isDetached: isDetached,
 );
 
+/// An editor that holds the one buffer it was given.
+final class _Holding extends EditorNotifier {
+  _Holding(this._state);
+
+  final EditorState _state;
+
+  @override
+  EditorState build() => _state;
+}
+
 /// A repository for any space, answering with a document that holds nothing.
 DocumentRepository _documentsFor(SpaceEntity space) => const _Documents();
 
@@ -265,6 +373,13 @@ final class _Documents implements DocumentRepository {
   ) async => Success<DocumentEntity, DocumentFailure>(
     DocumentEntity(path: path, content: ''),
   );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

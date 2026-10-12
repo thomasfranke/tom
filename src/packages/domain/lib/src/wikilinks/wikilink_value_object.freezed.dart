@@ -14,9 +14,12 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$WikilinkValueObject {
 
-/// What was written before the `#`, trimmed, never empty.
+/// What was written before the `#`, trimmed; empty only when the link
+/// is to a heading of the document it is written in, `[[#heading]]`.
  String get target;/// What was written after the first `#`, or null when there was none.
- String? get anchor;
+ String? get anchor;/// What was written after the first `|`, or null when there was none —
+/// the words the preview shows instead of the target.
+ String? get label;
 /// Create a copy of WikilinkValueObject
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,16 +30,16 @@ $WikilinkValueObjectCopyWith<WikilinkValueObject> get copyWith => _$WikilinkValu
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WikilinkValueObject&&(identical(other.target, target) || other.target == target)&&(identical(other.anchor, anchor) || other.anchor == anchor));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WikilinkValueObject&&(identical(other.target, target) || other.target == target)&&(identical(other.anchor, anchor) || other.anchor == anchor)&&(identical(other.label, label) || other.label == label));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,target,anchor);
+int get hashCode => Object.hash(runtimeType,target,anchor,label);
 
 @override
 String toString() {
-  return 'WikilinkValueObject(target: $target, anchor: $anchor)';
+  return 'WikilinkValueObject(target: $target, anchor: $anchor, label: $label)';
 }
 
 
@@ -47,7 +50,7 @@ abstract mixin class $WikilinkValueObjectCopyWith<$Res>  {
   factory $WikilinkValueObjectCopyWith(WikilinkValueObject value, $Res Function(WikilinkValueObject) _then) = _$WikilinkValueObjectCopyWithImpl;
 @useResult
 $Res call({
- String target, String? anchor
+ String target, String? anchor, String? label
 });
 
 
@@ -64,10 +67,11 @@ class _$WikilinkValueObjectCopyWithImpl<$Res>
 
 /// Create a copy of WikilinkValueObject
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? target = null,Object? anchor = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? target = null,Object? anchor = freezed,Object? label = freezed,}) {
   return _then(_self.copyWith(
 target: null == target ? _self.target : target // ignore: cast_nullable_to_non_nullable
 as String,anchor: freezed == anchor ? _self.anchor : anchor // ignore: cast_nullable_to_non_nullable
+as String?,label: freezed == label ? _self.label : label // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -153,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String target,  String? anchor)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String target,  String? anchor,  String? label)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WikilinkValueObject() when $default != null:
-return $default(_that.target,_that.anchor);case _:
+return $default(_that.target,_that.anchor,_that.label);case _:
   return orElse();
 
 }
@@ -174,10 +178,10 @@ return $default(_that.target,_that.anchor);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String target,  String? anchor)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String target,  String? anchor,  String? label)  $default,) {final _that = this;
 switch (_that) {
 case _WikilinkValueObject():
-return $default(_that.target,_that.anchor);case _:
+return $default(_that.target,_that.anchor,_that.label);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -194,10 +198,10 @@ return $default(_that.target,_that.anchor);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String target,  String? anchor)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String target,  String? anchor,  String? label)?  $default,) {final _that = this;
 switch (_that) {
 case _WikilinkValueObject() when $default != null:
-return $default(_that.target,_that.anchor);case _:
+return $default(_that.target,_that.anchor,_that.label);case _:
   return null;
 
 }
@@ -209,13 +213,17 @@ return $default(_that.target,_that.anchor);case _:
 
 
 class _WikilinkValueObject extends WikilinkValueObject {
-  const _WikilinkValueObject({required this.target, this.anchor}): super._();
+  const _WikilinkValueObject({required this.target, this.anchor, this.label}): super._();
   
 
-/// What was written before the `#`, trimmed, never empty.
+/// What was written before the `#`, trimmed; empty only when the link
+/// is to a heading of the document it is written in, `[[#heading]]`.
 @override final  String target;
 /// What was written after the first `#`, or null when there was none.
 @override final  String? anchor;
+/// What was written after the first `|`, or null when there was none —
+/// the words the preview shows instead of the target.
+@override final  String? label;
 
 /// Create a copy of WikilinkValueObject
 /// with the given fields replaced by the non-null parameter values.
@@ -227,16 +235,16 @@ _$WikilinkValueObjectCopyWith<_WikilinkValueObject> get copyWith => __$WikilinkV
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WikilinkValueObject&&(identical(other.target, target) || other.target == target)&&(identical(other.anchor, anchor) || other.anchor == anchor));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WikilinkValueObject&&(identical(other.target, target) || other.target == target)&&(identical(other.anchor, anchor) || other.anchor == anchor)&&(identical(other.label, label) || other.label == label));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,target,anchor);
+int get hashCode => Object.hash(runtimeType,target,anchor,label);
 
 @override
 String toString() {
-  return 'WikilinkValueObject(target: $target, anchor: $anchor)';
+  return 'WikilinkValueObject(target: $target, anchor: $anchor, label: $label)';
 }
 
 
@@ -247,7 +255,7 @@ abstract mixin class _$WikilinkValueObjectCopyWith<$Res> implements $WikilinkVal
   factory _$WikilinkValueObjectCopyWith(_WikilinkValueObject value, $Res Function(_WikilinkValueObject) _then) = __$WikilinkValueObjectCopyWithImpl;
 @override @useResult
 $Res call({
- String target, String? anchor
+ String target, String? anchor, String? label
 });
 
 
@@ -264,10 +272,11 @@ class __$WikilinkValueObjectCopyWithImpl<$Res>
 
 /// Create a copy of WikilinkValueObject
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? target = null,Object? anchor = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? target = null,Object? anchor = freezed,Object? label = freezed,}) {
   return _then(_WikilinkValueObject(
 target: null == target ? _self.target : target // ignore: cast_nullable_to_non_nullable
 as String,anchor: freezed == anchor ? _self.anchor : anchor // ignore: cast_nullable_to_non_nullable
+as String?,label: freezed == label ? _self.label : label // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

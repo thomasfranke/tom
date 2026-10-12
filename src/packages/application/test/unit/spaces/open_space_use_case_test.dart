@@ -50,18 +50,76 @@ void main() {
     });
   });
 
-  group('an expected failure stays expected', () {
-    test('a folder outside any repository is passed through', () async {
-      final Result<SpaceEntity, AppFailure> result = await openingWith(
-        const Failure<SpaceEntity, AppFailure>(GitNotARepository('/loose')),
-      ).open('/loose');
+  group('in two halves', () {
+    final SpaceEntity folder = SpaceEntity(
+      root: '/code/app/docs',
+      repositoryRoot: null,
+      name: 'docs',
+    );
+
+    test(
+      'the folder is opened and remembered with git asked nothing',
+      () async {
+        final _Locator locator = _Locator(folder, opened);
+
+        final Result<SpaceEntity, AppFailure> result = await OpenSpaceUseCase(
+          spaces: _Spaces(answer: Success<SpaceEntity, AppFailure>(opened)),
+          locator: locator,
+          recents: recents,
+          observability: observability,
+        ).openFolder('/code/app/docs');
+
+        expect((result as Success<SpaceEntity, AppFailure>).value, folder);
+        expect(locator.located, 0);
+        expect(recents.remembered, <SpaceEntity>[folder]);
+      },
+    );
+
+    test('the repository is found apart, a failure passed through', () async {
+      final _Locator locator = _Locator(folder, opened);
+      final OpenSpaceUseCase use = OpenSpaceUseCase(
+        spaces: _Spaces(answer: Success<SpaceEntity, AppFailure>(opened)),
+        locator: locator,
+        recents: recents,
+        observability: observability,
+      );
 
       expect(
-        (result as Failure<SpaceEntity, AppFailure>).failure,
-        const GitNotARepository('/loose'),
+        ((await use.locate(folder)) as Success<SpaceEntity, AppFailure>).value,
+        opened,
+      );
+      locator.refusal = const GitCommandDenied();
+      expect(
+        ((await use.locate(folder)) as Failure<SpaceEntity, AppFailure>)
+            .failure
+            .isDenial,
+        isTrue,
       );
     });
 
+    test('with no locator the whole opening is the only opening', () async {
+      final _Spaces spaces = _Spaces(
+        answer: Success<SpaceEntity, AppFailure>(opened),
+      );
+      final OpenSpaceUseCase use = OpenSpaceUseCase(
+        spaces: spaces,
+        recents: recents,
+        observability: observability,
+      );
+
+      expect(
+        ((await use.openFolder('/p')) as Success<SpaceEntity, AppFailure>)
+            .value,
+        opened,
+      );
+      expect(
+        ((await use.locate(opened)) as Success<SpaceEntity, AppFailure>).value,
+        opened,
+      );
+    });
+  });
+
+  group('an expected failure stays expected', () {
     test('a folder that is gone is passed through', () async {
       final Result<SpaceEntity, AppFailure> result = await openingWith(
         const Failure<SpaceEntity, AppFailure>(SpaceFolderMissing('/gone')),
@@ -75,8 +133,8 @@ void main() {
 
     test('and nothing is reported to observability', () async {
       await openingWith(
-        const Failure<SpaceEntity, AppFailure>(GitNotARepository('/loose')),
-      ).open('/loose');
+        const Failure<SpaceEntity, AppFailure>(SpaceFolderMissing('/gone')),
+      ).open('/gone');
 
       expect(observability.captured, isEmpty);
     });
@@ -91,12 +149,17 @@ void main() {
       expect(recents.remembered, <SpaceEntity>[opened]);
     });
 
-    test('a folder outside a repository is not a place to return to', () async {
-      await openingWith(
-        const Failure<SpaceEntity, AppFailure>(GitNotARepository('/loose')),
-      ).open('/loose');
+    test('a folder with no repository, which opened like any other', () async {
+      // It is a space (`docs/product/workspace/without-a-repository/doc.md`).
+      final SpaceEntity loose = SpaceEntity(
+        root: '/loose',
+        repositoryRoot: null,
+        name: 'loose',
+      );
 
-      expect(recents.remembered, isEmpty);
+      await openingWith(Success<SpaceEntity, AppFailure>(loose)).open('/loose');
+
+      expect(recents.remembered, <SpaceEntity>[loose]);
     });
 
     test('nor is a folder that is gone', () async {
@@ -177,11 +240,39 @@ void main() {
 }
 
 /// A repository that answers what it was told to, and remembers the folder.
+final class _Locator implements SpaceLocationRepository {
+  _Locator(this.folder, this.found);
+
+  final SpaceEntity folder;
+  final SpaceEntity found;
+  AppFailure? refusal;
+  int located = 0;
+
+  @override
+  Future<Result<SpaceEntity, AppFailure>> openFolder(String _) async =>
+      Success<SpaceEntity, AppFailure>(folder);
+
+  @override
+  Future<Result<SpaceEntity, AppFailure>> locate(SpaceEntity space) async {
+    located++;
+    final AppFailure? refused = refusal;
+    return refused != null
+        ? Failure<SpaceEntity, AppFailure>(refused)
+        : Success<SpaceEntity, AppFailure>(found);
+  }
+}
+
 final class _Spaces implements SpaceRepository {
   _Spaces({required this.answer});
 
   final Result<SpaceEntity, AppFailure> answer;
   String? asked;
+
+  @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
 
   @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async {
@@ -197,6 +288,12 @@ final class _Spaces implements SpaceRepository {
 
 /// A repository that breaks its contract by throwing.
 final class _ThrowingSpaces implements SpaceRepository {
+  @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
+
   @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async =>
       throw StateError('the disk caught fire');

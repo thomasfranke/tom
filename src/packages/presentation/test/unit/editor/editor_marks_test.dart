@@ -357,6 +357,140 @@ void main() {
       );
     });
   });
+
+  group('a file that is not markdown, by line', () {
+    test('a run is lettered on its first line and tinted through', () {
+      final EditorMarks lines = EditorMarks.ofLines(
+        const LineDiffValueObject(
+          runs: <LineRunValueObject>[
+            LineRunValueObject.added(from: 1, to: 2),
+            LineRunValueObject.modified(from: 4, to: 4),
+          ],
+        ),
+      );
+      expect(lines.at(1), EditorMarkEnum.added);
+      expect(lines.at(2), isNull);
+      expect(lines.bandAt(2), EditorMarkEnum.added);
+      expect(lines.at(4), EditorMarkEnum.modified);
+      expect(lines.bandAt(3), isNull);
+    });
+
+    test('removed lines are a seam above the line that followed', () {
+      final EditorMarks lines = EditorMarks.ofLines(
+        const LineDiffValueObject(
+          runs: <LineRunValueObject>[
+            LineRunValueObject.removed(at: 3, count: 2),
+          ],
+        ),
+      );
+      expect(lines.seamAbove(3), isTrue);
+      expect(lines.at(3), isNull);
+      expect(lines.bandAt(3), isNull);
+    });
+
+    test('nothing changed is marked nowhere', () {
+      expect(
+        EditorMarks.ofLines(
+          const LineDiffValueObject(runs: <LineRunValueObject>[]),
+        ).isEmpty,
+        isTrue,
+      );
+    });
+  });
+
+  group('a deleted file', () {
+    test('every line is under the removed band, lettered once', () {
+      final EditorMarks lines = EditorMarks.ofDeleted('one\ntwo\nthree\n');
+      expect(lines.at(0), EditorMarkEnum.removed);
+      expect(lines.bandAt(0), EditorMarkEnum.removed);
+      expect(lines.bandAt(2), EditorMarkEnum.removed);
+      expect(lines.bandAt(3), isNull, reason: 'the break ends line three');
+    });
+
+    test('an empty one has nothing to mark', () {
+      expect(EditorMarks.ofDeleted('').isEmpty, isTrue);
+    });
+  });
+
+  group('where the marks come from', () {
+    final DocumentEntity yaml = DocumentEntity(
+      path: SpaceRelativePathValueObject('site.yaml'),
+      content: 'a: 1\nb: 2\n',
+    );
+
+    /// The marks of an editor holding [buffer], the line diff answering
+    /// [lines].
+    EditorMarks marksOf(EditorState buffer, {LineDiffValueObject? lines}) {
+      final ProviderContainer holding = ProviderContainer(
+        overrides: <Override>[
+          editorProvider.overrideWith(() => _Holding(buffer)),
+          lineDiffProvider.overrideWith(() => _Lines(lines)),
+        ],
+      );
+      addTearDown(holding.dispose);
+      return holding.read(editorMarksProvider);
+    }
+
+    test('a text file is marked by its line diff', () {
+      expect(
+        marksOf(
+          EditorState.ready(saved: yaml, source: yaml.content),
+          lines: const LineDiffValueObject(
+            runs: <LineRunValueObject>[
+              LineRunValueObject.added(from: 1, to: 1),
+            ],
+          ),
+        ).at(1),
+        EditorMarkEnum.added,
+      );
+    });
+
+    test('a deleted file is every line removed, whatever its kind', () {
+      final EditorMarks lines = marksOf(
+        EditorState.ready(saved: yaml, source: yaml.content, isDeleted: true),
+      );
+      expect(lines.bandAt(0), EditorMarkEnum.removed);
+      expect(lines.bandAt(1), EditorMarkEnum.removed);
+    });
+
+    test('a binary file is marked nowhere', () {
+      expect(
+        marksOf(
+          EditorState.ready(
+            saved: DocumentEntity(path: yaml.path, content: ''),
+            source: '',
+            isBinary: true,
+          ),
+          lines: const LineDiffValueObject(
+            runs: <LineRunValueObject>[
+              LineRunValueObject.added(from: 0, to: 0),
+            ],
+          ),
+        ).isEmpty,
+        isTrue,
+      );
+    });
+  });
+}
+
+/// An editor holding one buffer and doing nothing else.
+final class _Holding extends EditorNotifier {
+  _Holding(this.buffer);
+
+  final EditorState buffer;
+
+  @override
+  EditorState build() => buffer;
+}
+
+/// A line diff that answers what it was told to.
+final class _Lines extends LineDiffNotifier {
+  _Lines(this.answer);
+
+  final LineDiffValueObject? answer;
+
+  @override
+  LineDiffValueObject? build() => answer;
 }
 
 /// A reader that splits nothing: one heading block, whatever it is given.
@@ -431,6 +565,13 @@ final class _Documents implements DocumentRepository {
   ) async => Success<DocumentEntity, DocumentFailure>(
     DocumentEntity(path: path, content: content),
   );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>

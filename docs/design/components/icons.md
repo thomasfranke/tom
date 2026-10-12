@@ -1,32 +1,34 @@
 # The icon set
 
-Glyphs drawn on a 16 grid with a 2px stroke and no fill, one SVG each in
-[`icons/`](icons/).
+Font Awesome Free 6 **Solid**, vendored as a font in `src/packages/ui/fonts/`
+and reached only through `TomGlyphWidget`
+([Decision 32](../../technical/decisions/032-the-icon-set-is-font-awesome.md)) —
+except the formatting bar's seventeen, which are Material Symbols Outlined at
+weight 300, drawn from `icons/toolbar/<name>.svg`.
 
-| | | |
+| Glyph | Font Awesome | Where |
 |---|---|---|
-| [`folder.svg`](icons/folder.svg) | [`link.svg`](icons/link.svg) | [`search.svg`](icons/search.svg) |
-| [`chevron.svg`](icons/chevron.svg) | [`check.svg`](icons/check.svg) | [`close.svg`](icons/close.svg) |
-| [`plus.svg`](icons/plus.svg) | [`upload.svg`](icons/upload.svg) | [`download.svg`](icons/download.svg) |
-| [`commit.svg`](icons/commit.svg) | [`push.svg`](icons/push.svg) | [`pull.svg`](icons/pull.svg) |
-| [`fetch.svg`](icons/fetch.svg) | [`no-git.svg`](icons/no-git.svg) | [`preferences.svg`](icons/preferences.svg) |
-| [`undo.svg`](icons/undo.svg) | [`redo.svg`](icons/redo.svg) | [`heading.svg`](icons/heading.svg) |
-| [`strikethrough.svg`](icons/strikethrough.svg) | [`list.svg`](icons/list.svg) | [`ordered-list.svg`](icons/ordered-list.svg) |
-| [`task-list.svg`](icons/task-list.svg) | [`quote.svg`](icons/quote.svg) | [`code.svg`](icons/code.svg) |
-| [`table.svg`](icons/table.svg) | [`rule.svg`](icons/rule.svg) | [`image.svg`](icons/image.svg) |
-| [`footnote.svg`](icons/footnote.svg) | [`alert.svg`](icons/alert.svg) | |
+| `folder` · `folderOpen` · `file` | `folder` · `folder-open` · `file-lines` | the tree's rows, a tab, Home's `Choose folder…` |
+| `branch` | `code-branch` | the branch pill, the status bar |
+| `home` | `house` | before the breadcrumb: the way out of a space |
+| `preferences` · `person` | `gear` · `user` | the gear, and the account button when nobody is named |
+| `push` · `pull` · `fetch` | `arrow-up` · `arrow-down` · `arrows-rotate` | the column's foot, the status bar's drift |
+| `discard` | `arrow-rotate-left` | the end of a changes row: putting one file back as git has it |
+| `undo` … `alert` | Material Symbols Outlined 300, not Font Awesome | the formatting bar's seventeen |
+| `more` | `ellipsis` | what the formatting bar's last group folds into |
+| `chevronDown` · `chevronRight` | `chevron-down` · `chevron-right` | a folder, a select control |
+| `close` · `clear` · `check` · `replace` | `xmark` · `circle-xmark` · `check` · `right-left` | dismissing, emptying a field, a tick, replacing |
+| `menu` · `plus` · `search` · `link` | `ellipsis-vertical` · `plus` · `magnifying-glass` · `link` | a column's `⋮`, a new entry, the search box, a URL |
+| `terminal` · `copy` · `external` | `terminal` · `copy` · `arrow-up-right-from-square` | the git menu, a row of the Commands panel, a page that opens outside the app |
 
-- Each is `viewBox="0 0 16 16"`, rendered at 24 with `stroke="currentColor"` — the colour is the host control's and nothing is recoloured per use.
-- **These files are the source**, and the Penpot `Icon` component draws the same paths. When the two disagree these are right: a glyph is geometry, and geometry belongs in a file the build can read.
-- The set grows **one glyph at a time**, never by importing a library — an icon set is a visual decision this project has not made, and importing one makes it by accident.
-- The chevron is VS Code's codicon path, filled, and is aligned by its ink rather than its box — the two states carry different amounts of it, so matching the boxes makes them look unaligned.
-- **`commit` is the wordmark's `O`**: a ring on the trunk, which is what a commit is ([brand](../brand/README.md)). The trunk breaks at the ring rather than crossing it — continuous, at 16, it reads as a circle struck through.
-- **`undo` and `redo` are an arrow that turns back**, not the closed circle `fetch` draws: one says *the last thing you did*, the other says *ask the remote*, and at 16 points a reader has one glance to tell them apart.
-- **`bold` and `italic` are not in this folder.** They are letterforms — a `B` and an `I` in the interface face — because a `B` traced on the 16 grid is worse than the letter, and the shape of the letter *is* the mark. They live in the `Icon` component as text rather than as a path.
-- **Two pairs were redrawn because they looked alike**, which is this set's one hard rule: `strikethrough` was three stacked lines and read as `rule` and as `list`, so it became the `S` with the line through it; `footnote` was a number over three lines and read as `ordered-list`, so it became the raised mark over the note. Both were caught by rendering the set at 48 and looking, not by reading the `d`.
-- **`fetch` is not an arrow.** An arrow says something moved, and a fetch writes nothing to disk; `pull` is the one that carries the down arrow, and the two must not look alike.
-- **`preferences` is a gear, and that is the whole argument** — a toggle-and-sliders mark was tried four times and read as a list, as a rule and as a control panel. The gear is the one symbol in this set nobody has to learn, so it is the one place a convention beats an invention.
-- Rendering these needs `flutter_svg`, so it is a licence check under [rule 1](../../../AGENTS.md). The alternative is each `d` attribute in a `CustomPainter`, which costs nothing.
+- **The enum names what a glyph does here**, never what Font Awesome calls it, so swapping one is a line in `tom_glyph_widget.dart` and no screen changes.
+- **The colour is the host control's**, available or not; nothing is recoloured per use.
+- **The house and the gear are stroked, not filled** — the same Solid glyph drawn as an outline, at the same size and in the same ink, so the bar's two ends read as one set.
+- **`discard` is not `undo`.** Both turn left, and they are two glyphs because one takes back an edit and the other puts a file back.
+- **The Penpot `Icon` component draws the same glyphs**, from Font Awesome's own SVGs, so a board and the app never show two sets.
+- **The formatting bar's SVGs are the source** — `icons/toolbar/<name>.svg`, one `<path>` and a `viewBox` each; `docs/design/tools/toolbar_outlines.py` writes the app's outlines from them, and replacing a glyph is replacing its file.- **`fetch` is not an arrow.** An arrow says something moved, and a fetch writes nothing to disk; `pull` is the one that carries the down arrow.
+- **A symbol that is not a letter comes from this set, never from text** — IBM Plex carries `✓`, `↑` and `↓` in its regular cut only, so at any other weight they export as nothing.
+- **No Material `Icons`.** A second set beside this one is how a hand-drawn set ended up next to Material's `close` and `check`.
 
 ---
 

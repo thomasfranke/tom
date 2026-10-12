@@ -4,6 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_note_widget.dart';
 import 'package:tom_desktop/screens/file_tree/widgets/file_tree_rows_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
@@ -36,12 +37,16 @@ class FileTreeBodyWidget extends StatelessWidget {
   Widget build(BuildContext context) => switch (state) {
     // The shell only shows with a space open, so nobody reaches this state.
     FileTreeInitial() => const SizedBox.shrink(),
-    FileTreeLoading() => const FileTreeNoteWidget('Reading the folder…'),
+    FileTreeLoading() => FileTreeNoteWidget(context.l10n.fileTreeReading),
     FileTreeFailed(failure: final AppFailure failure) => FileTreeNoteWidget(
-      _explain(failure),
+      _explain(context.l10n, failure),
     ),
     final FileTreeReady ready => FileTreeRowsWidget(
       rows: ready.rowsWith(changes),
+      draftAt: ready.draftIndex,
+      draftDepth: ready.draftDepth,
+      isDraftFolder: ready.draft?.isFolder ?? false,
+      isDraftRefused: ready.draft?.refused != null,
     ),
   };
 
@@ -49,9 +54,10 @@ class FileTreeBodyWidget extends StatelessWidget {
   /// folder inside it costs that folder, not the tree.
   ///
   /// A catch-all, because this switches over [AppFailure] itself.
-  static String _explain(AppFailure failure) => switch (failure) {
-    SpaceFolderMissing() => 'This folder is no longer there.',
-    SpaceAccessDenied() => 'TOM is not allowed to read this folder.',
-    _ => 'This folder could not be read.',
-  };
+  static String _explain(AppLocalizations l10n, AppFailure failure) =>
+      switch (failure) {
+        SpaceFolderMissing() => l10n.fileTreeFolderMissing,
+        SpaceAccessDenied() => l10n.fileTreeAccessDenied,
+        _ => l10n.fileTreeUnreadable,
+      };
 }

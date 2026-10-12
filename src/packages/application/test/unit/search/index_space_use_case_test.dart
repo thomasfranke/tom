@@ -149,6 +149,12 @@ final class _Spaces implements SpaceRepository {
   ) async => answer;
 
   @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
+
+  @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) =>
       throw UnimplementedError();
 }
@@ -159,6 +165,12 @@ final class _ThrowingSpaces implements SpaceRepository {
   Future<Result<List<SpaceEntryValueObject>, SpaceFailure>> entries(
     SpaceEntity space,
   ) async => throw StateError('the disk caught fire');
+
+  @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
 
   @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) =>

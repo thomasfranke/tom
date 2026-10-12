@@ -277,5 +277,115 @@ void main() {
     test('is false for a document that merely quotes a marker', () {
       expect(scanner.holdsMarker('Git writes `<<<<<<< HEAD` here.\n'), isFalse);
     });
+
+    // A region somebody half resolved by hand: one line of it deleted, the
+    // rest still there. Not a region any more, and still not prose.
+    for (final (String left, String text) in <(String, String)>[
+      ('the opening line', '# Title\n\n<<<<<<< HEAD\nours\n\nAfter.\n'),
+      ('the separator', '# Title\n\nours\n=======\ntheirs\n\nAfter.\n'),
+      ('the closing line', '# Title\n\ntheirs\n>>>>>>> main\n\nAfter.\n'),
+      ('the base line', '# Title\n\nours\n||||||| 1a2b3c4\nbase\n\nAfter.\n'),
+      ('a closing line with no label', 'theirs\n>>>>>>>\n'),
+      ('a marker on the last line, unterminated', 'theirs\n>>>>>>> main'),
+      ('a marker in a file with Windows line endings', 'a\r\n=======\r\nb\r\n'),
+    ]) {
+      test('is true with only $left left', () {
+        expect(scanner.holdsMarker(text), isTrue);
+      });
+    }
+
+    test('is false for a heading underlined with more than seven', () {
+      expect(scanner.holdsMarker('Title\n========\n\nProse.\n'), isFalse);
+    });
+
+    test('is false for a table row that opens with empty cells', () {
+      expect(scanner.holdsMarker('||||||||a|\n'), isFalse);
+    });
+
+    test('is false for a marker that is indented, which is code', () {
+      expect(scanner.holdsMarker('    <<<<<<< HEAD\n'), isFalse);
+    });
+  });
+
+  group('a region written with its base (diff3, zdiff3)', () {
+    const String withBase =
+        '# Title\n'
+        '\n'
+        '<<<<<<< HEAD\n'
+        'ours\n'
+        '||||||| 1a2b3c4\n'
+        'as it was\n'
+        '=======\n'
+        'theirs\n'
+        '>>>>>>> main\n'
+        '\n'
+        'After.\n';
+
+    test('is one region, and the base is on neither side', () {
+      final ConflictRegionValueObject region = scanner.scan(withBase).single;
+
+      expect(region.current, 'ours');
+      expect(region.incoming, 'theirs');
+      expect(region.currentLabel, 'HEAD');
+      expect(region.incomingLabel, 'main');
+    });
+
+    test('spans all four marker lines', () {
+      final ConflictRegionValueObject region = scanner.scan(withBase).single;
+
+      expect(withBase.substring(region.start), startsWith('<<<<<<< HEAD\n'));
+      expect(withBase.substring(region.end), '\nAfter.\n');
+    });
+
+    for (final ConflictChoiceEnum choice in ConflictChoiceEnum.values) {
+      test('resolved as ${choice.name}, no marker and no base text is '
+          'left', () {
+        final String resolved = scanner.resolve(
+          withBase,
+          scanner.scan(withBase).single,
+          choice,
+        );
+
+        expect(resolved, isNot(contains('|||||||')));
+        expect(resolved, isNot(contains('as it was')));
+        expect(scanner.holdsMarker(resolved), isFalse);
+      });
+    }
+
+    test('keeping both is current then incoming, as without a base', () {
+      expect(
+        scanner.resolve(
+          withBase,
+          scanner.scan(withBase).single,
+          ConflictChoiceEnum.both,
+        ),
+        '# Title\n\nours\ntheirs\n\nAfter.\n',
+      );
+    });
+
+    test('an empty base is still a base', () {
+      const String text =
+          '<<<<<<< HEAD\nours\n||||||| base\n=======\ntheirs\n>>>>>>> main\n';
+
+      expect(scanner.scan(text).single.current, 'ours');
+    });
+
+    test('a base with no separator after it is not a conflict', () {
+      expect(
+        scanner.scan('<<<<<<< HEAD\nours\n||||||| base\nwas\n>>>>>>> main\n'),
+        isEmpty,
+      );
+    });
+
+    test('the preview is cut around it, with no marker in the prose', () {
+      final List<ConflictSegment> cut = scanner.segment(withBase);
+
+      expect(cut, hasLength(3));
+      expect(find(cut).current, 'ours');
+      for (final ConflictProse prose in cut.whereType<ConflictProse>()) {
+        expect(prose.text, isNot(contains('|||||||')));
+        expect(prose.text, isNot(contains('as it was')));
+      }
+    });
   });
 }

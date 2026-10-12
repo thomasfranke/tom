@@ -3,7 +3,9 @@ library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:tom_domain/src/git/branch_name_value_object.dart';
+import 'package:tom_domain/src/git/file_state_enum.dart';
 import 'package:tom_domain/src/git/status_entry_value_object.dart';
+import 'package:tom_domain/src/paths/repo_relative_path_value_object.dart';
 
 part 'git_status_value_object.freezed.dart';
 
@@ -56,4 +58,27 @@ abstract class GitStatusValueObject with _$GitStatusValueObject {
   /// Whether a commit would record something.
   bool get hasStagedChanges =>
       entries.any((StatusEntryValueObject entry) => entry.isStaged);
+
+  /// Whether this status already says `HEAD` holds nothing at [path]: the
+  /// file is untracked, added, or the new name of a rename.
+  ///
+  /// The one place that rule is written, so nothing asks git for a
+  /// committed text it can be told does not exist.
+  bool hasNothingAtHead(RepoRelativePathValueObject path) => entries.any(
+    (StatusEntryValueObject entry) =>
+        entry.path == path &&
+        (entry.state == FileStateEnum.untracked ||
+            entry.state == FileStateEnum.added ||
+            entry.state == FileStateEnum.renamed),
+  );
+
+  /// How many documents `Discard all changes` puts back: each path once,
+  /// and neither an untracked nor an added one, which it keeps
+  /// (`docs/product/git-workflow/git-menu/doc.md`).
+  int get discardable => <RepoRelativePathValueObject>{
+    for (final StatusEntryValueObject entry in entries)
+      if (entry.state != FileStateEnum.untracked &&
+          entry.state != FileStateEnum.added)
+        entry.path,
+  }.length;
 }

@@ -1,4 +1,4 @@
-// `tom codegen` — build_runner, in two strengths, over one package or all.
+// `cli codegen` — build_runner, in two strengths, over one package or all.
 library;
 
 import 'dart:io';

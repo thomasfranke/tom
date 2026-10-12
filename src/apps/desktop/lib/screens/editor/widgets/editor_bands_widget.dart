@@ -15,9 +15,9 @@ import 'package:tom_ui/tom_ui.dart';
 /// (`editor_marks_widget.dart`) and the tint is this
 /// (`docs/product/diff/rendered-diff/how-it-is-drawn/doc.md`).
 ///
-/// Drawn **behind** the editor rather than inside it: the band crosses the
-/// line numbers and the text both, and the indicator column is only as wide
-/// as the numbers. The editor is left transparent so this shows through.
+/// Drawn **behind** the editor rather than inside it: the band starts in the
+/// gap after the numbers and crosses the text, and the indicator column is
+/// only as wide as the numbers. The editor is transparent so this shows.
 class EditorBandsWidget extends StatelessWidget {
   /// Creates the bands for [marks].
   const EditorBandsWidget({

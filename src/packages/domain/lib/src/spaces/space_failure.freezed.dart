@@ -86,12 +86,14 @@ extension SpaceFailurePatterns on SpaceFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( SpaceFolderMissing value)?  folderMissing,TResult Function( SpaceAccessDenied value)?  accessDenied,TResult Function( SpaceOperationFailed value)?  operationFailed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( SpaceFolderMissing value)?  folderMissing,TResult Function( SpaceAccessDenied value)?  accessDenied,TResult Function( SpaceEntryExists value)?  entryExists,TResult Function( SpaceInvalidName value)?  invalidName,TResult Function( SpaceOperationFailed value)?  operationFailed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case SpaceFolderMissing() when folderMissing != null:
 return folderMissing(_that);case SpaceAccessDenied() when accessDenied != null:
-return accessDenied(_that);case SpaceOperationFailed() when operationFailed != null:
+return accessDenied(_that);case SpaceEntryExists() when entryExists != null:
+return entryExists(_that);case SpaceInvalidName() when invalidName != null:
+return invalidName(_that);case SpaceOperationFailed() when operationFailed != null:
 return operationFailed(_that);case _:
   return orElse();
 
@@ -110,12 +112,14 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( SpaceFolderMissing value)  folderMissing,required TResult Function( SpaceAccessDenied value)  accessDenied,required TResult Function( SpaceOperationFailed value)  operationFailed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( SpaceFolderMissing value)  folderMissing,required TResult Function( SpaceAccessDenied value)  accessDenied,required TResult Function( SpaceEntryExists value)  entryExists,required TResult Function( SpaceInvalidName value)  invalidName,required TResult Function( SpaceOperationFailed value)  operationFailed,}){
 final _that = this;
 switch (_that) {
 case SpaceFolderMissing():
 return folderMissing(_that);case SpaceAccessDenied():
-return accessDenied(_that);case SpaceOperationFailed():
+return accessDenied(_that);case SpaceEntryExists():
+return entryExists(_that);case SpaceInvalidName():
+return invalidName(_that);case SpaceOperationFailed():
 return operationFailed(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
@@ -130,12 +134,14 @@ return operationFailed(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( SpaceFolderMissing value)?  folderMissing,TResult? Function( SpaceAccessDenied value)?  accessDenied,TResult? Function( SpaceOperationFailed value)?  operationFailed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( SpaceFolderMissing value)?  folderMissing,TResult? Function( SpaceAccessDenied value)?  accessDenied,TResult? Function( SpaceEntryExists value)?  entryExists,TResult? Function( SpaceInvalidName value)?  invalidName,TResult? Function( SpaceOperationFailed value)?  operationFailed,}){
 final _that = this;
 switch (_that) {
 case SpaceFolderMissing() when folderMissing != null:
 return folderMissing(_that);case SpaceAccessDenied() when accessDenied != null:
-return accessDenied(_that);case SpaceOperationFailed() when operationFailed != null:
+return accessDenied(_that);case SpaceEntryExists() when entryExists != null:
+return entryExists(_that);case SpaceInvalidName() when invalidName != null:
+return invalidName(_that);case SpaceOperationFailed() when operationFailed != null:
 return operationFailed(_that);case _:
   return null;
 
@@ -153,11 +159,13 @@ return operationFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String root,  AppFailure? cause)?  folderMissing,TResult Function( String path,  AppFailure? cause)?  accessDenied,TResult Function( String path,  AppFailure? cause)?  operationFailed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String root,  AppFailure? cause)?  folderMissing,TResult Function( String path,  AppFailure? cause)?  accessDenied,TResult Function( String path,  AppFailure? cause)?  entryExists,TResult Function( String path,  AppFailure? cause)?  invalidName,TResult Function( String path,  AppFailure? cause)?  operationFailed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case SpaceFolderMissing() when folderMissing != null:
 return folderMissing(_that.root,_that.cause);case SpaceAccessDenied() when accessDenied != null:
-return accessDenied(_that.path,_that.cause);case SpaceOperationFailed() when operationFailed != null:
+return accessDenied(_that.path,_that.cause);case SpaceEntryExists() when entryExists != null:
+return entryExists(_that.path,_that.cause);case SpaceInvalidName() when invalidName != null:
+return invalidName(_that.path,_that.cause);case SpaceOperationFailed() when operationFailed != null:
 return operationFailed(_that.path,_that.cause);case _:
   return orElse();
 
@@ -176,11 +184,13 @@ return operationFailed(_that.path,_that.cause);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String root,  AppFailure? cause)  folderMissing,required TResult Function( String path,  AppFailure? cause)  accessDenied,required TResult Function( String path,  AppFailure? cause)  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String root,  AppFailure? cause)  folderMissing,required TResult Function( String path,  AppFailure? cause)  accessDenied,required TResult Function( String path,  AppFailure? cause)  entryExists,required TResult Function( String path,  AppFailure? cause)  invalidName,required TResult Function( String path,  AppFailure? cause)  operationFailed,}) {final _that = this;
 switch (_that) {
 case SpaceFolderMissing():
 return folderMissing(_that.root,_that.cause);case SpaceAccessDenied():
-return accessDenied(_that.path,_that.cause);case SpaceOperationFailed():
+return accessDenied(_that.path,_that.cause);case SpaceEntryExists():
+return entryExists(_that.path,_that.cause);case SpaceInvalidName():
+return invalidName(_that.path,_that.cause);case SpaceOperationFailed():
 return operationFailed(_that.path,_that.cause);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -195,11 +205,13 @@ return operationFailed(_that.path,_that.cause);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String root,  AppFailure? cause)?  folderMissing,TResult? Function( String path,  AppFailure? cause)?  accessDenied,TResult? Function( String path,  AppFailure? cause)?  operationFailed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String root,  AppFailure? cause)?  folderMissing,TResult? Function( String path,  AppFailure? cause)?  accessDenied,TResult? Function( String path,  AppFailure? cause)?  entryExists,TResult? Function( String path,  AppFailure? cause)?  invalidName,TResult? Function( String path,  AppFailure? cause)?  operationFailed,}) {final _that = this;
 switch (_that) {
 case SpaceFolderMissing() when folderMissing != null:
 return folderMissing(_that.root,_that.cause);case SpaceAccessDenied() when accessDenied != null:
-return accessDenied(_that.path,_that.cause);case SpaceOperationFailed() when operationFailed != null:
+return accessDenied(_that.path,_that.cause);case SpaceEntryExists() when entryExists != null:
+return entryExists(_that.path,_that.cause);case SpaceInvalidName() when invalidName != null:
+return invalidName(_that.path,_that.cause);case SpaceOperationFailed() when operationFailed != null:
 return operationFailed(_that.path,_that.cause);case _:
   return null;
 
@@ -338,6 +350,144 @@ class _$SpaceAccessDeniedCopyWithImpl<$Res>
 /// with the given fields replaced by the non-null parameter values.
 @override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
   return _then(SpaceAccessDenied(
+null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class SpaceEntryExists implements SpaceFailure {
+  const SpaceEntryExists(this.path, {this.cause});
+  
+
+/// The space-relative path that was asked for.
+ final  String path;
+@override final  AppFailure? cause;
+
+/// Create a copy of SpaceFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$SpaceEntryExistsCopyWith<SpaceEntryExists> get copyWith => _$SpaceEntryExistsCopyWithImpl<SpaceEntryExists>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpaceEntryExists&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,path,cause);
+
+@override
+String toString() {
+  return 'SpaceFailure.entryExists(path: $path, cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $SpaceEntryExistsCopyWith<$Res> implements $SpaceFailureCopyWith<$Res> {
+  factory $SpaceEntryExistsCopyWith(SpaceEntryExists value, $Res Function(SpaceEntryExists) _then) = _$SpaceEntryExistsCopyWithImpl;
+@override @useResult
+$Res call({
+ String path, AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$SpaceEntryExistsCopyWithImpl<$Res>
+    implements $SpaceEntryExistsCopyWith<$Res> {
+  _$SpaceEntryExistsCopyWithImpl(this._self, this._then);
+
+  final SpaceEntryExists _self;
+  final $Res Function(SpaceEntryExists) _then;
+
+/// Create a copy of SpaceFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
+  return _then(SpaceEntryExists(
+null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
+as AppFailure?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class SpaceInvalidName implements SpaceFailure {
+  const SpaceInvalidName(this.path, {this.cause});
+  
+
+/// What was typed.
+ final  String path;
+@override final  AppFailure? cause;
+
+/// Create a copy of SpaceFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$SpaceInvalidNameCopyWith<SpaceInvalidName> get copyWith => _$SpaceInvalidNameCopyWithImpl<SpaceInvalidName>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpaceInvalidName&&(identical(other.path, path) || other.path == path)&&(identical(other.cause, cause) || other.cause == cause));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,path,cause);
+
+@override
+String toString() {
+  return 'SpaceFailure.invalidName(path: $path, cause: $cause)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $SpaceInvalidNameCopyWith<$Res> implements $SpaceFailureCopyWith<$Res> {
+  factory $SpaceInvalidNameCopyWith(SpaceInvalidName value, $Res Function(SpaceInvalidName) _then) = _$SpaceInvalidNameCopyWithImpl;
+@override @useResult
+$Res call({
+ String path, AppFailure? cause
+});
+
+
+
+
+}
+/// @nodoc
+class _$SpaceInvalidNameCopyWithImpl<$Res>
+    implements $SpaceInvalidNameCopyWith<$Res> {
+  _$SpaceInvalidNameCopyWithImpl(this._self, this._then);
+
+  final SpaceInvalidName _self;
+  final $Res Function(SpaceInvalidName) _then;
+
+/// Create a copy of SpaceFailure
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? cause = freezed,}) {
+  return _then(SpaceInvalidName(
 null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,cause: freezed == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
 as AppFailure?,

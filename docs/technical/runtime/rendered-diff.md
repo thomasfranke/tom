@@ -22,8 +22,8 @@ tom_core         every step returns Result<T>; failures are typed
 | **v1** — block diff | Parse both sides into blocks, align by similarity, classify as unchanged/added/removed/modified. This is `BlockDiffer`, the one real domain service |
 | **v2** — intra-block diff | Word-level insert/delete inside modified blocks |
 
-A parsing and tree-comparison problem, testable with golden files and no UI
-involved.
+A parsing and tree-comparison problem, testable over markdown fixtures with no
+UI involved.
 
 ---
 

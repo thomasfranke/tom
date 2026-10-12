@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/screens/editor/editor_toolbar_widget.dart';
 import 'package:tom_desktop/screens/shell/widgets/shell_mode_bar_widget.dart';
+import 'package:tom_desktop/screens/shell/widgets/shell_mode_control_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -28,6 +30,7 @@ void main() {
     preferences = _Preferences();
     container = ProviderContainer(
       overrides: <Override>[
+        historyProvider.overrideWith(_NoHistory.new),
         readPreferencesProvider.overrideWithValue(
           ReadPreferencesUseCase(preferences: preferences),
         ),
@@ -49,14 +52,23 @@ void main() {
             observability: const _Silent(),
           ),
         ),
+        // The modes ask the editor whether its buffer is binary, which
+        // makes it read the preferences file once that is on screen.
+        readPreferencesFileProvider.overrideWithValue(
+          ReadDocumentUseCase(
+            documentsFor: (SpaceEntity space) => documents,
+            observability: const _Silent(),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
   });
 
-  /// Mounts the bar, with [document] open when one is given.
-  Future<void> pumpBar(
-    WidgetTester tester, {
+  /// Mounts [chrome] with [document] open when one is given.
+  Future<void> pump(
+    WidgetTester tester,
+    Widget chrome, {
     SpaceRelativePathValueObject? document,
   }) async {
     container.read(spaceSessionProvider.notifier).open(docs);
@@ -68,18 +80,41 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: tomTheme(Brightness.light),
-          home: const Scaffold(body: ShellModeBarWidget()),
+          home: Scaffold(body: chrome),
         ),
       ),
     );
     await tester.pumpAndSettle();
   }
 
+  /// The row above the document.
+  Future<void> pumpBar(
+    WidgetTester tester, {
+    SpaceRelativePathValueObject? document,
+  }) => pump(tester, const ShellModeBarWidget(), document: document);
+
+  /// The round marks the row draws, whatever their colour.
+  Iterable<BoxDecoration> modifiedDots(WidgetTester tester) => tester
+      .widgetList<DecoratedBox>(
+        find.descendant(
+          of: find.byType(ShellModeBarWidget),
+          matching: find.byType(DecoratedBox),
+        ),
+      )
+      .map((DecoratedBox it) => it.decoration)
+      .whereType<BoxDecoration>()
+      .where((BoxDecoration it) => it.shape == BoxShape.circle);
+
+  /// The modes, which the top bar carries
+  /// (`docs/product/workspace/columns/doc.md`).
+  Future<void> pumpModes(WidgetTester tester) =>
+      pump(tester, const ShellModeControlWidget());
+
   testWidgets('it offers the three modes and no fourth', (
     WidgetTester tester,
   ) async {
     // No WYSIWYG (Decision 3).
-    await pumpBar(tester);
+    await pumpModes(tester);
 
     expect(find.text('Source'), findsOneWidget);
     expect(find.text('Split'), findsOneWidget);
@@ -87,17 +122,28 @@ void main() {
   });
 
   testWidgets('a space opens in split', (WidgetTester tester) async {
-    await pumpBar(tester);
+    await pumpModes(tester);
 
     expect(container.read(spaceSessionProvider)?.mode, DocumentModeEnum.split);
+  });
+
+  testWidgets('the row above the document carries no mode', (
+    WidgetTester tester,
+  ) async {
+    // The modes are a choice about the window, so they sit with the
+    // window's own controls in the top bar.
+    await pumpBar(tester);
+
+    expect(find.text('Source'), findsNothing);
+    expect(find.text('Preview'), findsNothing);
   });
 
   testWidgets('choosing a mode writes it to the session', (
     WidgetTester tester,
   ) async {
-    // The bar names no panel; which panels a mode includes is the
+    // The control names no panel; which panels a mode includes is the
     // descriptor's answer.
-    await pumpBar(tester);
+    await pumpModes(tester);
 
     await tester.tap(find.text('Preview'));
     await tester.pumpAndSettle();
@@ -105,6 +151,35 @@ void main() {
     expect(
       container.read(spaceSessionProvider)?.mode,
       DocumentModeEnum.preview,
+    );
+  });
+
+  testWidgets('the preferences file is source, and the other two are off', (
+    WidgetTester tester,
+  ) async {
+    // Not markdown to render (`preferences/where-it-is-stored/doc.md`).
+    await pumpModes(tester);
+    container
+        .read(spaceSessionProvider.notifier)
+        .openPreferencesFile(SpaceRelativePathValueObject('preferences.json'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<Text>(find.text('Source')).style?.color,
+      TomColors.light.textPrimary,
+    );
+    expect(
+      tester.widget<Text>(find.text('Preview')).style?.color,
+      TomColors.light.textMuted,
+    );
+
+    await tester.tap(find.text('Preview'));
+    await tester.pumpAndSettle();
+
+    expect(container.read(spaceSessionProvider)?.mode, DocumentModeEnum.split);
+    expect(
+      container.read(spaceSessionProvider)?.drawnMode,
+      DocumentModeEnum.source,
     );
   });
 
@@ -117,15 +192,19 @@ void main() {
       expect(find.text('Unsaved'), findsNothing);
     });
 
-    testWidgets('appears the moment something is typed', (
+    testWidgets('says nothing about an edit that is only unwritten', (
       WidgetTester tester,
     ) async {
+      // The tab's dot says it, closer to the document it is about.
       await pumpBar(tester, document: writing);
 
       container.read(editorProvider.notifier).edit('# changed\n');
       await tester.pumpAndSettle();
 
-      expect(find.text('Unsaved'), findsOneWidget);
+      expect(container.read(editorProvider).isDirty, isTrue);
+      expect(find.text('Unsaved'), findsNothing);
+      expect(find.text('Not saved'), findsNothing);
+      expect(modifiedDots(tester), isEmpty);
     });
 
     testWidgets('goes once the write lands', (WidgetTester tester) async {
@@ -158,6 +237,49 @@ void main() {
       expect(find.text('Unsaved'), findsNothing);
     });
   });
+
+  group('reading a past version', () {
+    final CommitEntity past = CommitEntity(
+      sha: CommitShaValueObject('abc1234' * 5 + 'def01'),
+      author: const AuthorValueObject(name: 'Ana', email: 'ana@example.com'),
+      date: CommitDateValueObject(
+        utc: DateTime.now().toUtc().subtract(const Duration(days: 3)),
+        offset: Duration.zero,
+      ),
+      subject: 'Reword the intro',
+      body: '',
+    );
+
+    testWidgets('the bar names the version and says the way back', (
+      WidgetTester tester,
+    ) async {
+      await pumpBar(tester, document: writing);
+      container.read(spaceSessionProvider.notifier).read(past);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Reading ${past.sha.short} · Ana · '),
+        findsOneWidget,
+      );
+      expect(find.text('Back to now'), findsOneWidget);
+      // It replaces the tools: there is no source for a commit.
+      expect(find.byType(EditorToolbarWidget), findsNothing);
+    });
+
+    testWidgets('Back to now leaves the version for the document', (
+      WidgetTester tester,
+    ) async {
+      await pumpBar(tester, document: writing);
+      container.read(spaceSessionProvider.notifier).read(past);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Back to now'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(spaceSessionProvider)?.readingVersion, isNull);
+      expect(find.text('Back to now'), findsNothing);
+    });
+  });
 }
 
 /// A repository answering with whatever content the test set.
@@ -172,8 +294,21 @@ final class _Documents implements DocumentRepository {
   );
 
   @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
+
+  @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async =>
       refusal ?? const Success<void, DocumentFailure>(null);
+}
+
+/// No history read: the bar only asks it to leave a version.
+final class _NoHistory extends HistoryNotifier {
+  @override
+  HistoryState build() => const HistoryState.idle();
 }
 
 /// The no-op observability, which is also the shipping default.

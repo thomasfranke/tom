@@ -54,7 +54,7 @@ void main() {
     const Filesystem filesystem = DartIoFilesystemImpl();
     documents = DocumentRepositoryImpl(
       documents: const DocumentDataSource(filesystem: filesystem),
-      space: space,
+      root: space.root,
     );
     spaces = SpaceRepositoryImpl(
       spaces: SpaceDataSource(
@@ -117,6 +117,34 @@ void main() {
           'path',
           'binary.md',
         ),
+      );
+    });
+
+    test('and its bytes are handed over as they are, to be judged', () async {
+      const List<int> picture = <int>[0xff, 0xd8, 0xff, 0xe0];
+      File('$root/logo.jpg').writeAsBytesSync(picture);
+      final SpaceRelativePathValueObject logo = SpaceRelativePathValueObject(
+        'logo.jpg',
+      );
+
+      final List<int> bytes = valueOf(await documents.readBytes(logo));
+
+      expect(bytes, picture);
+      expect(
+        FileContentValueObject.ofBytes(
+          logo,
+          valueOf(await documents.readBytes(logo)),
+        ),
+        const FileContentValueObject.binary(),
+      );
+    });
+
+    test('bytes of a file that is gone say the document is', () async {
+      expect(
+        failureOf(
+          await documents.readBytes(SpaceRelativePathValueObject('gone.yaml')),
+        ),
+        isA<DocumentNotFound>(),
       );
     });
 

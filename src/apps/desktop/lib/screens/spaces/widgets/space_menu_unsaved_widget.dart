@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/spaces/space_menu_design.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -25,18 +26,28 @@ class SpaceMenuUnsavedWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
-    final SpaceRelativePathValueObject? document = ref.watch(
+    final AppLocalizations l10n = context.l10n;
+    final DocumentTab? open = ref.watch(
       spaceSessionProvider.select(
-        (SpaceSessionState? session) => session?.openDocument,
+        (SpaceSessionState? session) => session?.onScreen,
       ),
     );
+    // Every tab's, not only the one on screen: saving and discarding act on
+    // all of them, so the question counts all of them.
+    final Set<DocumentTab> unsaved = ref.watch(unsavedDocumentsProvider);
+    final bool isMany = unsaved.length > 1;
+    final DocumentTab? document = unsaved.length == 1 ? unsaved.single : open;
     final SpaceMenuNotifier notifier = ref.read(spaceMenuProvider.notifier);
-    final String going = switch (ref.watch(
+    final SpaceDeparture? pending = ref.watch(
       spaceMenuProvider.select((SpaceMenuState state) => state.pending),
-    )) {
+    );
+    final String going = switch (pending) {
       SpaceDepartureSwitching(space: final RecentSpaceEntity it) => it.name,
       _ => '',
     };
+    // The window closing is a closing too, so its answers are the same two
+    // words; only what is lost with it is said differently.
+    final bool isQuitting = pending is SpaceDepartureQuitting;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -53,8 +64,12 @@ class SpaceMenuUnsavedWidget extends ConsumerWidget {
         const SizedBox(height: SpaceMenuDesign.dividerGap),
         Text(
           // Named, because half of not losing work quietly is saying which
-          // file is at stake.
-          '${document?.value ?? 'The open document'} has unsaved changes.',
+          // file is at stake; counted when one name would hide the rest.
+          isMany
+              ? l10n.spacesUnsavedCount(unsaved.length)
+              : l10n.commonHasUnsavedChanges(
+                  document?.value ?? l10n.commonTheOpenDocument,
+                ),
           style: TextStyle(
             fontSize: SpaceMenuDesign.title,
             height: 1.4,
@@ -64,11 +79,14 @@ class SpaceMenuUnsavedWidget extends ConsumerWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          going.isEmpty
-              ? 'Closing the space leaves the window, and the edit that has '
-                    'not reached the disk goes with it.'
-              : 'Opening $going replaces what is on screen, and the edit '
-                    'that has not reached the disk goes with it.',
+          switch ((going.isEmpty, isMany)) {
+            (true, false) when isQuitting => l10n.spacesUnsavedQuitting,
+            (true, true) when isQuitting => l10n.spacesUnsavedQuittingMany,
+            (true, false) => l10n.spacesUnsavedClosing,
+            (true, true) => l10n.spacesUnsavedClosingMany,
+            (false, false) => l10n.spacesUnsavedOpening(going),
+            (false, true) => l10n.spacesUnsavedOpeningMany(going),
+          },
           style: TextStyle(
             fontSize: SpaceMenuDesign.note,
             height: 1.5,
@@ -77,19 +95,29 @@ class SpaceMenuUnsavedWidget extends ConsumerWidget {
         ),
         const SizedBox(height: 14),
         _AnswerWidget(
-          label: going.isEmpty ? 'Save and close' : 'Save and open',
+          label: switch ((going.isEmpty, isMany)) {
+            (true, false) => l10n.commonSaveAndClose,
+            (true, true) => l10n.spacesSaveAllAndClose,
+            (false, false) => l10n.spacesSaveAndOpen,
+            (false, true) => l10n.spacesSaveAllAndOpen,
+          },
           isPrimary: true,
           onPressed: () => unawaited(notifier.saveAndLeave()),
         ),
         const SizedBox(height: SpaceMenuDesign.answerGap),
         _AnswerWidget(
-          label: going.isEmpty ? 'Discard and close' : 'Discard and open',
+          label: switch ((going.isEmpty, isMany)) {
+            (true, false) => l10n.commonDiscardAndClose,
+            (true, true) => l10n.spacesDiscardAllAndClose,
+            (false, false) => l10n.spacesDiscardAndOpen,
+            (false, true) => l10n.spacesDiscardAllAndOpen,
+          },
           isPrimary: false,
           onPressed: () => unawaited(notifier.discardAndLeave()),
         ),
         const SizedBox(height: SpaceMenuDesign.answerGap),
         _AnswerWidget(
-          label: 'Stay in this space',
+          label: l10n.spacesStay,
           isPrimary: false,
           onPressed: notifier.stay,
         ),

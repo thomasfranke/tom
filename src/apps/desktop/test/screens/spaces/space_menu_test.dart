@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
+import 'package:tom_desktop/screens/preferences/preferences_control_widget.dart';
 import 'package:tom_desktop/screens/spaces/space_menu_control_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -74,10 +76,14 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  /// Mounts the breadcrumb with [docs] open, and a document when asked.
+  /// Mounts the breadcrumb with [docs] open, and a document when asked —
+  /// with the preferences gear beside it when [withGear], the way the top
+  /// bar's two ends sit.
   Future<void> pumpControl(
     WidgetTester tester, {
     bool withDocument = false,
+    bool withGear = false,
+    Locale? locale,
   }) async {
     tester.view
       ..physicalSize = const Size(1280, 800)
@@ -94,10 +100,25 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: tomTheme(Brightness.dark),
-          home: const Scaffold(
+          locale: locale,
+          localizationsDelegates: locale == null
+              ? null
+              : AppLocalizations.localizationsDelegates,
+          supportedLocales: locale == null
+              ? const <Locale>[Locale('en', 'US')]
+              : AppLocalizations.supportedLocales,
+          home: Scaffold(
             body: Align(
               alignment: Alignment.topLeft,
-              child: SpaceMenuControlWidget(),
+              child: withGear
+                  ? const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        SpaceMenuControlWidget(),
+                        PreferencesControlWidget(),
+                      ],
+                    )
+                  : const SpaceMenuControlWidget(),
             ),
           ),
         ),
@@ -106,9 +127,16 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Opens the menu by clicking the breadcrumb.
+  /// Opens the menu by clicking the breadcrumb — its chevron, which is the
+  /// part that says it opens something.
   Future<void> openMenu(WidgetTester tester) async {
-    await tester.tap(find.byType(SpaceMenuControlWidget));
+    await tester.tap(find.byType(TomChevronWidget));
+    await tester.pumpAndSettle();
+  }
+
+  /// Presses the home button before the breadcrumb.
+  Future<void> pressHome(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('Close space'));
     await tester.pumpAndSettle();
   }
 
@@ -135,10 +163,11 @@ void main() {
     await pumpControl(tester);
 
     expect(find.text('RECENT SPACES'), findsNothing);
-    expect(find.text('Close space'), findsNothing);
+    // The way out is on the bar itself, menu or no menu.
+    expect(find.byTooltip('Close space'), findsOneWidget);
   });
 
-  testWidgets('opened, it lists the recents with the way out at its foot', (
+  testWidgets('opened, it lists the recents and nothing else', (
     WidgetTester tester,
   ) async {
     recents.stored = <RecentSpaceEntity>[here, elsewhere];
@@ -148,7 +177,7 @@ void main() {
 
     expect(find.text('RECENT SPACES'), findsOneWidget);
     expect(find.text('handbook'), findsOneWidget);
-    expect(find.text('Close space'), findsOneWidget);
+    expect(find.text('Close space'), findsNothing);
   });
 
   testWidgets('the space already open is marked and does not answer', (
@@ -168,16 +197,42 @@ void main() {
     expect(container.read(spaceSessionProvider)?.space, docs);
   });
 
-  testWidgets('closing the space puts the window back on the opening screen', (
+  testWidgets('the home button puts the window back on the opening screen', (
     WidgetTester tester,
   ) async {
+    // One press, no menu: leaving is the thing nobody chooses among spaces
+    // for.
     await pumpControl(tester);
-    await openMenu(tester);
 
-    await tester.tap(find.text('Close space'));
-    await tester.pumpAndSettle();
+    await pressHome(tester);
 
     expect(container.read(spaceSessionProvider), isNull);
+    expect(find.text('RECENT SPACES'), findsNothing);
+  });
+
+  testWidgets('the home button is drawn like the gear: outlined, same ink', (
+    WidgetTester tester,
+  ) async {
+    // The bar's two ends read as one set on the 1b boards: the same Solid
+    // glyphs stroked, in `text_secondary`, about 16 wide each.
+    await pumpControl(tester, withGear: true);
+
+    TomGlyphWidget glyph(TomGlyphEnum which) => tester.widget<TomGlyphWidget>(
+      find.byWidgetPredicate(
+        (Widget widget) => widget is TomGlyphWidget && widget.glyph == which,
+      ),
+    );
+    final TomGlyphWidget house = glyph(TomGlyphEnum.home);
+    final TomGlyphWidget gear = glyph(TomGlyphEnum.preferences);
+    final Color secondary = TomColors.dark.textSecondary;
+
+    expect(house.outline, isTrue);
+    expect(gear.outline, isTrue);
+    expect(house.color, secondary);
+    expect(gear.color, secondary);
+    // Font Awesome's house is 576 units wide and the gear 512 on a 512 em,
+    // so a smaller house is the gear's width.
+    expect(house.size * 576 / 512, closeTo(gear.size, 0.5));
   });
 
   testWidgets('choosing another one goes there without a trip through Home', (
@@ -194,17 +249,37 @@ void main() {
     expect(container.read(spaceSessionProvider)?.space, handbook);
   });
 
+  testWidgets('one that has moved is named under the rows, in words', (
+    WidgetTester tester,
+  ) async {
+    recents.stored = <RecentSpaceEntity>[here, elsewhere];
+    spaces.answer = const Failure<SpaceEntity, AppFailure>(
+      SpaceFolderMissing('/code/acme/handbook'),
+    );
+    await pumpControl(tester);
+    await openMenu(tester);
+
+    await tester.tap(find.text('handbook'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('handbook could not be opened — has it moved?'),
+      findsOneWidget,
+    );
+    expect(container.read(spaceSessionProvider)?.space.name, isNot('handbook'));
+  });
+
   group('with an unsaved buffer', () {
     testWidgets('leaving asks first, and names the document at stake', (
       WidgetTester tester,
     ) async {
+      // Pressed with the menu closed: the question is the menu's, so the
+      // question opens it.
       await pumpControl(tester, withDocument: true);
       container.read(editorProvider.notifier).edit('changed');
       await tester.pumpAndSettle();
-      await openMenu(tester);
 
-      await tester.tap(find.text('Close space'));
-      await tester.pumpAndSettle();
+      await pressHome(tester);
 
       expect(find.text('note.md has unsaved changes.'), findsOneWidget);
       expect(find.text('Save and close'), findsOneWidget);
@@ -213,21 +288,41 @@ void main() {
       expect(container.read(spaceSessionProvider), isNotNull);
     });
 
-    testWidgets('staying is an answer, and the list comes back', (
+    testWidgets('staying is an answer, and takes the question away', (
       WidgetTester tester,
     ) async {
+      // Even with the menu open: the home button is outside it, so the press
+      // that asks also puts the list away, and stay leaves nothing on screen.
+      recents.stored = <RecentSpaceEntity>[here, elsewhere];
       await pumpControl(tester, withDocument: true);
       container.read(editorProvider.notifier).edit('changed');
       await tester.pumpAndSettle();
       await openMenu(tester);
-      await tester.tap(find.text('Close space'));
-      await tester.pumpAndSettle();
+      await pressHome(tester);
+      expect(find.text('Stay in this space'), findsOneWidget);
 
       await tester.tap(find.text('Stay in this space'));
       await tester.pumpAndSettle();
 
       expect(container.read(spaceSessionProvider), isNotNull);
-      expect(find.text('Close space'), findsOneWidget);
+      expect(find.text('Stay in this space'), findsNothing);
+      expect(find.text('RECENT SPACES'), findsNothing);
+    });
+
+    testWidgets('staying on a menu nobody opened closes it again', (
+      WidgetTester tester,
+    ) async {
+      await pumpControl(tester, withDocument: true);
+      container.read(editorProvider.notifier).edit('changed');
+      await tester.pumpAndSettle();
+      await pressHome(tester);
+
+      await tester.tap(find.text('Stay in this space'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(spaceSessionProvider), isNotNull);
+      expect(find.text('RECENT SPACES'), findsNothing);
+      expect(find.text('Stay in this space'), findsNothing);
     });
 
     testWidgets('and discarding leaves, with nothing written', (
@@ -236,15 +331,89 @@ void main() {
       await pumpControl(tester, withDocument: true);
       container.read(editorProvider.notifier).edit('changed');
       await tester.pumpAndSettle();
-      await openMenu(tester);
-      await tester.tap(find.text('Close space'));
-      await tester.pumpAndSettle();
+      await pressHome(tester);
 
       await tester.tap(find.text('Discard and close'));
       await tester.pumpAndSettle();
 
       expect(container.read(spaceSessionProvider), isNull);
       expect(documents.written, isEmpty);
+    });
+
+    /// Leaves two documents unsaved: [note] held in its tab, `other.md` on
+    /// screen.
+    Future<void> editTwo(WidgetTester tester) async {
+      container.read(editorProvider.notifier).edit('changed');
+      await tester.pumpAndSettle();
+      container
+          .read(spaceSessionProvider.notifier)
+          .show(SpaceRelativePathValueObject('other.md'));
+      await tester.pumpAndSettle();
+      container.read(editorProvider.notifier).edit('changed too');
+      await tester.pumpAndSettle();
+      expect(container.read(unsavedDocumentsProvider), hasLength(2));
+    }
+
+    testWidgets('several unsaved are counted, and the answers say all', (
+      WidgetTester tester,
+    ) async {
+      await pumpControl(tester, withDocument: true);
+      await editTwo(tester);
+
+      await pressHome(tester);
+
+      expect(find.text('2 documents have unsaved changes.'), findsOneWidget);
+      expect(find.textContaining('note.md'), findsNothing);
+      expect(find.text('Save all and close'), findsOneWidget);
+      expect(find.text('Discard all and close'), findsOneWidget);
+      expect(find.text('Stay in this space'), findsOneWidget);
+    });
+
+    testWidgets('going to another space says all too', (
+      WidgetTester tester,
+    ) async {
+      recents.stored = <RecentSpaceEntity>[here, elsewhere];
+      await pumpControl(tester, withDocument: true);
+      await editTwo(tester);
+      await openMenu(tester);
+
+      await tester.tap(find.text('handbook'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 documents have unsaved changes.'), findsOneWidget);
+      expect(find.text('Save all and open'), findsOneWidget);
+      expect(find.text('Discard all and open'), findsOneWidget);
+    });
+
+    testWidgets('in Portuguese, one is named and several are counted', (
+      WidgetTester tester,
+    ) async {
+      await pumpControl(tester, withDocument: true, locale: const Locale('pt'));
+      container.read(editorProvider.notifier).edit('changed');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Fechar espaço'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('note.md tem alterações não salvas.'), findsOneWidget);
+      expect(find.text('Salvar e fechar'), findsOneWidget);
+
+      await tester.tap(find.text('Ficar neste espaço'));
+      await tester.pumpAndSettle();
+      container
+          .read(spaceSessionProvider.notifier)
+          .show(SpaceRelativePathValueObject('other.md'));
+      await tester.pumpAndSettle();
+      container.read(editorProvider.notifier).edit('changed too');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Fechar espaço'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('2 documentos têm alterações não salvas.'),
+        findsOneWidget,
+      );
+      expect(find.text('Salvar todos e fechar'), findsOneWidget);
+      expect(find.text('Descartar todos e fechar'), findsOneWidget);
     });
   });
 }
@@ -272,6 +441,12 @@ final class _Spaces implements SpaceRepository {
       const Failure<SpaceEntity, AppFailure>(GitNotARepository('/unset'));
 
   @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
+
+  @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async => answer;
 
   @override
@@ -292,6 +467,13 @@ final class _Documents implements DocumentRepository {
   ) async => Success<DocumentEntity, DocumentFailure>(
     DocumentEntity(path: path, content: 'on disk'),
   );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async {

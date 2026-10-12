@@ -16,3 +16,25 @@ ListSpaceEntriesUseCase listSpaceEntries(Ref ref) => throw StateError(
   'listSpaceEntriesProvider has no default. The composition root overrides '
   'it — see runTom() in tom_desktop.',
 );
+
+/// Creates a folder where the explorer menu's `New folder` asks.
+@riverpod
+CreateFolderUseCase createFolder(Ref ref) => throw StateError(
+  'createFolderProvider has no default. The composition root overrides '
+  'it — see runTom() in tom_desktop.',
+);
+
+/// Shows a folder in the platform's file manager — the space's from the
+/// explorer, the repository's from the git column.
+@riverpod
+RevealFolderUseCase revealFolder(Ref ref) => throw StateError(
+  'revealFolderProvider has no default. The composition root overrides '
+  'it — see runTom() in tom_desktop.',
+);
+
+/// Creates a markdown document where the explorer's `+` was pressed.
+@riverpod
+CreateDocumentUseCase createDocument(Ref ref) => throw StateError(
+  'createDocumentProvider has no default. The composition root overrides '
+  'it — see runTom() in tom_desktop.',
+);

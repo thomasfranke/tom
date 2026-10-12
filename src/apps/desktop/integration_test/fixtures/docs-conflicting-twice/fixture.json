@@ -1,0 +1,24 @@
+{
+  "summary": "A docs folder whose remote rewrote two lines of one file",
+  "description": "docs-conflicting-remote with a second conflict: both sides rewrote the line under Phase 1 and the line under Phase 2, with unchanged lines between them, so a pull stops with two regions in one document. What a document needs to be resolved a side at a time, one region after the other.",
+  "space": "docs",
+  "commit": "docs: the first pass",
+  "remote": {
+    "theirs": [
+      {
+        "message": "docs: their two lines",
+        "write": {
+          "docs/roadmap.md": "# Roadmap\n\n## Phase 1 — MVP\n\nM2 closes with full-text search.\n\nA stretch of text neither side touched, long enough that git keeps the two\nconflicts apart instead of joining them into one region.\n\nOne more line between them.\nAnd another.\nAnd another still.\nAnd one more, so the distance is beyond doubt.\n\n## Phase 2\n\nPhase 2 ships on Monday.\n"
+        }
+      }
+    ],
+    "mine": [
+      {
+        "message": "docs: my two lines",
+        "write": {
+          "docs/roadmap.md": "# Roadmap\n\n## Phase 1 — MVP\n\nM2 closes with search and replace.\n\nA stretch of text neither side touched, long enough that git keeps the two\nconflicts apart instead of joining them into one region.\n\nOne more line between them.\nAnd another.\nAnd another still.\nAnd one more, so the distance is beyond doubt.\n\n## Phase 2\n\nPhase 2 ships on Tuesday.\n"
+        }
+      }
+    ]
+  }
+}

@@ -2,6 +2,8 @@
 /// because only a recording double can say `.git/` was never descended into.
 library;
 
+import 'dart:typed_data';
+
 import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
@@ -160,6 +162,37 @@ void main() {
     });
   });
 
+  group('creating a folder', () {
+    test('creates it inside the space, not the repository', () async {
+      await repository.createFolder(
+        space,
+        SpaceRelativePathValueObject('adr/drafts'),
+      );
+
+      expect(filesystem.created, <String>['/code/app/docs/adr/drafts']);
+    });
+
+    test('a name already taken is refused, by the path asked for', () async {
+      filesystem.failures['/code/app/docs/adr'] = const FilesystemAlreadyExists(
+        '/code/app/docs/adr',
+      );
+
+      expect(
+        failureOf(
+          await repository.createFolder(
+            space,
+            SpaceRelativePathValueObject('adr'),
+          ),
+        ),
+        isA<SpaceEntryExists>().having(
+          (SpaceEntryExists failure) => failure.path,
+          'path',
+          'adr',
+        ),
+      );
+    });
+  });
+
   group('when a folder will not open', () {
     test('one folder inside the space costs that folder only', () async {
       filesystem.tree['/code/app/docs'] = <FilesystemEntryDto>[
@@ -247,6 +280,9 @@ final class _RecordingFilesystem implements Filesystem {
   /// Every directory a listing was asked for, in order.
   final List<String> listed = <String>[];
 
+  /// Every directory a creation was asked for, in order.
+  final List<String> created = <String>[];
+
   @override
   Future<Result<List<FilesystemEntryDto>, FilesystemFailure>> listDirectory(
     String path, {
@@ -283,10 +319,44 @@ final class _RecordingFilesystem implements Filesystem {
   ) async => throw UnimplementedError();
 
   @override
+  Future<Result<Uint8List, FilesystemFailure>> readBytes(String path) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> writeBytes(
+    String path,
+    Uint8List bytes,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> createFile(
+    String path,
+    String content,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> createDirectory(String path) async {
+    created.add(path);
+    final FilesystemFailure? failure = failures[path];
+    return failure == null
+        ? const Success<void, FilesystemFailure>(null)
+        : Failure<void, FilesystemFailure>(failure);
+  }
+
+  @override
   Future<Result<bool, FilesystemFailure>> directoryExists(String path) async =>
       throw UnimplementedError();
 
   @override
   Future<Result<String, FilesystemFailure>> resolvePath(String path) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<FilesystemEntryTypeEnum?, FilesystemFailure>> entryTypeOf(
+    String path,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> delete(String path) async =>
       throw UnimplementedError();
 }

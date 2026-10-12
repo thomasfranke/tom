@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tom_application/tom_application.dart';
 import 'package:tom_core/tom_core.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/remote/remote_band_widget.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
@@ -13,6 +14,7 @@ import 'package:tom_ui/tom_ui.dart';
 
 void main() {
   late _Git git;
+  late _Opens opens;
   late ProviderContainer container;
 
   final SpaceEntity docs = SpaceEntity(
@@ -42,8 +44,10 @@ void main() {
 
   setUp(() {
     git = _Git()..reported = statusOf();
+    opens = _Opens();
     container = ProviderContainer(
       overrides: <Override>[
+        pullRequestProvider.overrideWith(() => opens),
         readGitStatusProvider.overrideWithValue(
           ReadGitStatusUseCase(
             gitFor: (SpaceEntity space) => git,
@@ -93,7 +97,7 @@ void main() {
   });
 
   /// Mounts the band across the document area, with [docs] open.
-  Future<void> pumpBand(WidgetTester tester) async {
+  Future<void> pumpBand(WidgetTester tester, {Locale? locale}) async {
     tester.view
       ..physicalSize = const Size(1280, 800)
       ..devicePixelRatio = 1;
@@ -104,6 +108,13 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: tomTheme(Brightness.light),
+          locale: locale,
+          localizationsDelegates: locale == null
+              ? null
+              : AppLocalizations.localizationsDelegates,
+          supportedLocales: locale == null
+              ? const <Locale>[Locale('en', 'US')]
+              : AppLocalizations.supportedLocales,
           home: const Scaffold(
             body: Column(children: <Widget>[RemoteBandWidget()]),
           ),
@@ -124,6 +135,72 @@ void main() {
       0,
       reason: 'a band nobody needs must not push the document down',
     );
+  });
+
+  group('a push to a branch the remote protects', () {
+    Future<void> pushAndBeRefused(WidgetTester tester) async {
+      git.pushFailure = const GitBranchProtected();
+      await container.read(remoteProvider.notifier).push();
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('says so, offers Pull request and never Try again', (
+      WidgetTester tester,
+    ) async {
+      opens.initial = PullRequestState(
+        target: PullRequestTargetValueObject(
+          project: RemoteProjectValueObject.tryParse(
+            'https://github.com/tom/docs.git',
+          ),
+          hasRemote: true,
+          defaultBranch: BranchNameValueObject('trunk'),
+          branch: BranchNameValueObject('main'),
+        ),
+      );
+      await pumpBand(tester);
+
+      await pushAndBeRefused(tester);
+
+      expect(
+        find.text(
+          'The remote refused this branch. '
+          'Nothing was published, and nothing you committed has been lost.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Try again'), findsNothing);
+      expect(find.text('Show the command'), findsOneWidget);
+      await tester.tap(find.text('Pull request'));
+      expect(opens.opened, 1);
+    });
+
+    testWidgets('offers no Pull request where none can be opened', (
+      WidgetTester tester,
+    ) async {
+      await pumpBand(tester);
+
+      await pushAndBeRefused(tester);
+
+      expect(find.text('Pull request'), findsNothing);
+      expect(find.text('Try again'), findsNothing);
+      expect(find.text('Show the command'), findsOneWidget);
+    });
+
+    testWidgets('speaks Portuguese when it is asked to', (
+      WidgetTester tester,
+    ) async {
+      await pumpBand(tester, locale: const Locale('pt', 'BR'));
+
+      await pushAndBeRefused(tester);
+
+      expect(
+        find.text(
+          'O remoto recusou esta branch. '
+          'Nada foi publicado, e nenhum commit seu foi perdido.',
+        ),
+        findsOneWidget,
+      );
+    });
   });
 
   group('a push the remote refused', () {
@@ -168,31 +245,41 @@ void main() {
       );
     });
 
-    testWidgets('offers Pull as its one action, and it pulls', (
+    testWidgets('offers Pull as its remedy, and it pulls', (
       WidgetTester tester,
     ) async {
-      // Not a fourth button in the chrome: the remedy lives inside the news.
+      // Not a fourth button in the chrome: the remedy lives inside the news,
+      // beside the way to the command that was refused.
       await pumpBand(tester);
       await pushAndBeRefused(tester);
 
-      expect(find.byType(OutlinedButton), findsOneWidget);
+      expect(find.byType(OutlinedButton), findsNWidgets(2));
+      expect(find.text('Show the command'), findsOneWidget);
       await tester.tap(find.text('Pull'));
       await tester.pumpAndSettle();
 
       expect(git.pulled, 1);
     });
 
-    testWidgets('is as tall as the boards draw it', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('is at least as tall as the boards draw it, and grows rather '
+        'than cut the sentence', (WidgetTester tester) async {
       await pumpBand(tester);
 
       await pushAndBeRefused(tester);
 
       expect(
         tester.getSize(find.byType(NoticeBandWidget)).height,
-        TomMetrics.noticeBand,
+        greaterThanOrEqualTo(TomMetrics.noticeBand),
       );
+      final Text sentence = tester.widget<Text>(
+        find
+            .descendant(
+              of: find.byType(NoticeBandWidget),
+              matching: find.byType(Text),
+            )
+            .first,
+      );
+      expect(sentence.maxLines, isNull);
     });
   });
 
@@ -247,7 +334,60 @@ void main() {
         find.text('TOM could not find git on this machine.'),
         findsOneWidget,
       );
-      expect(find.byType(OutlinedButton), findsNothing);
+      expect(find.text('Try again'), findsNothing);
+    });
+  });
+
+  group('a failure shows the command behind it', () {
+    // `docs/product/workspace/commands/doc.md`: the panel never opens by
+    // itself, and a failure's band is the one place that offers it.
+    testWidgets('as a second action, before the retry', (
+      WidgetTester tester,
+    ) async {
+      git.fetchFailure = const GitTimedOut();
+      await pumpBand(tester);
+
+      await container.read(remoteProvider.notifier).fetch();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Show the command'), findsOneWidget);
+      expect(
+        tester.getCenter(find.text('Show the command')).dx,
+        lessThan(tester.getCenter(find.text('Try again')).dx),
+      );
+      expect(container.read(workspaceProvider).showingBottom, isFalse);
+    });
+
+    testWidgets('which opens the panel on the last command that failed', (
+      WidgetTester tester,
+    ) async {
+      git.pushFailure = const GitAuthenticationFailed();
+      await pumpBand(tester);
+      container.read(commandsProvider.notifier)
+        ..record(_ran('push', exitCode: 128))
+        ..record(_ran('status'));
+      await container.read(remoteProvider.notifier).push();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Show the command'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(workspaceProvider).showingBottom, isTrue);
+      expect(container.read(workspaceProvider).bottomPanel, 'tom.commands');
+      expect(container.read(commandsProvider).expanded, <int>{0});
+    });
+
+    testWidgets('a refused push offers it beside Pull', (
+      WidgetTester tester,
+    ) async {
+      git.pushFailure = const GitPushRejected();
+      await pumpBand(tester);
+
+      await container.read(remoteProvider.notifier).push();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Show the command'), findsOneWidget);
+      expect(find.text('Pull'), findsOneWidget);
     });
   });
 
@@ -267,14 +407,81 @@ void main() {
       find.text('The pull stopped: 2 documents conflict.'),
       findsOneWidget,
     );
-    expect(find.byType(OutlinedButton), findsNothing);
+    expect(find.text('Try again'), findsNothing);
   });
 
-  testWidgets('a pull in flight says so on the band that started it', (
-    WidgetTester tester,
-  ) async {
-    // Pull has no button of its own, so the band is the control that was
-    // pressed and the one that must say it is working.
+  group('a pull refused over uncommitted work', () {
+    /// The band's colour, read off its 3-point bar.
+    Color? inkOf(WidgetTester tester) =>
+        tester.widget<NoticeBandWidget>(find.byType(NoticeBandWidget)).ink;
+
+    testWidgets('names the one file, says nothing changed, and the remedy', (
+      WidgetTester tester,
+    ) async {
+      git.pullFailure = const GitLocalChangesOverwritten(<String>[
+        'docs/roadmap.md',
+      ]);
+      await pumpBand(tester);
+
+      await container.read(remoteProvider.notifier).pull();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Git refused the pull: it would overwrite the uncommitted changes '
+          'to docs/roadmap.md. Nothing changed here — commit them, then try '
+          'again.',
+        ),
+        findsOneWidget,
+      );
+      // A situation to act on, not a fault: the refusal's colour.
+      expect(inkOf(tester), TomColors.light.modified);
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('Show the command'), findsOneWidget);
+    });
+
+    testWidgets('counts several', (WidgetTester tester) async {
+      git.pullFailure = const GitLocalChangesOverwritten(<String>[
+        'docs/a.md',
+        'docs/b.md',
+        'notes.md',
+      ]);
+      await pumpBand(tester);
+
+      await container.read(remoteProvider.notifier).pull();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('the uncommitted changes to 3 files.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('says it in Portuguese', (WidgetTester tester) async {
+      git.pullFailure = const GitLocalChangesOverwritten(<String>[
+        'docs/a.md',
+        'docs/b.md',
+      ]);
+      await pumpBand(tester, locale: const Locale('pt'));
+
+      await container.read(remoteProvider.notifier).pull();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'O git recusou o pull: ele sobrescreveria as alterações sem commit '
+          'em 2 arquivos. Nada mudou aqui — faça o commit delas e tente de '
+          'novo.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Tentar de novo'), findsOneWidget);
+    });
+  });
+
+  testWidgets('a pull in flight draws no band', (WidgetTester tester) async {
+    // The button that was pressed says `Pulling…` and the bar over the
+    // column runs; a band is news from a request that ended.
     final Completer<void> pulling = Completer<void>();
     git.pullGate = pulling.future;
     await pumpBand(tester);
@@ -282,7 +489,8 @@ void main() {
     final Future<void> done = container.read(remoteProvider.notifier).pull();
     await tester.pump();
 
-    expect(find.text('Pulling what the remote has…'), findsOneWidget);
+    expect(container.read(remoteProvider), isA<RemoteWorking>());
+    expect(find.byType(NoticeBandWidget), findsNothing);
 
     pulling.complete();
     await done;
@@ -448,11 +656,31 @@ void main() {
 }
 
 /// Git, answering what the test set and counting what it was asked.
+/// A pull request that has read what the test puts in it, and opens
+/// nothing but a count.
+final class _Opens extends PullRequestNotifier {
+  int opened = 0;
+
+  /// What it has read by the time the test mounts the band.
+  PullRequestState initial = const PullRequestState();
+
+  @override
+  PullRequestState build() => initial;
+
+  @override
+  void open() => opened++;
+}
+
 final class _Git implements GitRepository {
   GitStatusValueObject? reported;
   GitFailure? fetchFailure;
   GitFailure? pullFailure;
   GitFailure? pushFailure;
+
+  /// Where `origin` is: fetching and pulling ask before they start.
+  @override
+  Future<Result<String?, GitFailure>> remoteAddress() async =>
+      const Success<String?, GitFailure>('https://example.test/docs.git');
 
   /// Held open to keep an action in flight.
   Future<void>? pullGate;
@@ -503,6 +731,12 @@ final class _Git implements GitRepository {
         : Failure<void, GitFailure>(pushFailure!);
   }
 
+  // A branch with no upstream is published rather than pushed; to this fake
+  // the two are one request.
+  @override
+  Future<Result<void, GitFailure>> publish(BranchNameValueObject branch) =>
+      push();
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -521,6 +755,15 @@ final class _NothingInIt implements SpaceRepository {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
+
+/// A git command, as the client would write it down.
+CommandRecord _ran(String verb, {int exitCode = 0}) => CommandRecord.of(
+  executable: 'git',
+  arguments: <String>[verb],
+  startedAt: DateTime(2026, 10, 8),
+  duration: const Duration(milliseconds: 40),
+  exitCode: exitCode,
+);
 
 /// The no-op observability, which is also the shipping default.
 final class _Silent implements Observability {

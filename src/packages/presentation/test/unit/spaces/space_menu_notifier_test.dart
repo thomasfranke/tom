@@ -12,6 +12,9 @@ void main() {
   late _Documents documents;
   late ProviderContainer container;
 
+  /// How many times the window was closed for good.
+  late int windowsClosed;
+
   final SpaceEntity docs = SpaceEntity(
     root: '/code/app/docs',
     repositoryRoot: '/code/app',
@@ -36,8 +39,10 @@ void main() {
     recents = _Recents();
     documents = _Documents();
     const _Silent silent = _Silent();
+    windowsClosed = 0;
     container = ProviderContainer(
       overrides: <Override>[
+        windowCloserProvider.overrideWithValue(() async => windowsClosed++),
         openSpaceProvider.overrideWithValue(
           OpenSpaceUseCase(
             spaces: spaces,
@@ -177,6 +182,118 @@ void main() {
     });
   });
 
+  group('closing the window', () {
+    test('with no space open it closes at once', () async {
+      container.listen<SpaceMenuState>(spaceMenuProvider, (_, _) {});
+
+      await notifier().quit();
+
+      expect(windowsClosed, 1);
+    });
+
+    test('with a clean buffer it closes at once', () async {
+      await open(withDocument: true);
+
+      await notifier().quit();
+
+      expect(windowsClosed, 1);
+    });
+
+    test('with an unsaved buffer it asks instead, and stays open', () async {
+      await open(withDocument: true);
+      typeSomething();
+
+      await notifier().quit();
+
+      expect(state().pending, const SpaceDeparture.quitting());
+      expect(windowsClosed, 0);
+      expect(container.read(spaceSessionProvider), isNotNull);
+    });
+
+    test('an edit held behind another tab asks too', () async {
+      await open(withDocument: true);
+      typeSomething();
+      container
+          .read(spaceSessionProvider.notifier)
+          .show(SpaceRelativePathValueObject('other.md'));
+      await Future<void>.delayed(Duration.zero);
+
+      await notifier().quit();
+
+      expect(state().pending, const SpaceDeparture.quitting());
+      expect(windowsClosed, 0);
+    });
+
+    test('staying keeps the window and the edit', () async {
+      await open(withDocument: true);
+      typeSomething();
+      await notifier().quit();
+
+      notifier().stay();
+
+      expect(state().pending, isNull);
+      expect(windowsClosed, 0);
+      expect(container.read(editorProvider.notifier).hasUnsaved, isTrue);
+    });
+
+    test('discarding closes it, and nothing was written', () async {
+      await open(withDocument: true);
+      typeSomething();
+      await notifier().quit();
+
+      await notifier().discardAndLeave();
+
+      expect(windowsClosed, 1);
+      expect(documents.written, isEmpty);
+    });
+
+    test('discarding leaves nothing unsaved behind, so the system\'s own '
+        'question is not raised a second time', () async {
+      await open(withDocument: true);
+      typeSomething();
+      await notifier().quit();
+
+      await notifier().discardAndLeave();
+
+      expect(container.read(editorProvider.notifier).hasUnsaved, isFalse);
+    });
+
+    test('saving writes first, then closes', () async {
+      await open(withDocument: true);
+      typeSomething();
+      await notifier().quit();
+
+      await notifier().saveAndLeave();
+
+      expect(documents.written, <String>['changed']);
+      expect(windowsClosed, 1);
+    });
+
+    test('a save that failed keeps the window and the question', () async {
+      await open(withDocument: true);
+      typeSomething();
+      await notifier().quit();
+      documents.refuses = true;
+
+      await notifier().saveAndLeave();
+
+      expect(windowsClosed, 0);
+      expect(state().pending, const SpaceDeparture.quitting());
+    });
+
+    test('a file changed on disk meanwhile keeps the window too', () async {
+      await open(withDocument: true);
+      typeSomething();
+      await notifier().quit();
+      documents.onDisk = 'somebody else wrote this';
+
+      await notifier().saveAndLeave();
+
+      expect(documents.written, isEmpty);
+      expect(windowsClosed, 0);
+    });
+  });
+
   group('switching to another space', () {
     test('it opens without going through Home', () async {
       await open();
@@ -221,7 +338,20 @@ void main() {
       await notifier().switchTo(elsewhere);
 
       expect(container.read(spaceSessionProvider)?.space, docs);
-      expect(state().failure, contains('handbook'));
+      expect(state().unopened, elsewhere);
+      expect(state().isBusy, isFalse);
+    });
+
+    test('one the person refused to ask git about says nothing', () async {
+      await open();
+      spaces.answer = const Failure<SpaceEntity, AppFailure>(
+        GitCommandDenied(),
+      );
+
+      await notifier().switchTo(elsewhere);
+
+      expect(container.read(spaceSessionProvider)?.space, docs);
+      expect(state().unopened, isNull, reason: 'the folder did not move');
       expect(state().isBusy, isFalse);
     });
   });
@@ -242,6 +372,12 @@ void main() {
 final class _Spaces implements SpaceRepository {
   Result<SpaceEntity, AppFailure> answer =
       const Failure<SpaceEntity, AppFailure>(GitNotARepository('/unset'));
+
+  @override
+  Future<Result<void, SpaceFailure>> createFolder(
+    SpaceEntity space,
+    SpaceRelativePathValueObject path,
+  ) async => throw UnimplementedError();
 
   @override
   Future<Result<SpaceEntity, AppFailure>> open(String folder) async => answer;
@@ -283,12 +419,23 @@ final class _Documents implements DocumentRepository {
   final List<String> written = <String>[];
   bool refuses = false;
 
+  /// What the file holds, which a test changes to stand in for somebody
+  /// else writing it.
+  String onDisk = 'on disk';
+
   @override
   Future<Result<DocumentEntity, DocumentFailure>> read(
     SpaceRelativePathValueObject path,
   ) async => Success<DocumentEntity, DocumentFailure>(
-    DocumentEntity(path: path, content: 'on disk'),
+    DocumentEntity(path: path, content: onDisk),
   );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<Result<void, DocumentFailure>> create(DocumentEntity document) async =>
+      throw UnimplementedError();
 
   @override
   Future<Result<void, DocumentFailure>> write(DocumentEntity document) async {

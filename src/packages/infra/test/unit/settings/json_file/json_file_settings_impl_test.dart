@@ -1,6 +1,8 @@
 /// [JsonFileSettingsImpl] over a filesystem that fails on command.
 library;
 
+import 'dart:typed_data';
+
 import 'package:test/test.dart';
 import 'package:tom_core/tom_core.dart';
 import 'package:tom_data/tom_data.dart';
@@ -83,8 +85,97 @@ void main() {
     test('and reading still works, because the file is intact', () async {
       expect(
         await settings.read('theme'),
-        isA<Success<String?, SettingsFailure>>(),
+        isA<Success<Object?, SettingsFailure>>(),
       );
+    });
+  });
+
+  group('a value JSON cannot hold', () {
+    test('is this capability\'s failure, and nothing is written', () async {
+      expect(
+        failureOf(await settings.write('when', DateTime(2026))),
+        isA<SettingsUnavailable>(),
+      );
+      expect(filesystem.written, isEmpty);
+    });
+  });
+
+  group('a file that holds text', () {
+    const String file = '/preferences.json';
+
+    test('an empty file holds nothing, and the first write fills it', () async {
+      filesystem.written[file] = '  \n';
+
+      expect(
+        await settings.read('theme'),
+        isA<Success<Object?, SettingsFailure>>(),
+      );
+      await settings.write('theme', 'dark');
+
+      expect(filesystem.written[file], contains('"theme": "dark"'));
+    });
+
+    test('a key that is not there reads as null', () async {
+      filesystem.written[file] = '{"theme": "dark"}';
+
+      final Result<Object?, SettingsFailure> read = await settings.read('x');
+
+      expect((read as Success<Object?, SettingsFailure>).value, isNull);
+    });
+
+    test('a file that is not an object is read as nothing and never '
+        'written over', () async {
+      filesystem.written[file] = '[1, 2, 3]';
+
+      expect(
+        (await settings.read('theme') as Success<Object?, SettingsFailure>)
+            .value,
+        isNull,
+      );
+      expect(
+        failureOf(await settings.write('theme', 'dark')),
+        isA<SettingsUnavailable>(),
+      );
+      expect(
+        failureOf(await settings.remove('theme')),
+        isA<SettingsUnavailable>(),
+      );
+      expect(filesystem.written[file], '[1, 2, 3]');
+    });
+
+    test('text that is not JSON is the same', () async {
+      filesystem.written[file] = 'theme = dark';
+
+      expect(
+        failureOf(await settings.write('theme', 'dark')),
+        isA<SettingsUnavailable>(),
+      );
+      expect(filesystem.written[file], 'theme = dark');
+    });
+
+    test('a value the old shape wrote as a string is read as what it holds, '
+        'and a plain string stays one', () async {
+      filesystem.written[file] =
+          r'{"list": "[1, 2]", "map": "{\"a\": 1}", "word": "dark", '
+          '"number": "42"}';
+
+      Future<Object?> value(String key) async =>
+          ((await settings.read(key)) as Success<Object?, SettingsFailure>)
+              .value;
+
+      expect(await value('list'), <Object?>[1, 2]);
+      expect(await value('map'), <String, Object?>{'a': 1});
+      expect(await value('word'), 'dark');
+      expect(await value('number'), '42');
+    });
+
+    test('removing a key leaves the others in today\'s shape', () async {
+      filesystem.written[file] = '{"a": "[1]", "b": true}';
+
+      await settings.remove('b');
+
+      expect(filesystem.written[file], isNot(contains('"[1]"')));
+      expect(filesystem.written[file], isNot(contains('"b"')));
     });
   });
 
@@ -132,6 +223,26 @@ final class _Filesystem implements Filesystem {
   }
 
   @override
+  Future<Result<Uint8List, FilesystemFailure>> readBytes(String path) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> writeBytes(
+    String path,
+    Uint8List bytes,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> createFile(
+    String path,
+    String content,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> createDirectory(String path) async =>
+      throw UnimplementedError();
+
+  @override
   Future<Result<List<FilesystemEntryDto>, FilesystemFailure>> listDirectory(
     String path, {
     bool recursive = false,
@@ -143,5 +254,14 @@ final class _Filesystem implements Filesystem {
 
   @override
   Future<Result<String, FilesystemFailure>> resolvePath(String path) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<FilesystemEntryTypeEnum?, FilesystemFailure>> entryTypeOf(
+    String path,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Result<void, FilesystemFailure>> delete(String path) async =>
       throw UnimplementedError();
 }

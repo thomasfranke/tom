@@ -177,3 +177,107 @@ final class ForgetRecentSpaceProvider
 }
 
 String _$forgetRecentSpaceHash() => r'92e6c7b36c74d49694d20c261af821a93187f181';
+
+/// Clones a repository by URL and opens it as a space.
+
+@ProviderFor(cloneRepository)
+final cloneRepositoryProvider = CloneRepositoryProvider._();
+
+/// Clones a repository by URL and opens it as a space.
+
+final class CloneRepositoryProvider
+    extends
+        $FunctionalProvider<
+          CloneRepositoryUseCase,
+          CloneRepositoryUseCase,
+          CloneRepositoryUseCase
+        >
+    with $Provider<CloneRepositoryUseCase> {
+  /// Clones a repository by URL and opens it as a space.
+  CloneRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'cloneRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$cloneRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<CloneRepositoryUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  CloneRepositoryUseCase create(Ref ref) {
+    return cloneRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CloneRepositoryUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CloneRepositoryUseCase>(value),
+    );
+  }
+}
+
+String _$cloneRepositoryHash() => r'0c92317f24e082fdfe077b9a9ff836c1ae9aafe7';
+
+/// Reads the branch a recent space was left on.
+
+@ProviderFor(readRecentBranch)
+final readRecentBranchProvider = ReadRecentBranchProvider._();
+
+/// Reads the branch a recent space was left on.
+
+final class ReadRecentBranchProvider
+    extends
+        $FunctionalProvider<
+          ReadRecentBranchUseCase,
+          ReadRecentBranchUseCase,
+          ReadRecentBranchUseCase
+        >
+    with $Provider<ReadRecentBranchUseCase> {
+  /// Reads the branch a recent space was left on.
+  ReadRecentBranchProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'readRecentBranchProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$readRecentBranchHash();
+
+  @$internal
+  @override
+  $ProviderElement<ReadRecentBranchUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ReadRecentBranchUseCase create(Ref ref) {
+    return readRecentBranch(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ReadRecentBranchUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ReadRecentBranchUseCase>(value),
+    );
+  }
+}
+
+String _$readRecentBranchHash() => r'2c6e34da08c7be22db926eb0f3eedfcc0bd80f40';

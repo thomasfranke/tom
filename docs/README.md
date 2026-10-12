@@ -1,8 +1,8 @@
 # Documentation
 
 The corpus, split by audience. `about.md` is the shared context above the fork
-and `roadmap.md` is the order things arrive in; the four chapters answer one
-question each.
+and `roadmap.md` is the order things arrive in; each chapter answers one
+question.
 
 | | |
 |---|---|
@@ -17,9 +17,13 @@ doc is shaped, and where a given sentence belongs:
 [`product/conventions.md`](product/conventions.md) and the
 [`tom-docs`](../.ai/skills/tom-docs/SKILL.md) skill.
 
-**The canonical form of a rule is the dartdoc of the code that implements it.**
-This chapter states the rule, the code shows it; when the two disagree, the
-code is right and the doc is a bug.
+**Which record wins depends on the chapter.**
+
+| Chapter | The truth is | When the code disagrees |
+|---|---|---|
+| [`product/`](product/README.md) | the `doc.md` | the code is the bug — or the maintainer decides the doc moves |
+| [`technical/`](technical/README.md) | the code, whose dartdoc is the canonical form of the rule | the doc is the bug |
+| [`design/`](design/README.md) | the Penpot file; the export in the repository is the record of it | an export is never edited by hand — the board changes and is exported again |
 
 ---
 

@@ -15,14 +15,21 @@ final class WikilinkResolverService {
   /// Creates the resolver.
   const WikilinkResolverService();
 
-  /// What [link] points at among [entries].
+  /// What [link] points at among [entries], written in [origin].
   ///
   /// Total: every link gets an answer, and one that matches nothing is
-  /// [WikilinkMissing] rather than a failure.
+  /// [WikilinkMissing] rather than a failure. `[[#heading]]` is [origin]
+  /// itself, never looked up — and missing only with no [origin] to be in.
   WikilinkTargetValueObject resolve(
     WikilinkValueObject link,
-    List<SpaceEntryValueObject> entries,
-  ) {
+    List<SpaceEntryValueObject> entries, {
+    SpaceRelativePathValueObject? origin,
+  }) {
+    if (link.isWithinDocument) {
+      return origin == null
+          ? const WikilinkTargetValueObject.missing()
+          : WikilinkTargetValueObject.resolved(origin);
+    }
     final Iterable<SpaceEntryValueObject> documents = entries.where(
       (SpaceEntryValueObject entry) => entry.isDocument,
     );
@@ -41,12 +48,15 @@ final class WikilinkResolverService {
   /// Entries whose path is the one written, the `.md` optional.
   ///
   /// Case-sensitive, because a path is what the filesystem said rather than
-  /// what somebody remembered.
+  /// what somebody remembered. A leading `/` is the space's root, which is
+  /// how a document there is told from others of its name.
   List<SpaceRelativePathValueObject> _byPath(
     WikilinkValueObject link,
     Iterable<SpaceEntryValueObject> documents,
   ) {
-    final String wanted = '${link.targetWithoutExtension}.md';
+    final String written = link.targetWithoutExtension;
+    final String wanted =
+        '${written.startsWith('/') ? written.substring(1) : written}.md';
     return documents
         .where((SpaceEntryValueObject entry) => entry.path.value == wanted)
         .map((SpaceEntryValueObject entry) => entry.path)

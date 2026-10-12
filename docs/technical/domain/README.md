@@ -25,15 +25,15 @@ object** is wholly what it carries. The naming rule that enforces it is
 | [`spaces.md`](spaces.md) | `SpaceEntity`, `SpaceEntryValueObject`, `SpaceRepository` |
 | [`paths.md`](paths.md) | `SpaceRelativePathValueObject`, `RepoRelativePathValueObject` |
 | [`documents.md`](documents.md) | `DocumentEntity`, `ParsedDocumentValueObject`, `DocumentRepository` |
-| [`git.md`](git.md) | `GitStatusValueObject`, `CommitEntity`, `BranchEntity`, `GitRepository` |
+| [`git.md`](git.md) | `GitStatusValueObject`, `CommitEntity`, `BranchEntity`, `MergeStateValueObject`, `ConflictRegionValueObject`, `GitRepository` |
 | [`blocks.md`](blocks.md) | `BlockValueObject` |
 | [`diff-blocks.md`](diff-blocks.md) | `DiffBlockValueObject`, and how two blocks are paired |
 | [`wikilinks.md`](wikilinks.md) | `WikilinkValueObject`, `WikilinkTargetValueObject`, `WikilinkResolverService` |
 
 ## Not settled
 
-[`open-questions.md`](open-questions.md) — space configuration, document
-loading, the conflict model, and how each one gets answered.
+[`open-questions.md`](open-questions.md) — space configuration, what
+`tom_infra` can see of `tom_data`, and how each one gets answered.
 
 ---
 

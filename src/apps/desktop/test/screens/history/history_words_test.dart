@@ -1,4 +1,6 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tom_desktop/l10n/l10n.dart';
 import 'package:tom_desktop/screens/history/history_words.dart';
 import 'package:tom_domain/tom_domain.dart';
 
@@ -10,8 +12,21 @@ void main() {
     Duration offset = Duration.zero,
   }) => CommitDateValueObject(utc: now.subtract(since), offset: offset);
 
-  String words(Duration since, {Duration offset = Duration.zero}) =>
-      whenInWords(ago(since, offset: offset), now: now);
+  String words(
+    Duration since, {
+    Duration offset = Duration.zero,
+    String language = 'en',
+  }) => whenInWords(
+    lookupAppLocalizations(Locale(language)),
+    ago(since, offset: offset),
+    now: now,
+  );
+
+  test('in Portuguese, the age comes after há and agrees in number', () {
+    expect(words(const Duration(seconds: 40), language: 'pt'), 'agora mesmo');
+    expect(words(const Duration(days: 1), language: 'pt'), 'há 1 dia');
+    expect(words(const Duration(days: 70), language: 'pt'), 'há 2 meses');
+  });
 
   test('anything under a minute is just now', () {
     expect(words(const Duration(seconds: 40)), 'just now');

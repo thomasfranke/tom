@@ -1,6 +1,7 @@
 /// One block, in the container the app owns.
 library;
 
+import 'dart:async' show unawaited;
 import 'dart:io' show File;
 
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,8 @@ import 'package:tom_desktop/screens/preview/code_highlighter_impl.dart';
 import 'package:tom_desktop/screens/preview/footnote_marker_builder_impl.dart';
 import 'package:tom_desktop/screens/preview/footnote_ref_syntax_impl.dart';
 import 'package:tom_desktop/screens/preview/preview_design.dart';
+import 'package:tom_desktop/screens/preview/wikilink_builder_impl.dart';
+import 'package:tom_desktop/screens/preview/wikilink_syntax_impl.dart';
 import 'package:tom_domain/tom_domain.dart';
 import 'package:tom_presentation/tom_presentation.dart';
 import 'package:tom_ui/tom_ui.dart';
@@ -56,12 +59,16 @@ class PreviewBlockWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final TomColors colors = TomColors.of(context);
-    final SpaceEntity? space = ref.watch(
-      spaceSessionProvider.select(
-        (SpaceSessionState? session) => session?.space,
-      ),
-    );
-    // A link or an image is relative to the document it is in, not the space.
+    // An image is relative to the document it is in, not the space — and a
+    // changed file outside the space is in the repository's frame.
+    final ({SpaceEntity space, SpaceRelativePathValueObject path})? at = ref
+        .watch(
+          spaceSessionProvider.select(
+            (SpaceSessionState? session) =>
+                session?.onScreen?.addressIn(session.space),
+          ),
+        );
+    // A link opens in the space, so only a document of the space follows one.
     final SpaceRelativePathValueObject? origin = ref.watch(
       spaceSessionProvider.select(
         (SpaceSessionState? session) => session?.openDocument,
@@ -76,11 +83,15 @@ class PreviewBlockWidget extends ConsumerWidget {
       // The footnotes are document scope too, and drawn rather than parsed
       // again: the number is the document's, not this block's
       // (`docs/technical/decisions/031-where-a-footnotes-text-goes.md`).
+      // A wikilink is drawn by what it points at, which only the space's
+      // listing can say (`docs/product/wikilinks/doc.md`).
       inlineSyntaxes: <md.InlineSyntax>[
         FootnoteRefSyntaxImpl(FootnoteRefSyntaxImpl.by(document.footnotes)),
+        WikilinkSyntaxImpl(),
       ],
       builders: <String, MarkdownElementBuilder>{
         FootnoteRefSyntaxImpl.tag: FootnoteMarkerBuilderImpl(),
+        WikilinkSyntaxImpl.tag: WikilinkBuilderImpl(),
       },
       selectable: true,
       styleSheet: _styleSheetOf(context, colors, body, struckThrough),
@@ -90,9 +101,9 @@ class PreviewBlockWidget extends ConsumerWidget {
         style: _codeStyle(colors, struckThrough),
       ),
       imageBuilder: (Uri uri, String? title, String? alt) =>
-          _image(uri, alt, space, origin, colors),
+          _image(uri, alt, at?.space, at?.path, colors),
       onTapLink: (String text, String? href, String? title) =>
-          _follow(href, origin, ref),
+          follow(href, origin, ref),
     );
   }
 
@@ -139,6 +150,7 @@ class PreviewBlockWidget extends ConsumerWidget {
   static Widget _missing(String label, TomColors colors) => Text(
     label,
     style: TextStyle(
+      fontFamily: TomFonts.reading,
       fontSize: PreviewDesign.body,
       height: PreviewDesign.bodyHeight,
       fontStyle: FontStyle.italic,
@@ -146,21 +158,32 @@ class PreviewBlockWidget extends ConsumerWidget {
     ),
   );
 
-  /// Opens [href] when it names a document in this space.
+  /// The schemes handed to the machine: the web and mail, nothing that runs.
+  static const Set<String> _external = <String>{'http', 'https', 'mailto'};
+
+  /// Opens [href]: a document in this space here, a web or mail address in
+  /// the person's own browser or mail client.
   ///
-  /// Resolved from [origin]'s folder, and a link that climbs out of the
-  /// space is refused. An external link does nothing yet: opening a browser
-  /// needs a plugin.
-  static void _follow(
+  /// A relative link is resolved from [origin]'s folder, and one that climbs
+  /// out of the space is refused; any other scheme does nothing.
+  static void follow(
     String? href,
     SpaceRelativePathValueObject? origin,
     WidgetRef ref,
   ) {
-    if (href == null || origin == null) {
+    final Uri? uri = href == null ? null : Uri.tryParse(href);
+    if (uri == null) {
       return;
     }
-    final Uri? uri = Uri.tryParse(href);
-    if (uri == null || uri.hasScheme || uri.path.isEmpty) {
+    if (uri.hasScheme) {
+      if (_external.contains(uri.scheme.toLowerCase())) {
+        // A refusal has nothing to show: the use case reports it, and the
+        // link simply did not open.
+        unawaited(ref.read(openUrlProvider).open(uri));
+      }
+      return;
+    }
+    if (origin == null || uri.path.isEmpty) {
       return;
     }
     final SpaceRelativePathValueObject? path = origin.resolve(
@@ -180,11 +203,10 @@ class PreviewBlockWidget extends ConsumerWidget {
     bool struckThrough,
   ) {
     final TextDecoration? gone = _gone(struckThrough);
-    // The prose is the serif and the headings are not: the document is the
-    // one place somebody reads rather than operates, and the headings belong
-    // to the interface's voice (`docs/design/foundations/README.md`).
+    // Prose and headings alike are the reading face: the document is the one
+    // place somebody reads rather than operates; code keeps the mono.
     final TextStyle prose = TextStyle(
-      fontFamily: TomFonts.serif,
+      fontFamily: TomFonts.reading,
       fontSize: body,
       height: PreviewDesign.bodyHeight,
       color: colors.textPrimary,
@@ -237,6 +259,7 @@ class PreviewBlockWidget extends ConsumerWidget {
     TomColors colors,
     TextDecoration? decoration,
   ) => TextStyle(
+    fontFamily: TomFonts.reading,
     fontSize: size,
     height: 1.3,
     fontWeight: FontWeight.w600,

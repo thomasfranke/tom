@@ -13,13 +13,14 @@ const String e2eDirectory = '.e2e';
 /// Where a scenario called [name] keeps its preferences.
 ///
 /// Beside the environment so `tom e2e clean` takes it too, and per scenario
-/// so no two of them share a recent list.
+/// so no two of them share a recent list — a folder each, so the file keeps
+/// the name a person's own copy gives it, which is what its tab shows.
 String scenarioSettingsPath(String name) {
   final String slug = name
       .toLowerCase()
       .replaceAll(RegExp('[^a-z0-9]+'), '-')
       .replaceAll(RegExp(r'^-|-$'), '');
-  return '${E2eFixtures.directory}/preferences/$slug.json';
+  return '${E2eFixtures.directory}/preferences/$slug/preferences.json';
 }
 
 /// One situation the app can be pointed at.
