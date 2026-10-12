@@ -1,4 +1,4 @@
-/// Tests for the link check of `tom rules`, each over a small tree written
+/// Tests for the link check of `cli rules`, each over a small tree written
 /// for it: the rule takes the root it is pointed at, so nothing here reads
 /// this repository's own docs.
 library;
@@ -186,7 +186,7 @@ void main() {
         slugOf('Skills — load on the matching trigger'),
         'skills--load-on-the-matching-trigger',
       );
-      expect(slugOf('The `tom` CLI'), 'the-tom-cli');
+      expect(slugOf('The `cli` tool'), 'the-cli-tool');
       expect(slugOf('See [the roadmap](roadmap.md)'), 'see-the-roadmap');
       expect(slugOf('Ação & reação'), 'ação--reação');
     });

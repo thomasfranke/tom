@@ -110,7 +110,7 @@ const List<_Gated> _gated = <_Gated>[
 void main(List<String> args) async {
   final CoverageKind? kind = coverageKindFrom(args);
   if (kind == null) {
-    stderr.writeln('tom: --kind is unit or all');
+    stderr.writeln('cli: --kind is unit or all');
     exit(64);
   }
   final double threshold = _threshold(args);

@@ -1,19 +1,19 @@
-# The `tom` CLI
+# The `cli` tool
 
-`tom` is the CLI, in [`tool/`](../../../tool/). **It needs nothing but the Dart
-SDK** — no `pub get` of its own, which is what lets it be the thing that resolves
-the workspace
+`cli` (`tool/cli.dart`) is the CLI, in [`tool/`](../../../tool/). **It needs
+nothing but the Dart SDK** — no `pub get` of its own, which is what lets it be
+the thing that resolves the workspace
 ([Decision 17](../decisions/017-tom-is-the-entry-point-and-make-is-a-face.md)).
 
 ```bash
-dart run tool/tom.dart                 # the menu: arrow keys, Enter, Esc to go back
-dart run tool/tom.dart --help          # every command, non-interactively
-dart run tool/tom.dart --preview e2e   # a screen as plain text, without driving the menu
+dart run tool/cli.dart                 # the menu: arrow keys, Enter, Esc to go back
+dart run tool/cli.dart --help          # every command, non-interactively
+dart run tool/cli.dart --preview e2e   # a screen as plain text, without driving the menu
 ```
 
 ## Every command
 
-Run as `dart run tool/tom.dart <command>`, from the repository root.
+Run as `dart run tool/cli.dart <command>`, from the repository root.
 
 | Command | Does |
 |---|---|
@@ -55,7 +55,7 @@ The scenarios drive the assembled app on this machine, one at a time
 | | Does |
 |---|---|
 | `e2e` · `e2e list` | Lists every scenario by group, with when each last passed and on which version of the app |
-| `e2e <the scenario's name>` | Runs that one. **The name is the prose the source declares**, words and all — `tom e2e Works in tabs` |
+| `e2e <the scenario's name>` | Runs that one. **The name is the prose the source declares**, words and all — `cli e2e Works in tabs` |
 | `e2e all` | Every scenario, sequentially |
 | `e2e prepare` · `e2e clean` | Builds, or removes, the folders the scenarios run against, under `.e2e/` |
 | `e2e fixtures` | Lists the situations on disk the scenarios flow through |
@@ -72,7 +72,7 @@ The scenarios drive the assembled app on this machine, one at a time
 
 ## Rules
 
-- **`make` is a face, not a layer.** A target is one line through `tom`, and nothing in `tool/` calls back into `make` — the direction is deliberate, because `make` is not installed on Windows and the commands have to work there. `runner-watch` is the one recipe still written as shell, since `build_runner watch` never returns an exit code.
+- **`make` is a face, not a layer.** A target is one line through `cli`, and nothing in `tool/` calls back into `make` — the direction is deliberate, because `make` is not installed on Windows and the commands have to work there. `runner-watch` is the one recipe still written as shell, since `build_runner watch` never returns an exit code.
 - **The end-to-end screen is two screens: the groups, then one group's scenarios.** A suite grows a scenario at a time and a single list grows with it until it runs off the window; a group is the unit somebody thinks in anyway. Backing out of a group returns to the groups rather than leaving, the way codegen's two screens do.
 - **A group's row says what the group adds up to** — `✘ 1 failing`, `✓ 6 passed`, or `4 of 6 run`. A failure is what the eye is looking for, so it is said first, and "all passed" is claimed only when every one of them actually ran.
 - **`rules links` follows every relative link in the written record** — the markdown under `docs/` and `.ai/skills/`, plus `AGENTS.md`, `CONTRIBUTING.md` and `README.md`: the file by exact case, and the heading when the target is markdown. An address on the network is never asked — a gate that needs one fails with the weather — and links inside dartdoc are not read.

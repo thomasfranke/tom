@@ -1,6 +1,6 @@
 #!/usr/bin/env dart
 
-// The CLI entry point, `dart run tool/tom.dart`: a menu with no arguments, the
+// The CLI entry point, `dart run tool/cli.dart`: a menu with no arguments, the
 // same code path as a subcommand, and nothing but `dart:*` imported because a
 // tool that resolves the workspace cannot need it resolved first.
 library;
@@ -280,7 +280,7 @@ Future<int> _run(List<String> args) async {
 
   // A menu would hang waiting for a key that is never coming.
   if (Terminal.isPlain) {
-    stderr.writeln('tom: no terminal attached — pass a command.');
+    stderr.writeln('cli: no terminal attached — pass a command.');
     _printUsage();
     return 64; // EX_USAGE
   }
@@ -445,7 +445,7 @@ void _printHeader(String name, List<String> arguments) {
     ..writeln('${palette.section}${_labelFor(name)}${Ansi.reset}')
     ..writeln()
     ..writeln(
-      '${' ' * Layout.promptColumn}${palette.prompt}→ dart run tool/tom.dart '
+      '${' ' * Layout.promptColumn}${palette.prompt}→ dart run tool/cli.dart '
       '${[name, ...arguments].join(' ')}${Ansi.reset}',
     );
 }
@@ -481,7 +481,7 @@ const _setupGroup = {'doctor', 'fvm', 'setup', 'updates'};
 /// Every menu the CLI can show, by the breadcrumb it opens under, built by the
 /// functions the screens themselves use.
 ///
-/// `tom --menus` prints them as JSON for `src/test/cli/menus_test.dart`,
+/// `cli --menus` prints them as JSON for `src/test/cli/menus_test.dart`,
 /// which holds each one to alphabetical order; a screen added without a line
 /// here escapes the test.
 Map<String, List<MenuItem<String>>> _cliMenus() {
@@ -585,7 +585,7 @@ const List<MenuItem<String>> _questionRows = [
     'CLI',
     'test $cli',
     description:
-        'Drives `tom` itself — every command --help lists, the exit codes a '
+        'Drives `cli` itself — every command --help lists, the exit codes a '
         'script depends on, and the pure functions behind them. Black box: '
         'the CLI has no pubspec, so its tests live on the workspace side.',
   ),
@@ -857,7 +857,7 @@ List<MenuItem<String>> e2eSubmenuItems(List<Scenario> group) {
 
 /// The rows of the groups screen.
 ///
-/// A function of its own so `tom --preview e2e` can render the screen with
+/// A function of its own so `cli --preview e2e` can render the screen with
 /// no terminal attached, the way the root screen already is.
 List<MenuItem<String>> e2eGroupItems(List<Scenario> scenarios) {
   final results = readResults();
@@ -1211,7 +1211,7 @@ const _allTargets = 'all';
 /// [rest] with the flags taken out, which leaves a scenario name in prose.
 ///
 /// Both questions — was a name given, and what is it — are asked of the
-/// filtered list, or `tom e2e --watch` looks for a scenario called nothing.
+/// filtered list, or `cli e2e --watch` looks for a scenario called nothing.
 List<String> _scenarioWords(List<String> rest) => rest
     .where((word) => word != watchFlag && word != boardFlag && word != ciFlag)
     .toList();
@@ -1312,7 +1312,7 @@ List<MenuItem<String>> get _platformItems {
 Future<int> _dispatch(String name, List<String> rest) async {
   final command = _commands.where((c) => c.name == name).firstOrNull;
   if (command == null) {
-    stderr.writeln('tom: unknown command "$name"');
+    stderr.writeln('cli: unknown command "$name"');
     _printUsage();
     return 64;
   }
@@ -1323,7 +1323,7 @@ Future<int> _dispatch(String name, List<String> rest) async {
   final unrecognized = _unrecognized(command.name, rest);
   if (unrecognized.isNotEmpty) {
     stderr.writeln(
-      'tom: ${command.name} does not take "${unrecognized.first}"',
+      'cli: ${command.name} does not take "${unrecognized.first}"',
     );
     return 66; // EX_NOINPUT
   }
@@ -1379,7 +1379,7 @@ Future<int> _dispatch(String name, List<String> rest) async {
         board: rest.contains(boardFlag),
         ci: rest.contains(ciFlag),
       ),
-      // `tom e2e` and `tom e2e --watch` both name no scenario, so both list.
+      // `cli e2e` and `cli e2e --watch` both name no scenario, so both list.
       _ when _scenarioWords(rest).isEmpty => await runE2eList(),
       // Anything else is a scenario name, in prose.
       _ => await runNamedScenario(
@@ -1502,8 +1502,8 @@ void _printUsage() {
     ..writeln()
     ..writeln('  $_title ${Layout.titleSeparator} $_subtitle')
     ..writeln()
-    ..writeln('  dart run tool/tom.dart           Open the menu')
-    ..writeln('  dart run tool/tom.dart <command> Run it directly')
+    ..writeln('  dart run tool/cli.dart           Open the menu')
+    ..writeln('  dart run tool/cli.dart <command> Run it directly')
     ..writeln();
   // Width from the longest name, so adding a command cannot break the column.
   final width = _commands

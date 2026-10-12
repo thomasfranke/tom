@@ -1,6 +1,6 @@
 # Decision 17 — `tom` is the development entry point; `make` is a face over it
 
-**Status:** accepted
+**Status:** accepted — revised (2026-10-12): the file is `tool/cli.dart`, not `tool/tom.dart`. See the note at the foot.
 
 ## Context
 
@@ -40,4 +40,6 @@ Output adapts to whether a terminal is attached (`tool/src/tty.dart`): with one,
 
 ## Revisit when
 
-A test for the CLI is wanted. The frame composer (`composeFrame`) and the key decoder are pure functions and worth asserting; the interactive loop is not, since it needs a pty. Testing them means giving `tool/` a `pubspec.yaml` of its own, kept **out** of the `workspace:` list in `src/pubspec.yaml` so its dependencies can never reach the product, plus a `dart pub get -C tool` in `tom setup`. That trades the zero-dependency bootstrap for coverage of the part most likely to break silently — worth doing deliberately, not by accident when someone reaches for a package.
+A test for the CLI is wanted. The frame composer (`composeFrame`) and the key decoder are pure functions and worth asserting; the interactive loop is not, since it needs a pty. Testing them means giving `tool/` a `pubspec.yaml` of its own, kept **out** of the `workspace:` list in `src/pubspec.yaml` so its dependencies can never reach the product, plus a `dart pub get -C tool` in `cli setup`. That trades the zero-dependency bootstrap for coverage of the part most likely to break silently — worth doing deliberately, not by accident when someone reaches for a package.
+
+**Revised (2026-10-12), the maintainer's call:** the entry point is named `cli`, not `tom` — `tool/cli.dart`, run as `dart run tool/cli.dart <command>` or `make cli`. Every mention of `tom` as the command word above is read as `cli`; nothing else in this decision changes. The product is still TOM; only its development tool no longer shares the name.

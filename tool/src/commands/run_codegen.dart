@@ -16,7 +16,7 @@ import '../tty.dart';
 import 'process.dart';
 
 // Every package, the ones with no generator included — `_hasBuildRunner`
-// skips those. An unknown target fails the run *after* `tom codegen --hard`
+// skips those. An unknown target fails the run *after* `cli codegen --hard`
 // has deleted the output it was about to rebuild.
 const _pkgOrder = [
   'core',

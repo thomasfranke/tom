@@ -202,7 +202,7 @@ Future<T?> showMenu<T>(
 }
 
 /// One frame as a list of rendered lines, so the caller can rewind by exactly
-/// that many on the next. Public so `tom --preview` can render one without a
+/// that many on the next. Public so `cli --preview` can render one without a
 /// terminal.
 List<String> composeFrame<T>({
   required String title,

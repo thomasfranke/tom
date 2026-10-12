@@ -1,4 +1,4 @@
-// `tom test` — the suite, or one kind of it, over one package or all.
+// `cli test` — the suite, or one kind of it, over one package or all.
 library;
 
 import 'process.dart';
@@ -15,7 +15,7 @@ const arch = 'arch';
 ///
 /// A kind is a path, not a naming convention, which keeps the menu and the
 /// filesystem from drifting apart. End-to-end is not one: it drives the app
-/// on a device, and is its own command (`tom e2e`).
+/// on a device, and is its own command (`cli e2e`).
 const testKinds = {'unit', 'integration'};
 
 /// Runs the suite, or one [kind] of it: a target without that folder is
@@ -95,7 +95,7 @@ Future<int> runLastTests({int? count, bool coverage = true}) => dart([
 /// The argument that selects the CLI's own tests.
 const cli = 'cli';
 
-/// Runs the tests for `tom` itself.
+/// Runs the tests for `cli` itself.
 ///
 /// They live in `src/test/cli/`, because `tool/` holds no pubspec: a tool
 /// that resolves the workspace cannot depend on it being resolved, so it can

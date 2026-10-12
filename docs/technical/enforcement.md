@@ -18,7 +18,7 @@ has to remember. Four mechanisms prove it.
 
 The same test holds the look to its table: every `*Widget` class under `packages/ui/lib/src/widgets` is named in [`controls.md`](../design/components/controls.md), and every `Tom…`, `Notice…`, `Diff…` or `Commit…` widget the table names exists — a shared component without a row has nothing to be held to.
 
-Run it with `dart run tool/tom.dart test arch`. A dependency between layers is
+Run it with `dart run tool/cli.dart test arch`. A dependency between layers is
 declared there deliberately, because the graph is a decision
 ([Decision 14](decisions/014-each-layer-is-its-own-package.md)).
 

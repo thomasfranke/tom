@@ -11,7 +11,7 @@ typedef Offence = ({String rule, String where, String detail});
 /// `src/test/integrity/architecture_test.dart`.
 typedef Rule = Iterable<Offence> Function(Directory root);
 
-/// One file of rules, as the menu and the subcommand both see it, so `tom
+/// One file of rules, as the menu and the subcommand both see it, so `cli
 /// rules <name>` runs exactly what the row named after the file runs.
 typedef RuleFile = ({
   String name,

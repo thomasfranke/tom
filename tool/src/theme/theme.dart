@@ -51,7 +51,7 @@ abstract final class Layout {
   /// The em dash between a title and its subtitle: `TOM — dev`.
   static const titleSeparator = '—';
 
-  /// What every screen is headed with. Here rather than in `tom.dart` because
+  /// What every screen is headed with. Here rather than in `cli.dart` because
   /// a command that paints its own frame — the end-to-end runner — has to put
   /// the same header back.
   static const appTitle = 'TOM';

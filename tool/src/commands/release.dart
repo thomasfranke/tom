@@ -1,4 +1,4 @@
-// `tom release` — bump the version in lockstep, write the changelog since
+// `cli release` — bump the version in lockstep, write the changelog since
 // the last tag, and leave a commit and an annotated tag ready to push.
 library;
 
@@ -8,7 +8,7 @@ import '../repo.dart';
 import 'process.dart';
 
 /// The three bumps semantic versioning offers, read from the word after
-/// `tom release` — `major`, `minor` or `patch`
+/// `cli release` — `major`, `minor` or `patch`
 /// ([versioning.md](../../../docs/technical/process/versioning.md)).
 const releaseBumps = {'major', 'minor', 'patch'};
 
@@ -35,7 +35,7 @@ final class SemVer {
   factory SemVer.parse(String value) {
     final parts = value.trim().split('.');
     if (parts.length != 3) {
-      throw FormatException('tom release: "$value" is not major.minor.patch');
+      throw FormatException('cli release:"$value" is not major.minor.patch');
     }
     return SemVer(
       int.parse(parts[0]),
@@ -56,7 +56,7 @@ final class SemVer {
     'major' => SemVer(major + 1, 0, 0),
     'minor' => SemVer(major, minor + 1, 0),
     'patch' => SemVer(major, minor, patch + 1),
-    _ => throw ArgumentError('tom release: unknown bump "$kind"'),
+    _ => throw ArgumentError('cli release:unknown bump "$kind"'),
   };
 
   @override
@@ -71,7 +71,7 @@ String currentVersion() {
     multiLine: true,
   ).firstMatch(file.readAsStringSync());
   if (match == null) {
-    throw StateError('tom release: no version: line in ${file.path}');
+    throw StateError('cli release:no version: line in ${file.path}');
   }
   return match.group(1)!;
 }
@@ -169,7 +169,7 @@ String changelogFor(SemVer version, List<CommitMessage> commits) {
 /// this command never touches a remote.
 Future<int> runRelease(String? bump) async {
   if (bump == null || !releaseBumps.contains(bump)) {
-    stderr.writeln('tom release: pass major, minor or patch');
+    stderr.writeln('cli release:pass major, minor or patch');
     return 64; // EX_USAGE
   }
 
@@ -180,7 +180,7 @@ Future<int> runRelease(String? bump) async {
   _writeVersion(next);
   final add = await capture('git', ['add', ...versionedPubspecs]);
   if (add == null || add.exitCode != 0) {
-    stderr.writeln('tom release: git add failed');
+    stderr.writeln('cli release:git add failed');
     return 1;
   }
   final commit = await capture('git', [
@@ -189,7 +189,7 @@ Future<int> runRelease(String? bump) async {
     'chore(release): v$next',
   ]);
   if (commit == null || commit.exitCode != 0) {
-    stderr.writeln('tom release: git commit failed\n${commit?.stdout}');
+    stderr.writeln('cli release:git commit failed\n${commit?.stdout}');
     return 1;
   }
   final tag = await capture('git', [
@@ -200,7 +200,7 @@ Future<int> runRelease(String? bump) async {
     changelog,
   ]);
   if (tag == null || tag.exitCode != 0) {
-    stderr.writeln('tom release: git tag failed\n${tag?.stdout}');
+    stderr.writeln('cli release:git tag failed\n${tag?.stdout}');
     return 1;
   }
 

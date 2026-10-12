@@ -40,7 +40,7 @@ The maintainer's bar (2026-10-09), and it is not a figure of speech:
 - **A fixture is part of the proof.** One whose changes all sat inside the space passed while the real app could not open a single row: a git feature is tested with a space below the repository root *and* a change beside it.
 - **A state drawn as a piece is measured as a piece.** A page now draws its first screen whole and then one component in every state ([`tom-design`](../tom-design/SKILL.md)), and the board records where the piece sits in the window — `x, y · w × h`. Two comparisons use that rectangle, and a state needs both: the **render test** pumps the widget alone at that size in that state and compares it with the piece (seconds, no app); the **scenario** reaches the state in the real app at the board's size and compares the frame *cropped to the rectangle* (`compare.py` crops any rectangle). The first proves the drawing, the second that the app can get there and puts the piece where the window does.
 - **Survey before writing in bulk.** Closing a coverage gap starts with the audit — rule by rule, control by control, proven / partial / missing — and a roadmap the maintainer approves. Scenarios written before that are scenarios written twice.
-- **Writing is not running.** A scenario is run alone, when the maintainer says so; `tom e2e all` and the Penpot export are the end of the work, never part of it.
+- **Writing is not running.** A scenario is run alone, when the maintainer says so; `cli e2e all` and the Penpot export are the end of the work, never part of it.
 
 ## Where it lives
 
@@ -60,7 +60,7 @@ src/apps/desktop/integration_test/
     └── e2e_module_impl.dart      ← the panels, wired for a run
 ```
 
-**The folders are the menus of `tom e2e`**, in the menu's own words in snake case:
+**The folders are the menus of `cli e2e`**, in the menu's own words in snake case:
 `group: 'Git', submenu: 'Remote'` lives in `e2e/git/remote/`, and `group: 'Workspace',
 submenu: 'Leaving a space'` in `e2e/workspace/leaving_a_space/`. A group lists
 submenus or scenarios, never both; **no menu holds more than 25 entries** (a group
@@ -165,11 +165,11 @@ Two shapes, and the names carry which:
 ## Running it
 
 ```bash
-dart run tool/tom.dart e2e                                # the menu: groups, scenarios, last outcome
-dart run tool/tom.dart e2e list                           # the scenarios there are
-dart run tool/tom.dart e2e "Finds a document by its contents"          # one, by its name
-dart run tool/tom.dart e2e "Finds a document by its contents" --board  # at the boards' 1440×900
-dart run tool/tom.dart e2e all                            # the whole suite — only when the maintainer asks
+dart run tool/cli.dart e2e                                # the menu: groups, scenarios, last outcome
+dart run tool/cli.dart e2e list                           # the scenarios there are
+dart run tool/cli.dart e2e "Finds a document by its contents"          # one, by its name
+dart run tool/cli.dart e2e "Finds a document by its contents" --board  # at the boards' 1440×900
+dart run tool/cli.dart e2e all                            # the whole suite — only when the maintainer asks
 ```
 
 - **A scenario is named by the words of its title**, exactly. Anything else —
@@ -177,7 +177,7 @@ dart run tool/tom.dart e2e all                            # the whole suite — 
 - **`--board` is the pixel review's run**: the window the boards are drawn at,
   so a frame and a board crop to the same rectangle
   ([`tom-design`](../tom-design/SKILL.md), *Measuring the app against a board*).
-- **While building, only the feature's own scenario runs.** `tom e2e all` is
+- **While building, only the feature's own scenario runs.** `cli e2e all` is
   slow and locks the machine, so it runs once, at the end of the work, when the
   maintainer says so.
 - **A scenario nobody runs is green by memory** — two sat broken for days after
@@ -187,7 +187,7 @@ dart run tool/tom.dart e2e all                            # the whole suite — 
   scenario and the previous log is deleted first.
 - **`0/0 steps` means the scenario did not run — never that it passed.** Either
   the build failed and the app never started, or the run hung and its process
-  was killed. `tom e2e` reports it as `✘ … did not run` and counts it as a
+  was killed. `cli e2e` reports it as `✘ … did not run` and counts it as a
   failure; a record written before it learnt to still reads as did-not-run.
   Read the log above it, and run it again.
 

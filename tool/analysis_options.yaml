@@ -5,7 +5,7 @@
 # package:lints/recommended.yaml`, and resolving a `package:` URI needs a
 # package. `tool/` is not one, on purpose — it holds no pubspec, because a tool
 # that resolves the workspace cannot require the workspace to be resolved
-# before it runs (see tom.dart). So the rules are written out here.
+# before it runs (see cli.dart). So the rules are written out here.
 #
 # And it is not a copy, because three of the style rules there describe library
 # code inside a package and this is neither:

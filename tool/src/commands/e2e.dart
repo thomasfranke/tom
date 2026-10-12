@@ -1,4 +1,4 @@
-// `tom e2e` — the environment the end-to-end tests are run against.
+// `cli e2e` — the environment the end-to-end tests are run against.
 library;
 
 import 'dart:convert';
@@ -57,13 +57,13 @@ final class E2eFixture {
     final file = File('${directory.path}/$fixtureFile');
     if (!file.existsSync()) {
       throw StateError(
-        'tom e2e: $mockDirectory/$name has no $fixtureFile. Every fixture '
+        'cli e2e: $mockDirectory/$name has no $fixtureFile. Every fixture '
         'needs one: it is what says which of its files git has seen.',
       );
     }
     final decoded = jsonDecode(file.readAsStringSync());
     if (decoded is! Map<String, Object?>) {
-      throw StateError('tom e2e: ${file.path} is not a JSON object.');
+      throw StateError('cli e2e: ${file.path} is not a JSON object.');
     }
     return E2eFixture(
       name: name,
@@ -162,7 +162,7 @@ List<E2eFixture> e2eFixtures() {
   ]..sort((a, b) => a.name.compareTo(b.name));
 }
 
-/// Runs the scenario slowly enough to watch it happen: `tom e2e <name>
+/// Runs the scenario slowly enough to watch it happen: `cli e2e <name>
 /// --watch`.
 ///
 /// Declared here because both entry points take it — the menu and this
@@ -170,7 +170,7 @@ List<E2eFixture> e2eFixtures() {
 const watchFlag = '--watch';
 
 /// Runs the scenario in the window the **boards** are drawn at, so a
-/// screenshot and a board crop to the same rectangle: `tom e2e <name>
+/// screenshot and a board crop to the same rectangle: `cli e2e <name>
 /// --board`.
 ///
 /// Every other run uses a window a laptop actually has. This one exists for
@@ -180,7 +180,7 @@ const watchFlag = '--watch';
 const boardFlag = '--board';
 
 /// Runs without frames or a video, for a CI pass that only needs the exit
-/// code: `tom e2e all --ci`.
+/// code: `cli e2e all --ci`.
 ///
 /// Headless by what runs it, not by this flag — Linux still opens a real
 /// window, under `xvfb-run` in the workflow that asks for this
@@ -225,7 +225,7 @@ Future<int> runAllScenarios({
   // The plans are data, not tests: `all` is every scenario that is written.
   final scenarios = discoverScenarios(includePlanned: false);
   if (scenarios.isEmpty) {
-    stderr.writeln('tom e2e: no scenarios found under $scenarioDirectory');
+    stderr.writeln('cli e2e: no scenarios found under $scenarioDirectory');
     return 1;
   }
   final progress = SuiteProgress(scenarios.length);
@@ -306,7 +306,7 @@ Future<int> runNamedScenario(
   final match = scenarios.where((s) => s.name == name);
   if (match.isEmpty) {
     stderr
-      ..writeln('tom e2e: no scenario called "$name". There are:')
+      ..writeln('cli e2e: no scenario called "$name". There are:')
       ..writeln();
     for (final scenario in scenarios.where((s) => !s.isPlanned)) {
       stderr.writeln('  ${scenario.name}');
@@ -338,7 +338,7 @@ void _printTitle() => stdout.writeln(
   '${Layout.appSubtitle}${Ansi.reset}',
 );
 
-/// Whether `tom e2e prepare` has been run.
+/// Whether `cli e2e prepare` has been run.
 bool environmentIsPrepared() =>
     File('${repoRoot().path}/$e2eDirectory/$manifestFile').existsSync();
 
@@ -411,7 +411,7 @@ Future<int> runE2eList() async {
               '${Ansi.reset}'
         : '  ${palette.rowDisabled}Environment not built — '
               '$blocked of ${counts.written} cannot run. '
-              '`tom e2e prepare` builds it.${Ansi.reset}',
+              '`cli e2e prepare` builds it.${Ansi.reset}',
   );
   return 0;
 }
@@ -526,7 +526,7 @@ final class E2eRemote {
   static E2eRemote? read(Object? decoded) {
     if (decoded == null) return null;
     if (decoded is! Map<String, Object?>) {
-      throw StateError('tom e2e: a fixture\'s "remote" must be an object.');
+      throw StateError('cli e2e: a fixture\'s "remote" must be an object.');
     }
     return E2eRemote(
       theirs: _commits(decoded['theirs']),
@@ -572,7 +572,7 @@ final class E2eBranch {
   static List<E2eBranch> read(Object? decoded) {
     if (decoded == null) return const <E2eBranch>[];
     if (decoded is! List<Object?>) {
-      throw StateError('tom e2e: a fixture\'s "branches" must be a list.');
+      throw StateError('cli e2e: a fixture\'s "branches" must be a list.');
     }
     return <E2eBranch>[
       for (final entry in decoded)
@@ -741,7 +741,7 @@ String _without(String tail, {required String at}) {
   final content = File(at).readAsStringSync();
   if (!content.endsWith(tail)) {
     throw StateError(
-      'tom e2e: $at does not end with the uncommitted tail its '
+      'cli e2e: $at does not end with the uncommitted tail its '
       '$fixtureFile declares. Either the file changed or the tail did.',
     );
   }
@@ -769,7 +769,7 @@ List<String> _relativeTo(String space, String repository, List<String> paths) =>
 /// `cp`, which is a platform difference waiting for someone on Windows.
 void _copy(Directory from, Directory to) {
   if (!from.existsSync()) {
-    throw StateError('tom e2e: ${from.path} does not exist.');
+    throw StateError('cli e2e: ${from.path} does not exist.');
   }
   to.createSync(recursive: true);
   for (final entry in from.listSync(recursive: true)) {
@@ -896,7 +896,7 @@ void _git(String directory, List<String> arguments) {
   );
   if (result.exitCode != 0) {
     throw StateError(
-      'tom e2e: git ${arguments.join(' ')} in $directory failed:\n'
+      'cli e2e: git ${arguments.join(' ')} in $directory failed:\n'
       '${result.stderr}',
     );
   }
@@ -929,7 +929,7 @@ String _wrap(String text, {int width = 58}) {
 const _readme = '''
 # The end-to-end environment
 
-Built by `tom e2e prepare`, deleted by `tom e2e clean`, and gitignored.
+Built by `cli e2e prepare`, deleted by `cli e2e clean`, and gitignored.
 Nothing here is edited by hand: the next prepare throws it away.
 
 Open one of the folders in the app — `make run`, then *Choose folder…* —

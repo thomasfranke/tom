@@ -1,4 +1,4 @@
-// `tom format`, `tom analyze`, and `tom verify` — the PR gate.
+// `cli format`, `cli analyze`, and `cli verify` — the PR gate.
 library;
 
 import 'dart:io';

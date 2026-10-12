@@ -41,7 +41,7 @@ a failure early is a failure that costs seconds instead of a whole e2e run.
 ### 1 · Architecture — does it still obey the graph?
 
 ```
-dart run tool/tom.dart test arch
+dart run tool/cli.dart test arch
 ```
 
 Reads every `pubspec.yaml` and asserts the dependency graph, including that
@@ -52,7 +52,7 @@ behaviour in a shape the project rejects.
 ### 2 · Unit — does each piece decide correctly?
 
 ```
-dart run tool/tom.dart test unit
+dart run tool/cli.dart test unit
 ```
 
 Pure logic, fakes over real dependencies: failures, parsers, domain services,
@@ -63,7 +63,7 @@ an unfinished fix.**
 ### 3 · Integration — does it survive the real thing?
 
 ```
-dart run tool/tom.dart test integration
+dart run tool/cli.dart test integration
 ```
 
 A real `git init` repository in a temp dir, real disk, real sqlite. **This is
@@ -74,7 +74,7 @@ because git's porcelain is the contract and only git produces it.
 ### 4 · End-to-end — can a person actually do it, and can we watch?
 
 ```
-dart run tool/tom.dart e2e
+dart run tool/cli.dart e2e
 ```
 
 Drives the real app against fixtures it builds. **Every user-facing feature
@@ -99,12 +99,12 @@ without ffmpeg still gets the frames.
 - **Hand the maintainer the video, not a summary of it.** "The scenario passed" is a claim; the file is the proof, and watching it is how a wrong-but-green scenario gets caught.
 - **A timed-out step takes no frame**, because `timeout` cannot cancel a body — a gap in the film is where the run stopped, not a dropped frame.
 - **Two runs must never overlap.** Scenarios write, fixtures are rebuilt per scenario, and the previous log is deleted first.
-- `0/0 steps` means the scenario did not run — a build failure, or a hung run whose process was killed. `tom e2e` reports it as `✘ … did not run`, a failure. Read the log above it.
+- `0/0 steps` means the scenario did not run — a build failure, or a hung run whose process was killed. `cli e2e` reports it as `✘ … did not run`, a failure. Read the log above it.
 
 ## Then, and only then
 
 ```
-dart run tool/tom.dart verify
+dart run tool/cli.dart verify
 ```
 
 Everything CI runs, stopping at the first failure. One trap worth the line:

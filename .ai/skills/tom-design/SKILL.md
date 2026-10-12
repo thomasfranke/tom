@@ -254,7 +254,7 @@ Render and actually view both themes. A board with a clipped label, a control th
 | `bbox.py` | where the ink actually is inside a rectangle |
 | `compare.py` | board, app and their difference in one PNG, cropped to any rectangle |
 
-- **A comparison is only real at the board's own size.** `dart run tool/tom.dart e2e "<the scenario's name>" --board` runs the real app at 1440×900; against any other window one side is scaled and every number taken off the image is a number about the scaling.
+- **A comparison is only real at the board's own size.** `dart run tool/cli.dart e2e "<the scenario's name>" --board` runs the real app at 1440×900; against any other window one side is scaled and every number taken off the image is a number about the scaling.
 - **The render is the judge, not the markup.** Reading an SVG alone missed a `text-decoration: line-through`, a clear disc, a four-point gap and a mid-word cut. Put board and app side by side in one PNG.
 - **A zoomed screenshot lies about a radius.** Read the pixels (`pixels.py`) before believing a corner is wrong.
 - **Read a shape's pixels at its mid-height, never at its top row** — a rounded corner makes a control read narrower than it is.

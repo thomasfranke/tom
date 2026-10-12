@@ -1,4 +1,4 @@
-/// `tom release`'s pure logic: the bump and the changelog it writes.
+/// `cli release`'s pure logic: the bump and the changelog it writes.
 ///
 /// What it leaves in git — the commit, the tag — is not covered here: both
 /// are one `capture('git', …)` call each, and the risk worth a test is the

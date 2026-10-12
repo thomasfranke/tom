@@ -62,7 +62,7 @@ jobs:
       # Through the CLI, as the codegen gate is — a rule file added to the
       # catalogue is run here the day it lands.
       - name: Rules
-        run: dart run tool/tom.dart rules
+        run: dart run tool/cli.dart rules
 
       # These two used to be fifty lines of inlined bash, because the
       # dashboards behind them redraw with ANSI cursor moves that a CI log
@@ -71,7 +71,7 @@ jobs:
       # output, so CI runs exactly what a developer runs — one implementation,
       # and the one exercised locally every day.
       - name: Codegen — regenerate from scratch, fail on drift
-        run: dart run tool/tom.dart codegen-gate
+        run: dart run tool/cli.dart codegen-gate
 
       # Split from one step into the four `make flutter-test-*` targets below:
       # a failure now points straight at architecture, a package, an app or
@@ -96,7 +96,7 @@ jobs:
       # for the exit code, not the evidence a person reviewing a run reads
       # (docs/technical/conventions/testing.md).
       - name: End-to-end (headless, Linux)
-        run: xvfb-run -a dart run tool/tom.dart e2e all --ci
+        run: xvfb-run -a dart run tool/cli.dart e2e all --ci
 
   build-macos:
     name: Build (macOS)

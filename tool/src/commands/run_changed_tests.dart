@@ -366,7 +366,7 @@ const _defaultLastCount = 10;
 ///
 /// Modification time rather than git: git says what differs from a commit,
 /// this says what was being worked on. Generated output is skipped because
-/// one `tom codegen` stamps every `.freezed.dart` in the workspace at once.
+/// one `cli codegen` stamps every `.freezed.dart` in the workspace at once.
 List<String> _recentFiles(Directory root, int count) {
   final src = Directory('${root.path}/src');
   if (!src.existsSync()) return const [];

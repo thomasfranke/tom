@@ -140,7 +140,7 @@ String _plain(String text) =>
 
 ProcessResult _tom(List<String> arguments) => Process.runSync(
   Platform.resolvedExecutable,
-  <String>['run', 'tool/tom.dart', ...arguments],
+  <String>['run', 'tool/cli.dart', ...arguments],
   workingDirectory: _repositoryRoot.path,
 );
 

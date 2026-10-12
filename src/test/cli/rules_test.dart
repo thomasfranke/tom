@@ -1,4 +1,4 @@
-/// Tests for what `tom rules` walks and what it lets through, over small
+/// Tests for what `cli rules` walks and what it lets through, over small
 /// trees written for each: the catalogue, the generated output no rule may
 /// read, and the one class named in the naming rule's exemption.
 library;

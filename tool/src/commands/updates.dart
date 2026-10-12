@@ -1,4 +1,4 @@
-// `tom updates` — whether the toolchain this repository pins has fallen
+// `cli updates` — whether the toolchain this repository pins has fallen
 // behind what Flutter has released.
 library;
 
@@ -48,7 +48,7 @@ Future<int> runUpdates() async {
   _heading('Dart');
   // The Dart rows are the one bundled with each Flutter above, not the `dart`
   // on PATH: it is the SDK the app is built with, and it makes the three rows
-  // comparable. `tom doctor` checks the CLI's own Dart.
+  // comparable. `cli doctor` checks the CLI's own Dart.
   final bundled = flutter?.dart;
   _row('declared', constraint ?? 'unreadable', null, workspacePubspecPath);
   _row(
@@ -89,7 +89,7 @@ Future<int> runUpdates() async {
 /// Says whether the pin is current, and what to do when it is not.
 ///
 /// The pin is compared, not the installation: the pin is the project's answer
-/// and the installation is one machine's — `tom doctor`'s finding.
+/// and the installation is one machine's — `cli doctor`'s finding.
 void _reportFlutter({
   required Version? pin,
   required DateTime? pinnedOn,
@@ -111,8 +111,8 @@ void _reportFlutter({
       'Flutter $pin${_dated(pinnedOn)} is behind stable '
           '${latest.flutter}${_dated(latest.date)}'
           '${_gap(pinnedOn, latest.date)}.',
-      'Set "flutter" to ${latest.flutter} in $fvmrcPath, then run `tom fvm` '
-          'and `tom setup`.',
+      'Set "flutter" to ${latest.flutter} in $fvmrcPath, then run `cli fvm` '
+          'and `cli setup`.',
     );
   } else {
     _note(
@@ -126,7 +126,7 @@ void _reportFlutter({
     _note(
       _Verdict.attention,
       'This machine runs Flutter $installed, not the pinned $pin.',
-      'Run `tom fvm` to match it.',
+      'Run `cli fvm` to match it.',
     );
   }
 }

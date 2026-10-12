@@ -76,7 +76,7 @@ Not to be confused with modules: the repository answers *who has this code*, a f
 
 - The layer packages: `dart test` — fast, and with no Flutter binding available, which is what makes framework independence a fact rather than a claim.
 - `tom_ui` and the applications: `flutter test`.
-- The assembled app: `dart run tool/tom.dart e2e <the scenario's name>`, which drives the real window ([commands](docs/technical/process/commands.md)).
+- The assembled app: `dart run tool/cli.dart e2e <the scenario's name>`, which drives the real window ([commands](docs/technical/process/commands.md)).
 - Parsers get fixtures of real git output; `GitRepositoryImpl` gets integration tests against a real git repo created in a temp directory.
 
 See [the testing table](docs/technical/conventions/testing.md#what-each-subject-gets).

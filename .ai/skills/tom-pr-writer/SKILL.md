@@ -104,7 +104,7 @@ Rules the PR is checked against (from `CONTRIBUTING.md`):
 - New dependency → its license is stated, and it is not AGPL/GPL.
 - Behavior changed → documentation updated **in the same PR**.
 - Architectural change → a file added or revised in `docs/technical/decisions/`.
-- A layer package touched → still pure Dart, and `dart run tool/tom.dart test arch` still green.
+- A layer package touched → still pure Dart, and `dart run tool/cli.dart test arch` still green.
 - Riverpod appears only in `tom_presentation` and the composition root (`src/apps/desktop/lib/bootstrap/`).
 - Interface changed → the board was changed and approved in Penpot before the code, and both themes are exported before the merge — the description says whether the export has run.
 - No attribution line in the description or the squash message.

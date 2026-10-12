@@ -16,10 +16,10 @@ import '../../../tool/src/commands/e2e_catalogue.dart';
 
 void main() {
   group('alphabetical order', () {
-    // `tom --menus`: every screen's lists of labels, as the screens build them.
+    // `cli --menus`: every screen's lists of labels, as the screens build them.
     final ProcessResult printed = Process.runSync(
       Platform.resolvedExecutable,
-      <String>['run', 'tool/tom.dart', '--menus'],
+      <String>['run', 'tool/cli.dart', '--menus'],
       workingDirectory: _repositoryRoot.path,
     );
     final Map<String, List<List<String>>> menus =
@@ -210,11 +210,11 @@ void main() {
 List<String> _preview(List<String> arguments) {
   final ProcessResult result = Process.runSync(
     Platform.resolvedExecutable,
-    <String>['run', 'tool/tom.dart', '--preview', ...arguments],
+    <String>['run', 'tool/cli.dart', '--preview', ...arguments],
     workingDirectory: _repositoryRoot.path,
   );
   if (result.exitCode != 0) {
-    throw StateError('tom --preview failed: ${result.stderr}');
+    throw StateError('cli --preview failed: ${result.stderr}');
   }
   return (result.stdout as String)
       .replaceAll(RegExp(r'\x1B\[[0-9;?]*[a-zA-Z]'), '')
@@ -223,10 +223,10 @@ List<String> _preview(List<String> arguments) {
 
 Directory get _repositoryRoot {
   Directory directory = Directory.current;
-  while (!File('${directory.path}/tool/tom.dart').existsSync()) {
+  while (!File('${directory.path}/tool/cli.dart').existsSync()) {
     final Directory parent = directory.parent;
     if (parent.path == directory.path) {
-      throw StateError('tool/tom.dart not found above ${Directory.current}');
+      throw StateError('tool/cli.dart not found above ${Directory.current}');
     }
     directory = parent;
   }

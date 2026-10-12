@@ -32,12 +32,12 @@ Code the diff merely touches, sits next to, or calls is **context, not subject**
 
 ## Step 1 — let the tooling speak first
 
-Everything runs through the `tom` CLI from the repository root; `make` targets are one-line faces over it (Decision 17).
+Everything runs through the `cli` tool from the repository root; `make` targets are one-line faces over it (Decision 17).
 
 ```bash
-dart run tool/tom.dart verify       # format, analyze, codegen gate, every test, coverage gate — in that order, first failure stops
-dart run tool/tom.dart test arch    # the layer graph on its own
-dart run tool/tom.dart test diff    # only what this branch's diff maps to, while iterating
+dart run tool/cli.dart verify       # format, analyze, codegen gate, every test, coverage gate — in that order, first failure stops
+dart run tool/cli.dart test arch    # the layer graph on its own
+dart run tool/cli.dart test diff    # only what this branch's diff maps to, while iterating
 ```
 
 `verify` is what CI runs. If it is red, that is the finding — report it and stop; a review of code that does not compile, does not regenerate identically, or drops a package under the coverage threshold (95% by default, `*.freezed.dart` excluded) is wasted on both sides.
@@ -87,7 +87,7 @@ Every repository method and every use case returns `Result<T>`; an exception nev
 
 - `RepoRelativePathValueObject`, `SpaceRelativePathValueObject` and absolute `String` paths are distinct types on purpose — path confusion is the most probable bug in this application. A new signature taking a `String` where one of the two relative types belongs is a finding.
 - `SpaceEntity` is the only converter: `toRepoRelative`, `toSpaceRelative` (null for what the space does not contain — an ordinary answer, handled, never `!`-ed), `relativize` (from the absolute paths the filesystem reports), `absolutePathOf`. A conversion written anywhere else is a finding. `SpaceRelativePathValueObject.resolve` is the one place a document's own `..` is folded — a link or an image is read from the document's folder, and a second resolver in a widget is a finding.
-- The documentation's words are the code's words: Space, Document, Block, DiffBlock, SpaceEntry — carried into the code with the role word [Decision 23](../../../docs/technical/decisions/023-domain-types-say-entity-or-value-object.md) mandates, `SpaceEntity`, `DocumentEntity`, `BlockValueObject`, `SpaceEntryValueObject`. No `FileModel`, no `DocDto`, and no bare `Space` either: `tom rules naming` fails a domain type that says neither. A concept renamed in code is renamed in `docs/` in the same PR.
+- The documentation's words are the code's words: Space, Document, Block, DiffBlock, SpaceEntry — carried into the code with the role word [Decision 23](../../../docs/technical/decisions/023-domain-types-say-entity-or-value-object.md) mandates, `SpaceEntity`, `DocumentEntity`, `BlockValueObject`, `SpaceEntryValueObject`. No `FileModel`, no `DocDto`, and no bare `Space` either: `cli rules naming` fails a domain type that says neither. A concept renamed in code is renamed in `docs/` in the same PR.
 
 ### Tests (`conventions/testing.md`, normative)
 
@@ -183,7 +183,7 @@ Rules for the findings themselves:
 
 - **Quote the diff, not your memory.** A finding names a file and a line — one the branch added or changed. Anything else is outside the review (see *What is under review*).
 - **A finding that cannot fail is not a finding.** Describe the input or state that produces the wrong result; if you cannot, it is a note.
-- Never report what `tom verify` already catches (Step 1).
+- Never report what `cli verify` already catches (Step 1).
 - **Never re-litigate a settled decision.** Not findings, ever: `Process.run` for git instead of libgit2 (Decision 2); source + preview instead of WYSIWYG (Decision 3); no `dartz` (Decision 5); plain `Navigator` for dialogs, no routing package (Decision 6); Riverpod codegen and Freezed as structural dependencies (Decision 7); seven packages for a project this size (Decision 14, bought knowingly); the absence of aggregates, domain events, factories and a persistence model (Decision 15); explicit types everywhere; dense dartdoc. Nor the non-goals in `about.md`: WYSIWYG, real-time collaboration, databases/kanban/tasks, our own cloud sync. These are the deliberate deviations of Step 3's precedence; suggesting one of them is suggesting the project be a different project — and if you genuinely believe a decision is wrong, the move is an ADR, not a PR comment.
 - **Scope is the roadmap's.** `docs/roadmap.md` decides what exists yet, and each item's `doc.md` decides what it must do. "This should also handle X" is only a finding if X is in the current milestone; mobile is not a non-goal but is Phase 3, and nothing about the MVP bends toward it.
 

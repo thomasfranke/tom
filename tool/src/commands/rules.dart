@@ -1,4 +1,4 @@
-// `tom rules` — the catalogue of rule files, and the run that checks them.
+// `cli rules` — the catalogue of rule files, and the run that checks them.
 library;
 
 import 'dart:convert';

@@ -30,7 +30,7 @@ void main() {
     test('an unknown one is a usage error', () {
       final ProcessResult result = Process.runSync(
         Platform.resolvedExecutable,
-        <String>['run', 'tool/tom.dart', 'coverage-gate', '--kind=nonesuch'],
+        <String>['run', 'tool/cli.dart', 'coverage-gate', '--kind=nonesuch'],
         workingDirectory: '..',
       );
       expect(result.exitCode, 64);

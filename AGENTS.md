@@ -83,7 +83,7 @@ Riverpod (codegen) + Freezed · `markdown` (AST) · `flutter_markdown_plus` · `
 
 ## Code structure
 
-See `docs/technical/architecture.md` (source of truth) and `docs/technical/conventions/` for the rules inside a package. The Dart workspace lives under `src/`; run everything through `dart run tool/tom.dart <command>` from the repository root (`make` targets are shortcuts over the same CLI, and `tool/` never calls back into `make`).
+See `docs/technical/architecture.md` (source of truth) and `docs/technical/conventions/` for the rules inside a package. The Dart workspace lives under `src/`; run everything through `dart run tool/cli.dart <command>` from the repository root (`make` targets are shortcuts over the same CLI, and `tool/` never calls back into `make`).
 
 ```
 core ← domain ← application ← presentation
@@ -113,12 +113,12 @@ core ← domain ← application ← presentation
 **Phase 1 — MVP. M0, M1 and M2 are complete; M3 is built except packaging and what the alignment roadmap lists.** This section holds what a new session needs and neither git history nor `docs/roadmap.md` says, in three parts: what exists, what is open by decision, and the traps.
 
 - It is a status, not a log: no dated narration and no strike-through — an item that closed is deleted, and how it closed is git's.
-- It carries no counts (tests, scenarios, components, boards, messages) — `tom e2e list`, `ls` and the suites answer, and a number written here is stale by the next session.
+- It carries no counts (tests, scenarios, components, boards, messages) — `cli e2e list`, `ls` and the suites answer, and a number written here is stale by the next session.
 - A trap lives where it is loaded when it applies: the code's here, Penpot's in [`tom-design`](.ai/skills/tom-design/SKILL.md), the test side's in [`tom-testing`](.ai/skills/tom-testing/SKILL.md).
 
 ### The maintainer's working rules
 
-- **The Penpot export and `tom e2e all` run only when he asks** — both are slow and lock development. While building, only the feature's own scenario runs; a stage that draws boards ends at "drawn and approved in Penpot".
+- **The Penpot export and `cli e2e all` run only when he asks** — both are slow and lock development. While building, only the feature's own scenario runs; a stage that draws boards ends at "drawn and approved in Penpot".
 - **The `Prototypes` page is kept in the Penpot file and never exported.**
 - **A doubt never blocks.** Proceed on the conservative reading and bring the question with its options.
 - **Nothing is committed or pushed without his approval of the exact text**, and commits and pull requests carry no attribution lines.
@@ -173,8 +173,8 @@ How the pieces that are easy to get wrong are shaped:
 - **Presentation produces no sentence**: it carries a reason as an enum and the widget words it through `context.l10n` ([Decision 34](docs/technical/decisions/034-the-interface-is-localised-with-gen-l10n.md)); `app_en.arb` is the template.
 - **Preferences are applied when pressed** and kept as plain JSON per key under `app.preferences`; a missing or unreadable value is the default, silently.
 - **Every control in `controls.md` has a master in the Penpot library, and most of the newest are reference only**: the screens draw them inside the shell masters (`Top bar`, `Explorer`, `Document`, `Git panel`), whose copies cannot change structure — only `Overflow strip`, `Wordmark` and `Commit trunk` are instanced by a screen.
-- **`tom rules` has a `links` rule**: every relative link in `docs/`, `.ai/skills/`, `AGENTS.md`, `CONTRIBUTING.md` and `README.md` names a file that exists, by exact case, and a heading it has — `tom rules links` after moving or renaming a doc.
-- **The app is held to the boards by measuring, never by eye**: `tom e2e "<scenario's name>" --board` runs it at the boards' own 1440×900 and `docs/design/tools/` compares the two ([`tom-design`](.ai/skills/tom-design/SKILL.md), *Measuring the app against a board*).
+- **`cli rules` has a `links` rule**: every relative link in `docs/`, `.ai/skills/`, `AGENTS.md`, `CONTRIBUTING.md` and `README.md` names a file that exists, by exact case, and a heading it has — `cli rules links` after moving or renaming a doc.
+- **The app is held to the boards by measuring, never by eye**: `cli e2e "<scenario's name>" --board` runs it at the boards' own 1440×900 and `docs/design/tools/` compares the two ([`tom-design`](.ai/skills/tom-design/SKILL.md), *Measuring the app against a board*).
 
 ### Open, by decision
 

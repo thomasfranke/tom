@@ -1,4 +1,4 @@
-// `tom doctor` — whether this machine can build the repository.
+// `cli doctor` — whether this machine can build the repository.
 library;
 
 import 'dart:io';
@@ -153,35 +153,35 @@ Future<_Check> _flutter() async {
       : _Check.attention(
           'Flutter',
           '${flutter.framework} — $fvmrcPath pins $pinned, '
-              'which is what CI builds with; `tom fvm` matches it',
+              'which is what CI builds with; `cli fvm` matches it',
         );
 }
 
-/// FVM, which applies the pin. Optional: it is `tom fvm` that installs it,
+/// FVM, which applies the pin. Optional: it is `cli fvm` that installs it,
 /// and a machine already on the right Flutter never needs it.
 Future<_Check> _fvm() async => await isInstalled('fvm')
     ? const _Check.ok(
         'FVM',
-        'installed — `tom fvm` pins this workspace',
+        'installed — `cli fvm` pins this workspace',
         required: false,
       )
     : const _Check.absent(
         'FVM',
-        'not installed — `tom fvm` installs it when the pin is needed',
+        'not installed — `cli fvm` installs it when the pin is needed',
       );
 
 /// Whether the workspace has been resolved here.
 _Check _workspace() => isWorkspaceResolved()
     ? const _Check.ok('Workspace', 'resolved')
-    : const _Check.attention('Workspace', 'not resolved — run `tom setup`');
+    : const _Check.attention('Workspace', 'not resolved — run `cli setup`');
 
-/// genhtml, which turns the measured coverage into the report `tom coverage`
+/// genhtml, which turns the measured coverage into the report `cli coverage`
 /// opens. Optional: the gate reads the raw lcov and never needs it.
 Future<_Check> _lcov() async => await isInstalled('genhtml')
     ? const _Check.ok('lcov', 'genhtml available', required: false)
     : const _Check.absent(
         'lcov',
-        'genhtml not installed — only `tom coverage` needs it',
+        'genhtml not installed — only `cli coverage` needs it',
       );
 
 /// What one check found: four outcomes rather than a boolean, because only
